@@ -41,7 +41,7 @@ export function findFileListByNameUpward(dir: string, name: string) {
 
 export function readDirRecursive(
   root: string,
-  files: string[],
+  files?: string[],
   filter?: {
     dir?: (filename: string, dir: string) => boolean;
     file?: (filename: string, dir: string) => boolean;
