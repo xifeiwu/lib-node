@@ -41,9 +41,10 @@ export function findFileListByNameUpward(dir: string, name: string) {
 
 export function readDirRecursive(
   root: string,
-  filter?: {
-    dir?: (filename: string, dir: string) => boolean;
-    file?: (filename: string, dir: string) => boolean;
+  option?: {
+    dirFilter?: (fullpath: string) => boolean;
+    fileFilter?: (fullpath: string) => boolean;
+    includeDir?: boolean;
   },
   files?: string[],
   prefix?: string
@@ -51,19 +52,22 @@ export function readDirRecursive(
   prefix = prefix || '';
   files = files || [];
   // filter = filter || (() => true);
-  const {dir: dirFilter = () => true, file: fileFilter = () => true} = filter ? filter : {};
-  var dir = path.join(root, prefix);
-  if (!fs.existsSync(dir)) return files;
-  if (fs.statSync(dir).isDirectory()) {
-    fs.readdirSync(dir)
+  const {dirFilter = () => true, fileFilter = () => true, includeDir = false} = option ? option : {};
+  const fullpath = path.join(root, prefix);
+  if (!fs.existsSync(fullpath)) return files;
+  if (fs.statSync(fullpath).isDirectory()) {
+    if (includeDir) {
+      files.push(`${prefix}/`);
+    }
+    fs.readdirSync(fullpath)
       .filter(name => {
-        return dirFilter(name, dir);
+        return dirFilter(path.join(fullpath, name));
       })
       .forEach(name => {
-        readDirRecursive(root, filter, files, path.join(prefix as string, name));
+        readDirRecursive(root, option, files, path.join(prefix as string, name));
       });
   } else {
-    if (fileFilter(prefix, dir)) {
+    if (fileFilter(fullpath)) {
       files.push(prefix);
     }
   }
