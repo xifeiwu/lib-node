@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as stream from 'stream';
+import * as db from 'mime-db';
 
 // return file list in the form of <ul><li></li></ul>
 export function getFileListInFormOfUl(dir: string, filter?: () => boolean) {
@@ -78,6 +79,36 @@ export async function getFileContentInFormOfStream(targetFile: string) {
   } else if (statInfo.isFile()) {
     return fs.createReadStream(targetFile);
   }
+}
+var COMPRESSIBLE_TYPE_REGEXP = /^text\/|\+(?:json|text|xml)$/i;
+var EXTRACT_TYPE_REGEXP = /^\s*([^;\s]*)(?:;|\s|$)/;
+/**
+ * Checks if a type is compressible.
+ *
+ * @param {string} type
+ * @return {Boolean} compressible
+ * @public
+ */
+export function compressible(type?: string): boolean {
+  if (!type || typeof type !== 'string') {
+    return false;
+  }
+
+  // strip parameters
+  var match = EXTRACT_TYPE_REGEXP.exec(type);
+  var mime = match && match[1].toLowerCase();
+  if (!mime) {
+    return false;
+  }
+  var data = db[mime];
+
+  // return database information
+  if (data && data.compressible !== undefined) {
+    return data.compressible;
+  }
+
+  // fallback to regexp or unknown
+  return COMPRESSIBLE_TYPE_REGEXP.test(mime);
 }
 
 // export function defaultResponse(response: http.ServerResponse) {
