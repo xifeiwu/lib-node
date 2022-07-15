@@ -41,11 +41,11 @@ export function findFileListByNameUpward(dir: string, name: string) {
 
 export function readDirRecursive(
   root: string,
-  files?: string[],
   filter?: {
     dir?: (filename: string, dir: string) => boolean;
     file?: (filename: string, dir: string) => boolean;
   },
+  files?: string[],
   prefix?: string
 ) {
   prefix = prefix || '';
@@ -60,7 +60,7 @@ export function readDirRecursive(
         return dirFilter(name, dir);
       })
       .forEach(name => {
-        readDirRecursive(root, files, filter, path.join(prefix as string, name));
+        readDirRecursive(root, filter, files, path.join(prefix as string, name));
       });
   } else {
     if (fileFilter(prefix, dir)) {
