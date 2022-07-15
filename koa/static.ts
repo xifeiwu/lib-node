@@ -25,23 +25,43 @@ interface IOptions {
   dynamic?: boolean;
   dirFilter?: () => boolean;
   fileFilter?: () => boolean;
-  fileInfo?: IFileInfoMap;
+  store?: IFileStore;
   enableGzip?: boolean;
   alias?: {
     [pathname: string]: string;
   };
 }
+
+interface IHttpHeaderConfig {
+  maxAge?: number;
+  cacheControl?: string;
+}
+
+export interface IFileInfo extends IHttpHeaderConfig {
+  fullPath?: string;
+  extName?: string;
+  contentType?: string;
+  size: number;
+  modifyTime: Date;
+  buffer?: Buffer;
+  md5?: string;
+}
+
+interface IFileInfoMap {
+  [pathname: string]: IFileInfo;
+}
+
+export interface IFileStore {
+  map: IFileInfoMap;
+  get(pathname: string): IFileInfo;
+  set(pathname: string, info: IFileInfo): void;
+}
+
 export default function staticCache(options: IOptions) {
-  // if (typeof dir === 'object') {
-  //   files = options;
-  //   options = dir;
-  //   dir = null;
-  // }
-  // dir, options, files
   let {
     dir = process.cwd(),
     urlPrefix = '/',
-    fileInfo,
+    store,
     enableGzip = true,
     dirFilter,
     fileFilter,
@@ -58,7 +78,7 @@ export default function staticCache(options: IOptions) {
   // options = options || {};
   // prefix must be ASCII code
   // options.prefix = (options.prefix || '')
-  const files = new FileManager(fileInfo);
+  const files = store ? store : new FileManager();
   // dir = dir || options.dir || process.cwd();
   // var enableGzip = !!options.gzip;
   // var filePrefix = path.normalize(options.urlPrefix.replace(/^\//, ''));
@@ -109,6 +129,9 @@ export default function staticCache(options: IOptions) {
     if (pathname.indexOf(urlPrefix) !== 0) return await next();
 
     let file = files.get(pathname);
+    // console.log(`pathname`);
+    // console.log(pathname);
+    // console.log(file);
     // try to load file
     if (!file) {
       if (!dynamic) return await next();
@@ -169,7 +192,7 @@ export default function staticCache(options: IOptions) {
 
     ctx.type = getContentType(file);
     ctx.length = file.size;
-    ctx.set('cache-control', file.cacheControl || 'public, max-age=' + file.maxAge);
+    ctx.set('cache-control', file.cacheControl || 'public, max-age=' + (file.maxAge || 0));
     if (file.md5) ctx.set('content-md5', file.md5);
 
     if (ctx.method === 'HEAD') return;
@@ -275,19 +298,6 @@ function safeDecodeURIComponent(text: string) {
 //   return obj;
 // }
 
-interface IHttpHeaderConfig {
-  maxAge?: number;
-  cacheControl?: string;
-}
-interface IFileInfo extends IHttpHeaderConfig {
-  fullPath?: string;
-  extName?: string;
-  contentType?: string;
-  size: number;
-  modifyTime: Date;
-  buffer?: Buffer;
-  md5?: string;
-}
 const FILE_SIZE_THRESHOLD = 1024 * 1024;
 
 export function getFileInfo(fullPath: string, headerConfig?: IHttpHeaderConfig): IFileInfo | null {
@@ -333,20 +343,18 @@ function getContentType(fileInfo: IFileInfo) {
 //   this.map[key] = value
 // }
 
-interface IFileInfoMap {
-  [pathname: string]: IFileInfo;
-}
-class FileManager {
+class FileManager implements IFileStore {
   map: IFileInfoMap = {};
-  constructor(store?: IFileInfoMap) {
-    if (store) {
-      this.map = store;
-    }
+  constructor() {
+    this.map = {};
   }
   get(pathname: string) {
     return this.map[pathname];
   }
   set(pathname: string, info: IFileInfo) {
     this.map[pathname] = info;
+  }
+  keys() {
+    return Object.keys(this.map);
   }
 }
