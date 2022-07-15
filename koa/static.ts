@@ -70,10 +70,10 @@ export default function staticCache(options: IOptions) {
     alias = {},
   } = options;
   dir = path.normalize(dir);
-  urlPrefix = urlPrefix
+  urlPrefix = `/${urlPrefix
     .split('/')
     .filter(it => it)
-    .join('/');
+    .join('/')}`;
 
   // options = options || {};
   // prefix must be ASCII code
