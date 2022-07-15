@@ -15,7 +15,7 @@ import * as mimeTypes from 'mime-types';
 import {readDirRecursive} from '../path';
 import * as Koa from 'koa';
 import {toStream} from '../stream';
-import compressible from './compressible';
+import {compressible} from '../http';
 import stream = require('stream');
 
 interface IOptions {
