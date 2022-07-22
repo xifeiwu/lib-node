@@ -21,7 +21,7 @@ interface IOptions {
   alias?: {
     [pathname: string]: string;
   };
-  handleDir?: (fullpath: string) => string;
+  handleDir?: (fullpath: string) => IFileInfo;
   postTreatStream?: (stream: stream.Readable, fileInfo: IFileInfo) => stream.Readable;
 }
 
@@ -308,13 +308,7 @@ export function getFileInfo(
       ...(headerConfig ? headerConfig : {}),
     };
   } else if (stats.isDirectory() && handleDir) {
-    const buffer = Buffer.from(handleDir(fullPath));
-    return {
-      buffer,
-      size: buffer.byteLength,
-      modifyTime: new Date(),
-      extName: 'html',
-    };
+    return handleDir(fullPath);
   }
   return null;
   // const length = stats.size;
