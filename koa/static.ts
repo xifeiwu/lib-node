@@ -22,6 +22,7 @@ interface IOptions {
     [pathname: string]: string;
   };
   handleDir?: (fullpath: string) => string;
+  postTreatStream?: (stream: stream.Readable, fileInfo: IFileInfo) => stream.Readable;
 }
 
 interface IHttpHeaderConfig {
@@ -30,6 +31,7 @@ interface IHttpHeaderConfig {
 }
 
 export interface IFileInfo extends IHttpHeaderConfig {
+  /** fullPath of the file, customed data does not have fullPath */
   fullPath?: string;
   extName?: string;
   contentType?: string;
@@ -61,6 +63,7 @@ export default function staticCache(options: IOptions) {
     dynamic = true,
     alias = {},
     handleDir,
+    postTreatStream,
   } = options;
   dir = path.normalize(dir);
   urlPrefix = `/${urlPrefix
@@ -197,6 +200,9 @@ export default function staticCache(options: IOptions) {
       }
       stream = toStream(file.buffer);
     }
+    if (postTreatStream) {
+      stream = postTreatStream(stream, file);
+    }
 
     // update file hash
     // if (!file.md5) {
@@ -260,9 +266,19 @@ function safeDecodeURIComponent(text: string) {
 
 const FILE_SIZE_THRESHOLD = 1024 * 1024;
 
+/**
+ *
+ * @param fullPath
+ * @param option
+ * @param headerConfig config for http header
+ * @returns
+ */
 export function getFileInfo(
   fullPath: string,
-  option: {handleDir?: IOptions['handleDir']} = {},
+  option: {
+    /** return content of buffer when path points to a directory */
+    handleDir?: IOptions['handleDir'];
+  } = {},
   headerConfig?: IHttpHeaderConfig
 ): IFileInfo | null {
   if (!fs.existsSync(fullPath)) {
