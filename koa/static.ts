@@ -22,6 +22,7 @@ interface IOptions {
     [pathname: string]: string;
   };
   handleDir?: (fullpath: string) => IFileInfo;
+  customContentType?: (extName: string) => string | undefined;
   postTreatStream?: (stream: stream.Readable, fileInfo: IFileInfo) => stream.Readable;
 }
 
@@ -65,7 +66,22 @@ export default function staticCache(options: IOptions) {
     alias = {},
     handleDir,
     postTreatStream,
+    customContentType,
   } = options;
+
+  const getContentType = (fileInfo: IFileInfo) => {
+    const {extName = '', contentType} = fileInfo;
+    if (customContentType) {
+      const contentType = customContentType(extName);
+      if (contentType) {
+        return contentType;
+      }
+    }
+    if (contentType) {
+      return contentType;
+    }
+    return mimeTypes.lookup(extName) || 'application/octet-stream';
+  };
   dir = path.normalize(dir);
   urlPrefix = `/${urlPrefix
     .split('/')
@@ -312,13 +328,6 @@ export function getFileInfo(
   }
   return null;
   // const length = stats.size;
-}
-function getContentType(fileInfo: IFileInfo) {
-  const {extName = '', contentType} = fileInfo;
-  if (contentType) {
-    return contentType;
-  }
-  return mimeTypes.lookup(extName) || 'application/octet-stream';
 }
 
 // function FileManager(store) {
