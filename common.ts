@@ -1,4 +1,4 @@
 
 
-export * from '@modules/libs/fe/common';
+export * from '../fe/common';
 
