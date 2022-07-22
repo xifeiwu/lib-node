@@ -59,7 +59,8 @@ export default function staticCache(options: IOptions) {
     enableGzip = true,
     dirFilter,
     fileFilter,
-    preLoad = true,
+    /** set false as default value to avoid unnoticeable too many time cost in top dir  */
+    preLoad = false,
     dynamic = true,
     alias = {},
     handleDir,
@@ -103,7 +104,9 @@ export default function staticCache(options: IOptions) {
       pathname = alias[pathname];
     }
     // check prefix first to avoid calculate
-    if (pathname.indexOf(urlPrefix) !== 0) return await next();
+    if (pathname.indexOf(urlPrefix) !== 0) {
+      return await next();
+    }
 
     let file = files.get(pathname);
     // console.log(`pathname`);
@@ -126,13 +129,19 @@ export default function staticCache(options: IOptions) {
       }
 
       const stat = fs.statSync(fullpath);
-      if (!stat.isFile()) return await next();
+      /** only support file or directory */
+      if (!stat.isFile() && !stat.isDirectory()) {
+        return await next();
+      }
 
-      const fileInfo = getFileInfo(fullpath);
+      const fileInfo = getFileInfo(fullpath, {handleDir});
       if (fileInfo) {
         files.set(pathname, fileInfo);
         file = fileInfo;
       }
+    }
+    if (!file) {
+      return await next();
     }
 
     ctx.status = 200;
