@@ -48,7 +48,7 @@ export function readDirRecursive(
   },
   files?: string[],
   prefix?: string
-) {
+): string[] {
   prefix = prefix || '';
   files = files || [];
   // filter = filter || (() => true);
@@ -56,14 +56,14 @@ export function readDirRecursive(
   const fullpath = path.join(root, prefix);
   if (!fs.existsSync(fullpath)) return files;
   if (fs.statSync(fullpath).isDirectory()) {
+    if (!dirFilter(fullpath) && fullpath !== root) {
+      return [];
+    }
     if (includeDir) {
       files.push(`${prefix}/`);
     }
     fs.readdirSync(fullpath)
-      .filter(name => {
-        return dirFilter(path.join(fullpath, name));
-      })
-      .forEach(name => {
+      .forEach((name) => {
         readDirRecursive(root, option, files, path.join(prefix as string, name));
       });
   } else {
