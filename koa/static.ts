@@ -330,23 +330,6 @@ export function getFileInfo(
   // const length = stats.size;
 }
 
-// function FileManager(store) {
-//   if (store && typeof store.set === 'function' && typeof store.get === 'function') {
-//     this.store = store
-//   } else {
-//     this.map = store || Object.create(null)
-//   }
-// }
-
-// FileManager.prototype.get = function (key) {
-//   return this.store ? this.store.get(key) : this.map[key]
-// }
-
-// FileManager.prototype.set = function (key, value) {
-//   if (this.store) return this.store.set(key, value)
-//   this.map[key] = value
-// }
-
 class FileManager implements IFileStore {
   map: IFileInfoMap = {};
   constructor() {
@@ -361,4 +344,25 @@ class FileManager implements IFileStore {
   keys() {
     return Object.keys(this.map);
   }
+}
+
+export function preLoadDir(dir: string, store: IFileStore, urlPrefix: string) {
+  if (!urlPrefix) {
+    urlPrefix = '';
+  }
+  if (!fs.existsSync(dir)) {
+    throw new Error(`dir "${dir}" not exist`);
+  }
+  const stat = fs.statSync(dir);
+  if (!stat.isDirectory()) {
+    throw new Error(`dir "${dir}" is not a directory`);
+  }
+  readDirRecursive(dir, {
+    includeDir: false,
+  }).forEach(relativePath => {
+    const fileInfo = getFileInfo(path.join(dir, relativePath));
+    if (fileInfo) {
+      store.set(path.join(urlPrefix, relativePath), fileInfo);
+    }
+  });
 }
