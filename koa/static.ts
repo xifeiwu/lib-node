@@ -179,7 +179,7 @@ export default function staticCache(options: IOptions) {
     if (ctx.fresh) return (ctx.status = 304);
 
     ctx.type = getContentType(file);
-    ctx.length = file.size;
+    // ctx.length = file.size;
     ctx.set('cache-control', file.cacheControl || 'public, max-age=' + (file.maxAge || 0));
     if (file.md5) ctx.set('content-md5', file.md5);
 
