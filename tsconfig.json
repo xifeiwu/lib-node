@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "outDir": "./dist",
+    "target": "es6",
+    // "target": "es2019",
+    // "lib": "es2019",
+    "module": "CommonJS",
+    "strict": false,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "node",
+    "types": ["webpack-env", "node"],
+  },
+}
