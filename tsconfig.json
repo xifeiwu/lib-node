@@ -4,6 +4,7 @@
     "target": "es6",
     // "target": "es2019",
     // "lib": "es2019",
+    "esModuleInterop": true,
     "module": "CommonJS",
     "strict": false,
     "experimentalDecorators": true,
