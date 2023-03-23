@@ -1,6 +1,6 @@
 import {isObject} from '@modules/libs/fe/common';
 import {formatDate} from '@modules/libs/fe/date';
-import * as util from 'util';
+import util from 'util';
 
 function log2(content: any) {
   if (isObject(content)) {

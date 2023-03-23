@@ -1,7 +1,7 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as stream from 'stream';
-import * as db from 'mime-db';
+import fs from 'fs';
+import path from 'path';
+import stream from 'stream';
+import db from 'mime-db';
 
 // return file list in the form of <ul><li></li></ul>
 export function getFileListInFormOfUl(dir: string, filter?: () => boolean) {

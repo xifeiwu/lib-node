@@ -1,6 +1,6 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as childProcess from 'child_process';
+import fs from 'fs';
+import path from 'path';
+import childProcess from 'child_process';
 const HOME_PATH = process.env['HOME'];
 /**
  * start from @param 'dir', find one file with @param'name' upwards

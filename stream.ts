@@ -1,4 +1,4 @@
-import * as stream from 'stream';
+import stream from 'stream';
 import {isString, isObject, waitMilliSeconds} from './common';
 
 export function getStreamData(req: stream.Stream) {

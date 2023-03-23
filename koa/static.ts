@@ -1,10 +1,10 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as http from 'http';
-import * as zlib from 'zlib';
-import * as mimeTypes from 'mime-types';
+import fs from 'fs';
+import path from 'path';
+import http from 'http';
+import zlib from 'zlib';
+import mimeTypes from 'mime-types';
 import {readDirRecursive} from '../path';
-import * as Koa from 'koa';
+import Koa from 'koa';
 import {toStream} from '../stream';
 import {compressible} from '../http';
 import stream = require('stream');
