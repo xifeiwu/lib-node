@@ -1,29 +1,44 @@
 import fs from 'fs';
 import path from 'path';
-import http from 'http';
 import zlib from 'zlib';
-import mimeTypes from 'mime-types';
+import stream = require('stream');
 import {readDirRecursive} from '../path';
 import Koa from 'koa';
 import {toStream} from '../stream';
 import {compressible} from '../http';
-import stream = require('stream');
+
+interface IFileInfoMap {
+  [pathname: string]: IFileInfo;
+}
+
+export interface IFileStore {
+  get(pathname: string): IFileInfo;
+  set(pathname: string, info: IFileInfo): void;
+}
 
 interface IOptions {
+  /** target static dir */
   dir: string;
+  /** urlPrefix will be replace to '' whne found a file by pathname */
   urlPrefix?: string;
+  /** load all files on start, set false as default to avoid too many time cost and memory cost */
   preLoad?: boolean;
+  /** whether to find a file from local storage when it not exist in map */
   dynamic?: boolean;
   dirFilter?: (fullpath: string) => boolean;
   fileFilter?: (fullpath: string) => boolean;
   store?: IFileStore;
   enableGzip?: boolean;
+  /** alias a pathname to another */
   alias?: {
     [pathname: string]: string;
   };
+  /** when the path point to a dir, how to handle it */
   handleDir?: (fullpath: string) => IFileInfo;
+  /** return a new contentType from origin contentType */
   customContentType?: (extName: string) => string | undefined;
-  postTreatStream?: (stream: stream.Readable, fileInfo: IFileInfo) => stream.Readable;
+  /** handle data and return new data */
+  postTreatData?: (stream: stream.Readable, fileInfo: IFileInfo) => stream.Readable;
 }
 
 interface IHttpHeaderConfig {
@@ -35,21 +50,12 @@ export interface IFileInfo extends IHttpHeaderConfig {
   /** fullPath of the file, customed data does not have fullPath */
   fullPath?: string;
   extName?: string;
+  /** file content can be found by fullPath or return this buffer */
+  buffer?: Buffer;
   contentType?: string;
   size: number;
   modifyTime: Date;
-  buffer?: Buffer;
   md5?: string;
-}
-
-interface IFileInfoMap {
-  [pathname: string]: IFileInfo;
-}
-
-export interface IFileStore {
-  map: IFileInfoMap;
-  get(pathname: string): IFileInfo;
-  set(pathname: string, info: IFileInfo): void;
 }
 
 export default function staticCache(options: IOptions) {
@@ -60,12 +66,11 @@ export default function staticCache(options: IOptions) {
     enableGzip = true,
     dirFilter,
     fileFilter,
-    /** set false as default value to avoid unnoticeable too many time cost in top dir  */
     preLoad = false,
     dynamic = true,
     alias = {},
     handleDir,
-    postTreatStream,
+    postTreatData: postTreatStream,
     customContentType,
   } = options;
 
@@ -80,13 +85,15 @@ export default function staticCache(options: IOptions) {
     if (contentType) {
       return contentType;
     }
-    return mimeTypes.lookup(extName) || 'application/octet-stream';
+    return extName || 'application/octet-stream';
   };
   dir = path.normalize(dir);
-  urlPrefix = `/${urlPrefix
-    .split('/')
-    .filter(it => it)
-    .join('/')}`;
+  urlPrefix =
+    '/' +
+    urlPrefix
+      .split('/')
+      .filter(it => it)
+      .join('/');
 
   const files = store ? store : new FileManager();
 
@@ -162,7 +169,9 @@ export default function staticCache(options: IOptions) {
 
     ctx.status = 200;
 
-    if (enableGzip) ctx.vary('Accept-Encoding');
+    if (enableGzip) {
+      ctx.vary('Accept-Encoding');
+    }
 
     // if (!file.buffer) {
     //   var stats = await fs.stat(file.path);
@@ -174,16 +183,24 @@ export default function staticCache(options: IOptions) {
     // }
 
     ctx.response.lastModified = file.modifyTime;
-    if (file.md5) ctx.response.etag = file.md5;
+    if (file.md5) {
+      ctx.response.etag = file.md5;
+    }
 
-    if (ctx.fresh) return (ctx.status = 304);
+    if (ctx.fresh) {
+      return (ctx.status = 304)
+    };
 
     ctx.type = getContentType(file);
     // ctx.length = file.size;
     ctx.set('cache-control', file.cacheControl || 'public, max-age=' + (file.maxAge || 0));
-    if (file.md5) ctx.set('content-md5', file.md5);
+    if (file.md5) {
+      ctx.set('content-md5', file.md5);
+    }
 
-    if (ctx.method === 'HEAD') return;
+    if (ctx.method === 'HEAD') {
+      return;
+    }
 
     var acceptGzip = ctx.acceptsEncodings('gzip') === 'gzip';
 
@@ -228,15 +245,6 @@ export default function staticCache(options: IOptions) {
     if (postTreatStream) {
       stream = postTreatStream(stream, file);
     }
-
-    // update file hash
-    // if (!file.md5) {
-    //   var hash = crypto.createHash('md5');
-    //   stream.on('data', hash.update.bind(hash));
-    //   stream.on('end', function () {
-    //     file.md5 = hash.digest('base64');
-    //   });
-    // }
 
     ctx.body = stream;
     // enable gzip will remove content length
@@ -314,7 +322,7 @@ export function getFileInfo(
   const stats = fs.statSync(fullPath);
   if (stats.isFile()) {
     const extName = path.extname(fullPath);
-    const contentType = mimeTypes.lookup(extName) || 'application/octet-stream';
+    const contentType = extName || 'application/octet-stream';
     return {
       fullPath,
       size: stats.size,
@@ -327,7 +335,6 @@ export function getFileInfo(
     return handleDir(fullPath);
   }
   return null;
-  // const length = stats.size;
 }
 
 class FileManager implements IFileStore {
