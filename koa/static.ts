@@ -5,11 +5,7 @@ import stream = require('stream');
 import {readDirRecursive} from '../path';
 import Koa from 'koa';
 import {toStream} from '../stream';
-import {compressible} from '../http';
-
-interface IFileInfoMap {
-  [pathname: string]: IFileInfo;
-}
+import {compressible} from '../mime/mime-types';
 
 export interface IFileStore {
   get(pathname: string): IFileInfo;
@@ -21,19 +17,20 @@ interface IOptions {
   dir: string;
   /** urlPrefix will be replace to '' whne found a file by pathname */
   urlPrefix?: string;
-  /** load all files on start, set false as default to avoid too many time cost and memory cost */
+  /** load all files at start of the server, set false as default to avoid too many time cost and memory cost */
   preLoad?: boolean;
-  /** whether to find a file from local storage when it not exist in map */
+  /** try to find the file from local when it not exist in store */
   dynamic?: boolean;
   dirFilter?: (fullpath: string) => boolean;
   fileFilter?: (fullpath: string) => boolean;
   store?: IFileStore;
+  /** enable gzip or not */
   enableGzip?: boolean;
-  /** alias a pathname to another */
+  /** alias a pathname to another name before load file */
   alias?: {
     [pathname: string]: string;
   };
-  /** when the path point to a dir, how to handle it */
+  /** when the target path point to is dir, how to handle it */
   handleDir?: (fullpath: string) => IFileInfo;
   /** return a new contentType from origin contentType */
   customContentType?: (extName: string) => string | undefined;
@@ -58,6 +55,9 @@ export interface IFileInfo extends IHttpHeaderConfig {
   md5?: string;
 }
 
+/**
+ * A middleware of koa for handle static files under a target folder.
+ */
 export default function staticCache(options: IOptions) {
   let {
     dir = process.cwd(),
@@ -70,7 +70,7 @@ export default function staticCache(options: IOptions) {
     dynamic = true,
     alias = {},
     handleDir,
-    postTreatData: postTreatStream,
+    postTreatData,
     customContentType,
   } = options;
 
@@ -95,7 +95,7 @@ export default function staticCache(options: IOptions) {
       .filter(it => it)
       .join('/');
 
-  const files = store ? store : new FileManager();
+  const fileStore = store ? store : new FileManager();
 
   if (!fs.existsSync(dir)) {
     throw new Error(`dir ${dir} not exist!`);
@@ -111,7 +111,7 @@ export default function staticCache(options: IOptions) {
         handleDir,
       });
       if (fileInfo) {
-        files.set(path.join(urlPrefix, relativePath), fileInfo);
+        fileStore.set(path.join(urlPrefix, relativePath), fileInfo);
       }
     });
   }
@@ -131,7 +131,7 @@ export default function staticCache(options: IOptions) {
       return await next();
     }
 
-    let file = files.get(pathname);
+    let file = fileStore.get(pathname);
     // console.log(`pathname`);
     // console.log(pathname);
     // console.log(file);
@@ -159,7 +159,7 @@ export default function staticCache(options: IOptions) {
 
       const fileInfo = getFileInfo(fullpath, {handleDir});
       if (fileInfo) {
-        files.set(pathname, fileInfo);
+        fileStore.set(pathname, fileInfo);
         file = fileInfo;
       }
     }
@@ -188,10 +188,11 @@ export default function staticCache(options: IOptions) {
     }
 
     if (ctx.fresh) {
-      return (ctx.status = 304)
-    };
+      return (ctx.status = 304);
+    }
 
     ctx.type = getContentType(file);
+    // should not set length as it may be compressed later
     // ctx.length = file.size;
     ctx.set('cache-control', file.cacheControl || 'public, max-age=' + (file.maxAge || 0));
     if (file.md5) {
@@ -203,16 +204,6 @@ export default function staticCache(options: IOptions) {
     }
 
     var acceptGzip = ctx.acceptsEncodings('gzip') === 'gzip';
-
-    // if (file.zipBuffer) {
-    //   if (acceptGzip) {
-    //     ctx.set('content-encoding', 'gzip');
-    //     ctx.body = file.zipBuffer;
-    //   } else {
-    //     ctx.body = file.buffer;
-    //   }
-    //   return;
-    // }
 
     var shouldGzip = enableGzip && file.size > 1024 && acceptGzip && compressible(file.contentType);
 
@@ -242,8 +233,8 @@ export default function staticCache(options: IOptions) {
       }
       stream = toStream(file.buffer);
     }
-    if (postTreatStream) {
-      stream = postTreatStream(stream, file);
+    if (postTreatData) {
+      stream = postTreatData(stream, file);
     }
 
     ctx.body = stream;
@@ -263,39 +254,6 @@ function safeDecodeURIComponent(text: string) {
     return text;
   }
 }
-
-/**
- * load file and add file content to cache
- *
- * @param {String} name
- * @param {String} dir
- * @param {Object} options
- * @param {Object} files
- * @return {Object}
- * @api private
- */
-
-// function loadFile(name, dir, options, files) {
-//   var pathname = path.normalize(path.join(options.prefix, name));
-//   if (!files.get(pathname)) files.set(pathname, {});
-//   var obj = files.get(pathname);
-//   var filename = (obj.path = path.join(dir, name));
-//   var stats = fs.statSync(filename);
-//   var buffer = fs.readFileSync(filename);
-
-//   obj.cacheControl = options.cacheControl;
-//   obj.maxAge = obj.maxAge ? obj.maxAge : options.maxAge || 0;
-//   obj.type = obj.mime = mime.lookup(pathname) || 'application/octet-stream';
-//   obj.mtime = stats.mtime;
-//   obj.length = stats.size;
-//   obj.md5 = crypto.createHash('md5').update(buffer).digest('base64');
-
-//   debug('file: ' + JSON.stringify(obj, null, 2));
-//   if (options.buffer) obj.buffer = buffer;
-
-//   buffer = null;
-//   return obj;
-// }
 
 const FILE_SIZE_THRESHOLD = 1024 * 1024;
 
@@ -335,6 +293,10 @@ export function getFileInfo(
     return handleDir(fullPath);
   }
   return null;
+}
+
+interface IFileInfoMap {
+  [pathname: string]: IFileInfo;
 }
 
 class FileManager implements IFileStore {
