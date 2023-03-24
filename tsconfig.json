@@ -5,6 +5,7 @@
     // "target": "es2019",
     // "lib": "es2019",
     "esModuleInterop": true,
+    "resolveJsonModule": true,
     "module": "CommonJS",
     "strict": false,
     "experimentalDecorators": true,
