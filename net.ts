@@ -1,6 +1,6 @@
 import os from 'os';
 import net from 'net';
-import {isString, isNumber} from './common';
+import {isString, isNumber} from './fe';
 
 export function getLocalIP() {
   var localIP = null;

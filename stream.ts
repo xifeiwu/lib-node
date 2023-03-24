@@ -1,5 +1,5 @@
 import stream from 'stream';
-import {isString, isObject, waitMilliSeconds} from './common';
+import {isString, isObject, waitMilliSeconds} from './fe';
 
 export function getStreamData(req: stream.Stream) {
   return new Promise((resolve, reject) => {

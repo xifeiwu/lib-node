@@ -1,5 +1,4 @@
-import {isObject} from '@modules/libs/fe/common';
-import {formatDate} from '@modules/libs/fe/date';
+import {isObject, formatDate} from './fe';
 import util from 'util';
 
 function log2(content: any) {
@@ -25,6 +24,7 @@ export function log() {
     if (isObject(content)) {
       console.log(
         util.inspect(content, {
+          showHidden: true,
           depth: null,
           colors: true,
         })
