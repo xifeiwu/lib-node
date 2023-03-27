@@ -4,7 +4,7 @@ import stream from 'stream';
 import db from 'mime-db';
 
 // return file list in the form of <ul><li></li></ul>
-export function getFileListInFormOfUl(dir: string, filter?: () => boolean) {
+export function getFileListInFormOfUl(dir: string, filter?: (fileName: string) => boolean) {
   filter = filter ? filter : () => true;
   try {
     var stat = fs.statSync(dir);
@@ -35,7 +35,7 @@ export function getFileListInFormOfUl(dir: string, filter?: () => boolean) {
   }
 }
 
-export function getDirContentInFormOfHtml(dir: string, filter?: () => boolean) {
+export function getDirContentInFormOfHtml(dir: string, filter?: (fileName: string) => boolean) {
   const ulStr = getFileListInFormOfUl(dir, filter);
   return `<html>
   <head>

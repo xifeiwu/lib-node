@@ -12,7 +12,7 @@ export interface IFileStore {
   set(pathname: string, info: IFileInfo): void;
 }
 
-interface IOptions {
+export interface IStaticMiddlewareOptions {
   /** target static dir */
   dir: string;
   /** urlPrefix will be replace to '' whne found a file by pathname */
@@ -47,9 +47,11 @@ export interface IFileInfo extends IHttpHeaderConfig {
   /** fullPath of the file, customed data does not have fullPath */
   fullPath?: string;
   extName?: string;
+
   /** file content can be found by fullPath or return this buffer */
   buffer?: Buffer;
   contentType?: string;
+
   size: number;
   modifyTime: Date;
   md5?: string;
@@ -58,7 +60,7 @@ export interface IFileInfo extends IHttpHeaderConfig {
 /**
  * A middleware of koa for handle static files under a target folder.
  */
-export default function staticCache(options: IOptions) {
+export default function staticCache(options: IStaticMiddlewareOptions) {
   let {
     dir = process.cwd(),
     urlPrefix = '/',
@@ -268,7 +270,7 @@ export function getFileInfo(
   fullPath: string,
   option: {
     /** return content of buffer when path points to a directory */
-    handleDir?: IOptions['handleDir'];
+    handleDir?: IStaticMiddlewareOptions['handleDir'];
   } = {},
   headerConfig?: IHttpHeaderConfig
 ): IFileInfo | null {
