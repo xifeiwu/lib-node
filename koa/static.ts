@@ -7,9 +7,15 @@ import Koa from 'koa';
 import {toStream} from '../stream';
 import {compressible} from '../mime/mime-types';
 
+/**
+ * Key points:
+ * pathname meaning: /path/a, /path/a/
+ */
 export interface IFileStore {
-  get(pathname: string): IFileInfo;
-  set(pathname: string, info: IFileInfo): void;
+  get(pathname: string): TargetInfo | null;
+  set(pathname: string, info: TargetInfo): void;
+  remove(pathname: string): boolean;
+  all(): {[pathname: string]: TargetInfo};
 }
 
 export interface IStaticMiddlewareOptions {
@@ -18,11 +24,9 @@ export interface IStaticMiddlewareOptions {
   /** urlPrefix will be replace to '' whne found a file by pathname */
   urlPrefix?: string;
   /** load all files at start of the server, set false as default to avoid too many time cost and memory cost */
-  preLoad?: boolean;
-  /** try to find the file from local when it not exist in store */
-  dynamic?: boolean;
-  dirFilter?: (fullpath: string) => boolean;
-  fileFilter?: (fullpath: string) => boolean;
+  // preLoad?: boolean;
+  // /** try to find the file from local when it not exist in store */
+  // dynamic?: boolean;
   store?: IFileStore;
   /** enable gzip or not */
   enableGzip?: boolean;
@@ -31,11 +35,12 @@ export interface IStaticMiddlewareOptions {
     [pathname: string]: string;
   };
   /** when the target path point to is dir, how to handle it */
-  handleDir?: (fullpath: string) => IFileInfo;
+  handleDir?: (fullpath: string) => BufferInfo;
   /** return a new contentType from origin contentType */
-  customContentType?: (extName: string) => string | undefined;
+  customContentType?: (fileInfo: LocalFileInfo) => string | undefined;
   /** handle data and return new data */
-  postTreatData?: (stream: stream.Readable, fileInfo: IFileInfo) => stream.Readable;
+  postTreatData?: (stream: stream.Readable, fileInfo: TargetInfo) => stream.Readable;
+  maxCacheTime?: number;
 }
 
 interface IHttpHeaderConfig {
@@ -43,53 +48,59 @@ interface IHttpHeaderConfig {
   cacheControl?: string;
 }
 
-export interface IFileInfo extends IHttpHeaderConfig {
-  /** fullPath of the file, customed data does not have fullPath */
-  fullPath?: string;
-  extName?: string;
-
-  /** file content can be found by fullPath or return this buffer */
-  buffer?: Buffer;
-  contentType?: string;
-
+interface ICommonInfo extends IHttpHeaderConfig {
   size: number;
   modifyTime: Date;
   md5?: string;
+  timestamp: number;
 }
+export interface LocalFileInfo extends ICommonInfo {
+  /** fullpath for local file, buffer for generated file */
+  fullPath: string;
+  extName: string;
+}
+export interface BufferInfo extends ICommonInfo {
+  buffer: Buffer;
+  contentType: string;
+}
+export type TargetInfo = LocalFileInfo | BufferInfo;
 
 /**
  * A middleware of koa for handle static files under a target folder.
  */
 export default function staticCache(options: IStaticMiddlewareOptions) {
   let {
-    dir = process.cwd(),
+    dir,
     urlPrefix = '/',
     store,
-    enableGzip = true,
-    dirFilter,
-    fileFilter,
-    preLoad = false,
-    dynamic = true,
+    enableGzip = false,
     alias = {},
     handleDir,
     postTreatData,
     customContentType,
+    maxCacheTime = 0,
   } = options;
 
-  const getContentType = (fileInfo: IFileInfo) => {
-    const {extName = '', contentType} = fileInfo;
-    if (customContentType) {
-      const contentType = customContentType(extName);
+  const getContentType = (fileInfo: LocalFileInfo | BufferInfo) => {
+    if (customContentType && (fileInfo as LocalFileInfo).extName) {
+      const contentType = customContentType(fileInfo as LocalFileInfo);
       if (contentType) {
         return contentType;
       }
     }
-    if (contentType) {
-      return contentType;
-    }
-    return extName || 'application/octet-stream';
+    // @ts-ignore
+    const {extName, contentType} = fileInfo;
+    return extName || contentType || 'application/octet-stream';
   };
+
   dir = path.normalize(dir);
+  if (!fs.existsSync(dir)) {
+    throw new Error(`dir ${dir} not exist!`);
+  }
+
+  if (!urlPrefix.startsWith('/')) {
+    throw new Error(`urlPrefix should starts with '/': ${urlPrefix}`);
+  }
   urlPrefix =
     '/' +
     urlPrefix
@@ -99,28 +110,11 @@ export default function staticCache(options: IStaticMiddlewareOptions) {
 
   const fileStore = store ? store : new FileManager();
 
-  if (!fs.existsSync(dir)) {
-    throw new Error(`dir ${dir} not exist!`);
-  }
-
-  if (preLoad) {
-    readDirRecursive(dir, {
-      dirFilter: dirFilter,
-      fileFilter: fileFilter,
-      includeDir: true,
-    }).forEach(relativePath => {
-      const fileInfo = getFileInfo(path.join(dir, relativePath), {
-        handleDir,
-      });
-      if (fileInfo) {
-        fileStore.set(path.join(urlPrefix, relativePath), fileInfo);
-      }
-    });
-  }
-
   return async (ctx: Koa.Context, next: Koa.Next) => {
     // only accept HEAD and GET
-    if (ctx.method !== 'HEAD' && ctx.method !== 'GET') return await next();
+    if (ctx.method !== 'HEAD' && ctx.method !== 'GET') {
+      return await next();
+    }
     // decode for `/%E4%B8%AD%E6%96%87`
     // normalize for `//index`
     let pathname = path.normalize(safeDecodeURIComponent(ctx.path));
@@ -133,18 +127,15 @@ export default function staticCache(options: IStaticMiddlewareOptions) {
       return await next();
     }
 
-    let file = fileStore.get(pathname);
+    const relativePath = pathname.replace(urlPrefix, '');
+    const fullpath = path.join(dir, relativePath);
+    let fileInfo = fileStore.get(pathname);
     // console.log(`pathname`);
     // console.log(pathname);
     // console.log(file);
     // console.log(file.buffer ? file.buffer.toString() : file.fullPath);
     // try to load file
-    if (!file) {
-      if (!dynamic) {
-        return await next();
-      }
-      const relativePath = pathname.replace(urlPrefix, '');
-      var fullpath = path.join(dir, relativePath);
+    if (!fileInfo) {
       // files that can be accessd should be under options.dir
       if (fullpath.indexOf(dir) !== 0) {
         return await next();
@@ -159,13 +150,25 @@ export default function staticCache(options: IStaticMiddlewareOptions) {
         return await next();
       }
 
-      const fileInfo = getFileInfo(fullpath, {handleDir});
-      if (fileInfo) {
-        fileStore.set(pathname, fileInfo);
-        file = fileInfo;
+      const _fileInfo = getFileInfo(fullpath, {handleDir});
+      if (_fileInfo) {
+        fileStore.set(pathname, _fileInfo);
+        fileInfo = _fileInfo;
+      }
+    } else {
+      /** check whether fullpath exist in local storage */
+      if (!fs.existsSync(fullpath)) {
+        fileStore.remove(fullpath);
+        return await next();
+      } else if (maxCacheTime && fileInfo.timestamp + maxCacheTime > Date.now()) {
+        const _fileInfo = getFileInfo(fullpath, {handleDir});
+        if (_fileInfo) {
+          fileStore.set(pathname, _fileInfo);
+          fileInfo = _fileInfo;
+        }
       }
     }
-    if (!file) {
+    if (!fileInfo) {
       return await next();
     }
 
@@ -175,30 +178,21 @@ export default function staticCache(options: IStaticMiddlewareOptions) {
       ctx.vary('Accept-Encoding');
     }
 
-    // if (!file.buffer) {
-    //   var stats = await fs.stat(file.path);
-    //   if (stats.mtime.getTime() !== file.mtime.getTime()) {
-    //     file.mtime = stats.mtime;
-    //     file.md5 = null;
-    //     file.length = stats.size;
-    //   }
-    // }
-
-    ctx.response.lastModified = file.modifyTime;
-    if (file.md5) {
-      ctx.response.etag = file.md5;
+    ctx.response.lastModified = fileInfo.modifyTime;
+    if (fileInfo.md5) {
+      ctx.response.etag = fileInfo.md5;
     }
 
     if (ctx.fresh) {
       return (ctx.status = 304);
     }
 
-    ctx.type = getContentType(file);
+    ctx.type = getContentType(fileInfo);
     // should not set length as it may be compressed later
     // ctx.length = file.size;
-    ctx.set('cache-control', file.cacheControl || 'public, max-age=' + (file.maxAge || 0));
-    if (file.md5) {
-      ctx.set('content-md5', file.md5);
+    ctx.set('cache-control', fileInfo.cacheControl || 'public, max-age=' + (fileInfo.maxAge || 0));
+    if (fileInfo.md5) {
+      ctx.set('content-md5', fileInfo.md5);
     }
 
     if (ctx.method === 'HEAD') {
@@ -207,36 +201,17 @@ export default function staticCache(options: IStaticMiddlewareOptions) {
 
     var acceptGzip = ctx.acceptsEncodings('gzip') === 'gzip';
 
-    var shouldGzip = enableGzip && file.size > 1024 && acceptGzip && compressible(file.contentType);
-
-    // if (file.buffer) {
-    //   if (shouldGzip) {
-    //     var gzFile = files.get(pathname + '.gz');
-    //     if (options.usePrecompiledGzip && gzFile && gzFile.buffer) {
-    //       // if .gz file already read from disk
-    //       file.zipBuffer = gzFile.buffer;
-    //     } else {
-    //       file.zipBuffer = await zlib.gzip(file.buffer);
-    //     }
-    //     ctx.set('content-encoding', 'gzip');
-    //     ctx.body = file.zipBuffer;
-    //   } else {
-    //     ctx.body = file.buffer;
-    //   }
-    //   return;
-    // }
+    var shouldGzip =
+      enableGzip && fileInfo.size > 1024 && acceptGzip && compressible(getContentType(fileInfo));
 
     let stream: stream.Readable;
-    if (file.fullPath) {
-      stream = fs.createReadStream(file.fullPath);
-    } else {
-      if (!file.buffer) {
-        return await next();
-      }
-      stream = toStream(file.buffer);
+    if ((fileInfo as LocalFileInfo).fullPath) {
+      stream = fs.createReadStream((fileInfo as LocalFileInfo).fullPath);
+    } else if (fileInfo as BufferInfo) {
+      stream = toStream((fileInfo as BufferInfo).buffer);
     }
     if (postTreatData) {
-      stream = postTreatData(stream, file);
+      stream = postTreatData(stream, fileInfo);
     }
 
     ctx.body = stream;
@@ -273,7 +248,7 @@ export function getFileInfo(
     handleDir?: IStaticMiddlewareOptions['handleDir'];
   } = {},
   headerConfig?: IHttpHeaderConfig
-): IFileInfo | null {
+): TargetInfo | null {
   if (!fs.existsSync(fullPath)) {
     console.error(`file ${fullPath} not exist`);
     return null;
@@ -282,13 +257,12 @@ export function getFileInfo(
   const stats = fs.statSync(fullPath);
   if (stats.isFile()) {
     const extName = path.extname(fullPath);
-    const contentType = extName || 'application/octet-stream';
     return {
       fullPath,
       size: stats.size,
       modifyTime: stats.mtime,
       extName,
-      contentType,
+      timestamp: Date.now(),
       ...(headerConfig ? headerConfig : {}),
     };
   } else if (stats.isDirectory() && handleDir) {
@@ -298,7 +272,7 @@ export function getFileInfo(
 }
 
 interface IFileInfoMap {
-  [pathname: string]: IFileInfo;
+  [pathname: string]: LocalFileInfo;
 }
 
 class FileManager implements IFileStore {
@@ -309,29 +283,48 @@ class FileManager implements IFileStore {
   get(pathname: string) {
     return this.map[pathname];
   }
-  set(pathname: string, info: IFileInfo) {
+  set(pathname: string, info: LocalFileInfo) {
     this.map[pathname] = info;
   }
-  keys() {
-    return Object.keys(this.map);
+  remove(pathname: string) {
+    if (Object.prototype.hasOwnProperty.call(this.map, pathname)) {
+      delete this.map[pathname];
+      return true;
+    }
+    return false;
+  }
+  all() {
+    return this.map;
   }
 }
 
-export function preLoadDir(dir: string, store: IFileStore, urlPrefix: string) {
+export function preLoadDir(
+  store: IFileStore,
+  dirInfo: {
+    fullPath: string;
+    includeDir?: boolean;
+    dirFilter?: (fullpath: string) => boolean;
+    fileFilter?: (fullpath: string) => boolean;
+  },
+  urlPrefix: string
+) {
   if (!urlPrefix) {
     urlPrefix = '';
   }
-  if (!fs.existsSync(dir)) {
-    throw new Error(`dir "${dir}" not exist`);
+  const {fullPath, dirFilter, fileFilter, includeDir} = dirInfo;
+  if (!fs.existsSync(fullPath)) {
+    throw new Error(`dir "${fullPath}" not exist`);
   }
-  const stat = fs.statSync(dir);
+  const stat = fs.statSync(fullPath);
   if (!stat.isDirectory()) {
-    throw new Error(`dir "${dir}" is not a directory`);
+    throw new Error(`dir "${fullPath}" is not a directory`);
   }
-  readDirRecursive(dir, {
-    includeDir: false,
+  readDirRecursive(fullPath, {
+    dirFilter,
+    fileFilter,
+    includeDir,
   }).forEach(relativePath => {
-    const fileInfo = getFileInfo(path.join(dir, relativePath));
+    const fileInfo = getFileInfo(path.join(fullPath, relativePath));
     if (fileInfo) {
       store.set(path.join(urlPrefix, relativePath), fileInfo);
     }
