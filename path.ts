@@ -39,6 +39,9 @@ export function findFileListByNameUpward(dir: string, name: string) {
   return results;
 }
 
+/**
+ * @returns relative path list to root
+ */
 export function readDirRecursive(
   root: string,
   option?: {
