@@ -1,4 +1,4 @@
-export const ports: {
+export const PORT: {
   [key: string]: {
     port: number;
     description: string;
