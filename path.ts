@@ -45,8 +45,8 @@ export function findFileListByNameUpward(dir: string, name: string) {
 export function readDirRecursive(
   root: string,
   option?: {
-    dirFilter?: (fullpath: string) => boolean;
-    fileFilter?: (fullpath: string) => boolean;
+    dirFilter?: (relativePath: string) => boolean;
+    fileFilter?: (relativePath: string) => boolean;
     includeDir?: boolean;
   },
   files?: string[],
@@ -59,7 +59,7 @@ export function readDirRecursive(
   const fullpath = path.join(root, prefix);
   if (!fs.existsSync(fullpath)) return files;
   if (fs.statSync(fullpath).isDirectory()) {
-    if (!dirFilter(fullpath) && fullpath !== root) {
+    if (!dirFilter(prefix) && fullpath !== root) {
       return [];
     }
     if (includeDir) {
@@ -70,7 +70,7 @@ export function readDirRecursive(
         readDirRecursive(root, option, files, path.join(prefix as string, name));
       });
   } else {
-    if (fileFilter(fullpath)) {
+    if (fileFilter(prefix)) {
       files.push(prefix);
     }
   }
