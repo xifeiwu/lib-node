@@ -1,5 +1,7 @@
-import {isObject, formatDate} from './fe';
 import util from 'util';
+import fs from 'fs';
+import path from 'path';
+import {isObject, formatDate} from './fe';
 
 // function log2(content: any) {
 //   if (isObject(content)) {
@@ -60,4 +62,27 @@ export function prettyLog() {
   }
   const params = [].slice.call(arguments) as any[];
   params.forEach(logOne);
+}
+
+export function toConsole(...args: any[]) {
+  args.forEach((arg) => {
+    console.log(
+      util.inspect(arg, {
+        depth: 10,
+        colors: true,
+      }),
+    );
+  });
+}
+
+export function toFile(tag: string, data: string | object) {
+  fs.writeFileSync(
+    path.resolve(__dirname, `${tag}-${Date.now()}`),
+    util.inspect(data, {
+      // showHidden: false,
+      maxArrayLength: null,
+      depth: null,
+      colors: false,
+    }),
+  );
 }
