@@ -1,5 +1,5 @@
 import stream from 'stream';
-import {isString, isObject, waitMilliSeconds} from './fe';
+import {isString, isObject, waitFor} from './fe';
 
 export function getStreamData(req: stream.Stream) {
   return new Promise((resolve, reject) => {
@@ -53,7 +53,7 @@ export function slowStream(chunkSize = 1024, wait = 500) {
         }
         chunk = Buffer.alloc(size);
         data.copy(chunk, 0, pos, pos + size);
-        await waitMilliSeconds(wait);
+        await waitFor(wait);
         this.push(chunk);
         pos += size;
       }
