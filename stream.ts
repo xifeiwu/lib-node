@@ -1,7 +1,7 @@
 import stream from 'stream';
 import {isString, isObject, waitFor} from './fe';
 
-export function getStreamData(req: stream.Stream) {
+export function getStreamData(req: stream.Stream): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const bufferList: Buffer[] = [];
     req.on('data', (chunk: Buffer) => {
