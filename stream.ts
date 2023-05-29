@@ -1,5 +1,6 @@
-import stream from 'stream';
+import stream, {Readable} from 'stream';
 import {isString, isObject, waitFor} from './fe';
+import {isStream} from './common';
 
 export function getStreamData(req: stream.Stream): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -60,4 +61,16 @@ export function slowStream(chunkSize = 1024, wait = 500) {
       next();
     },
   });
+}
+
+export async function toBuffer(data: string | number | Readable | Uint8Array) {
+  const bufferList: Buffer[] = [];
+  if (data) {
+    let payload: Buffer | string = data as Buffer | string;
+    if (isStream(payload)) {
+      payload = await getStreamData(data as Readable);
+    }
+    bufferList.push(Buffer.from(payload));
+  }
+  return Buffer.concat(bufferList);
 }
