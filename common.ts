@@ -1,4 +1,14 @@
 import readline from 'readline';
+import {isFunction, isObject} from './fe';
+
+/**
+ * Determine if a value is a Stream
+ *
+ * @param {*} val The value to test
+ *
+ * @returns {boolean} True if value is a Stream, otherwise false
+ */
+export const isStream = val => isObject(val) && isFunction(val.pipe);
 
 export function selectOption<T extends {label: string}>(
   options: T[],
@@ -19,7 +29,7 @@ export function selectOption<T extends {label: string}>(
     output: process.stdout,
   });
   return new Promise((res, rej) => {
-    interact.question(optionStr, (answer) => {
+    interact.question(optionStr, answer => {
       let index = parseInt(answer);
       if (Number.isNaN(index)) {
         index = defaultIndex;
