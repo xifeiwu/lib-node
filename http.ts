@@ -1,7 +1,30 @@
 import fs from 'fs';
 import path from 'path';
+import http from 'http';
+import https from 'https';
 import stream from 'stream';
-import db from 'mime-db';
+import {toBuffer} from './stream';
+
+export async function request(
+  url: string | URL,
+  options: http.RequestOptions,
+  data?: Parameters<typeof toBuffer>[0]
+): Promise<http.IncomingMessage> {
+  const {protocol} = new URL(url);
+  const clientRequest = (protocol === 'https:' ? https : http).request(url, options);
+  if (data) {
+    clientRequest.write(await toBuffer(data));
+  }
+  clientRequest.end();
+  return new Promise((res, rej) => {
+    clientRequest.on('response', async response => {
+      res(response);
+    });
+    clientRequest.on('error', error => {
+      rej(error);
+    });
+  });
+}
 
 // return file list in the form of <ul><li></li></ul>
 export function getFileListInFormOfUl(dir: string, filter?: (fileName: string) => boolean) {
