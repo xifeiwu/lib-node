@@ -5,7 +5,7 @@ import https from 'https';
 import stream from 'stream';
 import {toBuffer} from './stream';
 
-export async function request(
+export async function requestAndGetResponse(
   url: string | URL,
   options: http.RequestOptions,
   data?: Parameters<typeof toBuffer>[0]
