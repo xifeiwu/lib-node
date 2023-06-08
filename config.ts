@@ -20,4 +20,4 @@ export const PORT: {
     port: 3202,
     description: 'proxy server for pulser-app'
   }
-}
+};

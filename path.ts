@@ -1,14 +1,14 @@
 import fs from 'fs';
 import path from 'path';
 import childProcess from 'child_process';
-const HOME_PATH = process.env['HOME'];
+const HOME_PATH = process.env.HOME;
 /**
  * start from @param 'dir', find one file with @param'name' upwards
  * @param dir, start dir
  * @param name, target file name
  */
 export function findClosestFile(dir: string, name: string): string | null {
-  let fullPath = path.resolve(dir, name);
+  const fullPath = path.resolve(dir, name);
   if (dir == HOME_PATH || dir == '/') {
     return null;
   }
@@ -29,7 +29,7 @@ export function findFileListByNameUpward(dir: string, name: string) {
   let currentPath = dir;
   while (currentPath !== HOME_PATH && currentPath !== '/' && currentPath !== null) {
     // console.log(currentPath);
-    var toFind = path.resolve(currentPath, name);
+    const toFind = path.resolve(currentPath, name);
     if (fs.existsSync(toFind)) {
       results.push(toFind);
     }
@@ -57,7 +57,7 @@ export function readDirRecursive(
   // filter = filter || (() => true);
   const {dirFilter = () => true, fileFilter = () => true, includeDir = false} = option ? option : {};
   const fullpath = path.join(root, prefix);
-  if (!fs.existsSync(fullpath)) return files;
+  if (!fs.existsSync(fullpath)) { return files; }
   if (fs.statSync(fullpath).isDirectory()) {
     if (!dirFilter(prefix) && fullpath !== root) {
       return [];
@@ -83,7 +83,7 @@ export function deleteFile(path: string) {
       fs.unlinkSync(path);
     } else if (fs.statSync(path).isDirectory()) {
       fs.readdirSync(path).forEach((file, index) => {
-        var curPath = path + '/' + file;
+        const curPath = path + '/' + file;
         if (fs.statSync(curPath).isDirectory()) {
           // recurse
           deleteFile(curPath);

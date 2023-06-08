@@ -30,7 +30,7 @@ export async function requestAndGetResponse(
 export function getFileListInFormOfUl(dir: string, filter?: (fileName: string) => boolean) {
   filter = filter ? filter : () => true;
   try {
-    var stat = fs.statSync(dir);
+    let stat = fs.statSync(dir);
     if (!stat.isDirectory()) {
       throw new Error('not a directory');
     }
@@ -39,7 +39,7 @@ export function getFileListInFormOfUl(dir: string, filter?: (fileName: string) =
       .call(fileList)
       .filter(filter)
       .map(it => {
-        var item = '';
+        let item = '';
         const statInfo = fs.statSync(path.resolve(dir, it));
         if (statInfo.isDirectory()) {
           item = `<li><a href="${it}/">${it}/</a></li>`;

@@ -10,7 +10,7 @@ export function getStreamData(req: stream.Stream): Promise<Buffer> {
       // result += chunk;
       bufferList.push(chunk);
     });
-    req.on('end', function () {
+    req.on('end', function() {
       resolve(Buffer.concat(bufferList));
     });
     req.on('error', (err: any) => {
@@ -45,10 +45,10 @@ export function slowStream(chunkSize = 1024, wait = 500) {
   return new stream.Transform({
     async transform(data, enc, next) {
       const dataSize = data.length;
-      var pos = 0;
-      var chunk = null;
+      let pos = 0;
+      let chunk = null;
       while (pos < dataSize) {
-        var size = chunkSize;
+        let size = chunkSize;
         if (pos + chunkSize > dataSize) {
           size = dataSize - pos;
         }

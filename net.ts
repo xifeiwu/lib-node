@@ -3,11 +3,11 @@ import net from 'net';
 import {isString, isNumber} from './fe';
 
 export function getLocalIP() {
-  var localIP = null;
-  var ifaces = os.networkInterfaces();
-  var keys = ['en0', 'en1', 'en2', 'en3', 'en4', 'en5', 'em0', 'em1', 'em2', 'em3', 'em4', 'em5', 'eth0'];
+  let localIP = null;
+  let ifaces = os.networkInterfaces();
+  let keys = ['en0', 'en1', 'en2', 'en3', 'en4', 'en5', 'em0', 'em1', 'em2', 'em3', 'em4', 'em5', 'eth0'];
   let iface: os.NetworkInterfaceInfo[] | undefined;
-  keys.forEach(function (key) {
+  keys.forEach(function(key) {
     if (key in ifaces && Array.isArray(ifaces[key])) {
       iface = ifaces[key];
     }
@@ -49,7 +49,7 @@ export async function isPortOpen(host: string, port: number) {
 // scan port list and show the port opened
 export async function portsScan(host: string, endPort: number = 10000) {
   const startPort = 20;
-  var port = startPort;
+  let port = startPort;
   while (port < endPort) {
     const isOpen = await isPortOpen(host, port);
     if (isOpen) {

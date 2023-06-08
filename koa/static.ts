@@ -199,9 +199,9 @@ export default function staticCache(options: IStaticMiddlewareOptions) {
       return;
     }
 
-    var acceptGzip = ctx.acceptsEncodings('gzip') === 'gzip';
+    let acceptGzip = ctx.acceptsEncodings('gzip') === 'gzip';
 
-    var shouldGzip =
+    let shouldGzip =
       enableGzip && fileInfo.size > 1024 && acceptGzip && compressible(getContentType(fileInfo));
 
     let stream: stream.Readable;
@@ -276,24 +276,24 @@ interface IFileInfoMap {
 }
 
 class FileManager implements IFileStore {
-  map: IFileInfoMap = {};
+  public map: IFileInfoMap = {};
   constructor() {
     this.map = {};
   }
-  get(pathname: string) {
+  public get(pathname: string) {
     return this.map[pathname];
   }
-  set(pathname: string, info: LocalFileInfo) {
+  public set(pathname: string, info: LocalFileInfo) {
     this.map[pathname] = info;
   }
-  remove(pathname: string) {
+  public remove(pathname: string) {
     if (Object.prototype.hasOwnProperty.call(this.map, pathname)) {
       delete this.map[pathname];
       return true;
     }
     return false;
   }
-  all() {
+  public all() {
     return this.map;
   }
 }
