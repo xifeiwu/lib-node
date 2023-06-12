@@ -33,12 +33,12 @@ export default function keygrip(
       .createHmac(algorithm, key)
       .update(data)
       .digest(encoding)
-      .replace(/\/|\+|=/g, function (x) {
+      .replace(/\/|\+|=/g, function(x) {
         return {'/': '_', '+': '-', '=': ''}[x];
       });
   };
   const index = (data: BinaryLike, digest: string) => {
-    for (var i = 0, l = keys.length; i < l; i++) {
+    for (let i = 0, l = keys.length; i < l; i++) {
       if (compare(digest, sign(data, keys[i]))) {
         return i;
       }

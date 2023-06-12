@@ -30,7 +30,7 @@ export async function requestAndGetResponse(
 export function getFileListInFormOfUl(dir: string, filter?: (fileName: string) => boolean) {
   filter = filter ? filter : () => true;
   try {
-    let stat = fs.statSync(dir);
+    const stat = fs.statSync(dir);
     if (!stat.isDirectory()) {
       throw new Error('not a directory');
     }

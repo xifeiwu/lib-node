@@ -19,47 +19,47 @@ import http from 'http';
  * obs-text      = %x80-FF
  */
 
-var fieldContentRegExp = /^[\u0009\u0020-\u007e\u0080-\u00ff]+$/;
+let fieldContentRegExp = /^[\u0009\u0020-\u007e\u0080-\u00ff]+$/;
 
 /**
  * RegExp to match Priority cookie attribute value.
  */
 
-var PRIORITY_REGEXP = /^(?:low|medium|high)$/i;
+let PRIORITY_REGEXP = /^(?:low|medium|high)$/i;
 
 /**
  * Cache for generated name regular expressions.
  */
 
-var REGEXP_CACHE = Object.create(null);
+let REGEXP_CACHE = Object.create(null);
 
 /**
  * RegExp to match all characters to escape in a RegExp.
  */
 
-var REGEXP_ESCAPE_CHARS_REGEXP = /[\^$\\.*+?()[\]{}|]/g;
+let REGEXP_ESCAPE_CHARS_REGEXP = /[\^$\\.*+?()[\]{}|]/g;
 
 /**
  * RegExp to match basic restricted characters for loose validation.
  */
 
-var RESTRICTED_CHARS_REGEXP = /[;=]/;
+let RESTRICTED_CHARS_REGEXP = /[;=]/;
 
 /**
  * RegExp to match Same-Site cookie attribute value.
  */
 
-var SAME_SITE_REGEXP = /^(?:lax|none|strict)$/i;
+let SAME_SITE_REGEXP = /^(?:lax|none|strict)$/i;
 
 interface CookieConfig {
   signed?: boolean;
   secure?: boolean;
 }
 export class Cookies {
-  request: http.IncomingMessage;
-  response: http.OutgoingMessage;
-  secure: boolean;
-  keygrip?: IKeygrip;
+  public request: http.IncomingMessage;
+  public response: http.OutgoingMessage;
+  public secure: boolean;
+  public keygrip?: IKeygrip;
   constructor(
     request: http.IncomingMessage,
     response: http.OutgoingMessage,
@@ -75,13 +75,13 @@ export class Cookies {
       this.keygrip = keygrip(keys);
     }
   }
-  get(name: string, options: CookieConfig = {}) {
-    var sigName = name + '.sig',
+  public get(name: string, options: CookieConfig = {}) {
+    let sigName = name + '.sig',
       match,
       value,
       index;
 
-    const header = this.request.headers['cookie'];
+    const header = this.request.headers.cookie;
     if (!header) {
       return undefined;
     }
@@ -116,8 +116,8 @@ export class Cookies {
       // return value;
     }
   }
-  getAll(options: CookieConfig = {}) {
-    const header = this.request.headers['cookie'];
+  public getAll(options: CookieConfig = {}) {
+    const header = this.request.headers.cookie;
     const obj = header
       .split(';')
       .filter(it => it)
@@ -134,8 +134,8 @@ export class Cookies {
       }, {});
     return obj;
   }
-  getAllSigned() {
-    const header = this.request.headers['cookie'];
+  public getAllSigned() {
+    const header = this.request.headers.cookie;
     const obj = header
       .split(';')
       .filter(it => it)
@@ -152,7 +152,7 @@ export class Cookies {
       }, {});
     return obj;
   }
-  set(data: {name: string; value: string; sign?: boolean}, attr: CookieAttrs = {}) {
+  public set(data: {name: string; value: string; sign?: boolean}, attr: CookieAttrs = {}) {
     const {name, value} = data;
     const {request, response, keygrip} = this;
     let headers = response.getHeader('Set-Cookie') || [];
@@ -193,9 +193,9 @@ export interface CookieAttrs {
   maxAge?: number;
 }
 class Cookie {
-  name: string;
-  value: string;
-  attrs: CookieAttrs;
+  public name: string;
+  public value: string;
+  public attrs: CookieAttrs;
   constructor(name: string, value: string, attrs: CookieAttrs = {}) {
     if (!fieldContentRegExp.test(name) || RESTRICTED_CHARS_REGEXP.test(name)) {
       throw new TypeError('argument name is invalid');
@@ -254,10 +254,10 @@ class Cookie {
       overwrite,
     };
   }
-  toString() {
+  public toString() {
     return this.name + '=' + this.value;
   }
-  toHeader() {
+  public toHeader() {
     const results: string[] = [this.toString()];
     const {path = '/', maxAge, expires, domain, priority, sameSite, secure, httpOnly} = this.attrs;
     path && results.push(`path=${path}`);
@@ -302,7 +302,7 @@ function getPattern(name) {
 
 function pushCookie(headers, cookie) {
   if (cookie.overwrite) {
-    for (var i = headers.length - 1; i >= 0; i--) {
+    for (let i = headers.length - 1; i >= 0; i--) {
       if (headers[i].indexOf(cookie.name + '=') === 0) {
         headers.splice(i, 1);
       }

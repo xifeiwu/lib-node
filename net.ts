@@ -4,8 +4,8 @@ import {isString, isNumber} from './fe';
 
 export function getLocalIP() {
   let localIP = null;
-  let ifaces = os.networkInterfaces();
-  let keys = ['en0', 'en1', 'en2', 'en3', 'en4', 'en5', 'em0', 'em1', 'em2', 'em3', 'em4', 'em5', 'eth0'];
+  const ifaces = os.networkInterfaces();
+  const keys = ['en0', 'en1', 'en2', 'en3', 'en4', 'en5', 'em0', 'em1', 'em2', 'em3', 'em4', 'em5', 'eth0'];
   let iface: os.NetworkInterfaceInfo[] | undefined;
   keys.forEach(function(key) {
     if (key in ifaces && Array.isArray(ifaces[key])) {

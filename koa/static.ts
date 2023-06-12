@@ -199,9 +199,9 @@ export default function staticCache(options: IStaticMiddlewareOptions) {
       return;
     }
 
-    let acceptGzip = ctx.acceptsEncodings('gzip') === 'gzip';
+    const acceptGzip = ctx.acceptsEncodings('gzip') === 'gzip';
 
-    let shouldGzip =
+    const shouldGzip =
       enableGzip && fileInfo.size > 1024 && acceptGzip && compressible(getContentType(fileInfo));
 
     let stream: stream.Readable;
