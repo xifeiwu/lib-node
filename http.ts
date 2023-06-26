@@ -10,8 +10,8 @@ export async function requestAndGetResponse(
   options: http.RequestOptions,
   data?: Parameters<typeof toBuffer>[0]
 ): Promise<http.IncomingMessage> {
-  const {protocol} = new URL(url);
-  const clientRequest = (protocol === 'https:' ? https : http).request(url, options);
+  const {protocol, href} = url instanceof URL ? url : new URL(url);
+  const clientRequest = (protocol === 'https:' ? https : http).request(href, options);
   if (data) {
     clientRequest.write(await toBuffer(data));
   }
