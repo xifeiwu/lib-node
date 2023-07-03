@@ -24,8 +24,8 @@ import {extname} from 'path';
  * @private
  */
 
-var EXTRACT_TYPE_REGEXP = /^\s*([^;\s]*)(?:;|\s|$)/;
-var TEXT_TYPE_REGEXP = /^text\//i;
+let EXTRACT_TYPE_REGEXP = /^\s*([^;\s]*)(?:;|\s|$)/;
+let TEXT_TYPE_REGEXP = /^text\//i;
 
 /**
  * Module
@@ -51,8 +51,8 @@ export function charset(type) {
   }
 
   // TODO: use media-typer
-  var match = EXTRACT_TYPE_REGEXP.exec(type);
-  var mime = match && db[match[1].toLowerCase()];
+  let match = EXTRACT_TYPE_REGEXP.exec(type);
+  let mime = match && db[match[1].toLowerCase()];
 
   if (mime && mime.charset) {
     return mime.charset;
@@ -79,7 +79,7 @@ export function contentType(mimeTypeOrExtName) {
     return false;
   }
 
-  var mimeType = mimeTypeOrExtName.indexOf('/') === -1 ? lookup(mimeTypeOrExtName) : mimeTypeOrExtName;
+  let mimeType = mimeTypeOrExtName.indexOf('/') === -1 ? lookup(mimeTypeOrExtName) : mimeTypeOrExtName;
 
   if (!mimeType) {
     return false;
@@ -87,8 +87,8 @@ export function contentType(mimeTypeOrExtName) {
 
   // TODO: use content-type or other module
   if (mimeType.indexOf('charset') === -1) {
-    var _charset = charset(mimeType);
-    if (_charset) mimeType += '; charset=' + _charset.toLowerCase();
+    let _charset = charset(mimeType);
+    if (_charset) { mimeType += '; charset=' + _charset.toLowerCase(); }
   }
 
   return mimeType;
@@ -106,10 +106,10 @@ export function extension(mimeTypeOrContentType) {
   }
 
   // TODO: use media-typer
-  var match = EXTRACT_TYPE_REGEXP.exec(mimeTypeOrContentType);
+  let match = EXTRACT_TYPE_REGEXP.exec(mimeTypeOrContentType);
 
   // get extensions
-  var exts = match && extensions[match[1].toLowerCase()];
+  let exts = match && extensions[match[1].toLowerCase()];
 
   if (!exts || !exts.length) {
     return false;
@@ -130,7 +130,7 @@ export function lookup(extName: string): string | false {
   }
 
   // get the extension ("ext" or ".ext" or full path)
-  var extension = extname('x.' + extName)
+  let extension = extname('x.' + extName)
     .toLowerCase()
     .slice(1);
 
@@ -161,7 +161,7 @@ export function compressible(contentTypeOrMimeTypeOrExtName?: string): boolean {
       return false;
     }
   } else {
-    var match = EXTRACT_TYPE_REGEXP.exec(contentTypeOrMimeTypeOrExtName);
+    let match = EXTRACT_TYPE_REGEXP.exec(contentTypeOrMimeTypeOrExtName);
     mimeType = match && match[1].toLowerCase();
   }
 
@@ -169,7 +169,7 @@ export function compressible(contentTypeOrMimeTypeOrExtName?: string): boolean {
   if (!mimeType) {
     return false;
   }
-  var data = db[mimeType];
+  let data = db[mimeType];
 
   // return database information
   if (data && data.compressible !== undefined) {
@@ -185,11 +185,11 @@ export function compressible(contentTypeOrMimeTypeOrExtName?: string): boolean {
  */
 function populateMaps(extensions, types) {
   // source preference (least -> most)
-  var preference = ['nginx', 'apache', undefined, 'iana'];
+  let preference = ['nginx', 'apache', undefined, 'iana'];
 
   Object.keys(db).forEach(function forEachMimeType(type) {
-    var mime = db[type];
-    var exts = mime.extensions;
+    let mime = db[type];
+    let exts = mime.extensions;
 
     if (!exts || !exts.length) {
       return;
@@ -199,12 +199,12 @@ function populateMaps(extensions, types) {
     extensions[type] = exts;
 
     // extension -> mime
-    for (var i = 0; i < exts.length; i++) {
-      var extension = exts[i];
+    for (let i = 0; i < exts.length; i++) {
+      let extension = exts[i];
 
       if (types[extension]) {
-        var from = preference.indexOf(db[types[extension]].source);
-        var to = preference.indexOf(mime.source);
+        let from = preference.indexOf(db[types[extension]].source);
+        let to = preference.indexOf(mime.source);
 
         if (
           types[extension] !== 'application/octet-stream' &&

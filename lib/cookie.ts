@@ -19,37 +19,37 @@ import http from 'http';
  * obs-text      = %x80-FF
  */
 
-let fieldContentRegExp = /^[\u0009\u0020-\u007e\u0080-\u00ff]+$/;
+const fieldContentRegExp = /^[\u0009\u0020-\u007e\u0080-\u00ff]+$/;
 
 /**
  * RegExp to match Priority cookie attribute value.
  */
 
-let PRIORITY_REGEXP = /^(?:low|medium|high)$/i;
+const PRIORITY_REGEXP = /^(?:low|medium|high)$/i;
 
 /**
  * Cache for generated name regular expressions.
  */
 
-let REGEXP_CACHE = Object.create(null);
+const REGEXP_CACHE = Object.create(null);
 
 /**
  * RegExp to match all characters to escape in a RegExp.
  */
 
-let REGEXP_ESCAPE_CHARS_REGEXP = /[\^$\\.*+?()[\]{}|]/g;
+const REGEXP_ESCAPE_CHARS_REGEXP = /[\^$\\.*+?()[\]{}|]/g;
 
 /**
  * RegExp to match basic restricted characters for loose validation.
  */
 
-let RESTRICTED_CHARS_REGEXP = /[;=]/;
+const RESTRICTED_CHARS_REGEXP = /[;=]/;
 
 /**
  * RegExp to match Same-Site cookie attribute value.
  */
 
-let SAME_SITE_REGEXP = /^(?:lax|none|strict)$/i;
+const SAME_SITE_REGEXP = /^(?:lax|none|strict)$/i;
 
 interface CookieConfig {
   signed?: boolean;

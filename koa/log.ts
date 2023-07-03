@@ -1,6 +1,6 @@
 import Koa from 'koa';
 
-export default function (options: {
+export default function(options: {
   prefix?: string;
   showHeaders?: boolean;
   showPayload?: boolean;
@@ -21,7 +21,7 @@ export default function (options: {
             bufferList.push(chunk);
           }
         });
-        req.on('end', function () {
+        req.on('end', function() {
           res(Buffer.concat(bufferList));
         });
         req.on('error', (err: any) => {
