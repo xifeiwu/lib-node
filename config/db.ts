@@ -12,8 +12,9 @@ interface Options {
 interface TDBConfig {
   local: {
     root: 'mysql';
-    portaldb: 'portaldb_penguin';
+    xifeiwu: 'housekeeper';
     newbie: 'db_feature' | 'employees' | 'employees2';
+    portaldb: 'portaldb_penguin';
   };
   elif: {
     root: 'mysql';
@@ -32,6 +33,7 @@ interface DBConfig {
   local: {
     root: UserConfig<'local', 'root'>;
     portaldb: UserConfig<'local', 'portaldb'>;
+    xifeiwu: UserConfig<'local', 'xifeiwu'>;
     newbie: UserConfig<'local', 'newbie'>;
   };
   elif: {
@@ -62,13 +64,17 @@ const DB_CONFIG: DBConfig = {
       password: 'local__mysql',
       databaseList: ['mysql'],
     },
-    portaldb: {
-      password: 'portaldb',
-      databaseList: ['portaldb_penguin'],
+    xifeiwu: {
+      password: 'Elifxifei2023_',
+      databaseList: ['housekeeper'],
     },
     newbie: {
       password: 'test',
       databaseList: ['db_feature', 'employees', 'employees2'],
+    },
+    portaldb: {
+      password: 'portaldb',
+      databaseList: ['portaldb_penguin'],
     },
   },
   elif: {
@@ -132,7 +138,7 @@ export function allDbConfig(): Array<Options> {
   return result;
 }
 
-type DB = 'employees' | 'db_feature';
+type DB = 'employees' | 'db_feature' | 'housekeeper';
 export const DB_USED: {
   [db in DB]: {
     [site in keyof DBConfig]: Options;
@@ -145,5 +151,9 @@ export const DB_USED: {
   db_feature: {
     local: getDbConfig('local', 'newbie', 'db_feature'),
     elif: getDbConfig('elif', 'newbie', 'db_feature'),
+  },
+  housekeeper: {
+    local: getDbConfig('local', 'xifeiwu', 'housekeeper'),
+    elif: getDbConfig('elif', 'xifeiwu', 'housekeeper'),
   },
 };
