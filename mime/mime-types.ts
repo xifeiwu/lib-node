@@ -24,8 +24,8 @@ import {extname} from 'path';
  * @private
  */
 
-let EXTRACT_TYPE_REGEXP = /^\s*([^;\s]*)(?:;|\s|$)/;
-let TEXT_TYPE_REGEXP = /^text\//i;
+const EXTRACT_TYPE_REGEXP = /^\s*([^;\s]*)(?:;|\s|$)/;
+const TEXT_TYPE_REGEXP = /^text\//i;
 
 /**
  * Module
@@ -51,8 +51,8 @@ export function charset(type) {
   }
 
   // TODO: use media-typer
-  let match = EXTRACT_TYPE_REGEXP.exec(type);
-  let mime = match && db[match[1].toLowerCase()];
+  const match = EXTRACT_TYPE_REGEXP.exec(type);
+  const mime = match && db[match[1].toLowerCase()];
 
   if (mime && mime.charset) {
     return mime.charset;
@@ -87,7 +87,7 @@ export function contentType(mimeTypeOrExtName) {
 
   // TODO: use content-type or other module
   if (mimeType.indexOf('charset') === -1) {
-    let _charset = charset(mimeType);
+    const _charset = charset(mimeType);
     if (_charset) { mimeType += '; charset=' + _charset.toLowerCase(); }
   }
 
@@ -106,10 +106,10 @@ export function extension(mimeTypeOrContentType) {
   }
 
   // TODO: use media-typer
-  let match = EXTRACT_TYPE_REGEXP.exec(mimeTypeOrContentType);
+  const match = EXTRACT_TYPE_REGEXP.exec(mimeTypeOrContentType);
 
   // get extensions
-  let exts = match && extensions[match[1].toLowerCase()];
+  const exts = match && extensions[match[1].toLowerCase()];
 
   if (!exts || !exts.length) {
     return false;
@@ -130,7 +130,7 @@ export function lookup(extName: string): string | false {
   }
 
   // get the extension ("ext" or ".ext" or full path)
-  let extension = extname('x.' + extName)
+  const extension = extname('x.' + extName)
     .toLowerCase()
     .slice(1);
 
@@ -161,7 +161,7 @@ export function compressible(contentTypeOrMimeTypeOrExtName?: string): boolean {
       return false;
     }
   } else {
-    let match = EXTRACT_TYPE_REGEXP.exec(contentTypeOrMimeTypeOrExtName);
+    const match = EXTRACT_TYPE_REGEXP.exec(contentTypeOrMimeTypeOrExtName);
     mimeType = match && match[1].toLowerCase();
   }
 
@@ -169,7 +169,7 @@ export function compressible(contentTypeOrMimeTypeOrExtName?: string): boolean {
   if (!mimeType) {
     return false;
   }
-  let data = db[mimeType];
+  const data = db[mimeType];
 
   // return database information
   if (data && data.compressible !== undefined) {
@@ -185,11 +185,11 @@ export function compressible(contentTypeOrMimeTypeOrExtName?: string): boolean {
  */
 function populateMaps(extensions, types) {
   // source preference (least -> most)
-  let preference = ['nginx', 'apache', undefined, 'iana'];
+  const preference = ['nginx', 'apache', undefined, 'iana'];
 
   Object.keys(db).forEach(function forEachMimeType(type) {
-    let mime = db[type];
-    let exts = mime.extensions;
+    const mime = db[type];
+    const exts = mime.extensions;
 
     if (!exts || !exts.length) {
       return;
@@ -200,11 +200,11 @@ function populateMaps(extensions, types) {
 
     // extension -> mime
     for (let i = 0; i < exts.length; i++) {
-      let extension = exts[i];
+      const extension = exts[i];
 
       if (types[extension]) {
-        let from = preference.indexOf(db[types[extension]].source);
-        let to = preference.indexOf(mime.source);
+        const from = preference.indexOf(db[types[extension]].source);
+        const to = preference.indexOf(mime.source);
 
         if (
           types[extension] !== 'application/octet-stream' &&
