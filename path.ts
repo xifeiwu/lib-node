@@ -133,3 +133,22 @@ export function getModulePath(moduleName: string, currentPath: string) {
   const fullPath = pathList.map(it => path.resolve(it, moduleName)).find(it => fs.existsSync(it));
   return fullPath;
 }
+
+export function getFilePathInfo(fullPath: string): {
+  dirPath: string;
+  extName: string;
+  fileName: string;
+  fileBaseName: string;
+} {
+  const dirPath = path.dirname(fullPath);
+  const extName = path.extname(fullPath);
+  const fileName = path.basename(fullPath);
+  const fileBaseName = path.basename(fileName, extName);
+  const pathInfo = {
+    dirPath,
+    fileName,
+    extName,
+    fileBaseName,
+  };
+  return pathInfo;
+}
