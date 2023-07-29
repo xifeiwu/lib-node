@@ -45,8 +45,8 @@ export function findFileListByNameUpward(dir: string, name: string) {
 export function readDirRecursive(
   root: string,
   option?: {
-    dirFilter?: (relativePath: string) => boolean;
-    fileFilter?: (relativePath: string) => boolean;
+    dirFilter?: (baseName: string, relativePath: string) => boolean;
+    fileFilter?: (baseName: string, relativePath: string) => boolean;
     includeDir?: boolean;
   },
   pathInfo?: {prefix: string; fileName: string},
@@ -64,7 +64,7 @@ export function readDirRecursive(
     return files;
   }
   if (fs.statSync(fullpath).isDirectory()) {
-    if (!dirFilter(pathInfo.fileName) && fullpath !== root) {
+    if (!dirFilter(pathInfo.fileName, relativePath) && fullpath !== root) {
       return [];
     }
     if (includeDir) {
@@ -82,7 +82,7 @@ export function readDirRecursive(
       );
     });
   } else {
-    if (fileFilter(pathInfo.fileName)) {
+    if (fileFilter(pathInfo.fileName, relativePath)) {
       files.push(relativePath);
     }
   }
@@ -151,4 +151,12 @@ export function getFilePathInfo(fullPath: string): {
     fileBaseName,
   };
   return pathInfo;
+}
+
+export function writeFileSync(fullPath: string, data: string | NodeJS.ArrayBufferView) {
+  const dirName = path.dirname(fullPath);
+  if (!fs.existsSync) {
+    fs.mkdirSync(dirName, {recursive: true});
+  }
+  fs.writeFileSync(fullPath, data);
 }
