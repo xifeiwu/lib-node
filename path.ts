@@ -155,7 +155,7 @@ export function getFilePathInfo(fullPath: string): {
 
 export function writeFileSync(fullPath: string, data: string | NodeJS.ArrayBufferView) {
   const dirName = path.dirname(fullPath);
-  if (!fs.existsSync) {
+  if (!fs.existsSync(dirName)) {
     fs.mkdirSync(dirName, {recursive: true});
   }
   fs.writeFileSync(fullPath, data);
