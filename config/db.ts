@@ -109,6 +109,7 @@ export function getDbConfig<Site extends keyof TDBConfig, UserName extends keyof
     ...siteConfig,
     username: username as string,
     password,
+    // @ts-ignore
     database: database as string,
   };
 }
