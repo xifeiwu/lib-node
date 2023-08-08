@@ -81,12 +81,15 @@ const colorMap: {
 };
 
 export function logWithColor(color: Colors, ...contentList: Array<object | Buffer | string | number>) {
-  contentList.forEach(content => {
+  for (let content of contentList) {
+    if (content === undefined) {
+      continue;
+    }
     let finalStr = '';
     if (isPlainObject(content)) {
       finalStr = util.inspect(content, {depth: 10, colors: false});
     } else if (Buffer.isBuffer(content)) {
-      finalStr = Buffer.toString();
+      finalStr = content.toString();
     } else {
       finalStr = String(content);
     }
@@ -94,7 +97,7 @@ export function logWithColor(color: Colors, ...contentList: Array<object | Buffe
     finalStr.split('\n').forEach(oneLine => {
       console.log(`${colorInfo.start}${oneLine}${colorInfo.end}`);
     });
-  });
+  }
 }
 
 export function testLogWithColor() {
