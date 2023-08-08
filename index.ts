@@ -5,3 +5,4 @@ export * from './config';
 export * from './http';
 export * from './path';
 export * from './log';
+export * from './mime/mime-types';
