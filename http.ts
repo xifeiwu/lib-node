@@ -3,7 +3,7 @@ import path from 'path';
 import http from 'http';
 import https from 'https';
 import stream from 'stream';
-import {toBuffer} from './stream';
+import {getStreamData, toBuffer} from './stream';
 
 export async function requestAndGetResponse(
   url: string | URL,
@@ -24,6 +24,23 @@ export async function requestAndGetResponse(
       rej(error);
     });
   });
+}
+
+export async function getResponseInfo(
+  response: http.IncomingMessage,
+  options: {
+    maxLength?: number;
+  } = {}
+) {
+  const {maxLength = 32 * 1024} = options;
+  const {statusCode, statusMessage, headers} = response;
+  const data = await getStreamData(response);
+  return {
+    statusCode,
+    statusMessage,
+    headers,
+    data: data.slice(0, maxLength).toString(),
+  };
 }
 
 // return file list in the form of <ul><li></li></ul>
