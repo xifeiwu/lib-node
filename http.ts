@@ -39,8 +39,17 @@ export async function getResponseInfo(
     statusCode,
     statusMessage,
     headers,
-    data: data.slice(0, maxLength).toString(),
+    data: data.subarray(0, maxLength),
   };
+}
+
+export async function requestAndGetResponseInfo(
+  url: string | URL,
+  options: http.RequestOptions,
+  data?: Parameters<typeof toBuffer>[0]
+) {
+  const response = await requestAndGetResponse(url, options, data);
+  return await getResponseInfo(response);
 }
 
 // return file list in the form of <ul><li></li></ul>
