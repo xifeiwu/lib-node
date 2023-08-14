@@ -117,9 +117,9 @@ export function getDbConfigBySite(site: Site) {
   const result: Options[] = [];
   const siteConfig = DB_CONFIG[site];
   const siteInfo = SITE_INFO[site];
-  for (let [username, useConfig] of Object.entries(siteConfig)) {
+  for (const [username, useConfig] of Object.entries(siteConfig)) {
     const {password, databaseList} = useConfig as UserConfig<any, any>;
-    for (let database of databaseList) {
+    for (const database of databaseList) {
       result.push({
         ...siteInfo,
         username,
@@ -133,7 +133,7 @@ export function getDbConfigBySite(site: Site) {
 
 export function allDbConfig(): Array<Options> {
   const result: Options[] = [];
-  for (let [site, siteConfig] of Object.entries(DB_CONFIG)) {
+  for (const [site, siteConfig] of Object.entries(DB_CONFIG)) {
     result.push(...getDbConfigBySite(site as Site));
   }
   return result;
