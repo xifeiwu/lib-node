@@ -99,10 +99,3 @@ export function logWithColor(color: Colors, ...contentList: Array<object | Buffe
     });
   }
 }
-
-export function testLogWithColor() {
-  const colors: Colors[] = ['black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan'];
-  colors.forEach(color => {
-    logWithColor(color, {color, colors});
-  });
-}
