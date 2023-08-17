@@ -1,7 +1,7 @@
 import util from 'util';
-import fs from 'fs';
 import path from 'path';
 import {isObject, formatDate, isPlainObject} from './fe';
+import {writeFileSync} from './path';
 
 export function prettyLog(content: any): void;
 export function prettyLog(...args: any[]): void;
@@ -24,6 +24,7 @@ export function toConsole(...args: any[]) {
   args.forEach(arg => {
     console.log(
       util.inspect(arg, {
+        maxArrayLength: null,
         depth: 10,
         colors: true,
       })
@@ -32,7 +33,7 @@ export function toConsole(...args: any[]) {
 }
 
 export function toFile(tag: string, data: string | object) {
-  fs.writeFileSync(
+  writeFileSync(
     path.resolve(__dirname, `${tag}-${Date.now()}`),
     util.inspect(data, {
       // showHidden: false,
@@ -81,7 +82,7 @@ const colorMap: {
 };
 
 export function logWithColor(color: Colors, ...contentList: Array<object | Buffer | string | number>) {
-  for (let content of contentList) {
+  for (const content of contentList) {
     if (content === undefined) {
       continue;
     }
