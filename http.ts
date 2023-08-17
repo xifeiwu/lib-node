@@ -30,26 +30,29 @@ export async function getResponseInfo(
   response: http.IncomingMessage,
   options: {
     maxLength?: number;
+    dataType?: 'buffer' | 'string';
   } = {}
 ) {
-  const {maxLength = 32 * 1024} = options;
+  const {maxLength = 32 * 1024, dataType = 'string'} = options;
   const {statusCode, statusMessage, headers} = response;
   const data = await getStreamData(response);
+  const slicedData = data.subarray(0, maxLength);
   return {
     statusCode,
     statusMessage,
     headers,
-    data: data.subarray(0, maxLength),
+    data: dataType === 'string' ? slicedData.toString() : slicedData,
   };
 }
 
 export async function requestAndGetResponseInfo(
   url: string | URL,
   options: http.RequestOptions,
-  data?: Parameters<typeof toBuffer>[0]
+  data?: Parameters<typeof toBuffer>[0],
+  responseConfig?: Parameters<typeof getResponseInfo>[1]
 ) {
   const response = await requestAndGetResponse(url, options, data);
-  return await getResponseInfo(response);
+  return await getResponseInfo(response, responseConfig);
 }
 
 // return file list in the form of <ul><li></li></ul>
