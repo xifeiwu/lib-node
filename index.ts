@@ -5,4 +5,5 @@ export * from './config';
 export * from './http';
 export * from './path';
 export * from './log';
-export * from './mime/mime-types';
+import {lookup, extension, contentType, charset} from './mime/mime-types';
+export const mime = {lookup, extension, contentType, charset};

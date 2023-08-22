@@ -16,6 +16,7 @@
  * @private
  */
 
+/** should add `"resolveJsonModule": true` in tsconfig.json */
 import db from './db.json';
 import {extname} from 'path';
 
@@ -100,7 +101,7 @@ export function contentType(mimeTypeOrExtName) {
  * @param {string} mimeTypeOrContentType
  * @return {boolean|string}
  */
-export function extension(mimeTypeOrContentType) {
+export function extension(mimeTypeOrContentType): string | false {
   if (!mimeTypeOrContentType || typeof mimeTypeOrContentType !== 'string') {
     return false;
   }

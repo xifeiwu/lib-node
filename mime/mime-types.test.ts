@@ -1,5 +1,5 @@
 import assert from 'assert';
-import { compressible, contentType, extension, lookup } from './mime-types';
+import {compressible, contentType, extension, lookup} from './mime-types';
 
 /**
  * contentType: text/javascript; charset=utf-8
@@ -23,15 +23,21 @@ export function testContentType() {
   assert.equal(lookup('.html'), 'text/html');
   assert.equal(lookup('..html'), 'text/html');
 
-  assert.equal(contentType('html'), 'text/html; charset=utf-8');
-  assert.equal(contentType('.html'), 'text/html; charset=utf-8');
-  assert.equal(contentType('..html'), 'text/html; charset=utf-8');
-
   assert.equal(extension('text/html; charset=utf-8'), 'html');
   assert.equal(extension(' text/html; charset=utf-8'), 'html');
   assert.equal(extension('text/html'), 'html');
   assert.equal(extension('html'), false);
 
+  assert.equal(contentType('html'), 'text/html; charset=utf-8');
+  assert.equal(contentType('text/html'), 'text/html; charset=utf-8');
+  assert.equal(contentType('.html'), 'text/html; charset=utf-8');
+  assert.equal(contentType('..html'), 'text/html; charset=utf-8');
+  /** if param has charset, use it */
+  assert.equal(contentType('text/html; charset=ascii'), 'text/html; charset=ascii');
+  /** not support param in this format */
+  assert.equal(contentType('.html; charset=ascii'), false);
+
   assert(compressible('text/html'));
   assert(compressible('html'));
+  assert(!compressible('jpeg'));
 }
