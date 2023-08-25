@@ -146,7 +146,7 @@ export const DB_USED: {
   };
 } = {
   employees: {
-    local: getDbConfig('local', 'newbie', 'employees2'),
+    local: getDbConfig('local', 'newbie', 'employees'),
     elif: getDbConfig('elif', 'newbie', 'employees2'),
   },
   db_feature: {
