@@ -20,6 +20,14 @@ export function prettyLog() {
   params.forEach(logOne);
 }
 
+/** inspect with more commonly used config */
+export function inspect(arg: any) {
+  return util.inspect(arg, {
+    maxArrayLength: null,
+    depth: 10,
+    colors: true,
+  });
+}
 export function toConsole(...args: any[]) {
   args.forEach(arg => {
     console.log(

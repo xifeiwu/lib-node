@@ -1,5 +1,6 @@
 import readline from 'readline';
-import {isFunction, isObject} from './fe';
+import {isFunction, isObject, isString} from './fe';
+import {inspect} from './log';
 
 /**
  * Determine if a value is a Stream
@@ -13,16 +14,24 @@ export const isStream = val => isObject(val) && isFunction(val.pipe);
 export function selectOption<T extends {label: string}>(
   options: T[],
   option?: {
-    tip?: string;
+    tip?: Array<any> | string;
     defaultIndex?: number;
   }
 ): Promise<T> {
   const {tip = 'please select', defaultIndex = 0} = option ? option : {};
+  let tipArr: string[] = [];
+  if (isString(tip)) {
+    // tip = [tip];
+    tipArr.push(tip as string);
+  } else {
+    tipArr = (tip as Array<any>).map(it => inspect(it));
+  }
+  tipArr.push(`[default index is ${defaultIndex})]:`);
   const optionStr = options
     .map((it, index) => {
       return `${index}. ${String(it.label ? it.label : it)}`;
     })
-    .concat(`${tip}(default index is ${defaultIndex}): `)
+    .concat(...tipArr)
     .join('\n');
   const interact = readline.createInterface({
     input: process.stdin,
