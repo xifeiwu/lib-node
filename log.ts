@@ -40,9 +40,11 @@ export function toConsole(...args: any[]) {
   });
 }
 
-export function toFile(tag: string, data: string | object) {
+export function toFile(data: string | object, config: {dir: string; fileName: string}) {
+  const {dir, fileName} = config;
+  const fullPath = path.resolve(dir, `${fileName}-${Date.now()}`);
   writeFileSync(
-    path.resolve(__dirname, `${tag}-${Date.now()}`),
+    fullPath,
     util.inspect(data, {
       // showHidden: false,
       maxArrayLength: null,
@@ -50,6 +52,7 @@ export function toFile(tag: string, data: string | object) {
       colors: false,
     })
   );
+  return fullPath;
 }
 
 type Colors = 'black' | 'red' | 'green' | 'yellow' | 'blue' | 'magenta' | 'cyan';
