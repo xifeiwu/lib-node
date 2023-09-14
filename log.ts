@@ -98,7 +98,7 @@ export function logWithColor(color: Colors, ...contentList: Array<object | Buffe
       continue;
     }
     let finalStr = '';
-    if (isPlainObject(content)) {
+    if (isPlainObject(content) || Array.isArray(content)) {
       finalStr = util.inspect(content, {depth: 10, colors: false});
     } else if (Buffer.isBuffer(content)) {
       finalStr = content.toString();
