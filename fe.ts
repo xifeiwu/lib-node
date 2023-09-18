@@ -1,3 +1,2 @@
 
-export * from '../fe/common';
-export * from '../fe/date';
+export * from '../fe';
