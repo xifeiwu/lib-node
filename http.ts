@@ -5,11 +5,12 @@ import https from 'https';
 import stream from 'stream';
 import {getStreamData, toBuffer} from './stream';
 
-export async function requestAndGetResponse(
-  url: string | URL,
-  options: http.RequestOptions,
-  data?: Parameters<typeof toBuffer>[0]
-): Promise<http.IncomingMessage> {
+interface RequestConfig extends http.RequestOptions {
+  url: string | URL;
+  data?: Parameters<typeof toBuffer>[0];
+}
+export async function requestAndGetResponse(config: RequestConfig): Promise<http.IncomingMessage> {
+  const {url, data, ...options} = config;
   const {protocol, href} = url instanceof URL ? url : new URL(url);
   const clientRequest = (protocol === 'https:' ? https : http).request(href, options);
   if (data) {
@@ -30,28 +31,36 @@ export async function getResponseInfo(
   response: http.IncomingMessage,
   options: {
     maxLength?: number;
-    dataType?: 'buffer' | 'string';
+    dataType?: 'buffer' | 'string' | 'json';
   } = {}
 ) {
   const {maxLength = 32 * 1024, dataType = 'string'} = options;
   const {statusCode, statusMessage, headers} = response;
   const data = await getStreamData(response);
   const slicedData = data.subarray(0, maxLength);
+  let finalData: Buffer | string | object = data;
+  if (dataType === 'json') {
+    try {
+      finalData = JSON.parse(slicedData.toString());
+    } catch (err) {
+      /** parse Error */
+    }
+  } else if (dataType === 'string') {
+    finalData = slicedData.toString();
+  }
   return {
     statusCode,
     statusMessage,
     headers,
-    data: dataType === 'string' ? slicedData.toString() : slicedData,
+    data: finalData,
   };
 }
 
 export async function requestAndGetResponseInfo(
-  url: string | URL,
-  options: http.RequestOptions,
-  data?: Parameters<typeof toBuffer>[0],
+  config: RequestConfig,
   responseConfig?: Parameters<typeof getResponseInfo>[1]
 ) {
-  const response = await requestAndGetResponse(url, options, data);
+  const response = await requestAndGetResponse(config);
   return await getResponseInfo(response, responseConfig);
 }
 
