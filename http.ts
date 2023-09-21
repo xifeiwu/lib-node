@@ -3,7 +3,8 @@ import path from 'path';
 import http from 'http';
 import https from 'https';
 import stream from 'stream';
-import {getStreamData, toBuffer} from './stream';
+import {getStreamData} from './stream';
+import {fromBuffer, toBuffer} from './transform';
 
 type ToBufferParams = Parameters<typeof toBuffer>[0];
 interface RequestConfig<Payload extends ToBufferParams> extends http.RequestOptions {
@@ -41,17 +42,7 @@ export async function getResponseInfo<T>(
   const {statusCode, statusMessage, headers} = response;
   const data = await getStreamData(response);
   const slicedData = data.subarray(0, maxLength);
-  let finalData: Buffer | string | object = data;
-  if (dataType === 'json') {
-    finalData = slicedData.toString();
-    try {
-      finalData = JSON.parse(finalData);
-    } catch (err) {
-      /** parse Error */
-    }
-  } else if (dataType === 'string') {
-    finalData = slicedData.toString();
-  }
+  const finalData = fromBuffer(slicedData, dataType);
   return {
     statusCode,
     statusMessage,
@@ -68,6 +59,13 @@ export async function requestAndGetResponseInfo<ResData = any, Payload extends T
   return await getResponseInfo<ResData>(response, responseConfig);
 }
 
+export async function responseHttpIncomingMessage(
+  request: http.IncomingMessage,
+  response: http.ServerResponse
+) {
+  const {method, url, headers} = request;
+  const data = await getStreamData(request);
+}
 // return file list in the form of <ul><li></li></ul>
 export function getFileListInFormOfUl(dir: string, filter?: (fileName: string) => boolean) {
   filter = filter ? filter : () => true;
