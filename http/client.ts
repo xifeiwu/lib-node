@@ -3,8 +3,8 @@ import path from 'path';
 import http from 'http';
 import https from 'https';
 import stream from 'stream';
-import {getStreamData} from './stream';
-import {fromBuffer, toBuffer} from './transform';
+import {getStreamData} from '../stream';
+import {fromBuffer, toBuffer} from '../transform';
 
 type ToBufferParams = Parameters<typeof toBuffer>[0];
 interface RequestConfig<Payload extends ToBufferParams> extends http.RequestOptions {
@@ -57,32 +57,6 @@ export async function requestAndGetResponseInfo<ResData = any, Payload extends T
 ) {
   const response = await requestAndGetResponse<Payload>(config);
   return await getResponseInfo<ResData>(response, responseConfig);
-}
-
-export async function getHttpIncomingMessageInfo(request: http.IncomingMessage) {
-  const {method, url, headers} = request;
-  const data = fromBuffer(await getStreamData(request), 'json');
-  return {
-    method,
-    url,
-    headers,
-    data,
-  };
-}
-export async function responseHttpIncomingMessageInfo(
-  request: http.IncomingMessage,
-  response: http.ServerResponse
-) {
-  const data = await getHttpIncomingMessageInfo(request);
-  const buffer = await toBuffer(data);
-  const headers = {
-    'content-type': 'application/json',
-    'content-length': buffer.length,
-  };
-  Object.entries(headers).forEach(([key, value]) => {
-    response.setHeader(key, value);
-  });
-  response.end(buffer);
 }
 
 // return file list in the form of <ul><li></li></ul>
