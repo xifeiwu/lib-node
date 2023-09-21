@@ -59,13 +59,32 @@ export async function requestAndGetResponseInfo<ResData = any, Payload extends T
   return await getResponseInfo<ResData>(response, responseConfig);
 }
 
-export async function responseHttpIncomingMessage(
+export async function getHttpIncomingMessageInfo(request: http.IncomingMessage) {
+  const {method, url, headers} = request;
+  const data = fromBuffer(await getStreamData(request), 'json');
+  return {
+    method,
+    url,
+    headers,
+    data,
+  };
+}
+export async function responseHttpIncomingMessageInfo(
   request: http.IncomingMessage,
   response: http.ServerResponse
 ) {
-  const {method, url, headers} = request;
-  const data = await getStreamData(request);
+  const data = await getHttpIncomingMessageInfo(request);
+  const buffer = await toBuffer(data);
+  const headers = {
+    'content-type': 'application/json',
+    'content-length': buffer.length,
+  };
+  Object.entries(headers).forEach(([key, value]) => {
+    response.setHeader(key, value);
+  });
+  response.end(buffer);
 }
+
 // return file list in the form of <ul><li></li></ul>
 export function getFileListInFormOfUl(dir: string, filter?: (fileName: string) => boolean) {
   filter = filter ? filter : () => true;
