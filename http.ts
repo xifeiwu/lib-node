@@ -5,11 +5,14 @@ import https from 'https';
 import stream from 'stream';
 import {getStreamData, toBuffer} from './stream';
 
-interface RequestConfig extends http.RequestOptions {
+type ToBufferParams = Parameters<typeof toBuffer>[0];
+interface RequestConfig<Payload extends ToBufferParams> extends http.RequestOptions {
   url: string | URL;
-  data?: Parameters<typeof toBuffer>[0];
+  data?: Payload;
 }
-export async function requestAndGetResponse(config: RequestConfig): Promise<http.IncomingMessage> {
+export async function requestAndGetResponse<Payload extends ToBufferParams = any>(
+  config: RequestConfig<Payload>
+): Promise<http.IncomingMessage> {
   const {url, data, ...options} = config;
   const {protocol, href} = url instanceof URL ? url : new URL(url);
   const clientRequest = (protocol === 'https:' ? https : http).request(href, options);
@@ -27,7 +30,7 @@ export async function requestAndGetResponse(config: RequestConfig): Promise<http
   });
 }
 
-export async function getResponseInfo(
+export async function getResponseInfo<T>(
   response: http.IncomingMessage,
   options: {
     maxLength?: number;
@@ -40,8 +43,9 @@ export async function getResponseInfo(
   const slicedData = data.subarray(0, maxLength);
   let finalData: Buffer | string | object = data;
   if (dataType === 'json') {
+    finalData = slicedData.toString();
     try {
-      finalData = JSON.parse(slicedData.toString());
+      finalData = JSON.parse(finalData);
     } catch (err) {
       /** parse Error */
     }
@@ -52,16 +56,16 @@ export async function getResponseInfo(
     statusCode,
     statusMessage,
     headers,
-    data: finalData,
+    data: finalData as T,
   };
 }
 
-export async function requestAndGetResponseInfo(
-  config: RequestConfig,
+export async function requestAndGetResponseInfo<ResData = any, Payload extends ToBufferParams = any>(
+  config: RequestConfig<Payload>,
   responseConfig?: Parameters<typeof getResponseInfo>[1]
 ) {
-  const response = await requestAndGetResponse(config);
-  return await getResponseInfo(response, responseConfig);
+  const response = await requestAndGetResponse<Payload>(config);
+  return await getResponseInfo<ResData>(response, responseConfig);
 }
 
 // return file list in the form of <ul><li></li></ul>
