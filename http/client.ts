@@ -8,15 +8,21 @@ import {fromBuffer, toBuffer} from '../transform';
 
 type ToBufferParams = Parameters<typeof toBuffer>[0];
 interface RequestConfig<Payload extends ToBufferParams> extends http.RequestOptions {
-  url: string | URL;
+  url?: string | URL;
   data?: Payload;
 }
 export async function requestAndGetResponse<Payload extends ToBufferParams = any>(
   config: RequestConfig<Payload>
 ): Promise<http.IncomingMessage> {
   const {url, data, ...options} = config;
-  const {protocol, href} = url instanceof URL ? url : new URL(url);
-  const clientRequest = (protocol === 'https:' ? https : http).request(href, options);
+  let clientRequest: http.ClientRequest | null = null;
+  if (url) {
+    const {protocol, href} = url instanceof URL ? url : new URL(url);
+    clientRequest = (protocol === 'https:' ? https : http).request(href, options);
+  } else {
+    const {protocol = 'http'} = options;
+    clientRequest = (protocol === 'https:' ? https : http).request(options);
+  }
   if (data) {
     clientRequest.write(await toBuffer(data));
   }
@@ -31,14 +37,20 @@ export async function requestAndGetResponse<Payload extends ToBufferParams = any
   });
 }
 
+export interface ResponseInfo<T = any> {
+  statusCode: number;
+  statusMessage: string;
+  headers: object;
+  data: T;
+}
 export async function getResponseInfo<T>(
   response: http.IncomingMessage,
   options: {
     maxLength?: number;
     dataType?: 'buffer' | 'string' | 'json';
   } = {}
-) {
-  const {maxLength = 32 * 1024, dataType = 'string'} = options;
+): Promise<ResponseInfo<T>> {
+  const {maxLength = 32 * 1024, dataType = 'json'} = options;
   const {statusCode, statusMessage, headers} = response;
   const data = await getStreamData(response);
   const slicedData = data.subarray(0, maxLength);
