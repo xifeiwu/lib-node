@@ -5,6 +5,7 @@ import https from 'https';
 import stream from 'stream';
 import {getStreamData} from '../stream';
 import {fromBuffer, toBuffer} from '../transform';
+import {Socket} from 'net';
 
 type ToBufferParams = Parameters<typeof toBuffer>[0];
 interface RequestConfig<Payload extends ToBufferParams> extends http.RequestOptions {
@@ -31,12 +32,42 @@ export async function requestAndGetResponse<Payload extends ToBufferParams = any
     clientRequest.on('response', async response => {
       res(response);
     });
+    clientRequest.on('upgrade', async response => {
+      rej(new Error(`Expect response event, but receive upgrade event.`));
+    });
     clientRequest.on('error', error => {
       rej(error);
     });
   });
 }
-
+export async function requestAndGetUpgradeInfo<Payload extends ToBufferParams = any>(
+  config: RequestConfig<Payload>
+): Promise<{response: http.IncomingMessage; socket: Socket; head: Buffer}> {
+  const {url, data, ...options} = config;
+  let clientRequest: http.ClientRequest | null = null;
+  if (url) {
+    const {protocol, href} = url instanceof URL ? url : new URL(url);
+    clientRequest = (protocol === 'https:' ? https : http).request(href, options);
+  } else {
+    const {protocol = 'http'} = options;
+    clientRequest = (protocol === 'https:' ? https : http).request(options);
+  }
+  if (data) {
+    clientRequest.write(await toBuffer(data));
+  }
+  clientRequest.end();
+  return new Promise<{response: http.IncomingMessage; socket: Socket; head: Buffer}>((res, rej) => {
+    clientRequest.on('response', async response => {
+      rej(new Error(`Expect upgrade event, but receive response event.`));
+    });
+    clientRequest.on('upgrade', async (response, socket, head) => {
+      res({response, socket, head});
+    });
+    clientRequest.on('error', error => {
+      rej(error);
+    });
+  });
+}
 export interface ResponseInfo<T = any> {
   statusCode: number;
   statusMessage: string;

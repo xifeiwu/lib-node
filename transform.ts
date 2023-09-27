@@ -18,7 +18,7 @@ export async function toBuffer(data: string | object | Readable | Uint8Array) {
   return Buffer.concat(bufferList);
 }
 
-export function fromBuffer(buffer: Buffer, dataType?: 'json' | 'string' | 'buffer') {
+export function fromBuffer(buffer: Buffer, dataType: 'json' | 'string' | 'buffer') {
   if (!dataType) {
     return buffer;
   }
