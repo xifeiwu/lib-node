@@ -42,7 +42,7 @@ export function toConsole(...args: any[]) {
 
 export function toFile(data: string | object, config: {dir: string; fileName: string}) {
   const {dir, fileName} = config;
-  const fullPath = path.resolve(dir, `${fileName}-${Date.now()}`);
+  const fullPath = path.resolve(dir, `${Date.now()}-${fileName}`);
   writeFileSync(
     fullPath,
     util.inspect(data, {
