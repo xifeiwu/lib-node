@@ -4,18 +4,18 @@ import childProcess from 'child_process';
 const HOME_PATH = process.env.HOME;
 /**
  * start from @param 'dir', find one file with @param'name' upwards
- * @param dir, start dir
- * @param name, target file name
+ * @param startDir, start dir
+ * @param targetFileName, target file name
  */
-export function findClosestFile(dir: string, name: string): string | null {
-  const fullPath = path.resolve(dir, name);
-  if (dir == HOME_PATH || dir == '/') {
+export function findClosestFile(startDir: string, targetFileName: string): string | null {
+  const fullPath = path.resolve(startDir, targetFileName);
+  if (startDir == HOME_PATH || startDir == '/') {
     return null;
   }
   if (fs.existsSync(fullPath)) {
     return fullPath;
   } else {
-    return findClosestFile(path.resolve(dir, '..'), name);
+    return findClosestFile(path.resolve(startDir, '..'), targetFileName);
   }
 }
 
