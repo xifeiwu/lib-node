@@ -12,7 +12,7 @@ import {inspect} from './log';
 export const isStream = val => isObject(val) && isFunction(val.pipe);
 
 export function selectOption<T extends {label: string}>(
-  options: T[],
+  itemList: T[],
   option?: {
     tip?: Array<any> | string;
     defaultIndex?: number;
@@ -27,7 +27,7 @@ export function selectOption<T extends {label: string}>(
     tipArr = (tip as Array<any>).map(it => inspect(it));
   }
   tipArr.push(`[default index is ${defaultIndex})]:`);
-  const optionStr = options
+  const optionStr = itemList
     .map((it, index) => {
       return `${index}. ${String(it.label ? it.label : it)}`;
     })
@@ -43,10 +43,10 @@ export function selectOption<T extends {label: string}>(
       if (Number.isNaN(index)) {
         index = defaultIndex;
       }
-      if (!options[index]) {
+      if (!itemList[index]) {
         rej(`index ${index} does not existed in options`);
       } else {
-        res(options[index]);
+        res(itemList[index]);
       }
       interact.close();
     });

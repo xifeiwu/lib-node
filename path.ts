@@ -1,9 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 import childProcess from 'child_process';
+
 const HOME_PATH = process.env.HOME;
+
 /**
- * start from @param 'dir', find one file with @param'name' upwards
+ * start from @param 'startDir', find upwards to find the file with name @param'targetFileName'
  * @param startDir, start dir
  * @param targetFileName, target file name
  */
