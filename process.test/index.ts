@@ -1,8 +1,8 @@
 import http from 'http';
 import path from 'path';
+import assert from 'assert';
 import {getAllProcessInfo, killProcessByPort, spawnTsFile} from '../process';
 import {requestAndGetResponseInfo} from '../http';
-import {assert} from 'console';
 // import {resData} from './start-server';
 
 export async function testGetAllProcessInfo() {
@@ -22,8 +22,8 @@ export async function testKillProcessByPort() {
   const childProcess = spawnTsFile(path.resolve(__dirname, './start-server.ts'), {
     printCommand: true,
     spawnOptions: {
-      stdio: ['pipe', 'pipe', 'pipe', 'ipc']
-    }
+      stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
+    },
   });
   const {port} = await new Promise<{port: number}>(res => {
     childProcess.on('spawn', () => {
@@ -48,8 +48,8 @@ export async function testKillProcessByPort() {
     assert(statusCode === 200);
     assert(data === 'hello');
   }
-  await killProcessByPort(port);
-  {
+  await killProcessByPort({port, selectProcessToKill: true});
+  try {
     const {statusCode} = await requestAndGetResponseInfo(
       {
         url: `http://127.0.0.1:${port}`,
@@ -59,5 +59,8 @@ export async function testKillProcessByPort() {
       }
     );
     console.log(statusCode);
+    assert.fail(`the server should be closed`);
+  } catch (err) {
+    assert.ok(`should arrive here`);
   }
 }

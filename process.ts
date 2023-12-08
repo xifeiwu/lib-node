@@ -75,6 +75,11 @@ export async function getAllProcessInfo(options?: Options) {
   });
 }
 
+/**
+ * Find the process who use the port, and kill it.
+ * @param options 
+ * @returns The info of process killed
+ */
 export async function killProcessByPort(options: {
   port: number | string;
   printProcessInfo?: boolean;
@@ -151,17 +156,8 @@ export async function killProcessByPort(options: {
     pidToKill.push(processInfoList[0].pid);
   }
 
-  // const [processInfo] = processInfoList;
-  // if (processInfo) {
-  //   process.kill(Number(processInfo.pid));
-  // }
   pidToKill.forEach(pid => process.kill(Number(pid)));
   return pidToKill.map(pid => processInfoList.find(it => it.pid === pid));
-  // if (pid) {
-  //   process.kill(parseInt(pid), 'SIGTERM');
-  //   console.log(`process.kill(parseInt(${pid}), 'SIGTERM');`);
-  //   console.log(`kill pid ${pid} success!`);
-  // }
 }
 
 export function spawnTsFile(
