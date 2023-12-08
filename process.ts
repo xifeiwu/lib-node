@@ -164,21 +164,24 @@ export async function killByPort(
 
 export function spawnTsFile(
   filePath: string,
-  options: {
+  options?: {
     aliasPath?: boolean;
     useTsconfig?: boolean;
     printCommand?: boolean;
     params?: string[];
     spawnOptions?: Parameters<typeof spawn>[2];
-  } = {
-    aliasPath: true,
-    useTsconfig: true,
-    printCommand: false,
-    params: [],
-    spawnOptions: {},
   }
 ) {
-  const {aliasPath, useTsconfig, printCommand, spawnOptions} = options;
+  const {aliasPath, useTsconfig, printCommand, params, spawnOptions} = Object.assign(
+    {
+      aliasPath: true,
+      useTsconfig: true,
+      printCommand: false,
+      params: [],
+      spawnOptions: {},
+    },
+    options ? options : {}
+  );
   const fullPath = filePath.startsWith('/') ? filePath : path.resolve(process.cwd(), filePath);
   if (!fs.existsSync(fullPath)) {
     throw new Error(`path not exist: ${fullPath}`);
@@ -202,20 +205,20 @@ export function spawnTsFile(
     tsconfigFile = findClosestFile(dirPath, 'tsconfig.json');
   }
 
-  const params: string[] = [];
+  const mergedParams: string[] = [];
   if (pathRegisterFile) {
-    params.push(...['-r', pathRegisterFile]);
+    mergedParams.push('-r', pathRegisterFile);
   }
   if (tsconfigFile) {
-    params.push(...['--project', tsconfigFile]);
+    mergedParams.push('--project', tsconfigFile);
   }
-  const childProcess = spawn('ts-node', [...params, fullPath, ...params], {
+  mergedParams.push(fullPath, ...params);
+  const childProcess = spawn('ts-node', mergedParams, {
     stdio: ['pipe', 'pipe', 'pipe'],
     ...spawnOptions,
   });
   if (printCommand) {
-    console.log(`spawn command:`);
-    console.log(['ts-node', ...params, fullPath].join(' '));
+    console.log(`spawn command: ts-node ${mergedParams.join(' ')}`);
   }
   return childProcess;
 }

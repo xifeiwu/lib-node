@@ -11,7 +11,7 @@ import {inspect} from './log';
  */
 export const isStream = val => isObject(val) && isFunction(val.pipe);
 
-export function selectOption<T extends {label: string}>(
+export async function selectOption<T extends {label: string}>(
   itemList: T[],
   option?: {
     tip?: Array<any> | string;
