@@ -77,15 +77,17 @@ export async function getAllProcessInfo(options?: Options) {
 
 /**
  * Find the process who use the port, and kill it.
- * @param options 
+ * @param options
  * @returns The info of process killed
  */
-export async function killProcessByPort(options: {
-  port: number | string;
-  printProcessInfo?: boolean;
-  selectProcessToKill?: boolean;
-}) {
-  const {port, printProcessInfo, selectProcessToKill} = options;
+export async function killByPort(
+  port: number | string,
+  options: {
+    printProcessInfo?: boolean;
+    selectProcessToKill?: boolean;
+  }
+) {
+  const {printProcessInfo, selectProcessToKill} = options;
   /**
    * > lsof -i:3005
    * COMMAND   PID    USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME
@@ -166,11 +168,13 @@ export function spawnTsFile(
     aliasPath?: boolean;
     useTsconfig?: boolean;
     printCommand?: boolean;
+    params?: string[];
     spawnOptions?: Parameters<typeof spawn>[2];
   } = {
     aliasPath: true,
     useTsconfig: true,
     printCommand: false,
+    params: [],
     spawnOptions: {},
   }
 ) {
@@ -205,7 +209,7 @@ export function spawnTsFile(
   if (tsconfigFile) {
     params.push(...['--project', tsconfigFile]);
   }
-  const childProcess = spawn('ts-node', [...params, fullPath], {
+  const childProcess = spawn('ts-node', [...params, fullPath, ...params], {
     stdio: ['pipe', 'pipe', 'pipe'],
     ...spawnOptions,
   });

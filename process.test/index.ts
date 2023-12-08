@@ -1,7 +1,7 @@
 import http from 'http';
 import path from 'path';
 import assert from 'assert';
-import {getAllProcessInfo, killProcessByPort, spawnTsFile} from '../process';
+import {getAllProcessInfo, killByPort, spawnTsFile} from '../process';
 import {requestAndGetResponseInfo} from '../http';
 // import {resData} from './start-server';
 
@@ -48,7 +48,7 @@ export async function testKillProcessByPort() {
     assert(statusCode === 200);
     assert(data === 'hello');
   }
-  await killProcessByPort({port, selectProcessToKill: true});
+  await killByPort(port, {selectProcessToKill: true});
   try {
     const {statusCode} = await requestAndGetResponseInfo(
       {
