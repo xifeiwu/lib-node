@@ -3,6 +3,7 @@ import path from 'path';
 import {spawn, execSync, SpawnOptionsWithoutStdio} from 'child_process';
 import {findClosestFile} from './path';
 import {selectOption} from './common';
+import {isBoolean, isString} from './fe';
 
 type Prop = 'pid' | 'ppid' | 'pgid' | 'sess' | 'rss' | 'args';
 type ProcessInfo = {
@@ -162,57 +163,58 @@ export async function killByPort(
   return pidToKill.map(pid => processInfoList.find(it => it.pid === pid));
 }
 
-export function spawnTsFile(
-  filePath: string,
-  options?: {
-    aliasPath?: boolean;
-    useTsconfig?: boolean;
-    printCommand?: boolean;
-    params?: string[];
-    spawnOptions?: Parameters<typeof spawn>[2];
+interface SpawnTsFileOptions {
+  /**
+   * Path to tsconfig-paths/register.js
+   * Can pass the path or set it to truee
+   */
+  tsConfigPathsRegister?: boolean | string;
+  /** the tsconfig.json used for this run */
+  tsConfigJson?: boolean | string;
+  printCommand?: boolean;
+  params?: string[];
+  spawnOptions?: Parameters<typeof spawn>[2];
+}
+const spwanTsFileDefaultOptions: SpawnTsFileOptions = {
+  tsConfigPathsRegister: true,
+  tsConfigJson: true,
+  printCommand: false,
+  params: [],
+  spawnOptions: {},
+};
+export function spawnTsFile(execPath: string, options?: SpawnTsFileOptions) {
+  const fullExecPath = execPath.startsWith('/') ? execPath : path.resolve(process.cwd(), execPath);
+  if (!fs.existsSync(fullExecPath)) {
+    throw new Error(`path not exist: ${fullExecPath}`);
   }
-) {
-  const {aliasPath, useTsconfig, printCommand, params, spawnOptions} = Object.assign(
-    {
-      aliasPath: true,
-      useTsconfig: true,
-      printCommand: false,
-      params: [],
-      spawnOptions: {},
-    },
-    options ? options : {}
-  );
-  const fullPath = filePath.startsWith('/') ? filePath : path.resolve(process.cwd(), filePath);
-  if (!fs.existsSync(fullPath)) {
-    throw new Error(`path not exist: ${fullPath}`);
-  }
-  const dirPath = path.dirname(fullPath);
-  let pathRegisterFile = '';
-  let tsconfigFile = '';
-  if (aliasPath) {
-    pathRegisterFile = findClosestFile(dirPath, 'node_modules/tsconfig-paths/register.js');
-    if (!pathRegisterFile) {
+  const mergedOptions = Object.assign(spwanTsFileDefaultOptions, options ? options : {});
+  const {printCommand, params, spawnOptions} = mergedOptions;
+  let {tsConfigPathsRegister, tsConfigJson} = mergedOptions;
+  const dirPath = path.dirname(fullExecPath);
+  if (isBoolean(tsConfigPathsRegister) && tsConfigPathsRegister) {
+    tsConfigPathsRegister = findClosestFile(dirPath, 'node_modules/tsconfig-paths/register.js');
+    if (!tsConfigPathsRegister) {
       const {NVM_BIN} = process.env;
       if (NVM_BIN) {
         const globalRegisterFile = path.resolve(NVM_BIN, '../lib/node_modules/tsconfig-paths/register.js');
         if (fs.existsSync(globalRegisterFile)) {
-          pathRegisterFile = globalRegisterFile;
+          tsConfigPathsRegister = globalRegisterFile;
         }
       }
     }
   }
-  if (useTsconfig) {
-    tsconfigFile = findClosestFile(dirPath, 'tsconfig.json');
+  if (isBoolean(tsConfigJson) && tsConfigJson) {
+    tsConfigJson = findClosestFile(dirPath, 'tsconfig.json');
   }
 
   const mergedParams: string[] = [];
-  if (pathRegisterFile) {
-    mergedParams.push('-r', pathRegisterFile);
+  if (isString(tsConfigPathsRegister) && fs.existsSync(tsConfigPathsRegister as string)) {
+    mergedParams.push('-r', tsConfigPathsRegister as string);
   }
-  if (tsconfigFile) {
-    mergedParams.push('--project', tsconfigFile);
+  if (isString(tsConfigJson) && fs.existsSync(tsConfigJson as string)) {
+    mergedParams.push('--project', tsConfigJson as string);
   }
-  mergedParams.push(fullPath, ...params);
+  mergedParams.push(fullExecPath, ...params);
   const childProcess = spawn('ts-node', mergedParams, {
     stdio: ['pipe', 'pipe', 'pipe'],
     ...spawnOptions,
