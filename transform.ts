@@ -1,21 +1,24 @@
 import {Readable} from 'stream';
 import {isStream} from './common';
 import {getStreamData} from './stream';
-import {isPlainObject} from './fe';
+import {isNumber, isPlainObject, isString} from './fe';
 
-export async function toBuffer(data: string | object | Readable | Uint8Array) {
-  const bufferList: Buffer[] = [];
-  if (data) {
-    let payload: Buffer | string = data as Buffer | string;
-    if (isStream(payload)) {
-      payload = await getStreamData(data as Readable);
-    } else if (isPlainObject(data)) {
-      payload = JSON.stringify(data);
-    }
-
-    bufferList.push(Buffer.from(payload));
+type CanConvertToBuffer = string | number | object | Readable | Uint8Array;
+export async function toBuffer(data: CanConvertToBuffer | Array<CanConvertToBuffer>) {
+  if (Array.isArray(data)) {
+    return Buffer.concat(await Promise.all(data.map(toBuffer)));
   }
-  return Buffer.concat(bufferList);
+  let buffer: Buffer = Buffer.alloc(0);
+  if (isStream(data)) {
+    buffer = Buffer.from(await getStreamData(data as Readable));
+  } else if (isPlainObject(data)) {
+    buffer = Buffer.from(JSON.stringify(data));
+  } else if (isString(data)) {
+    buffer = Buffer.from(data as string);
+  } else if (isNumber(data)) {
+    buffer = Buffer.from([data as number]);
+  }
+  return buffer;
 }
 
 export function fromBuffer(buffer: Buffer, dataType: 'json' | 'string' | 'buffer') {
