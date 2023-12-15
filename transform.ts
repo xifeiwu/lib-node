@@ -17,6 +17,8 @@ export async function toBuffer(data: CanConvertToBuffer | Array<CanConvertToBuff
     buffer = Buffer.from(data as string);
   } else if (isNumber(data)) {
     buffer = Buffer.from([data as number]);
+  } else if (Buffer.isBuffer(data)) {
+    buffer = data;
   }
   return buffer;
 }
