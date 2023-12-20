@@ -3,15 +3,17 @@ import {isStream} from './common';
 import {getStreamData} from './stream';
 import {isNumber, isPlainObject, isString} from './fe';
 
-type CanConvertToBuffer = string | number | object | Readable | Uint8Array;
-export async function toBuffer(data: CanConvertToBuffer | Array<CanConvertToBuffer>) {
+type CanConvertToBuffer = string | number | object | Uint8Array;
+export function toBuffer(data: CanConvertToBuffer | Array<CanConvertToBuffer>) {
   if (Array.isArray(data)) {
-    return Buffer.concat(await Promise.all(data.map(toBuffer)));
+    if (data.every(isNumber)) {
+      return Buffer.from(data as Array<number>);
+    }
+    const bufAll = data.map(toBuffer);
+    return Buffer.concat(bufAll);
   }
   let buffer: Buffer = Buffer.alloc(0);
-  if (isStream(data)) {
-    buffer = Buffer.from(await getStreamData(data as Readable));
-  } else if (isPlainObject(data)) {
+  if (isPlainObject(data)) {
     buffer = Buffer.from(JSON.stringify(data));
   } else if (isString(data)) {
     buffer = Buffer.from(data as string);
