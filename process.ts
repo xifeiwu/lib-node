@@ -163,64 +163,73 @@ export async function killByPort(
   return pidToKill.map(pid => processInfoList.find(it => it.pid === pid));
 }
 
-interface SpawnTsFileOptions {
-  /**
-   * Path to tsconfig-paths/register.js
-   * Can pass the path or set it to truee
-   */
-  tsConfigPathsRegister?: boolean | string;
-  /** the tsconfig.json used for this run */
-  tsConfigJson?: boolean | string;
+/** Existing key with a null value means should give a default value by program */
+interface TsNodeOptions {
+  '-r'?: string | null;
+  '--project'?: string | null;
+  '--transpileOnly'?: boolean;
+}
+
+export interface SpawnTsFileOptions {
+  tsNodeOptions?: TsNodeOptions;
   printCommand?: boolean;
   params?: string[];
   spawnOptions?: Parameters<typeof spawn>[2];
 }
-const spwanTsFileDefaultOptions: SpawnTsFileOptions = {
-  tsConfigPathsRegister: true,
-  tsConfigJson: true,
+const defaultSpwanTsFileOptions: SpawnTsFileOptions = {
   printCommand: false,
   params: [],
   spawnOptions: {},
+};
+const defaultTsNodeOptions: TsNodeOptions = {
+  '-r': null,
+  '--project': null,
 };
 export function spawnTsFile(execPath: string, options?: SpawnTsFileOptions) {
   const fullExecPath = execPath.startsWith('/') ? execPath : path.resolve(process.cwd(), execPath);
   if (!fs.existsSync(fullExecPath)) {
     throw new Error(`path not exist: ${fullExecPath}`);
   }
-  const mergedOptions = Object.assign(spwanTsFileDefaultOptions, options ? options : {});
-  const {printCommand, params, spawnOptions} = mergedOptions;
-  let {tsConfigPathsRegister, tsConfigJson} = mergedOptions;
+  const mergedOptions = {...defaultSpwanTsFileOptions, ...options};
+  const {tsNodeOptions = {}, printCommand, params, spawnOptions} = mergedOptions;
+  const mergedTsNodeOptions = {...defaultTsNodeOptions, ...tsNodeOptions};
+
   const dirPath = path.dirname(fullExecPath);
-  if (isBoolean(tsConfigPathsRegister) && tsConfigPathsRegister) {
-    tsConfigPathsRegister = findClosestFile(dirPath, 'node_modules/tsconfig-paths/register.js');
+  if (mergedTsNodeOptions['-r'] && mergedTsNodeOptions['-r'] === null) {
+    let tsConfigPathsRegister = findClosestFile(dirPath, 'node_modules/tsconfig-paths/register.js');
     if (!tsConfigPathsRegister) {
       const {NVM_BIN} = process.env;
       if (NVM_BIN) {
-        const globalRegisterFile = path.resolve(NVM_BIN, '../lib/node_modules/tsconfig-paths/register.js');
-        if (fs.existsSync(globalRegisterFile)) {
-          tsConfigPathsRegister = globalRegisterFile;
-        }
+        const tsConfigPathsRegister = path.resolve(NVM_BIN, '../lib/node_modules/tsconfig-paths/register.js');
       }
     }
+    if (fs.existsSync(tsConfigPathsRegister)) {
+      mergedTsNodeOptions['-r'] = tsConfigPathsRegister;
+    }
   }
-  if (isBoolean(tsConfigJson) && tsConfigJson) {
-    tsConfigJson = findClosestFile(dirPath, 'tsconfig.json');
+  if (mergedTsNodeOptions['--project'] && mergedTsNodeOptions['--project'] === null) {
+    mergedTsNodeOptions['--project'] = findClosestFile(dirPath, 'tsconfig.json');
   }
 
-  const mergedParams: string[] = [];
-  if (isString(tsConfigPathsRegister) && fs.existsSync(tsConfigPathsRegister as string)) {
-    mergedParams.push('-r', tsConfigPathsRegister as string);
-  }
-  if (isString(tsConfigJson) && fs.existsSync(tsConfigJson as string)) {
-    mergedParams.push('--project', tsConfigJson as string);
-  }
-  mergedParams.push(fullExecPath, ...params);
-  const childProcess = spawn('ts-node', mergedParams, {
+  const tsNodeParams: string[] = [];
+  Object.entries(mergedTsNodeOptions).forEach(([key, value]) => {
+    if (!value) {
+      return;
+    }
+    if (isString(value)) {
+      tsNodeParams.push(key, value as string);
+    } else if (isBoolean(value)) {
+      tsNodeParams.push(key);
+    }
+  });
+  const fileExecParams = [fullExecPath, ...params];
+  const allParams = [...tsNodeParams, ...fileExecParams];
+  const childProcess = spawn('ts-node', allParams, {
     stdio: ['pipe', 'pipe', 'pipe'],
     ...spawnOptions,
   });
   if (printCommand) {
-    console.log(`spawn command: ts-node ${mergedParams.join(' ')}`);
+    console.log(`spawn command: ts-node ${allParams.join(' ')}`);
   }
   return childProcess;
 }
