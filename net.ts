@@ -104,7 +104,7 @@ export function handleSocketEvents(
       : chunk => {
           logWithColor(color, chunk);
         },
-  } = options;
+  } = options ?? {};
   const host = isServer ? socket.remoteAddress : socket.localAddress;
   const port = isServer ? socket.remotePort : socket.localPort;
   const tag = host + ':' + port;
@@ -138,14 +138,14 @@ export async function startSocketClient(options: TcpNetConnectOpts) {
 }
 
 export async function startSocketServer(
-  options: ServerOpts,
   config: {
     host?: string;
     port?: number;
-    handleConnection: (socket: Socket) => void;
-  }
+    options?: ServerOpts;
+  },
+  handleConnection: (socket: Socket) => void
 ) {
-  const {handleConnection, host = '127.0.0.1', port = await getAFreePort()} = config;
+  const {host = '127.0.0.1', port = await getAFreePort(), options} = config;
   // const host = '0.0.0.0';
   return new Promise<{host: string; port: number}>((res, rej) => {
     const server = net.createServer(options, handleConnection);
@@ -162,13 +162,13 @@ export async function startSocketServer(
 export function writeDataByInterval(
   writer: Writable,
   maxCount: number,
-  options: {
+  options?: {
     startChar?: string;
     str?: string;
     end?: string;
   }
 ) {
-  const {startChar, str, end} = options;
+  const {startChar, str, end} = options ?? {};
   const content: string[] = [];
   let cnt = 0;
   if (str) {
@@ -177,6 +177,12 @@ export function writeDataByInterval(
     }
   } else if (startChar) {
     let startCharCode = startChar.charCodeAt(0);
+    while (cnt < maxCount) {
+      content[cnt] = String.fromCharCode(startCharCode + cnt);
+      cnt++;
+    }
+  } else {
+    let startCharCode = 'a'.charCodeAt(0);
     while (cnt < maxCount) {
       content[cnt] = String.fromCharCode(startCharCode + cnt);
       cnt++;
