@@ -195,7 +195,7 @@ export function spawnTsFile(execPath: string, options?: SpawnTsFileOptions) {
   const mergedTsNodeOptions = {...defaultTsNodeOptions, ...tsNodeOptions};
 
   const dirPath = path.dirname(fullExecPath);
-  if (mergedTsNodeOptions['-r'] && mergedTsNodeOptions['-r'] === null) {
+  if (Object.prototype.hasOwnProperty.call(mergedTsNodeOptions, '-r') && mergedTsNodeOptions['-r'] === null) {
     let tsConfigPathsRegister = findClosestFile(dirPath, 'node_modules/tsconfig-paths/register.js');
     if (!tsConfigPathsRegister) {
       const {NVM_BIN} = process.env;
@@ -207,7 +207,10 @@ export function spawnTsFile(execPath: string, options?: SpawnTsFileOptions) {
       mergedTsNodeOptions['-r'] = tsConfigPathsRegister;
     }
   }
-  if (mergedTsNodeOptions['--project'] && mergedTsNodeOptions['--project'] === null) {
+  if (
+    Object.prototype.hasOwnProperty.call(mergedTsNodeOptions, '--project') &&
+    mergedTsNodeOptions['--project'] === null
+  ) {
     mergedTsNodeOptions['--project'] = findClosestFile(dirPath, 'tsconfig.json');
   }
 
