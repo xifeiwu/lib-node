@@ -108,6 +108,7 @@ export function handleSocketEvents(
   const host = isServer ? socket.remoteAddress : socket.localAddress;
   const port = isServer ? socket.remotePort : socket.localPort;
   const tag = host + ':' + port;
+  logWithColor(color, `start listen events on socket: ${tag}`);
   socket.on('data', chunk => {
     onData(chunk);
   });

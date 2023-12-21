@@ -55,9 +55,9 @@ export function toFile(data: string | object, config: {dir: string; fileName: st
   return fullPath;
 }
 
-type Colors = 'black' | 'red' | 'green' | 'yellow' | 'blue' | 'magenta' | 'cyan';
+export type LogColors = 'black' | 'red' | 'green' | 'yellow' | 'blue' | 'magenta' | 'cyan';
 const colorMap: {
-  [color in Colors]: {
+  [color in LogColors]: {
     start: string;
     end: string;
   };
@@ -92,7 +92,7 @@ const colorMap: {
   },
 };
 
-export function logWithColor(color: Colors, ...contentList: Array<object | Buffer | string | number>) {
+export function logWithColor(color: LogColors, ...contentList: Array<object | Buffer | string | number>) {
   for (const content of contentList) {
     if (content === undefined) {
       continue;
