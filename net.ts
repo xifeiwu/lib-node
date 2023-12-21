@@ -167,6 +167,7 @@ export function writeDataByInterval(
     end?: string;
   }
 ) {
+  let resolve: () => void;
   const {startChar, str, end} = options ?? {};
   const content: string[] = [];
   let cnt = 0;
@@ -195,6 +196,8 @@ export function writeDataByInterval(
       if (end !== undefined) {
         writer.end(end);
       }
+      resolve();
     }
   }, 500);
+  return new Promise<void>(res => resolve = res);
 }
