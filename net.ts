@@ -94,23 +94,21 @@ export function handleSocketEvents(
     onData?: (chunk: Buffer) => void;
   }
 ) {
-  const {
-    isServer = false,
-    color = 'black',
-    onData = isServer
-      ? chunk => {
-          socket.writable && socket.write(chunk);
-        }
-      : chunk => {
-          logWithColor(color, chunk);
-        },
-  } = options ?? {};
-  const host = isServer ? socket.remoteAddress : socket.localAddress;
-  const port = isServer ? socket.remotePort : socket.localPort;
-  const tag = host + ':' + port;
+  const {isServer = false, color = 'black', onData} = options ?? {};
+  const {localAddress, localPort, remoteAddress, remotePort} = socket;
+  const local = `${localAddress}:${localPort}`;
+  const remote = `${remoteAddress}:${remotePort}`;
+  const tag = [local, '<-', remote].join('');
   logWithColor(color, `start listen events on socket: ${tag}`);
   socket.on('data', chunk => {
-    onData(chunk);
+    if (onData) {
+      return onData(chunk);
+    }
+    logWithColor(color, `${tag} data:`);
+    logWithColor(color, chunk);
+    if (isServer) {
+      socket.writable && socket.write(chunk);
+    }
   });
   socket.on('end', () => {
     logWithColor(color, `socket ${tag} end.`);
