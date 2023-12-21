@@ -1,9 +1,8 @@
-import {logWithColor} from './log';
+import {LogColors, logWithColor} from './log';
 
 export function testLogWithColor() {
-  const colors: string[] = ['black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan'];
+  const colors: LogColors[] = ['red', 'yellow', 'green', 'blue', 'magenta', 'cyan', 'black'];
   colors.forEach(color => {
-    // @ts-ignore
     logWithColor(color, {color, colors});
   });
 }
