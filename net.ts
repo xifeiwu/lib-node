@@ -160,15 +160,16 @@ export async function startSocketServer(
 
 export function writeDataByInterval(
   writer: Writable,
-  maxCount: number,
   options?: {
     startChar?: string;
     str?: string;
+    maxCount?: number;
     end?: string;
+    interval?: number;
   }
 ) {
   let resolve: () => void;
-  const {startChar, str, end} = options ?? {};
+  const {startChar, str, end, interval = 500, maxCount = 3} = options ?? {};
   const content: string[] = [];
   let cnt = 0;
   if (str) {
@@ -198,6 +199,6 @@ export function writeDataByInterval(
       }
       resolve();
     }
-  }, 500);
+  }, interval);
   return new Promise<void>(res => resolve = res);
 }

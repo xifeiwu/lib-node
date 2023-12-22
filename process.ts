@@ -83,12 +83,12 @@ export async function getAllProcessInfo(options?: Options) {
  */
 export async function killByPort(
   port: number | string,
-  options: {
+  options?: {
     printProcessInfo?: boolean;
     selectProcessToKill?: boolean;
   }
 ) {
-  const {printProcessInfo, selectProcessToKill} = options;
+  const {printProcessInfo, selectProcessToKill} = options ?? {};
   /**
    * > lsof -i:3005
    * COMMAND   PID    USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME
