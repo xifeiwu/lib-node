@@ -79,13 +79,6 @@ export async function getAFreePort(startPort: string | number = 3000) {
   throw new Error('not free port found');
 }
 
-/**
-If the stream is connecting socket.readyState is opening.
-If the stream is readable and writable, it is open.
-If the stream is readable and not writable, it is readOnly.
-If the stream is not readable and writable, it is writeOnly.
- */
-
 export function handleSocketEvents(
   socket: Socket,
   options?: {
