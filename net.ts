@@ -170,19 +170,19 @@ export function writeDataByInterval(
       content[cnt++] = str;
     }
   } else if (startChar) {
-    let startCharCode = startChar.charCodeAt(0);
+    const startCharCode = startChar.charCodeAt(0);
     while (cnt < maxCount) {
       content[cnt] = String.fromCharCode(startCharCode + cnt);
       cnt++;
     }
   } else {
-    let startCharCode = 'a'.charCodeAt(0);
+    const startCharCode = 'a'.charCodeAt(0);
     while (cnt < maxCount) {
       content[cnt] = String.fromCharCode(startCharCode + cnt);
       cnt++;
     }
   }
-  let intervalTag = setInterval(() => {
+  const intervalTag = setInterval(() => {
     if (content.length > 0) {
       writer.write(content.shift());
     } else {
