@@ -46,12 +46,15 @@ export function findFileListByNameUpward(dir: string, name: string) {
  */
 export function readDirRecursive(
   root: string,
+  /** option passed through each recursive without any change */
   option?: {
     dirFilter?: (baseName: string, relativePath: string) => boolean;
     fileFilter?: (baseName: string, relativePath: string) => boolean;
     includeDir?: boolean;
   },
+  /** use for recursive: pass path related info */
   pathInfo?: {prefix: string; fileName: string},
+  /** use for recursive: passed recursively, correct value in each recursive, and return as final data */
   files?: string[]
 ): string[] {
   pathInfo = pathInfo || {
@@ -153,6 +156,32 @@ export function getFilePathInfo(fullPath: string): {
     fileBaseName,
   };
   return pathInfo;
+}
+
+interface LineCountInfo {
+  fullPath: string;
+  relativePath: string;
+  lineCount: number;
+}
+export function getLineCount(filePath: string): LineCountInfo | LineCountInfo[] {
+  if (!filePath) {
+    filePath = '.';
+  }
+  const fullPath = path.resolve(filePath);
+  const fStat = fs.statSync(fullPath);
+  if (fStat.isDirectory()) {
+    let totalCount = 0;
+    const files = readDirRecursive(fullPath);
+    return files.map(it => {
+      const destFile = path.join(fullPath, it);
+      const {lineCount} = getLineCount(destFile) as LineCountInfo;
+      return {fullPath: destFile, relativePath: it, lineCount};
+    });
+  } else {
+    const content = fs.readFileSync(fullPath);
+    const lineCount = content.toString().split('\n').length;
+    return {fullPath, relativePath: filePath, lineCount};
+  }
 }
 
 export function writeFileSync(fullPath: string, data: string | NodeJS.ArrayBufferView) {
