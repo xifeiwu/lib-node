@@ -1,6 +1,7 @@
 import assert from 'assert';
-import {FileInfoTreeItem, getFileInfoTree, getFileList, getLineCountList} from './fs';
+import {FileInfoTreeItem, flatChildren, getFileInfoTree, getFileList, getLineCountMap} from './fs';
 import {isString} from './fe';
+import path from 'path';
 
 export function testGetFileList() {
   const fileList = getFileList(__dirname, {
@@ -12,13 +13,28 @@ export function testGetFileList() {
   assert.equal(fileList.length, 2);
   assert.ok(isString(fileList[0]));
 }
-export function testGetLineCount() {
-  const fileList = getLineCountList(__dirname);
-  console.log(fileList);
-  // assert.ok(Array.isArray(fileList));
-  // assert.equal(fileList.length, 2);
-  // assert.ok(isString(fileList[0]));
+export function filePathForGetLineCountMap() {
+  const lineCountMap = getLineCountMap(path.join(__dirname, 'fs.ts'));
+  console.log(lineCountMap);
 }
+export function testGetLineCountMap() {
+  const lineCountMap = getLineCountMap(__dirname);
+  console.log(lineCountMap);
+  const lineCountList = flatChildren(lineCountMap, {
+    sort(prev, next) {
+      return next.lineCount - prev.lineCount;
+    },
+  });
+  console.log(lineCountList);
+}
+
+// export function testGetLineCount() {
+//   const fileList = getLineCountList(__dirname);
+//   console.log(fileList);
+//   // assert.ok(Array.isArray(fileList));
+//   // assert.equal(fileList.length, 2);
+//   // assert.ok(isString(fileList[0]));
+// }
 
 export function testGetFileInfoTree() {
   const fileInfoTree = getFileInfoTree(__dirname, {
