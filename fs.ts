@@ -160,21 +160,23 @@ export function getLineCountMap(
 }
 export function flatChildren<T extends {children?: any[]}>(
   mapInfo: T,
-  options?: {sort?: (a: T, b: T) => number}
+  options?: {sort?: (a: T, b: T) => number; ignoreParent?: boolean}
 ) {
-  const {sort} = options ?? {};
+  const {sort, ignoreParent} = options ?? {};
   function mapToList(map: T): T[] {
     const {children, ...others} = map;
     if (Array.isArray(children)) {
       if (sort) {
         children.sort(sort);
       }
-      return [
-        map,
-        ...children.map(mapToList).reduce<T[]>((sum, it) => {
-          return [...sum, ...it];
-        }, []),
-      ];
+      const reducedChildren = children.map(mapToList).reduce<T[]>((sum, it) => {
+        return [...sum, ...it];
+      }, []);
+      if (ignoreParent) {
+        return reducedChildren;
+      } else {
+        return [map, ...reducedChildren];
+      }
     } else {
       return [map];
     }
