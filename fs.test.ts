@@ -21,7 +21,7 @@ export function testGetLineCountMap() {
   const lineCountMap = getLineCountMap(__dirname);
   console.log(lineCountMap);
   const lineCountList = flatChildren(lineCountMap, {
-    sort(prev, next) {
+    sortChildren(prev, next) {
       return next.lineCount - prev.lineCount;
     },
   });

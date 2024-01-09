@@ -44,6 +44,7 @@ export function findFileListByNameUpward(dir: string, name: string) {
 interface PathInfo {
   baseName: string;
   relativePath: string;
+  depth: number;
 }
 /**
  * relativePath: path relative to root
@@ -67,10 +68,11 @@ export function readDirRecursive<T = any>(
   pathInfo = pathInfo || {
     baseName: '',
     relativePath: '.',
+    depth: 0,
   };
   // const relativePath = path.join(pathInfo.prefix, pathInfo.baseName);
   // pathInfo.relativePath = relativePath;
-  const {relativePath} = pathInfo;
+  const {relativePath, depth} = pathInfo;
   const {dirFilter = () => true, fileFilter = () => true} = option ? option : {};
   const fullpath = path.join(root, relativePath);
   if (!fs.existsSync(fullpath)) {
@@ -84,6 +86,7 @@ export function readDirRecursive<T = any>(
           const child = readDirRecursive(root, cb, option, {
             baseName,
             relativePath: path.join(relativePath, baseName),
+            depth: depth + 1,
           });
           return child;
         })
@@ -98,6 +101,12 @@ export function readDirRecursive<T = any>(
   return null;
 }
 
+/**
+ * @deprecated replaced by getFileInfoTree, flatChildren
+ * @param root
+ * @param options
+ * @returns
+ */
 export function getFileList(
   root: string,
   options?: {
@@ -158,16 +167,23 @@ export function getLineCountMap(
     options
   );
 }
+
+/**
+ * mapInfo container more info. Can convert to list by this function for some usecase.
+ * @param mapInfo
+ * @param options
+ * @returns
+ */
 export function flatChildren<T extends {children?: any[]}>(
   mapInfo: T,
-  options?: {sort?: (a: T, b: T) => number; ignoreParent?: boolean}
+  options?: {sortChildren?: (a: T, b: T) => number; ignoreParent?: boolean}
 ) {
-  const {sort, ignoreParent} = options ?? {};
+  const {sortChildren, ignoreParent} = options ?? {};
   function mapToList(map: T): T[] {
     const {children, ...others} = map;
     if (Array.isArray(children)) {
-      if (sort) {
-        children.sort(sort);
+      if (sortChildren) {
+        children.sort(sortChildren);
       }
       const reducedChildren = children.map(mapToList).reduce<T[]>((sum, it) => {
         return [...sum, ...it];
@@ -195,7 +211,7 @@ export function getFileInfoTree(
     dirFilter?: FileFilter;
     fileFilter?: FileFilter;
   }
-) {
+): FileInfoTreeItem {
   const {dirFilter, fileFilter} = options ?? {};
   const filterMode = Boolean(dirFilter || fileFilter);
   return readDirRecursive<FileInfoTreeItem>(
