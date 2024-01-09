@@ -124,6 +124,45 @@ export function getFileList(
   return fileList;
 }
 
+interface LineCountInfo {
+  relativePath: string;
+  lineCount: number;
+}
+export function getLineCountList(
+  filePath: string,
+  options?: {
+    dirFilter?: FileFilter;
+    fileFilter?: FileFilter;
+    includeDir?: boolean;
+  }
+): LineCountInfo[] {
+  if (!filePath) {
+    filePath = '.';
+  }
+  const fullPath = path.resolve(filePath);
+  const lineCountInfoList: LineCountInfo[] = [];
+  const files = readDirRecursive<LineCountInfo>(
+    fullPath,
+    (err, {pathInfo: {relativePath}, children}) => {
+      const fullPath = path.join(filePath, relativePath);
+      if (Array.isArray(children)) {
+        const lineCount = children.reduce<number>((sum, it) => {
+          return sum + it.lineCount;
+        }, 0);
+        return {relativePath, lineCount};
+      } else {
+        const content = fs.readFileSync(fullPath);
+        const lineCount = content.toString().split('\n').length;
+        lineCountInfoList.push({relativePath, lineCount});
+        return {relativePath, lineCount};
+      }
+    },
+    options
+  );
+  lineCountInfoList.sort((prev, next) => next.lineCount - prev.lineCount);
+  return lineCountInfoList;
+}
+
 export interface FileInfoTreeItem {
   relativePath: string;
   stat: fs.Stats;
@@ -229,32 +268,6 @@ export function getFilePathInfo(fullPath: string): {
     fileBaseName,
   };
   return pathInfo;
-}
-
-interface LineCountInfo {
-  fullPath: string;
-  relativePath: string;
-  lineCount: number;
-}
-export function getLineCount(filePath: string): LineCountInfo | LineCountInfo[] {
-  if (!filePath) {
-    filePath = '.';
-  }
-  const fullPath = path.resolve(filePath);
-  const fStat = fs.statSync(fullPath);
-  if (fStat.isDirectory()) {
-    let totalCount = 0;
-    const files = readDirRecursive(fullPath);
-    return files.map(it => {
-      const destFile = path.join(fullPath, it);
-      const {lineCount} = getLineCount(destFile) as LineCountInfo;
-      return {fullPath: destFile, relativePath: it, lineCount};
-    });
-  } else {
-    const content = fs.readFileSync(fullPath);
-    const lineCount = content.toString().split('\n').length;
-    return {fullPath, relativePath: filePath, lineCount};
-  }
 }
 
 export function writeFileSync(fullPath: string, data: string | NodeJS.ArrayBufferView) {

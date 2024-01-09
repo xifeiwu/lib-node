@@ -1,5 +1,5 @@
 import assert from 'assert';
-import {FileInfoTreeItem, getFileInfoTree, getFileList} from './fs';
+import {FileInfoTreeItem, getFileInfoTree, getFileList, getLineCountList} from './fs';
 import {isString} from './fe';
 
 export function testGetFileList() {
@@ -11,6 +11,13 @@ export function testGetFileList() {
   assert.ok(Array.isArray(fileList));
   assert.equal(fileList.length, 2);
   assert.ok(isString(fileList[0]));
+}
+export function testGetLineCount() {
+  const fileList = getLineCountList(__dirname);
+  console.log(fileList);
+  // assert.ok(Array.isArray(fileList));
+  // assert.equal(fileList.length, 2);
+  // assert.ok(isString(fileList[0]));
 }
 
 export function testGetFileInfoTree() {
