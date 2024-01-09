@@ -42,56 +42,102 @@ export function findFileListByNameUpward(dir: string, name: string) {
 }
 
 /**
+ * relativePath: path relative to root
+ * baseName: one level filename, not include any child dir. like value return from path.basename
+ */
+type FileFilter = (options: {baseName: string; relativePath: string}) => boolean;
+/**
  * @returns relative path list to root
  */
-export function readDirRecursive(
+export function readDirRecursive<T = any>(
   root: string,
+  cb: (err: Error | null, res: {relativePath: string; children?: T[]}) => T | null,
   /** option passed through each recursive without any change */
   option?: {
-    dirFilter?: (baseName: string, relativePath: string) => boolean;
-    fileFilter?: (baseName: string, relativePath: string) => boolean;
-    includeDir?: boolean;
+    dirFilter?: FileFilter;
+    fileFilter?: FileFilter;
   },
   /** use for recursive: pass path related info */
-  pathInfo?: {prefix: string; fileName: string},
-  /** use for recursive: passed recursively, correct value in each recursive, and return as final data */
-  files?: string[]
-): string[] {
+  pathInfo?: {baseName: string; relativePath: string}
+) {
   pathInfo = pathInfo || {
-    prefix: '',
-    fileName: '',
+    baseName: '',
+    relativePath: '',
   };
-  const relativePath = path.join(pathInfo.prefix, pathInfo.fileName);
-  files = files || [];
-  const {dirFilter = () => true, fileFilter = () => true, includeDir = false} = option ? option : {};
+  // const relativePath = path.join(pathInfo.prefix, pathInfo.baseName);
+  // pathInfo.relativePath = relativePath;
+  const {relativePath} = pathInfo;
+  const {dirFilter = () => true, fileFilter = () => true} = option ? option : {};
   const fullpath = path.join(root, relativePath);
   if (!fs.existsSync(fullpath)) {
-    return files;
+    return cb(new Error(`Not exist: ${fullpath}`), {relativePath});
   }
   if (fs.statSync(fullpath).isDirectory()) {
-    if (!dirFilter(pathInfo.fileName, relativePath) && fullpath !== root) {
-      return [];
+    if (dirFilter(pathInfo)) {
+      const children = fs
+        .readdirSync(fullpath)
+        .map(baseName => {
+          const child = readDirRecursive(root, cb, option, {
+            // prefix: relativePath,
+            baseName,
+            relativePath: path.join(relativePath, baseName),
+          });
+          return child;
+        })
+        .filter(it => it !== null);
+      return cb(null, {relativePath, children});
     }
-    if (includeDir) {
-      files.push(`${relativePath}/`);
-    }
-    fs.readdirSync(fullpath).forEach(name => {
-      readDirRecursive(
-        root,
-        option,
-        {
-          prefix: relativePath,
-          fileName: name,
-        },
-        files
-      );
-    });
   } else {
-    if (fileFilter(pathInfo.fileName, relativePath)) {
-      files.push(relativePath);
+    if (fileFilter(pathInfo)) {
+      return cb(null, {relativePath});
     }
   }
-  return files;
+  return null;
+}
+
+export function getFileList(
+  root: string,
+  options?: {
+    dirFilter?: FileFilter;
+    fileFilter?: FileFilter;
+    includeDir?: boolean;
+  }
+) {
+  const {includeDir = false} = options ?? {};
+  const fileList: string[] = [];
+  readDirRecursive(
+    root,
+    (err, {relativePath, children}) => {
+      if (err) {
+        return null;
+      }
+      if (Array.isArray(children) && !includeDir) {
+        return null;
+      }
+      fileList.push(relativePath);
+    },
+    options
+  );
+  return fileList;
+}
+export function getFileInfoTree(
+  root: string,
+  options?: {
+    dirFilter?: FileFilter;
+    fileFilter?: FileFilter;
+  }
+) {
+  return readDirRecursive(
+    root,
+    (err, {relativePath, children}) => {
+      if (err) {
+        return null;
+      }
+      const stat = fs.statSync(path.join(root, relativePath));
+      return {stat, relativePath, children};
+    },
+    options
+  );
 }
 
 export function deleteFile(path: string) {
