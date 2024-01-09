@@ -183,40 +183,6 @@ export function flatChildren<T extends {children?: any[]}>(
   }
   return mapToList(mapInfo);
 }
-// export function getLineCountList(
-//   filePath: string,
-//   options?: {
-//     dirFilter?: FileFilter;
-//     fileFilter?: FileFilter;
-//     includeDir?: boolean;
-//   }
-// ): LineCountMapItem[] {
-//   if (!filePath) {
-//     filePath = '.';
-//   }
-//   const fullPath = path.resolve(filePath);
-//   const lineCountInfoList: LineCountMapItem[] = [];
-//   const files = readDirRecursive<LineCountMapItem>(
-//     fullPath,
-//     (err, {pathInfo: {relativePath}, children}) => {
-//       const fullPath = path.join(filePath, relativePath);
-//       if (Array.isArray(children)) {
-//         const lineCount = children.reduce<number>((sum, it) => {
-//           return sum + it.lineCount;
-//         }, 0);
-//         return {relativePath, lineCount};
-//       } else {
-//         const content = fs.readFileSync(fullPath);
-//         const lineCount = content.toString().split('\n').length;
-//         lineCountInfoList.push({relativePath, lineCount});
-//         return {relativePath, lineCount};
-//       }
-//     },
-//     options
-//   );
-//   lineCountInfoList.sort((prev, next) => next.lineCount - prev.lineCount);
-//   return lineCountInfoList;
-// }
 
 export interface FileInfoTreeItem {
   relativePath: string;
