@@ -4,7 +4,7 @@ export * from './net';
 export * from './stream';
 export * from './config';
 export * from './http';
-export * from './path';
+export * from './fs';
 export * from './log';
 export * from './process';
 export * from './fe';

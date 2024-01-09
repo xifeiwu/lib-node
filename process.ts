@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import {spawn, execSync, SpawnOptionsWithoutStdio} from 'child_process';
-import {findClosestFile} from './path';
+import {findClosestFile} from './fs';
 import {selectOption} from './common';
 import {isBoolean, isString} from './fe';
 

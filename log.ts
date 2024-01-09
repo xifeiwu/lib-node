@@ -1,7 +1,7 @@
 import util from 'util';
 import path from 'path';
 import {isObject, formatDate, isPlainObject} from './fe';
-import {writeFileSync} from './path';
+import {writeFileSync} from './fs';
 
 export function prettyLog(content: any): void;
 export function prettyLog(...args: any[]): void;
