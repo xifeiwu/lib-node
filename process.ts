@@ -204,7 +204,7 @@ export function spawnTsFile(execPath: string, options?: SpawnTsFileOptions) {
     if (!tsConfigPathsRegister) {
       const {NVM_BIN} = process.env;
       if (NVM_BIN) {
-        const tsConfigPathsRegister = path.resolve(NVM_BIN, '../lib/node_modules/tsconfig-paths/register.js');
+        tsConfigPathsRegister = path.resolve(NVM_BIN, '../lib/node_modules/tsconfig-paths/register.js');
       }
     }
     if (fs.existsSync(tsConfigPathsRegister)) {
