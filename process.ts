@@ -76,19 +76,7 @@ export async function getAllProcessInfo(options?: Options) {
   });
 }
 
-/**
- * Find the process who use the port, and kill it.
- * @param options
- * @returns The info of process killed
- */
-export async function killByPort(
-  port: number | string,
-  options?: {
-    printProcessInfo?: boolean;
-    selectProcessToKill?: boolean;
-  }
-) {
-  const {printProcessInfo, selectProcessToKill} = options ?? {};
+export async function getProcessInfoByPort(port: number | string): Promise<ProcessInfo[]> {
   /**
    * > lsof -i:3005
    * COMMAND   PID    USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME
@@ -116,13 +104,29 @@ export async function killByPort(
     })
     .filter(it => it);
   if (pidList.length === 0) {
-    throw new Error(`length of pid list is zero`);
+    return [];
   }
   const processInfoList = await getAllProcessInfo({
     filter: it => {
       return pidList.includes(it.pid);
     },
   });
+  return processInfoList;
+}
+
+/**
+ * Find the process who use the port, and kill it.
+ * @param options
+ * @returns The info of process killed
+ */
+export async function selectProcessToKill(
+  processInfoList: ProcessInfo[],
+  options?: {
+    printProcessInfo?: boolean;
+    selectProcessToKill?: boolean;
+  }
+) {
+  const {printProcessInfo, selectProcessToKill} = options ?? {};
   printProcessInfo && console.log(processInfoList);
   const pidToKill: string[] = [];
   if (processInfoList.length > 1) {
