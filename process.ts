@@ -82,36 +82,40 @@ export async function getProcessInfoByPort(port: number | string): Promise<Proce
    * COMMAND   PID    USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME
    * node    72770 wuxifei   21u  IPv6 0x2464db0cd5195045      0t0  TCP *:geniuslm (LISTEN)
    */
-  const output = execSync(`lsof -i:${port}`).toString();
-  const lines: string[][] = output
-    .split('\n')
-    .slice(1)
-    .map(line => {
-      return line.split(/ +/);
+  try {
+    const output = execSync(`lsof -i:${port}`).toString();
+    const lines: string[][] = output
+      .split('\n')
+      .slice(1)
+      .map(line => {
+        return line.split(/ +/);
+      });
+    const pidReg = /^[\d]+$/;
+    const pidList = lines
+      .map(it => {
+        if (!Array.isArray(it)) {
+          return false;
+        }
+        const [, pid] = it;
+        if (pidReg.test(pid)) {
+          return pid;
+        } else {
+          return null;
+        }
+      })
+      .filter(it => it);
+    if (pidList.length === 0) {
+      return [];
+    }
+    const processInfoList = await getAllProcessInfo({
+      filter: it => {
+        return pidList.includes(it.pid);
+      },
     });
-  const pidReg = /^[\d]+$/;
-  const pidList = lines
-    .map(it => {
-      if (!Array.isArray(it)) {
-        return false;
-      }
-      const [, pid] = it;
-      if (pidReg.test(pid)) {
-        return pid;
-      } else {
-        return null;
-      }
-    })
-    .filter(it => it);
-  if (pidList.length === 0) {
+    return processInfoList;
+  } catch {
     return [];
   }
-  const processInfoList = await getAllProcessInfo({
-    filter: it => {
-      return pidList.includes(it.pid);
-    },
-  });
-  return processInfoList;
 }
 
 /**
