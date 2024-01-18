@@ -177,7 +177,7 @@ export function flatChildren<T extends {children?: any[]}>(
   return mapToList(mapInfo);
 }
 
-export interface FileSize {
+interface FileSize {
   relativePath: string;
   size: number;
   children?: FileSize[];
