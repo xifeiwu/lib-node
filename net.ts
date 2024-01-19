@@ -87,6 +87,9 @@ export function handleSocketEvents(
     onData?: (chunk: Buffer) => void;
   }
 ) {
+  if (!socket) {
+    return;
+  }
   const {isServer = false, color = 'black', onData} = options ?? {};
   const {localAddress, localPort, remoteAddress, remotePort} = socket;
   const local = `${localAddress}:${localPort}`;

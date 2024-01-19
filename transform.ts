@@ -21,6 +21,8 @@ export function toBuffer(data: CanConvertToBuffer | Array<CanConvertToBuffer>) {
     buffer = Buffer.from([data as number]);
   } else if (Buffer.isBuffer(data)) {
     buffer = data;
+  } else if (ArrayBuffer.isView(data)) {
+    buffer = Buffer.from(data as ArrayBuffer);
   }
   return buffer;
 }
