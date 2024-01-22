@@ -91,6 +91,10 @@ export function handleSocketEvents(
     return;
   }
   const {isServer = false, color = 'black', onData} = options ?? {};
+  if (!socket) {
+    logWithColor(color, `socket is undefined`);
+    return;
+  }
   const {localAddress, localPort, remoteAddress, remotePort} = socket;
   const local = `${localAddress}:${localPort}`;
   const remote = `${remoteAddress}:${remotePort}`;
