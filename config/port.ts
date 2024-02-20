@@ -12,12 +12,12 @@ export const PORT: {
     port: 3200,
     description: 'assist for development of assist server'
   },
-  proxy2Turtle: {
-    port: 3201,
-    description: 'proxy server for pulser-turtle'
-  },
-  proxy2App: {
-    port: 3202,
-    description: 'proxy server for pulser-app'
-  }
+  // proxy2Turtle: {
+  //   port: 3201,
+  //   description: 'proxy server for pulser-turtle'
+  // },
+  // proxy2App: {
+  //   port: 3202,
+  //   description: 'proxy server for pulser-app'
+  // }
 };
