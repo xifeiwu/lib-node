@@ -50,7 +50,7 @@ interface PathInfo {
  * relativePath: path relative to root
  * baseName: one level filename, not include any child dir. like value return from path.basename
  */
-type FileFilter = (pathInfo: PathInfo) => boolean;
+export type FileFilter = (pathInfo: PathInfo) => boolean;
 /**
  * @returns relative path list to root
  */
@@ -272,7 +272,6 @@ export function getLineCountMap(
 }
 
 /**
- * @deprecated replaced by getFileInfoTree, flatChildren
  * @param root
  * @param options
  * @returns
@@ -285,7 +284,7 @@ export function getFileList(
     includeDir?: boolean;
   }
 ) {
-  const {includeDir = false} = options ?? {};
+  const {includeDir = false, ...optionsOfReadDirRecursive} = options ?? {};
   const fileList: string[] = [];
   readDirRecursive(
     root,
@@ -298,7 +297,7 @@ export function getFileList(
       }
       fileList.push(relativePath);
     },
-    options
+    optionsOfReadDirRecursive
   );
   return fileList;
 }
