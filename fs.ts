@@ -51,6 +51,10 @@ interface PathInfo {
  * baseName: one level filename, not include any child dir. like value return from path.basename
  */
 export type FileFilter = (pathInfo: PathInfo) => boolean;
+export interface DirRecursiveOptions {
+  dirFilter?: FileFilter;
+  fileFilter?: FileFilter;
+}
 /**
  * @returns relative path list to root
  */
@@ -58,10 +62,7 @@ export function readDirRecursive<T = any>(
   root: string,
   cb: (err: Error | null, res: {pathInfo: PathInfo; children?: T[]}) => T | null,
   /** option passed through each recursive without any change */
-  option?: {
-    dirFilter?: FileFilter;
-    fileFilter?: FileFilter;
-  },
+  options?: DirRecursiveOptions,
   /** use for recursive: pass path related info */
   pathInfo?: PathInfo
 ) {
@@ -73,7 +74,7 @@ export function readDirRecursive<T = any>(
   // const relativePath = path.join(pathInfo.prefix, pathInfo.baseName);
   // pathInfo.relativePath = relativePath;
   const {relativePath, depth} = pathInfo;
-  const {dirFilter = () => true, fileFilter = () => true} = option ? option : {};
+  const {dirFilter = () => true, fileFilter = () => true} = options ? options : {};
   const fullpath = path.join(root, relativePath);
   if (!fs.existsSync(fullpath)) {
     return cb(new Error(`Not exist: ${fullpath}`), {pathInfo});
@@ -83,7 +84,7 @@ export function readDirRecursive<T = any>(
       const children = fs
         .readdirSync(fullpath)
         .map(baseName => {
-          const child = readDirRecursive(root, cb, option, {
+          const child = readDirRecursive(root, cb, options, {
             baseName,
             relativePath: path.join(relativePath, baseName),
             depth: depth + 1,
@@ -271,19 +272,15 @@ export function getLineCountMap(
   );
 }
 
+export interface GetFileListOption extends DirRecursiveOptions {
+  includeDir?: boolean;
+}
 /**
  * @param root
  * @param options
  * @returns
  */
-export function getFileList(
-  root: string,
-  options?: {
-    dirFilter?: FileFilter;
-    fileFilter?: FileFilter;
-    includeDir?: boolean;
-  }
-) {
+export function getFileList(root: string, options?: GetFileListOption) {
   const {includeDir = false, ...optionsOfReadDirRecursive} = options ?? {};
   const fileList: string[] = [];
   readDirRecursive(
