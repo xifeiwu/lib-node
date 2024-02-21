@@ -299,6 +299,33 @@ export function getFileList(root: string, options?: GetFileListOption) {
   return fileList;
 }
 
+export function getMultipleDirFileList(
+  targetList: Array<{
+    targetDir: string;
+    options?: GetFileListOption;
+  }>
+): Array<{relativePath: string; fullPath: string}> {
+  const allFiles = targetList.reduce<
+    Array<{
+      fullPath: string;
+      relativePath: string;
+    }>
+  >((sum, it) => {
+    const {targetDir, options} = it;
+    const fileList = getFileList(targetDir, options);
+    return [
+      ...sum,
+      ...fileList.map(relativePath => {
+        return {
+          relativePath,
+          fullPath: path.join(targetDir, relativePath),
+        };
+      }),
+    ];
+  }, []);
+  return allFiles;
+}
+
 export function deleteFile(path: string) {
   if (fs.existsSync(path)) {
     if (fs.statSync(path).isFile()) {
