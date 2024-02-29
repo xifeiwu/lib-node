@@ -4,12 +4,7 @@
  * 3100-3200: for stable service used by myself
  * 3200-3300: for service used for some specific case
  */
-export const PORT: {
-  [key: string]: {
-    port: number;
-    description: string;
-  }
-} = {
+export const PORT = {
   basicHttpServer: {
     port: 3180,
     description: 'for a http server with basic logic, such as test api',
