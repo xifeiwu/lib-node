@@ -4,20 +4,16 @@ export const PORT: {
     description: string;
   }
 } = {
-  netFeature: {
-    port: 3100,
-    description: 'show feature of net related logic, include http, websocket, socks5, etc'
+  basicHttpServer: {
+    port: 3180,
+    description: 'for a http server with basic logic, such as test api',
   },
+  // netFeature: {
+  //   port: 3100,
+  //   description: 'show feature of net related logic, include http, websocket, socks5, etc'
+  // },
   assistConviva: {
     port: 3200,
     description: 'assist for development of assist server'
   },
-  // proxy2Turtle: {
-  //   port: 3201,
-  //   description: 'proxy server for pulser-turtle'
-  // },
-  // proxy2App: {
-  //   port: 3202,
-  //   description: 'proxy server for pulser-app'
-  // }
 };
