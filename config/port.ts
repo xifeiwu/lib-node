@@ -1,3 +1,9 @@
+/**
+ * Port range:
+ * 3000-3100: for testing code for net feature
+ * 3100-3200: for stable service used by myself
+ * 3200-3300: for service used for some specific case
+ */
 export const PORT: {
   [key: string]: {
     port: number;
