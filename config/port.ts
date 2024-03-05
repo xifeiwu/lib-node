@@ -3,7 +3,10 @@
  * 3000-3100: for testing code for net feature
  * 3100-3200: for stable service used by myself
  * 3200-3300: for service used for some specific case
- * For the value, the higher, the stable
+ * For the value, the higher, the stable:
+ * 00-30: for testing
+ * 30-60: may change from time to time
+ * 60-99: stable
  */
 export const PORT = {
   httpProtocolExplorer: {
