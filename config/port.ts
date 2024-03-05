@@ -3,18 +3,19 @@
  * 3000-3100: for testing code for net feature
  * 3100-3200: for stable service used by myself
  * 3200-3300: for service used for some specific case
+ * For the value, the higher, the stable
  */
 export const PORT = {
-  basicHttpServer: {
-    port: 3180,
-    description: 'for a http server with basic logic, such as test api',
+  httpProtocolExplorer: {
+    port: 3130,
+    description: 'Http protocol Explorer',
   },
-  // netFeature: {
-  //   port: 3100,
-  //   description: 'show feature of net related logic, include http, websocket, socks5, etc'
-  // },
+  basicHttpServer: {
+    port: 3160,
+    description: 'For a http server with basic logic, such as test api',
+  },
   assistConviva: {
     port: 3200,
-    description: 'assist for development of assist server'
+    description: 'assist for development of assist server',
   },
 };
