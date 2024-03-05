@@ -71,6 +71,7 @@ export async function requestAndGetUpgradeInfo<Payload extends ToBufferParams = 
 export interface ResponseInfo<T = any> {
   statusCode: number;
   statusMessage: string;
+  httpVersion: string;
   headers: object;
   data: T;
 }
@@ -82,13 +83,14 @@ export async function getResponseInfo<T>(
   } = {}
 ): Promise<ResponseInfo<T>> {
   const {maxLength = 32 * 1024, dataType = 'json'} = options;
-  const {statusCode, statusMessage, headers} = response;
+  const {statusCode, statusMessage, httpVersion, headers} = response;
   const data = await getStreamData(response);
   const slicedData = data.subarray(0, maxLength);
   const finalData = fromBuffer(slicedData, dataType);
   return {
     statusCode,
     statusMessage,
+    httpVersion,
     headers,
     data: finalData as T,
   };
