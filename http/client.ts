@@ -3,9 +3,9 @@ import path from 'path';
 import http from 'http';
 import https from 'https';
 import stream from 'stream';
-import {getStreamData} from '../stream';
-import {fromBuffer, toBuffer} from '../transform';
+import {toBuffer} from '../transform';
 import {Socket} from 'net';
+import { getResponseInfo } from './common';
 
 type ToBufferParams = Parameters<typeof toBuffer>[0];
 interface RequestConfig<Payload extends ToBufferParams> extends http.RequestOptions {
@@ -67,33 +67,6 @@ export async function requestAndGetUpgradeInfo<Payload extends ToBufferParams = 
       rej(error);
     });
   });
-}
-export interface ResponseInfo<T = any> {
-  statusCode: number;
-  statusMessage: string;
-  httpVersion: string;
-  headers: object;
-  data: T;
-}
-export async function getResponseInfo<T>(
-  response: http.IncomingMessage,
-  options: {
-    maxLength?: number;
-    dataType?: 'buffer' | 'string' | 'json';
-  } = {}
-): Promise<ResponseInfo<T>> {
-  const {maxLength = 32 * 1024, dataType = 'json'} = options;
-  const {statusCode, statusMessage, httpVersion, headers} = response;
-  const data = await getStreamData(response);
-  const slicedData = data.subarray(0, maxLength);
-  const finalData = fromBuffer(slicedData, dataType);
-  return {
-    statusCode,
-    statusMessage,
-    httpVersion,
-    headers,
-    data: finalData as T,
-  };
 }
 
 export async function requestAndGetResponseInfo<ResData = any, Payload extends ToBufferParams = any>(

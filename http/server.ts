@@ -1,28 +1,13 @@
-import fs from 'fs';
-import path from 'path';
 import http, {RequestListener, ServerOptions} from 'http';
-import https from 'https';
-import stream from 'stream';
-import {getStreamData} from '../stream';
-import {fromBuffer, toBuffer} from '../transform';
-import {getAFreePort} from '..';
+import {toBuffer} from '../transform';
+import {getAFreePort, getRequestInfo} from '..';
 import {Socket} from 'net';
 
-export async function getHttpIncomingMessageInfo(request: http.IncomingMessage) {
-  const {method, url, headers} = request;
-  const data = fromBuffer(await getStreamData(request), 'json');
-  return {
-    method,
-    url,
-    headers,
-    data,
-  };
-}
-export async function responseHttpIncomingMessageInfo(
+export async function responseIncomingMessageInfo(
   request: http.IncomingMessage,
   response: http.ServerResponse
 ) {
-  const data = await getHttpIncomingMessageInfo(request);
+  const data = await getRequestInfo(request);
   const buffer = await toBuffer(data);
   const headers = {
     'content-type': 'application/json',
