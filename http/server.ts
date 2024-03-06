@@ -31,17 +31,17 @@ export async function startHttpServer(
   }
 ) {
   const {request: handleRequest, upgrade: handleUpgrade} = handler;
-  const {host = '127.0.0.1', port = await getAFreePort(), options} = config ?? {};
-  const url = `http://${host}:${port}`;
+  const {host = '0.0.0.0', port = await getAFreePort(), options} = config ?? {};
+  const origin = `http://${host}:${port}`;
   return new Promise<{
-    url: string;
+    origin: string;
     host: string;
     port: number;
     server: http.Server;
   }>((res, rej) => {
     const server = http.createServer(options).listen(port, host);
     server.on('listening', () => {
-      res({host, port, url, server});
+      res({host, port, origin, server});
     });
     handleRequest && server.on('request', handleRequest);
     handleUpgrade && server.on('upgrade', handleUpgrade);
