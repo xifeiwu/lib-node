@@ -1,6 +1,6 @@
-import stream, {Readable} from 'stream';
+import stream, {Readable, Transform} from 'stream';
 import {isString, isObject, waitFor, isPlainObject} from './fe';
-import {isStream} from './common';
+import {DataTypeFromBuffer, TargetDataTypeFromBuffer, fromBuffer} from './transform';
 
 export function getStreamData(req: stream.Stream): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -10,7 +10,7 @@ export function getStreamData(req: stream.Stream): Promise<Buffer> {
       // result += chunk;
       bufferList.push(chunk);
     });
-    req.on('end', function() {
+    req.on('end', function () {
       resolve(Buffer.concat(bufferList));
     });
     req.on('error', (err: any) => {
@@ -36,6 +36,33 @@ export function toStream(data: Buffer | string | object) {
     read() {
       this.push(data);
       this.push(null);
+    },
+  });
+}
+
+const MAX_SIZE = 32 * 1024 * 1024;
+export function getDataByTransform(
+  cb2Data: (data: DataTypeFromBuffer) => void,
+  config?: {
+    targetType?: TargetDataTypeFromBuffer;
+    maxSize?: number;
+  }
+) {
+  const {targetType, maxSize = MAX_SIZE} = config ?? {};
+  let totalSize = 0;
+  const bufferList: Buffer[] = [];
+  return new Transform({
+    transform(data, _enc, next) {
+      this.push(data);
+      if (totalSize < maxSize) {
+        bufferList.push(data);
+        totalSize += data.byteLength;
+      }
+      next && next();
+    },
+    final(cb) {
+      cb && cb();
+      cb2Data(fromBuffer(Buffer.concat(bufferList), targetType));
     },
   });
 }
