@@ -1,117 +1,157 @@
-import http, {IncomingMessage, RequestOptions, ServerResponse} from 'http';
 import https from 'https';
-import {ResponseInfo, getRequestHeaderInfo, getResponseHeaderInfo} from '../common';
-import {concatPath} from '../../fe';
+import http, {IncomingMessage, ServerResponse} from 'http';
+import {RequestInfo, getRequestHeaderInfo, getResponseHeaderInfo} from '../common';
 import {startHttpServer} from '../server';
+import {cookieRewrite, concatPath, deepClone, deepMerge, formatDate} from '../../external';
+import {HttpProxyConfig, ProxyRequestInfo, ProxyStatus} from './types';
+import {getDataByTransform} from '../../stream';
+import {toBuffer} from '../../transform';
 
-export interface ProxyRequestInfo {
-  href: string;
-  protocol: 'https:' | 'http:' | string;
-  requestOptions: RequestOptions;
-}
-export interface HttpProxyConfig {
-  targetHref: string;
-  changeOrigin?: boolean;
-  defaultRequestOptions?: Pick<RequestOptions, 'auth'>;
-  handleProxyReqInfo?: (info: ProxyRequestInfo) => ProxyRequestInfo | void;
-  handleProxyReqError?: (err: Error) => void;
-  handleProxyResInfo?: (info: ResponseInfo) => ResponseInfo | void;
-}
-
-function getProxyRequestInfo(req: IncomingMessage, config: HttpProxyConfig): ProxyRequestInfo {
-  const {targetHref, changeOrigin = true, defaultRequestOptions = {}} = config;
+/**
+ * Get Request Info from origin request, and the Request Info used for proxy.
+ * @param req
+ * @param config
+ * @returns
+ */
+function getRequestInfo(
+  req: IncomingMessage,
+  config: HttpProxyConfig
+): {origin: RequestInfo; proxy: ProxyRequestInfo} {
+  const {targetHref, changeOrigin = true, proxyRequestOptions: defaultRequestOptions = {}} = config;
   const {protocol, origin, host, pathname} = new URL(targetHref);
-  const {method, url, headers} = getRequestHeaderInfo(req);
+  const {method, url, httpVersion, headers: originHeaders} = getRequestHeaderInfo(req);
+  const proxyHeaders = deepClone(originHeaders);
   const href = origin + concatPath('/', pathname, url);
-  if (headers.host && changeOrigin) {
-    headers.host = host;
+  if (proxyHeaders.host && changeOrigin) {
+    proxyHeaders.host = host;
   }
   return {
-    href,
-    protocol,
-    requestOptions: {
+    origin: {
       method,
-      headers,
-      ...defaultRequestOptions,
+      url,
+      httpVersion,
+      headers: originHeaders,
+    },
+    proxy: {
+      href,
+      protocol,
+      requestOptions: deepMerge(
+        {
+          method,
+          headers: proxyHeaders,
+        },
+        defaultRequestOptions
+      ),
     },
   };
 }
 
-function cookieRewrite(value, property: 'domain' | 'path', newValue: string) {
-  if (Array.isArray(value)) {
-    return value.map(it => {
-      return cookieRewrite(it, property, newValue);
-    });
+const MAX_RROXY_STATUS_LENGTH = 100;
+const proxyStatusList: ProxyStatus[] = [];
+function pushStatus() {
+  const dt = formatDate(new Date(), 'yyyy-MM-ddThh:mm:ss.SSS');
+  let newId = dt;
+  let cnt = 0;
+  while (proxyStatusList.some(it => it.id === newId) && cnt < MAX_RROXY_STATUS_LENGTH) {
+    newId = `${dt}-${cnt}`;
+    cnt++;
   }
-
-  return value.replace(
-    new RegExp('(;\\s*' + property + '=)([^;]+)', 'i'),
-    function (match, prefix, previousValue) {
-      // var newValue;
-      // if (previousValue in config) {
-      //   newValue = config[previousValue];
-      // } else if ('*' in config) {
-      //   newValue = config['*'];
-      // } else {
-      //   //no match, return previous value
-      //   return match;
-      // }
-      if (newValue) {
-        //replace value
-        return prefix + newValue;
-      } else {
-        //remove value
-        return '';
-      }
-    }
-  );
+  const item: ProxyStatus = {id: newId};
+  if (proxyStatusList.length > MAX_RROXY_STATUS_LENGTH) {
+    proxyStatusList.pop();
+  }
+  proxyStatusList.unshift(item);
+  return item;
 }
 
 export async function handleRequest(req: IncomingMessage, res: ServerResponse, config: HttpProxyConfig) {
-  const {handleProxyReqError, handleProxyReqInfo, handleProxyResInfo} = config;
-  let proxyReqInfo = getProxyRequestInfo(req, config);
+  const proxyStatus = pushStatus();
+  const {handleProxyReqInfo, handleRes2ProxyInfo} = config;
+  let reqInfo = getRequestInfo(req, config);
+  proxyStatus.request = reqInfo;
   if (handleProxyReqInfo) {
-    const tmp = handleProxyReqInfo(proxyReqInfo);
+    const tmp = handleProxyReqInfo(reqInfo.proxy);
     if (tmp) {
-      proxyReqInfo = tmp;
+      reqInfo.proxy = tmp;
     }
   }
-  const {href, protocol, requestOptions: proxyRequestOptions} = proxyReqInfo;
+  const {href, protocol, requestOptions: proxyRequestOptions} = reqInfo.proxy;
   const proxyReq = (protocol === 'https:' ? https : http).request(href, proxyRequestOptions);
-  req.pipe(proxyReq);
-  proxyReq.on('error', err => {
-    if (handleProxyReqError) {
-      handleProxyReqError(err);
-    } else {
-      console.log(err);
+  req
+    .pipe(
+      getDataByTransform(
+        data => {
+          proxyStatus.request.origin.data = data;
+        },
+        {
+          targetType: 'json',
+        }
+      )
+    )
+    .pipe(proxyReq);
+
+  try {
+    const res2Proxy = await new Promise<http.IncomingMessage>((res, rej) => {
+      proxyReq.on('error', err => {
+        rej(err);
+      });
+      proxyReq.on('response', res2Proxy => res(res2Proxy));
+    });
+    const res2ProxyInfo = getResponseHeaderInfo(res2Proxy);
+    let res2OriginInfo = deepClone(res2ProxyInfo);
+    /** Rewrite cookie info */
+    for (let [key, value] of Object.entries(res2OriginInfo.headers)) {
+      let newValue = value;
+      // if (key.toLowerCase() === 'set-cookie') {
+      //   newValue = cookieRewrite(value, 'domain', '0.0.0.0');
+      // }
+      res2OriginInfo.headers[key] = newValue;
     }
-  });
-  proxyReq.on('response', res2Proxy => {
-    let proxyResInfo = getResponseHeaderInfo(res2Proxy);
-    if (handleProxyResInfo) {
-      const tmp = handleProxyResInfo(proxyResInfo);
+    if (handleRes2ProxyInfo) {
+      const tmp = handleRes2ProxyInfo(res2OriginInfo);
       if (tmp) {
-        proxyResInfo = tmp;
+        res2OriginInfo = tmp;
       }
     }
-    const {httpVersion, statusCode, statusMessage, headers} = proxyResInfo;
+    proxyStatus.response = {
+      toProxy: res2ProxyInfo,
+      toOrigin: res2OriginInfo,
+    };
+    const {httpVersion, statusCode, statusMessage, headers} = res2OriginInfo;
     res.statusCode = statusCode;
     res.statusMessage = statusMessage ?? '';
-    for (let [key, value] of Object.entries(headers)) {
-      // console.log(`key, value`);
-      // console.log(key, value);
-      let newValue = value;
-      if (key.toLowerCase() === 'set-cookie') {
-        newValue = cookieRewrite(value, 'domain', '0.0.0.0');
-      }
-      res.setHeader(key, newValue);
+    for (const [key, value] of Object.entries(res2OriginInfo.headers)) {
+      res.setHeader(key, value);
     }
-    res2Proxy.pipe(res);
-  });
+    res2Proxy
+      .pipe(
+        getDataByTransform(
+          data => {
+            proxyStatus.response.toProxy.data = data;
+          },
+          {
+            targetType: 'json',
+          }
+        )
+      )
+      .pipe(res);
+  } catch (err) {
+    res.statusCode = 500;
+    res.statusMessage = 'proxy error';
+    res.end(err);
+  }
 }
 
 export async function startProxyServer(config: HttpProxyConfig) {
   return startHttpServer({
-    request: (req, res) => handleRequest(req, res, config),
+    request: (req, res) => {
+      const {url} = getRequestHeaderInfo(req);
+      if (url === '/api/proxy-status') {
+        res.statusCode = 200;
+        res.end(toBuffer(proxyStatusList));
+        return;
+      }
+      handleRequest(req, res, config);
+    },
   });
 }

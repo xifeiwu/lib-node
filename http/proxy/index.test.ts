@@ -1,10 +1,13 @@
 import https from 'https';
-import {HttpProxyConfig, ProxyRequestInfo, startProxyServer} from '.';
-import { getResponseInfo } from '../common';
+import {startProxyServer} from '.';
+import {getResponseInfo} from '../common';
+import {HttpProxyConfig, ProxyRequestInfo} from './types';
 
+// https://pulse.conviva.com/
 export async function proxyToBaidu() {
   const config: HttpProxyConfig = {
-    targetHref: 'https://www.baidu.com',
+    // targetHref: 'https://www.baidu.com',
+    targetHref: 'https://pulse.conviva.com',
     handleProxyReqInfo(options) {
       console.log(options);
     },
@@ -39,7 +42,7 @@ export async function requestTarget() {
     const info = await getResponseInfo(res);
     console.log(info);
   });
-  client.on("error", err => {
+  client.on('error', err => {
     console.log(err);
-  })
+  });
 }

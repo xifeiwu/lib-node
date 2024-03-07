@@ -8,7 +8,7 @@ export interface RequestInfo<T = any> {
   url: string;
   httpVersion: string;
   headers: IncomingHttpHeaders;
-  data: T;
+  data?: T;
 }
 export function getRequestHeaderInfo(request: http.IncomingMessage) {
   const {method, url, httpVersion, headers} = request;
