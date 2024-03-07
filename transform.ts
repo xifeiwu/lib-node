@@ -27,11 +27,17 @@ export function toBuffer(data: CanConvertToBuffer | Array<CanConvertToBuffer>) {
   return buffer;
 }
 
-export function fromBuffer(buffer: Buffer, dataType: 'json' | 'string' | 'buffer') {
-  if (!dataType) {
+export type TargetDataTypeFromBuffer = 'json' | 'string' | 'buffer';
+export type DataTypeFromBuffer = Buffer | string | object | null;
+
+export function fromBuffer(buffer: Buffer, dataType: TargetDataTypeFromBuffer): DataTypeFromBuffer {
+  if (!dataType || dataType === 'buffer') {
     return buffer;
   }
-  let finalData: Buffer | string | object = buffer;
+  if (!buffer || !Buffer.isBuffer(buffer) || buffer.byteLength === 0) {
+    return null;
+  }
+  let finalData: DataTypeFromBuffer = buffer;
   if (dataType === 'json') {
     finalData = buffer.toString();
     try {
