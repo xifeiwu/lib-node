@@ -21,4 +21,8 @@ export const PORT = {
     port: 3200,
     description: 'assist for development of assist server',
   },
+  convivaDockerEnv: {
+    port: 3220,
+    description: 'assist for development of assist server',
+  },
 };
