@@ -13,7 +13,7 @@ export interface HttpProxyConfig {
   /** Options for proxy request */
   proxyRequestOptions?: Pick<RequestOptions, 'auth'>;
   /** Handle info of proxy request before request in sent */
-  handleProxyReqInfo?: (info: ProxyRequestInfo) => ProxyRequestInfo | void;
+  handleProxyReqInfo?: (info: ProxyRequestInfo) => Promise<ProxyRequestInfo | void>;
   // handleProxyReqError?: (err: Error) => void;
 
   /** Handle info of response to proxy */
@@ -27,4 +27,8 @@ export interface ProxyStatus {
     toProxy: ResponseInfo;
     toOrigin: ResponseInfo;
   };
+  err?: {
+    message: Error['message'];
+    stack: Error['stack']
+  }
 }

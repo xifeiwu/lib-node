@@ -61,8 +61,8 @@ export function getDataByTransform(
       next && next();
     },
     final(cb) {
-      cb && cb();
       cb2Data(fromBuffer(Buffer.concat(bufferList), targetType));
+      cb && cb();
     },
   });
 }

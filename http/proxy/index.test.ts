@@ -6,8 +6,8 @@ import {HttpProxyConfig, ProxyRequestInfo} from './types';
 // https://pulse.conviva.com/
 export async function proxyToBaidu() {
   const config: HttpProxyConfig = {
-    // targetHref: 'https://www.baidu.com',
-    targetHref: 'https://pulse.conviva.com',
+    targetHref: 'https://www.baidu.com',
+    // targetHref: 'https://pulse.conviva.com',
     handleProxyReqInfo(options) {
       console.log(options);
     },

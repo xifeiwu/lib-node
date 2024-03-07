@@ -1,7 +1,7 @@
 import https from 'https';
 import http, {IncomingMessage, ServerResponse} from 'http';
 import {RequestInfo, getRequestHeaderInfo, getResponseHeaderInfo} from '../common';
-import {startHttpServer} from '../server';
+import {HttpServerConfig, startHttpServer} from '../server';
 import {cookieRewrite, concatPath, deepClone, deepMerge, formatDate} from '../../external';
 import {HttpProxyConfig, ProxyRequestInfo, ProxyStatus} from './types';
 import {getDataByTransform} from '../../stream';
@@ -64,13 +64,17 @@ function pushStatus() {
   return item;
 }
 
-export async function handleRequest(req: IncomingMessage, res: ServerResponse, config: HttpProxyConfig) {
+export async function handleRequest4Proxy(
+  req: IncomingMessage,
+  res: ServerResponse,
+  config: HttpProxyConfig
+) {
   const proxyStatus = pushStatus();
   const {handleProxyReqInfo, handleRes2ProxyInfo} = config;
   let reqInfo = getRequestInfo(req, config);
   proxyStatus.request = reqInfo;
   if (handleProxyReqInfo) {
-    const tmp = handleProxyReqInfo(reqInfo.proxy);
+    const tmp = await handleProxyReqInfo(reqInfo.proxy);
     if (tmp) {
       reqInfo.proxy = tmp;
     }
@@ -138,20 +142,28 @@ export async function handleRequest(req: IncomingMessage, res: ServerResponse, c
   } catch (err) {
     res.statusCode = 500;
     res.statusMessage = 'proxy error';
-    res.end(err);
+    const {message, stack} = err as Error;
+    const errorInfo = {message, stack};
+    proxyStatus.err = errorInfo;
+    res.end(toBuffer(errorInfo));
   }
 }
 
-export async function startProxyServer(config: HttpProxyConfig) {
-  return startHttpServer({
-    request: (req, res) => {
-      const {url} = getRequestHeaderInfo(req);
-      if (url === '/api/proxy-status') {
-        res.statusCode = 200;
-        res.end(toBuffer(proxyStatusList));
-        return;
-      }
-      handleRequest(req, res, config);
+export const URL_PROXY_STATUS = '/api/proxy-status';
+export async function startProxyServer(proxyConfig: HttpProxyConfig, httpServerConfig?: HttpServerConfig) {
+  return await startHttpServer(
+    {
+      request: (req, res) => {
+        const {url} = getRequestHeaderInfo(req);
+        if (url === URL_PROXY_STATUS) {
+          res.statusCode = 200;
+          res.setHeader('content-type', 'application/json');
+          res.end(toBuffer(JSON.stringify(proxyStatusList)));
+          return;
+        }
+        handleRequest4Proxy(req, res, proxyConfig);
+      },
     },
-  });
+    httpServerConfig
+  );
 }

@@ -19,16 +19,17 @@ export async function responseIncomingMessageInfo(
   response.end(buffer);
 }
 
+export interface HttpServerConfig {
+  host?: string;
+  port?: number;
+  options?: ServerOptions;
+}
 export async function startHttpServer(
   handler: {
     request?: RequestListener;
     upgrade?: (req, socket: Socket, head: Buffer) => void;
   },
-  config?: {
-    host?: string;
-    port?: number;
-    options?: ServerOptions;
-  }
+  config?: HttpServerConfig
 ) {
   const {request: handleRequest, upgrade: handleUpgrade} = handler;
   const {host = '0.0.0.0', port = await getAFreePort(), options} = config ?? {};
