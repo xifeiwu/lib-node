@@ -18,6 +18,13 @@ export interface HttpProxyConfig {
 
   /** Handle info of response to proxy */
   handleRes2ProxyInfo?: (info: ResponseInfo) => ResponseInfo | void;
+
+  /** Info of proxy server */
+  proxyServerInfo?: {
+    origin: string;
+    url2ProxyStatus?: string;
+  };
+  isPrintLog?: boolean;
 }
 
 export interface ProxyStatus {

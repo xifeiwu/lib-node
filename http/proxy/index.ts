@@ -2,21 +2,31 @@ import https from 'https';
 import http, {IncomingMessage, ServerResponse} from 'http';
 import {RequestInfo, getRequestHeaderInfo, getResponseHeaderInfo} from '../common';
 import {HttpServerConfig, startHttpServer} from '../server';
-import {cookieRewrite, concatPath, deepClone, deepMerge, formatDate} from '../../external';
+import {
+  cookieRewrite,
+  concatPath,
+  deepClone,
+  deepMerge,
+  formatDate,
+  encodeQueryString,
+  parseUrl,
+} from '../../external';
 import {HttpProxyConfig, ProxyRequestInfo, ProxyStatus} from './types';
 import {getDataByTransform} from '../../stream';
 import {toBuffer} from '../../transform';
+import {logWithColor} from '../../log';
 
+interface AllRequestInfo {
+  origin: RequestInfo;
+  proxy: ProxyRequestInfo;
+}
 /**
  * Get Request Info from origin request, and the Request Info used for proxy.
  * @param req
  * @param config
  * @returns
  */
-function getRequestInfo(
-  req: IncomingMessage,
-  config: HttpProxyConfig
-): {origin: RequestInfo; proxy: ProxyRequestInfo} {
+function getRequestInfo(req: IncomingMessage, config: HttpProxyConfig): AllRequestInfo {
   const {targetHref, changeOrigin = true, proxyRequestOptions: defaultRequestOptions = {}} = config;
   const {protocol, origin, host, pathname} = new URL(targetHref);
   const {method, url, httpVersion, headers: originHeaders} = getRequestHeaderInfo(req);
@@ -48,6 +58,9 @@ function getRequestInfo(
 
 const MAX_RROXY_STATUS_LENGTH = 100;
 const proxyStatusList: ProxyStatus[] = [];
+/**
+ * Create proxyStatus item, push to proxyStatusList, and return the item.
+ */
 function pushStatus() {
   const dt = formatDate(new Date(), 'yyyy-MM-ddThh:mm:ss.SSS');
   let newId = dt;
@@ -64,11 +77,32 @@ function pushStatus() {
   return item;
 }
 
-export async function handleRequest4Proxy(
-  req: IncomingMessage,
-  res: ServerResponse,
-  config: HttpProxyConfig
-) {
+function printLog(proxyStatus: ProxyStatus, reqInfo: AllRequestInfo, config: HttpProxyConfig) {
+  const {isPrintLog = true, proxyServerInfo} = config;
+  if (!isPrintLog) {
+    return;
+  }
+  const {id} = proxyStatus;
+  const {
+    origin: {method, url},
+    proxy: {href},
+  } = reqInfo;
+  logWithColor('green', `[${id}]: ${method.toUpperCase()} ${url} -> ${href}`);
+  proxyServerInfo &&
+    logWithColor(
+      'black',
+      `${proxyServerInfo.origin}${proxyServerInfo.url2ProxyStatus ?? ''}${encodeQueryString(
+        {
+          id: id,
+        },
+        false
+      )}`
+    );
+}
+/**
+ * Proxy thre request.
+ */
+export async function proxyRequest(req: IncomingMessage, res: ServerResponse, config: HttpProxyConfig) {
   const proxyStatus = pushStatus();
   const {handleProxyReqInfo, handleRes2ProxyInfo} = config;
   let reqInfo = getRequestInfo(req, config);
@@ -80,6 +114,7 @@ export async function handleRequest4Proxy(
     }
   }
   const {href, protocol, requestOptions: proxyRequestOptions} = reqInfo.proxy;
+  printLog(proxyStatus, reqInfo, config);
   const proxyReq = (protocol === 'https:' ? https : http).request(href, proxyRequestOptions);
   req
     .pipe(
@@ -151,19 +186,29 @@ export async function handleRequest4Proxy(
 
 export const URL_PROXY_STATUS = '/api/proxy-status';
 export async function startProxyServer(proxyConfig: HttpProxyConfig, httpServerConfig?: HttpServerConfig) {
-  return await startHttpServer(
+  const {origin, host, port, server} = await startHttpServer(
     {
       request: (req, res) => {
         const {url} = getRequestHeaderInfo(req);
-        if (url === URL_PROXY_STATUS) {
+        const {pathname, searchParams} = parseUrl(url);
+
+        if (pathname === URL_PROXY_STATUS) {
           res.statusCode = 200;
           res.setHeader('content-type', 'application/json');
-          res.end(toBuffer(JSON.stringify(proxyStatusList)));
+          let resData: any = proxyStatusList;
+          if (searchParams.has('id')) {
+            resData = proxyStatusList.find(it => it.id === searchParams.get('id'));
+          }
+          res.end(toBuffer(JSON.stringify(resData)));
           return;
         }
-        handleRequest4Proxy(req, res, proxyConfig);
+        proxyRequest(req, res, {
+          ...proxyConfig,
+          proxyServerInfo: {origin, url2ProxyStatus: URL_PROXY_STATUS},
+        });
       },
     },
     httpServerConfig
   );
+  return {origin, host, port, server};
 }
