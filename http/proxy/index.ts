@@ -62,7 +62,7 @@ const proxyStatusList: ProxyStatus[] = [];
  * Create proxyStatus item, push to proxyStatusList, and return the item.
  */
 function pushStatus() {
-  const dt = formatDate(new Date(), 'yyyy-MM-ddThh:mm:ss.SSS');
+  const dt = formatDate(new Date(), 'MM-ddThh:mm:ss.SSS');
   let newId = dt;
   let cnt = 0;
   while (proxyStatusList.some(it => it.id === newId) && cnt < MAX_RROXY_STATUS_LENGTH) {
@@ -87,7 +87,7 @@ function printLog(proxyStatus: ProxyStatus, reqInfo: AllRequestInfo, config: Htt
     origin: {method, url},
     proxy: {href},
   } = reqInfo;
-  logWithColor('green', `[${id}]: ${method.toUpperCase()} ${url} -> ${href}`);
+  logWithColor('yellow', `[${id}]: ${method.toUpperCase()} ${url} -> ${href}`);
   proxyServerInfo &&
     logWithColor(
       'black',
