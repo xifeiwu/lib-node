@@ -1,19 +1,30 @@
 import https from 'https';
-import {startProxyServer} from '.';
+import {PATHNAME_PROXY_STATUS, startProxyServer} from '.';
 import {getResponseInfo} from '../common';
 import {HttpProxyConfig, ProxyRequestInfo} from './types';
+import {requestAndGetResponseInfo} from '../client';
+import {waitFor} from '../../fe';
 
 // https://pulse.conviva.com/
 export async function proxyToBaidu() {
   const config: HttpProxyConfig = {
     targetHref: 'https://www.baidu.com',
-    // targetHref: 'https://pulse.conviva.com',
-    handleProxyReqInfo(options) {
-      console.log(options);
+    handleProxyReqInfo(reqInfo) {
+      console.log(`reqInfo`);
+      console.log(reqInfo);
+    },
+    handleRes2ProxyInfo(resInfo) {
+      console.log(`resInfo`);
+      console.log(resInfo);
     },
   };
   const {origin, server} = await startProxyServer(config);
   console.log(origin);
+  await waitFor(10000);
+  const {data: proxyStatusList} = await requestAndGetResponseInfo({
+    url: origin + PATHNAME_PROXY_STATUS,
+  });
+  console.log(proxyStatusList);
 }
 
 export async function requestTarget() {
