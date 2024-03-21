@@ -8,12 +8,12 @@ import {Socket} from 'net';
 import { getResponseInfo } from './common';
 
 type ToBufferParams = Parameters<typeof toBuffer>[0];
-interface RequestConfig<Payload extends ToBufferParams> extends http.RequestOptions {
+export interface CustomRequestOptions<Payload extends ToBufferParams = any> extends http.RequestOptions {
   url?: string | URL;
   data?: Payload;
 }
 export async function requestAndGetResponse<Payload extends ToBufferParams = any>(
-  config: RequestConfig<Payload>
+  config: CustomRequestOptions<Payload>
 ): Promise<http.IncomingMessage> {
   const {url, data, ...options} = config;
   let clientRequest: http.ClientRequest | null = null;
@@ -41,7 +41,7 @@ export async function requestAndGetResponse<Payload extends ToBufferParams = any
   });
 }
 export async function requestAndGetUpgradeInfo<Payload extends ToBufferParams = any>(
-  config: RequestConfig<Payload>
+  config: CustomRequestOptions<Payload>
 ): Promise<{response: http.IncomingMessage; socket: Socket; head: Buffer}> {
   const {url, data, ...options} = config;
   let clientRequest: http.ClientRequest | null = null;
@@ -70,7 +70,7 @@ export async function requestAndGetUpgradeInfo<Payload extends ToBufferParams = 
 }
 
 export async function requestAndGetResponseInfo<ResData = any, Payload extends ToBufferParams = any>(
-  config: RequestConfig<Payload>,
+  config: CustomRequestOptions<Payload>,
   responseConfig?: Parameters<typeof getResponseInfo>[1]
 ) {
   const response = await requestAndGetResponse<Payload>(config);
