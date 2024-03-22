@@ -1,5 +1,6 @@
 // mime-db
 
+export type {UrlProps} from '../fe/common';
 export {
   concatPath,
   deepClone,
@@ -7,6 +8,10 @@ export {
   formatDate,
   cookieRewrite,
   encodeQueryString,
-  parseUrl,
   isNumber,
+  isString,
+  isPlainObject,
+  DeepEqualConfig,
+  urlPropsToInstance,
+  toUrlInstance,
 } from '../fe/common';

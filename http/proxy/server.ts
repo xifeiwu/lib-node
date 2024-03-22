@@ -1,5 +1,5 @@
 import {HttpServerConfig, startHttpServer} from '../server';
-import {formatDate, parseUrl, isNumber} from '../../external';
+import {formatDate, toUrlInstance, isNumber} from '../../external';
 import {HttpProxyConfig, ProxyStatus} from './types';
 import {getRequestHeaderInfo} from '../common';
 import {toBuffer} from '../../transform';
@@ -52,7 +52,7 @@ export async function startProxyServer(proxyConfig: HttpProxyConfig, httpServerC
     {
       request: (req, res) => {
         const {url} = getRequestHeaderInfo(req);
-        const {pathname, searchParams} = parseUrl(url);
+        const {pathname, searchParams} = toUrlInstance(url);
 
         if (pathname === PATHNAME_PROXY_STATUS) {
           res.statusCode = 200;

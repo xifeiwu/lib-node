@@ -5,11 +5,17 @@ import https from 'https';
 import stream from 'stream';
 import {toBuffer} from '../transform';
 import {Socket} from 'net';
-import { getResponseInfo } from './common';
+import {getResponseInfo} from './common';
+import {UrlProps, toUrlInstance} from '../external';
 
 type ToBufferParams = Parameters<typeof toBuffer>[0];
+
+/**
+ * A custom requestOptions based on http.RequestOptions, and used for requestAndGetResponse function.
+ */
 export interface CustomRequestOptions<Payload extends ToBufferParams = any> extends http.RequestOptions {
-  url?: string | URL;
+  /** pass url is encouraged */
+  url?: string | URL | UrlProps;
   data?: Payload;
 }
 export async function requestAndGetResponse<Payload extends ToBufferParams = any>(
@@ -18,7 +24,7 @@ export async function requestAndGetResponse<Payload extends ToBufferParams = any
   const {url, data, ...options} = config;
   let clientRequest: http.ClientRequest | null = null;
   if (url) {
-    const {protocol, href} = url instanceof URL ? url : new URL(url);
+    const {protocol, href} = toUrlInstance(url);
     clientRequest = (protocol === 'https:' ? https : http).request(href, options);
   } else {
     const {protocol = 'http'} = options;
@@ -46,7 +52,7 @@ export async function requestAndGetUpgradeInfo<Payload extends ToBufferParams = 
   const {url, data, ...options} = config;
   let clientRequest: http.ClientRequest | null = null;
   if (url) {
-    const {protocol, href} = url instanceof URL ? url : new URL(url);
+    const {protocol, href} = toUrlInstance(url);
     clientRequest = (protocol === 'https:' ? https : http).request(href, options);
   } else {
     const {protocol = 'http'} = options;
