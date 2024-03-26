@@ -1,5 +1,5 @@
 import readline from 'readline';
-import {isFunction, isObject, isString} from './fe';
+import {isFunction, isObject, isString} from './external';
 import {inspect} from './log';
 
 /**

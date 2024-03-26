@@ -7,6 +7,5 @@ export * from './http';
 export * from './fs';
 export * from './log';
 export * from './process';
-export * from './fe';
 import {lookup, extension, contentType, charset} from './mime/mime-types';
 export const mime = {lookup, extension, contentType, charset};

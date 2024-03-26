@@ -1,6 +1,6 @@
 import assert from 'assert';
 import {FileInfoTreeItem, flatChildren, getFileInfoTree, getFileList, getLineCountMap} from './fs';
-import {isString} from './fe';
+import {isString} from './external';
 import path from 'path';
 
 export function testGetFileList() {

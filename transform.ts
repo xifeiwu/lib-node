@@ -1,7 +1,7 @@
 import {Readable} from 'stream';
 import {isStream} from './common';
 import {getStreamData} from './stream';
-import {isNumber, isPlainObject, isString} from './fe';
+import {isNumber, isPlainObject, isString} from './external';
 
 type CanConvertToBuffer = string | number | object | Uint8Array;
 export function toBuffer(data: CanConvertToBuffer | Array<CanConvertToBuffer>) {

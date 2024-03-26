@@ -2,7 +2,7 @@ import os from 'os';
 import {Writable} from 'stream';
 import net, {ServerOpts, Socket, TcpNetConnectOpts} from 'net';
 import {logWithColor} from './index';
-import {isString, isNumber} from './fe';
+import {isString, isNumber} from './external';
 
 export function getLocalIP() {
   let localIP = null;

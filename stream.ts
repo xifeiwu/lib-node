@@ -1,5 +1,5 @@
 import stream, {Readable, Transform} from 'stream';
-import {isString, isObject, waitFor, isPlainObject} from './fe';
+import {isString, isObject, waitFor, isPlainObject} from './external';
 import {DataTypeFromBuffer, TargetDataTypeFromBuffer, fromBuffer} from './transform';
 
 export function getStreamData(req: stream.Stream): Promise<Buffer> {

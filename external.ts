@@ -1,7 +1,10 @@
 // mime-db
 
 export type {UrlProps} from '../fe/common';
+export {waitFor, isBoolean} from '../fe/common'
 export {
+  customDeepMerge,
+  isFunction, isObject,
   concatPath,
   deepClone,
   deepMerge,

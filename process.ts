@@ -3,7 +3,7 @@ import path from 'path';
 import {spawn, execSync, SpawnOptionsWithoutStdio} from 'child_process';
 import {findClosestFile} from './fs';
 import {selectOption} from './common';
-import {isBoolean, isString} from './fe';
+import {isBoolean, isString} from './external';
 
 type Prop = 'pid' | 'ppid' | 'pgid' | 'sess' | 'rss' | 'args';
 type ProcessInfo = {
