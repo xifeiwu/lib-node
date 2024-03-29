@@ -1,4 +1,5 @@
-import {MAX_RELATIVE_SECONDS} from './constant';
+import {BufferCRLF, CRLF, MAX_RELATIVE_SECONDS} from './constant';
+import {isString} from './external';
 import {CommandInfo} from './syntax';
 import {Flag, Params4Cas, Params4Store, RecordItem} from './types';
 
@@ -28,4 +29,23 @@ export function commandInfoToRecord(commandInfo: CommandInfo<Params4Store> | Com
     value: value.toString('utf-8'),
   };
   return record;
+}
+
+export function recordToLines(record: RecordItem) {
+  const {} = 
+
+}
+export function appendCRLF(data: string | Buffer) {
+  if (isString(data)) {
+    if ((data as string).endsWith(CRLF)) {
+      data = data + CRLF;
+    }
+  }
+  if (Buffer.isBuffer(data)) {
+    const length = (data as Buffer).byteLength;
+    if ((data as Buffer)[length - 2] !== BufferCRLF[0] || (data as Buffer)[length - 1] !== BufferCRLF[1]) {
+      data = Buffer.concat([data, BufferCRLF]);
+    }
+  }
+  return data;
 }

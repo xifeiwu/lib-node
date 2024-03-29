@@ -2,11 +2,10 @@ import net, {ServerOpts, Socket} from 'net';
 import {getAFreePort} from '../service/external';
 import {Params4Cas, ErrorStatus, Params4Store} from '../service/types';
 import {getError, parseCommandLine} from './service';
-import {CommandInfo, commandInfoToRecord, syntax} from '../service';
+import {CommandInfo, appendCRLF, commandInfoToRecord, syntax} from '../service';
 import {store} from './store';
 import {isNumber} from '../../../external';
 
-async function onData(chunk: Buffer, socket: Socket) {}
 async function handleConnection(socket: Socket) {
   let commandInfo: CommandInfo<Params4Cas> | null = null;
 
@@ -18,6 +17,9 @@ async function handleConnection(socket: Socket) {
     const data = chunk.subarray(index + 2);
     const info = parseCommandLine(firstLine);
     return {info, data};
+  }
+  function socketWrite(data: string | Buffer) {
+    socket.write(appendCRLF(data));
   }
   function onData(chunk: Buffer) {
     try {
@@ -34,26 +36,24 @@ async function handleConnection(socket: Socket) {
         receivedAllData = syntax[commandInfo.command]?.serverOnData(chunk, commandInfo);
       }
       if (receivedAllData) {
-        if (store?.[commandInfo.command] === undefined) {
-          throw new Error(getError(ErrorStatus.SERVER_ERROR, `command ${commandInfo.command} not support`));
-        }
-        let response: string | null = null;
-        const {command, key, bytes} = commandInfo;
-        if (isNumber(bytes) && commandInfo.bytes > 0) {
-          response = store?.[command](key, commandInfoToRecord(commandInfo));
-        }
+        // if (store?.[commandInfo.command] === undefined) {
+        //   throw new Error(getError(ErrorStatus.SERVER_ERROR, `command ${commandInfo.command} not support`));
+        // }
+        // let response: string | null = null;
+        // const {command, key, bytes} = commandInfo;
+        // // if (isNumber(bytes) && commandInfo.bytes > 0) {
+        // response = store?.[command](key, commandInfoToRecord(commandInfo));
+        // }
+        const response = syntax[commandInfo.command].serverResponse(store, commandInfo);
         if (response !== null) {
-          socket.write(response);
+          socketWrite(response);
         }
         commandInfo = null;
       }
     } catch (err) {
-      return chunk.write(err.message);
+      return socketWrite(err.message);
     }
   }
-
-  // let command: Command4Set | null = null;
-
   socket.on('data', onData);
 }
 export async function startServer(config: {port: number; host?: string; options?: ServerOpts}) {

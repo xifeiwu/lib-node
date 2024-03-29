@@ -1,10 +1,9 @@
-import { syntax } from '../service';
+import {syntax} from '../service';
 import {ErrorMessage, ErrorStatus} from '../service/types';
 
 export function getError(errorType: ErrorStatus, message: string = ''): ErrorMessage {
   return `${errorType} ${message}`;
 }
-
 
 const firstLineReg = /^(\w+) (.*?)(?: ?\r\n)?$/;
 export function parseCommandLine(line: string) {

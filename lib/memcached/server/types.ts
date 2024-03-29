@@ -1,9 +1,15 @@
-import {ErrorMessage, Command4Set, Status4Set, RecordItem} from '../service/types';
+// import {ErrorMessage, Command4Store, Status4Store, RecordItem, Command4Get} from '../service/types';
 
-type StorageSetFunc = (key: string, item: RecordItem) => Status4Set | ErrorMessage;
-export type StorageAction = {
-  [key in Command4Set]: StorageSetFunc;
-};
+// type StoreFunc = (key: string, item: RecordItem) => Status4Store | ErrorMessage;
+// type GetFunc = (keys: string[]) => {[key: string]: RecordItem}
+// export type AllStorageFunc = {
+//   [key in Command4Store]: StoreFunc;
+// };
+// export type AllGetFunc = {
+//   [key in Command4Get]: GetFunc;
+// }
+// export interface StoreApi extends AllStorageFunc, AllGetFunc {
+// }
 // interface StorageActionHandler<Item> {
 //   // records: {
 //   //   has: (key: string) => boolean;

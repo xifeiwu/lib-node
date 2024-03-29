@@ -1,5 +1,5 @@
 /** */
-export type Command4Set =
+export type Command4Store =
   /** "set" means "store this data" */
   | 'set'
   /** "add" means "store this data, but only if the server *doesn't* already hold data for this key". */
@@ -21,7 +21,7 @@ export enum ErrorStatus {
   CLIENT_ERROR = 'CLIENT_ERROR',
   SERVER_ERROR = 'SERVER_ERROR',
 }
-export enum Status4Set {
+export enum Status4Store {
   /** "STORED\r\n", to indicate success. */
   STORED = 'STORED',
   /**
@@ -34,6 +34,9 @@ export enum Status4Set {
   /** "NOT_FOUND\r\n" to indicate that the item you are trying to store with a "cas" command did not exist. */
   NOT_FOUND = 'NOT_FOUND',
 }
+
+export type Command4Get = 'get';
+
 export type RetrieveAction = '';
 export enum Flag {
   json = 1 << 1,
@@ -58,4 +61,16 @@ export interface RecordItem {
   casId?: string;
   bytes: number;
   value: string;
+}
+// import {ErrorMessage, Command4Store, Status4Store, RecordItem, Command4Get} from '../service/types';
+
+type StoreFunc = (key: string, item: RecordItem) => Status4Store | ErrorMessage;
+type GetFunc = (keys: string[]) => {[key: string]: RecordItem}
+export type AllStorageFunc = {
+  [key in Command4Store]: StoreFunc;
+};
+export type AllGetFunc = {
+  [key in Command4Get]: GetFunc;
+}
+export interface StoreApi extends AllStorageFunc, AllGetFunc {
 }

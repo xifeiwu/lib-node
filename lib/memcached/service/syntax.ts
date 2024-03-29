@@ -1,19 +1,21 @@
+import {appendCRLF, commandInfoToRecord} from '.';
 import {toInt, toString} from './external';
-import {Command4Set, Params4Cas, Params4Store} from './types';
+import {Command4Get, Command4Store, Params4Cas, Params4Store, StoreApi} from './types';
 
-export type CommandInfo<T> = {
-  command: Command4Set;
+export type CommandInfo<CommandCategory extends Command4Store | Command4Get, T> = {
+  command: CommandCategory;
   /** received data on server side, or... */
   value?: Buffer;
 } & T;
 
-interface Handler<Params = object> {
+interface Handler<CommandCategory extends Command4Store | Command4Get, Params = object> {
   lineToParams: (line: string) => Params;
-  serverOnData: (data: Buffer, options: CommandInfo<Params>) => boolean;
-  paramsToLine: (params: object) => string;
+  serverOnData: (data: Buffer, options: CommandInfo<CommandCategory, Params>) => boolean;
+  serverResponse: (store: StoreApi, commandInfo: CommandInfo<CommandCategory, Params>) => Buffer | string;
+  paramsToLine: (params: Params) => string;
 }
 
-function serverOnData(chunk: Buffer, commandInfo: CommandInfo<Params4Store>) {
+function serverOnData(chunk: Buffer, commandInfo: CommandInfo<Command4Store, Params4Store>) {
   const {value: data = Buffer.alloc(0), bytes} = commandInfo;
   if (chunk[chunk.byteLength - 1] === 0x0a) {
     chunk = chunk.subarray(-1);
@@ -32,10 +34,20 @@ function serverOnData(chunk: Buffer, commandInfo: CommandInfo<Params4Store>) {
   }
   return true;
 }
+const serverResponse: Handler<Command4Store, Params4Store | Params4Cas>['serverResponse'] = (
+  store,
+  commandInfo
+) => {
+  let response: string | null = null;
+  const {command, key, bytes} = commandInfo;
+  // if (isNumber(bytes) && commandInfo.bytes > 0) {
+  response = store[command](key, commandInfoToRecord(commandInfo));
+  return appendCRLF(response);
+};
 
 //<cmd> <key> <flags> <exptime> <bytes>
-const handler4Update: Handler<Params4Store> = {
-  lineToParams(line: string): Params4Store {
+const handler4Update: Handler<Command4Store, Params4Store> = {
+  lineToParams(line: string) {
     const [key, flags, exptime, bytes] = line.split(' ');
     return {
       key,
@@ -45,15 +57,16 @@ const handler4Update: Handler<Params4Store> = {
     };
   },
   serverOnData,
-  paramsToLine(params: Params4Store) {
+  serverResponse,
+  paramsToLine(params) {
     const {key, flags, expireTimeInSeconds: exptime, bytes} = params;
     return [key, flags, toInt(exptime), toInt(bytes)].join(' ');
   },
 };
 
 //<cmd> <key> <flags> <exptime> <bytes> <cas unique>
-const handler4Cas: Handler = {
-  lineToParams(line: string): Params4Cas {
+const handler4Cas: Handler<Command4Store, Params4Cas> = {
+  lineToParams(line: string) {
     const [key, flags, exptime, bytes, casId] = line.split(' ');
     return {
       key,
@@ -64,14 +77,38 @@ const handler4Cas: Handler = {
     };
   },
   serverOnData,
-  paramsToLine(params: Params4Cas) {
+  serverResponse,
+  paramsToLine(params) {
     const {key, flags, expireTimeInSeconds: exptime, bytes, casId} = params;
     return [key, flags, toInt(exptime), toInt(bytes), casId].join(' ');
   },
 };
 
+interface Params4Get {
+  keys: string[];
+}
+const handler4Get: Handler<Command4Get, Params4Get> = {
+  lineToParams(line: string) {
+    const keys = line.split(' ').filter(it => it.length > 0);
+    return {keys};
+  },
+  serverOnData() {
+    return true;
+  },
+  serverResponse(store, commandInfo) {
+    const {command, keys} = commandInfo;
+    const records = store[command](keys);
+    return `commandInfoToRecord(commandInfo)`;
+  },
+
+  paramsToLine(params) {
+    const {keys} = params;
+    return keys.join(' ');
+  },
+};
+
 export const syntax: {
-  [command in Command4Set]: Handler;
+  [command in Command4Store | Command4Get]: Handler<Command4Store | Command4Get>;
 } = {
   set: handler4Update,
   add: handler4Update,
@@ -79,4 +116,5 @@ export const syntax: {
   append: handler4Update,
   prepend: handler4Update,
   cas: handler4Cas,
+  get: handler4Get,
 };

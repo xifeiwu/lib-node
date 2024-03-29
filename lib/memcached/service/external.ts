@@ -1,2 +1,2 @@
-export {toInt, toString} from '../../../external';
+export {toInt, isString, toString} from '../../../external';
 export {getAFreePort} from '../../../net';

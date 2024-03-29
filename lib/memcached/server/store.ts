@@ -1,12 +1,11 @@
 // import { Params } from "./types";
 
 import {isNumber} from '../../../external';
-import {ErrorMessage, ErrorStatus, Command4Set, Status4Set} from '../service/types';
+import {ErrorMessage, ErrorStatus, Command4Store, Status4Store, StoreApi} from '../service/types';
 import {getError} from './service';
 import {RecordItem} from '../service/types';
-import {StorageAction} from './types';
 
-export class Storage implements StorageAction {
+export class Storage implements StoreApi {
   record: Map<string, RecordItem>;
   currentSize: number;
   maxSizeMb: number;
@@ -42,7 +41,7 @@ export class Storage implements StorageAction {
     const {expiration} = this.record.get(key);
     return !this.isOutdate(expiration);
   }
-  update(action: Command4Set, key: string, item: RecordItem): Status4Set | ErrorMessage {
+  store(action: Command4Store, key: string, item: RecordItem): Status4Store | ErrorMessage {
     const exist = this.contains(key);
     const record = exist ? this.record.get(key) : null;
     process.nextTick(() => this.purge());
@@ -55,7 +54,7 @@ export class Storage implements StorageAction {
       case 'add':
         {
           if (exist) {
-            return Status4Set.NOT_STORED;
+            return Status4Store.NOT_STORED;
           }
           this.record.set(key, item);
         }
@@ -63,7 +62,7 @@ export class Storage implements StorageAction {
       case 'replace':
         {
           if (!exist) {
-            return Status4Set.NOT_STORED;
+            return Status4Store.NOT_STORED;
           }
         }
         break;
@@ -71,7 +70,7 @@ export class Storage implements StorageAction {
       case 'prepend':
         {
           if (!record) {
-            return Status4Set.NOT_STORED;
+            return Status4Store.NOT_STORED;
           }
           const {value} = record;
           record.value = action === 'append' ? `${item.value}{value}` : `{value}${item.value}`;
@@ -83,34 +82,34 @@ export class Storage implements StorageAction {
           return getError(ErrorStatus.CLIENT_ERROR, 'cas id is not set');
         }
         if (!record || record.casId === undefined || record.casId !== casId) {
-          return Status4Set.NOT_FOUND;
+          return Status4Store.NOT_FOUND;
         }
         this.record.set(key, item);
-        return Status4Set.EXISTS;
+        return Status4Store.EXISTS;
       }
       default: {
         return getError(ErrorStatus.CLIENT_ERROR, `Command ${action} not support `);
       }
     }
-    return Status4Set.STORED;
+    return Status4Store.STORED;
   }
   set(key: string, item: RecordItem) {
-    return this.update('set', key, item);
+    return this.store('set', key, item);
   }
   add(key: string, item: RecordItem) {
-    return this.update('add', key, item);
+    return this.store('add', key, item);
   }
   replace(key: string, item: RecordItem) {
-    return this.update('replace', key, item);
+    return this.store('replace', key, item);
   }
   append(key: string, item: RecordItem) {
-    return this.update('append', key, item);
+    return this.store('append', key, item);
   }
   prepend(key: string, item: RecordItem) {
-    return this.update('prepend', key, item);
+    return this.store('prepend', key, item);
   }
   cas(key: string, item: RecordItem) {
-    return this.update('cas', key, item);
+    return this.store('cas', key, item);
   }
   purge() {
     if (this.record.size > this.maxCount) {
