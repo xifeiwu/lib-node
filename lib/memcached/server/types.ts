@@ -1,14 +1,9 @@
-import {ErrorMessage, Flag, StorageStatus} from '../types';
+import {ErrorMessage, Command4Set, Status4Set, RecordItem} from '../service/types';
 
-export interface Item {
-  flag: Flag;
-  expiration: number;
-  casId?: string;
-  bytes: number;
-  value: string;
-}
-
-
+type StorageSetFunc = (key: string, item: RecordItem) => Status4Set | ErrorMessage;
+export type StorageAction = {
+  [key in Command4Set]: StorageSetFunc;
+};
 // interface StorageActionHandler<Item> {
 //   // records: {
 //   //   has: (key: string) => boolean;

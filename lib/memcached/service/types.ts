@@ -1,5 +1,5 @@
 /** */
-export type StorageAction =
+export type Command4Set =
   /** "set" means "store this data" */
   | 'set'
   /** "add" means "store this data, but only if the server *doesn't* already hold data for this key". */
@@ -13,15 +13,15 @@ export type StorageAction =
   /** "cas" is a check and set operation which means "store this data but only if no one else has updated since I last fetched it." */
   | 'cas';
 
-  // const error
-  export type ErrorMessage = `${ErrorStatus} ${string}`;
+// const error
+export type ErrorMessage = `${ErrorStatus} ${string}`;
 
-  export enum ErrorStatus {
-    Error = 'Error',
-    CLIENT_ERROR = 'CLIENT_ERROR',
-    SERVER_ERROR = 'SERVER_ERROR',
-  }
-  export enum StorageStatus{
+export enum ErrorStatus {
+  Error = 'Error',
+  CLIENT_ERROR = 'CLIENT_ERROR',
+  SERVER_ERROR = 'SERVER_ERROR',
+}
+export enum Status4Set {
   /** "STORED\r\n", to indicate success. */
   STORED = 'STORED',
   /**
@@ -39,4 +39,23 @@ export enum Flag {
   json = 1 << 1,
   binary = 1 << 2,
   numeric = 1 << 3,
+}
+
+export interface Params4Store {
+  key: string;
+  flags: string;
+  expireTimeInSeconds: number;
+  bytes: number;
+}
+export interface Params4Cas extends Params4Store {
+  casId: string;
+}
+
+/** Record stored on Server Side */
+export interface RecordItem {
+  flags: Flag;
+  expiration: number;
+  casId?: string;
+  bytes: number;
+  value: string;
 }

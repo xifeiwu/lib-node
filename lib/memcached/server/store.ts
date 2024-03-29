@@ -1,12 +1,13 @@
 // import { Params } from "./types";
 
 import {isNumber} from '../../../external';
-import {ErrorMessage, ErrorStatus, StorageAction, StorageStatus} from '../types';
+import {ErrorMessage, ErrorStatus, Command4Set, Status4Set} from '../service/types';
 import {getError} from './service';
-import {Item} from './types';
+import {RecordItem} from '../service/types';
+import {StorageAction} from './types';
 
-export class Storage {
-  record: Map<string, Item>;
+export class Storage implements StorageAction {
+  record: Map<string, RecordItem>;
   currentSize: number;
   maxSizeMb: number;
   maxCount: number;
@@ -41,7 +42,7 @@ export class Storage {
     const {expiration} = this.record.get(key);
     return !this.isOutdate(expiration);
   }
-  set(action: StorageAction, key: string, item: Item): StorageStatus | ErrorMessage {
+  update(action: Command4Set, key: string, item: RecordItem): Status4Set | ErrorMessage {
     const exist = this.contains(key);
     const record = exist ? this.record.get(key) : null;
     process.nextTick(() => this.purge());
@@ -54,7 +55,7 @@ export class Storage {
       case 'add':
         {
           if (exist) {
-            return StorageStatus.NOT_STORED;
+            return Status4Set.NOT_STORED;
           }
           this.record.set(key, item);
         }
@@ -62,7 +63,7 @@ export class Storage {
       case 'replace':
         {
           if (!exist) {
-            return StorageStatus.NOT_STORED;
+            return Status4Set.NOT_STORED;
           }
         }
         break;
@@ -70,7 +71,7 @@ export class Storage {
       case 'prepend':
         {
           if (!record) {
-            return StorageStatus.NOT_STORED;
+            return Status4Set.NOT_STORED;
           }
           const {value} = record;
           record.value = action === 'append' ? `${item.value}{value}` : `{value}${item.value}`;
@@ -82,16 +83,34 @@ export class Storage {
           return getError(ErrorStatus.CLIENT_ERROR, 'cas id is not set');
         }
         if (!record || record.casId === undefined || record.casId !== casId) {
-          return StorageStatus.NOT_FOUND;
+          return Status4Set.NOT_FOUND;
         }
         this.record.set(key, item);
-        return StorageStatus.EXISTS;
+        return Status4Set.EXISTS;
       }
       default: {
         return getError(ErrorStatus.CLIENT_ERROR, `Command ${action} not support `);
       }
     }
-    return StorageStatus.STORED;
+    return Status4Set.STORED;
+  }
+  set(key: string, item: RecordItem) {
+    return this.update('set', key, item);
+  }
+  add(key: string, item: RecordItem) {
+    return this.update('add', key, item);
+  }
+  replace(key: string, item: RecordItem) {
+    return this.update('replace', key, item);
+  }
+  append(key: string, item: RecordItem) {
+    return this.update('append', key, item);
+  }
+  prepend(key: string, item: RecordItem) {
+    return this.update('prepend', key, item);
+  }
+  cas(key: string, item: RecordItem) {
+    return this.update('cas', key, item);
   }
   purge() {
     if (this.record.size > this.maxCount) {
@@ -109,8 +128,8 @@ export class Storage {
       }
     }
   }
-  get(keys: string[]): {[key: string]: Item} {
-    return keys.reduce<{[key: string]: Item}>((sum, key) => {
+  get(keys: string[]): {[key: string]: RecordItem} {
+    return keys.reduce<{[key: string]: RecordItem}>((sum, key) => {
       if (!this.contains(key)) {
         return sum;
       }
@@ -121,3 +140,5 @@ export class Storage {
     }, {});
   }
 }
+
+export const store = new Storage();
