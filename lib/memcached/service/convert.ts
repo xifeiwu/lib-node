@@ -1,6 +1,6 @@
 import {BufferCRLF, CRLF, MAX_RELATIVE_SECONDS} from './constant';
 import {isString} from './external';
-import {CommandInfo, SaveParams, CasParams, RecordItem, SaveCommandName, Flag} from './types';
+import {RecordItem, Flag, SaveCommandInfo} from './types';
 
 /**
  * Convert timeInSeconds to Expiration(timestamp)
@@ -18,11 +18,8 @@ export function toExpiration(timeInSeconds: number) {
   return milliSeconds;
 }
 
-export function saveCommandInfoToRecord(commandInfo: CommandInfo<SaveCommandName, SaveParams | CasParams>) {
-  const {flags, expireTimeInSeconds, bytes, casId, value} = commandInfo as CommandInfo<
-    SaveCommandName,
-    CasParams
-  >;
+export function saveCommandInfoToRecord(commandInfo: SaveCommandInfo) {
+  const {flags, expireTimeInSeconds, bytes, casId, value} = commandInfo;
   const record: RecordItem = {
     flags: flags as unknown as Flag,
     expiration: toExpiration(expireTimeInSeconds),
@@ -48,6 +45,9 @@ export function appendCRLF(data: string | Buffer) {
   }
   return data;
 }
+
+export function removeCRLF(data: string): string;
+export function removeCRLF(data: Buffer): Buffer;
 export function removeCRLF(data: string | Buffer) {
   if (isString(data)) {
     if ((data as string).endsWith(CRLF)) {
@@ -67,41 +67,77 @@ interface BytesAndValue {
   bytes: number;
   value?: Buffer;
 }
+export const firstLineReg = /^(\w+) (.*?)(?: ?\r\n)?$/;
 export function tryParseCommandLine<T extends BytesAndValue>(
   chunk: Buffer,
   parserFunc: (line: string) => T
 ): {
   item: T;
-  remaining: Buffer;
+  remaining?: Buffer;
+  /** onReceiveData is not undefined means item still need to consume some data */
   onReceiveData?: (chunk: Buffer) => false | Buffer;
 } {
   const index = chunk.findIndex((it, index) => {
     return it === 0x0d && chunk[index + 1] === 0x0a;
   });
   if (index === -1) {
-    throw new Error('Error tryParseCommandLine: \r\n not found on command line');
+    throw new Error('Error tryParseCommandLine: \r\n not found when parsing command line');
   }
   const firstLine = chunk.subarray(0, index).toString('utf-8');
-  const remaining = chunk.subarray(index + 2);
+  if (!firstLineReg.test(firstLine)) {
+    throw new Error(`Error format of command not correct: ${firstLine}`);
+  }
+  let remaining = chunk.subarray(index + 2);
   const item = parserFunc(firstLine);
   const {bytes = 0} = item;
-  return {item, remaining, onReceiveData: bytes === 0 ? undefined : onReceiveData.bind(item)};
+  let notNeedConsumeData = bytes === 0;
+  if (bytes > 0 && remaining.byteLength > 0) {
+    remaining = tryConsumeAllBuffer(item, remaining);
+    notNeedConsumeData = item.bytes === item.value.byteLength;
+  }
+  return {item, remaining, onReceiveData: notNeedConsumeData ? undefined : onReceiveData.bind(item)};
+}
+
+function tryConsumeAllBuffer(item: BytesAndValue, chunk: Buffer): Buffer | undefined {
+  const {bytes = 0} = item;
+  if (bytes === 0) {
+    return chunk;
+  }
+  if (!Buffer.isBuffer(chunk) || chunk.byteLength === 0) {
+    return undefined;
+  }
+  item.value = Buffer.alloc(0);
+  while (item.value.length < bytes && Buffer.isBuffer(chunk) && chunk.byteLength > 0) {
+    const {remainingBuffer} = onReceiveData(item, chunk);
+    chunk = remainingBuffer;
+  }
+  return chunk;
 }
 /**
  * @param item
  * @param chunk
- * @returns false means after append chunk to value, value length still less than bytes
+ * @returns
+ * consumeLength: how many bytes consumed on this time
+ * remainingBuffer: remaining buffer
  */
-function onReceiveData(item: BytesAndValue, chunk: Buffer) {
+function onReceiveData(
+  item: BytesAndValue,
+  chunk: Buffer
+): {
+  consumeLength: number;
+  needConsume: boolean;
+  remainingBuffer?: Buffer;
+} {
+  const needConsume = () => (item.value ? item.value.byteLength : 0) <= item.bytes;
   if (!Buffer.isBuffer(chunk) || chunk.byteLength === 0) {
-    return false;
+    return {consumeLength: 0, needConsume: needConsume()};
   }
   const {bytes, value = Buffer.alloc(0)} = item;
-  if (chunk.byteLength < bytes) {
-    item.value = Buffer.concat([value, chunk]);
-    return false;
-  }
   const remainingLength = bytes - value.byteLength;
+  if (chunk.byteLength < remainingLength) {
+    item.value = Buffer.concat([value, chunk]);
+    return {consumeLength: chunk.byteLength, needConsume: needConsume()};
+  }
   item.value = Buffer.concat([value, chunk.subarray(0, remainingLength)]);
   chunk = chunk.subarray(remainingLength);
   if (chunk[0] === 0x0d) {
@@ -110,5 +146,10 @@ function onReceiveData(item: BytesAndValue, chunk: Buffer) {
   if (chunk[1] === 0x0a) {
     chunk = chunk.subarray(1);
   }
-  return chunk;
+
+  return {
+    consumeLength: remainingLength,
+    needConsume: needConsume(),
+    remainingBuffer: chunk.byteLength > 0 ? chunk : undefined,
+  };
 }

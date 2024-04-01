@@ -51,6 +51,8 @@ export interface GetCommandInfo {
   keys: string[];
 }
 
+export type CommandName = SaveCommandName | GetCommandName;
+
 export type RetrieveAction = '';
 export enum Flag {
   json = 1 << 1,

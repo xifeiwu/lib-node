@@ -14,8 +14,8 @@ import {GetResponseInfo} from './types/client';
 
 interface Handler<CommandInfo, ResponseInfo> {
   server: {
-    parseFirstLine: (line: string) => CommandInfo;
-    handleCommand: (commandInfo: CommandInfo, store: StoreApi, data?: Buffer) => false | string | Buffer;
+    parseCommand: (line: string) => CommandInfo;
+    handleCommand: (commandInfo: CommandInfo, store: StoreApi) => false | string | Buffer;
   };
   client: {
     toCommandLine: (commandInfo: CommandInfo) => string;
@@ -26,24 +26,23 @@ interface Handler<CommandInfo, ResponseInfo> {
 const handlSaveCommand: Handler<SaveCommandInfo, ReturnType<SaveFunc>>['server']['handleCommand'] = (
   commandInfo,
   store,
-  chunk
 ) => {
   const {command, key, value: data = Buffer.alloc(0), bytes} = commandInfo;
-  if (chunk[chunk.byteLength - 1] === 0x0a) {
-    chunk = chunk.subarray(-1);
-  }
-  if (chunk[chunk.byteLength - 1] === 0x0d) {
-    chunk = chunk.subarray(-1);
-  }
-  if (commandInfo.value.byteLength < bytes) {
-    commandInfo.value = Buffer.concat([data, chunk]);
-    return false;
-  }
-  if (commandInfo.value.byteLength > bytes) {
-    throw new Error(
-      `Error, ByteLength, byte is ${bytes}, but actual received ${commandInfo.value.byteLength}`
-    );
-  }
+  // if (chunk[chunk.byteLength - 1] === 0x0a) {
+  //   chunk = chunk.subarray(-1);
+  // }
+  // if (chunk[chunk.byteLength - 1] === 0x0d) {
+  //   chunk = chunk.subarray(-1);
+  // }
+  // if (commandInfo.value.byteLength < bytes) {
+  //   commandInfo.value = Buffer.concat([data, chunk]);
+  //   return false;
+  // }
+  // if (commandInfo.value.byteLength > bytes) {
+  //   throw new Error(
+  //     `Error, ByteLength, byte is ${bytes}, but actual received ${commandInfo.value.byteLength}`
+  //   );
+  // }
   const saveRes = store[command](key, saveCommandInfoToRecord(commandInfo));
   return appendCRLF(saveRes);
 };
@@ -52,7 +51,7 @@ const handlSaveCommand: Handler<SaveCommandInfo, ReturnType<SaveFunc>>['server']
 //<cmd> <key> <flags> <exptime> <bytes> <cas unique>
 const saveHandler: Handler<SaveCommandInfo, ReturnType<SaveFunc>> = {
   server: {
-    parseFirstLine(line: string) {
+    parseCommand(line: string) {
       const [command, key, flags, exptime, bytes, casId] = line.split(' ');
       return {
         command: command as SaveCommandName,
@@ -83,7 +82,7 @@ const saveHandler: Handler<SaveCommandInfo, ReturnType<SaveFunc>> = {
 
 const getHandler: Handler<GetCommandInfo, Record<string, GetResponseInfo>> = {
   server: {
-    parseFirstLine(line: string) {
+    parseCommand(line: string) {
       const [command, ...keys] = line.split(' ').filter(it => it.length > 0);
       return {command: command as GetCommandName, keys};
     },
