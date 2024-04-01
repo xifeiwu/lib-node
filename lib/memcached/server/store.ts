@@ -1,7 +1,7 @@
 // import { Params } from "./types";
 
 import {isNumber} from '../../../external';
-import {ErrorMessage, ErrorStatus, Command4Store, Status4Store, StoreApi} from '../service/types';
+import {ErrorMessage, ErrorStatus, SaveCommandName, SaveStatus, StoreApi} from '../service/types';
 import {getError} from './service';
 import {RecordItem} from '../service/types';
 
@@ -41,7 +41,7 @@ export class Storage implements StoreApi {
     const {expiration} = this.record.get(key);
     return !this.isOutdate(expiration);
   }
-  store(action: Command4Store, key: string, item: RecordItem): Status4Store | ErrorMessage {
+  store(action: SaveCommandName, key: string, item: RecordItem): SaveStatus | ErrorMessage {
     const exist = this.contains(key);
     const record = exist ? this.record.get(key) : null;
     process.nextTick(() => this.purge());
@@ -54,7 +54,7 @@ export class Storage implements StoreApi {
       case 'add':
         {
           if (exist) {
-            return Status4Store.NOT_STORED;
+            return SaveStatus.NOT_STORED;
           }
           this.record.set(key, item);
         }
@@ -62,7 +62,7 @@ export class Storage implements StoreApi {
       case 'replace':
         {
           if (!exist) {
-            return Status4Store.NOT_STORED;
+            return SaveStatus.NOT_STORED;
           }
         }
         break;
@@ -70,7 +70,7 @@ export class Storage implements StoreApi {
       case 'prepend':
         {
           if (!record) {
-            return Status4Store.NOT_STORED;
+            return SaveStatus.NOT_STORED;
           }
           const {value} = record;
           record.value = action === 'append' ? `${item.value}{value}` : `{value}${item.value}`;
@@ -82,16 +82,16 @@ export class Storage implements StoreApi {
           return getError(ErrorStatus.CLIENT_ERROR, 'cas id is not set');
         }
         if (!record || record.casId === undefined || record.casId !== casId) {
-          return Status4Store.NOT_FOUND;
+          return SaveStatus.NOT_FOUND;
         }
         this.record.set(key, item);
-        return Status4Store.EXISTS;
+        return SaveStatus.EXISTS;
       }
       default: {
         return getError(ErrorStatus.CLIENT_ERROR, `Command ${action} not support `);
       }
     }
-    return Status4Store.STORED;
+    return SaveStatus.STORED;
   }
   set(key: string, item: RecordItem) {
     return this.store('set', key, item);
@@ -127,6 +127,10 @@ export class Storage implements StoreApi {
       }
     }
   }
+  /**
+   * VALUE <key> <flags> <bytes> [<cas unique>]\r\n
+   * <data block>\r\n
+   */
   get(keys: string[]): {[key: string]: RecordItem} {
     return keys.reduce<{[key: string]: RecordItem}>((sum, key) => {
       if (!this.contains(key)) {

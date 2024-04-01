@@ -1,22 +1,34 @@
-import {appendCRLF, commandInfoToRecord} from '.';
-import {toInt, toString} from './external';
-import {Command4Get, Command4Store, Params4Cas, Params4Store, StoreApi} from './types';
+import {appendCRLF, saveCommandInfoToRecord, tryParseCommandLine} from './convert';
+import {toInt} from './external';
+import {
+  SaveCommandName,
+  SaveStatus,
+  StoreApi,
+  SaveCommandInfo,
+  SaveFunc,
+  GetCommandInfo,
+  GetCommandName,
+  RecordItem,
+} from './types';
+import {GetResponseInfo} from './types/client';
 
-export type CommandInfo<CommandCategory extends Command4Store | Command4Get, T> = {
-  command: CommandCategory;
-  /** received data on server side, or... */
-  value?: Buffer;
-} & T;
-
-interface Handler<CommandCategory extends Command4Store | Command4Get, Params = object> {
-  lineToParams: (line: string) => Params;
-  serverOnData: (data: Buffer, options: CommandInfo<CommandCategory, Params>) => boolean;
-  serverResponse: (store: StoreApi, commandInfo: CommandInfo<CommandCategory, Params>) => Buffer | string;
-  paramsToLine: (params: Params) => string;
+interface Handler<CommandInfo, ResponseInfo> {
+  server: {
+    parseFirstLine: (line: string) => CommandInfo;
+    handleCommand: (commandInfo: CommandInfo, store: StoreApi, data?: Buffer) => false | string | Buffer;
+  };
+  client: {
+    toCommandLine: (commandInfo: CommandInfo) => string;
+    handleResponse: (chunk: Buffer) => (buf: Buffer) => false | ResponseInfo;
+  };
 }
 
-function serverOnData(chunk: Buffer, commandInfo: CommandInfo<Command4Store, Params4Store>) {
-  const {value: data = Buffer.alloc(0), bytes} = commandInfo;
+const handlSaveCommand: Handler<SaveCommandInfo, ReturnType<SaveFunc>>['server']['handleCommand'] = (
+  commandInfo,
+  store,
+  chunk
+) => {
+  const {command, key, value: data = Buffer.alloc(0), bytes} = commandInfo;
   if (chunk[chunk.byteLength - 1] === 0x0a) {
     chunk = chunk.subarray(-1);
   }
@@ -32,89 +44,138 @@ function serverOnData(chunk: Buffer, commandInfo: CommandInfo<Command4Store, Par
       `Error, ByteLength, byte is ${bytes}, but actual received ${commandInfo.value.byteLength}`
     );
   }
-  return true;
-}
-const serverResponse: Handler<Command4Store, Params4Store | Params4Cas>['serverResponse'] = (
-  store,
-  commandInfo
-) => {
-  let response: string | null = null;
-  const {command, key, bytes} = commandInfo;
-  // if (isNumber(bytes) && commandInfo.bytes > 0) {
-  response = store[command](key, commandInfoToRecord(commandInfo));
-  return appendCRLF(response);
+  const saveRes = store[command](key, saveCommandInfoToRecord(commandInfo));
+  return appendCRLF(saveRes);
 };
 
 //<cmd> <key> <flags> <exptime> <bytes>
-const handler4Update: Handler<Command4Store, Params4Store> = {
-  lineToParams(line: string) {
-    const [key, flags, exptime, bytes] = line.split(' ');
-    return {
-      key,
-      flags,
-      expireTimeInSeconds: toString(exptime),
-      bytes: toString(bytes),
-    };
-  },
-  serverOnData,
-  serverResponse,
-  paramsToLine(params) {
-    const {key, flags, expireTimeInSeconds: exptime, bytes} = params;
-    return [key, flags, toInt(exptime), toInt(bytes)].join(' ');
-  },
-};
-
 //<cmd> <key> <flags> <exptime> <bytes> <cas unique>
-const handler4Cas: Handler<Command4Store, Params4Cas> = {
-  lineToParams(line: string) {
-    const [key, flags, exptime, bytes, casId] = line.split(' ');
-    return {
-      key,
-      flags,
-      expireTimeInSeconds: toString(exptime),
-      bytes: toString(bytes),
-      casId,
-    };
+const saveHandler: Handler<SaveCommandInfo, ReturnType<SaveFunc>> = {
+  server: {
+    parseFirstLine(line: string) {
+      const [command, key, flags, exptime, bytes, casId] = line.split(' ');
+      return {
+        command: command as SaveCommandName,
+        key,
+        flags,
+        expireTimeInSeconds: toInt(exptime),
+        bytes: toInt(bytes),
+        casId,
+      };
+    },
+    handleCommand: handlSaveCommand,
   },
-  serverOnData,
-  serverResponse,
-  paramsToLine(params) {
-    const {key, flags, expireTimeInSeconds: exptime, bytes, casId} = params;
-    return [key, flags, toInt(exptime), toInt(bytes), casId].join(' ');
+  client: {
+    toCommandLine(params) {
+      const {key, flags, expireTimeInSeconds: exptime, bytes, casId} = params;
+      return [key, flags, toInt(exptime), toInt(bytes)].join(' ');
+    },
+    handleResponse(chunk: Buffer) {
+      const resStr = chunk.toString() as ReturnType<SaveFunc>;
+      return () => resStr;
+      // if (resStr !== SaveStatus.STORED) {
+      //   throw new Error(resStr);
+      // }
+      // return resStr;
+    },
   },
 };
 
-interface Params4Get {
-  keys: string[];
-}
-const handler4Get: Handler<Command4Get, Params4Get> = {
-  lineToParams(line: string) {
-    const keys = line.split(' ').filter(it => it.length > 0);
-    return {keys};
+const getHandler: Handler<GetCommandInfo, Record<string, GetResponseInfo>> = {
+  server: {
+    parseFirstLine(line: string) {
+      const [command, ...keys] = line.split(' ').filter(it => it.length > 0);
+      return {command: command as GetCommandName, keys};
+    },
+    // VALUE <key> <flags> <bytes> [<cas unique>]\r\n
+    // <data block>\r\n
+    // "END\r\n"
+    handleCommand(commandInfo, store) {
+      const {command, keys} = commandInfo;
+      const records = store[command](keys);
+      const valueList = Object.entries(records).map(([key, record]) => {
+        const {flags, bytes, casId, value} = record;
+        const firstLine = ['VALUE', key, flags, bytes, casId].filter(it => it !== undefined).join(' ');
+        return [firstLine, value];
+      });
+      return [...valueList, 'END'].join('\r\n') + '\r\n';
+    },
   },
-  serverOnData() {
-    return true;
-  },
-  serverResponse(store, commandInfo) {
-    const {command, keys} = commandInfo;
-    const records = store[command](keys);
-    return `commandInfoToRecord(commandInfo)`;
-  },
-
-  paramsToLine(params) {
-    const {keys} = params;
-    return keys.join(' ');
+  client: {
+    toCommandLine(params) {
+      const {command, keys} = params;
+      const line = [command, ...keys].join(' ');
+      return appendCRLF(line);
+    },
+    handleResponse(chunk) {
+      const results: Record<string, GetResponseInfo> = {};
+      function parseFirstLine(line: string) {
+        const [command, key, flags, bytes, casId] = line.split(' ');
+        return {command: command as GetResponseInfo['command'], key, flags, bytes: toInt(bytes), casId};
+      }
+      let tmpItem: {item: GetResponseInfo; onReceiveData?: (chunk: Buffer) => false | Buffer} | null = null;
+      let cachedBuf: Buffer = Buffer.alloc(0);
+      return (chunk: Buffer) => {
+        cachedBuf = Buffer.concat([cachedBuf, chunk]);
+        function getItem(data: Buffer): {
+          item: GetResponseInfo;
+          remain?: Buffer;
+          onReceiveData?: (chunk: Buffer) => false | Buffer;
+        } {
+          const {item, remaining, onReceiveData} = tryParseCommandLine(data, parseFirstLine);
+          if (item.command === 'VALUE' && onReceiveData) {
+            const remain = onReceiveData(remaining);
+            if (remain) {
+              return {item, remain};
+            } else {
+              return {item, onReceiveData};
+            }
+          } else {
+            return {item, onReceiveData};
+          }
+        }
+        function consume() {
+          if (cachedBuf.byteLength === 0) {
+            return false;
+          }
+          while (!tmpItem) {
+            const {item, remain, onReceiveData} = getItem(cachedBuf);
+            if (item.command === 'END') {
+              return results;
+            } else {
+              if (remain) {
+                results[item.key] = item;
+                cachedBuf = remain;
+              } else {
+                tmpItem = {item, onReceiveData};
+              }
+            }
+          }
+          if (tmpItem && cachedBuf.byteLength > 0) {
+            const {item, onReceiveData} = tmpItem;
+            while (cachedBuf.byteLength > 0) {
+              const remain = onReceiveData(cachedBuf);
+              if (remain) {
+                cachedBuf = remain;
+              }
+            }
+          }
+          return false;
+        }
+        return consume();
+      };
+    },
   },
 };
 
 export const syntax: {
-  [command in Command4Store | Command4Get]: Handler<Command4Store | Command4Get>;
+  [command in SaveCommandName | GetCommandName]: Handler<any, any>;
 } = {
-  set: handler4Update,
-  add: handler4Update,
-  replace: handler4Update,
-  append: handler4Update,
-  prepend: handler4Update,
-  cas: handler4Cas,
-  get: handler4Get,
+  set: saveHandler,
+  add: saveHandler,
+  replace: saveHandler,
+  append: saveHandler,
+  prepend: saveHandler,
+  cas: saveHandler,
+  get: getHandler,
 };

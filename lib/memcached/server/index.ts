@@ -1,13 +1,13 @@
 import net, {ServerOpts, Socket} from 'net';
 import {getAFreePort} from '../service/external';
-import {Params4Cas, ErrorStatus, Params4Store} from '../service/types';
+import {CasParams, ErrorStatus, SaveParams} from '../service/types';
 import {getError, parseCommandLine} from './service';
 import {CommandInfo, appendCRLF, commandInfoToRecord, syntax} from '../service';
 import {store} from './store';
 import {isNumber} from '../../../external';
 
 async function handleConnection(socket: Socket) {
-  let commandInfo: CommandInfo<Params4Cas> | null = null;
+  let commandInfo: CommandInfo<CasParams> | null = null;
 
   function parseFirstChunkOfCommand(chunk: Buffer) {
     const index = chunk.findIndex((it, index) => {
@@ -28,6 +28,9 @@ async function handleConnection(socket: Socket) {
         const {info, data} = parseFirstChunkOfCommand(chunk);
         commandInfo = info;
         const {command} = info;
+        if (store?.[commandInfo.command] === undefined) {
+          throw new Error(getError(ErrorStatus.SERVER_ERROR, `command ${commandInfo.command} not support`));
+        }
         if (!Object.prototype.hasOwnProperty.call(syntax, command)) {
           throw new Error(getError(ErrorStatus.CLIENT_ERROR, `command ${command} not support`));
         }
@@ -36,9 +39,6 @@ async function handleConnection(socket: Socket) {
         receivedAllData = syntax[commandInfo.command]?.serverOnData(chunk, commandInfo);
       }
       if (receivedAllData) {
-        // if (store?.[commandInfo.command] === undefined) {
-        //   throw new Error(getError(ErrorStatus.SERVER_ERROR, `command ${commandInfo.command} not support`));
-        // }
         // let response: string | null = null;
         // const {command, key, bytes} = commandInfo;
         // // if (isNumber(bytes) && commandInfo.bytes > 0) {

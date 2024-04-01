@@ -1,5 +1,5 @@
 /** */
-export type Command4Store =
+export type SaveCommandName =
   /** "set" means "store this data" */
   | 'set'
   /** "add" means "store this data, but only if the server *doesn't* already hold data for this key". */
@@ -13,15 +13,17 @@ export type Command4Store =
   /** "cas" is a check and set operation which means "store this data but only if no one else has updated since I last fetched it." */
   | 'cas';
 
-// const error
-export type ErrorMessage = `${ErrorStatus} ${string}`;
-
-export enum ErrorStatus {
-  Error = 'Error',
-  CLIENT_ERROR = 'CLIENT_ERROR',
-  SERVER_ERROR = 'SERVER_ERROR',
+export interface SaveCommandInfo {
+  command: SaveCommandName;
+  key: string;
+  flags: string;
+  expireTimeInSeconds: number;
+  bytes: number;
+  casId?: string;
+  value?: Buffer;
 }
-export enum Status4Store {
+
+export enum SaveStatus {
   /** "STORED\r\n", to indicate success. */
   STORED = 'STORED',
   /**
@@ -34,8 +36,20 @@ export enum Status4Store {
   /** "NOT_FOUND\r\n" to indicate that the item you are trying to store with a "cas" command did not exist. */
   NOT_FOUND = 'NOT_FOUND',
 }
+// const error
+export type ErrorMessage = `${ErrorStatus} ${string}`;
 
-export type Command4Get = 'get';
+export enum ErrorStatus {
+  Error = 'Error',
+  CLIENT_ERROR = 'CLIENT_ERROR',
+  SERVER_ERROR = 'SERVER_ERROR',
+}
+
+export type GetCommandName = 'get';
+export interface GetCommandInfo {
+  command: GetCommandName;
+  keys: string[];
+}
 
 export type RetrieveAction = '';
 export enum Flag {
@@ -44,33 +58,8 @@ export enum Flag {
   numeric = 1 << 3,
 }
 
-export interface Params4Store {
-  key: string;
-  flags: string;
-  expireTimeInSeconds: number;
-  bytes: number;
-}
-export interface Params4Cas extends Params4Store {
-  casId: string;
-}
-
-/** Record stored on Server Side */
-export interface RecordItem {
-  flags: Flag;
-  expiration: number;
-  casId?: string;
-  bytes: number;
-  value: string;
-}
-// import {ErrorMessage, Command4Store, Status4Store, RecordItem, Command4Get} from '../service/types';
-
-type StoreFunc = (key: string, item: RecordItem) => Status4Store | ErrorMessage;
-type GetFunc = (keys: string[]) => {[key: string]: RecordItem}
-export type AllStorageFunc = {
-  [key in Command4Store]: StoreFunc;
-};
-export type AllGetFunc = {
-  [key in Command4Get]: GetFunc;
-}
-export interface StoreApi extends AllStorageFunc, AllGetFunc {
-}
+// export type CommandInfo<CommandName extends SaveCommandName | GetCommand, T> = {
+//   command: CommandName;
+//   /** Only Command4Store have value after command line */
+//   value?: Buffer;
+// } & T;
