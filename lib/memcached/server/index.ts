@@ -1,14 +1,22 @@
 import net, {ServerOpts, Socket} from 'net';
 import {getAFreePort} from '../service/external';
-import {CommandName, ErrorStatus, GetCommandInfo, GetCommandName, SaveCommandInfo, SaveCommandName} from '../service/types';
+import {
+  CommandName,
+  ErrorStatus,
+  GetCommandInfo,
+  GetCommandName,
+  SaveCommandInfo,
+  SaveCommandName,
+} from '../service/types';
 import {getError, parseCommandLine} from './service';
 import {syntax} from '../service';
 import {store} from './store';
 import {isNumber} from '../../../external';
-import {firstLineReg, tryParseCommandLine} from '../service/convert';
+import {AfterReceiveStatus, firstLineReg, tryParseCommand} from '../service/convert';
 
 async function handleConnection(socket: Socket) {
-  let command: CommandName | null = null;
+  let commandInfo: SaveCommandInfo | GetCommandInfo | null = null;
+  let onReceiveDataToCommand: null | ((chunk: Buffer) => AfterReceiveStatus) = null;
 
   function getCommand(chunk: Buffer): CommandName {
     const index = chunk.findIndex((it, index) => {
@@ -27,48 +35,73 @@ async function handleConnection(socket: Socket) {
   // function socketWrite(data: string | Buffer) {
   //   socket.write(appendCRLF(data));
   // }
+  let cachedBuffer = Buffer.alloc(0);
   function onData(chunk: Buffer) {
     socket.pause();
-    if (command === null) {
-      command = getCommand(chunk);
+    if (cachedBuffer.byteLength > 0) {
+      cachedBuffer = Buffer.concat([cachedBuffer, chunk]);
     }
-    const {item, remaining, onReceiveData} = tryParseCommandLine(chunk, syntax[command].server.parseCommand);
-    if (onReceiveData === undefined) {
-      syntax[command].server.handleCommand(item.key, store)
-    }
-
-
-    try {
-      let receivedAllData = false;
-      if (!commandInfo) {
-        const {info, data} = parseFirstChunkOfCommand(chunk);
-        commandInfo = info;
-        const {command} = info;
-        if (store?.[commandInfo.command] === undefined) {
-          throw new Error(getError(ErrorStatus.SERVER_ERROR, `command ${commandInfo.command} not support`));
+    if (onReceiveDataToCommand === null) {
+      const command = getCommand(cachedBuffer);
+      const {
+        item,
+        remainingBuffer: remaining,
+        onReceiveData,
+      } = tryParseCommand(cachedBuffer, syntax[command].server.parseCommand);
+      if (onReceiveData === undefined) {
+        const res = syntax[command].server.handleCommand(item.key, store);
+        socket.write(res);
+        if (Buffer.isBuffer(remaining) && remaining.byteLength > 0) {
+          cachedBuffer = remaining;
         }
-        if (!Object.prototype.hasOwnProperty.call(syntax, command)) {
-          throw new Error(getError(ErrorStatus.CLIENT_ERROR, `command ${command} not support`));
-        }
-        receivedAllData = syntax[commandInfo.command]?.serverOnData(data, commandInfo);
+        onReceiveDataToCommand = null;
       } else {
-        receivedAllData = syntax[commandInfo.command]?.serverOnData(chunk, commandInfo);
+        onReceiveDataToCommand = onReceiveData;
+        commandInfo = item;
       }
-      if (receivedAllData) {
-        // let response: string | null = null;
-        // const {command, key, bytes} = commandInfo;
-        // // if (isNumber(bytes) && commandInfo.bytes > 0) {
-        // response = store?.[command](key, commandInfoToRecord(commandInfo));
-        // }
-        const response = syntax[commandInfo.command].serverResponse(store, commandInfo);
-        if (response !== null) {
-          socketWrite(response);
+    } else {
+      const {command} = commandInfo;
+      const {remainingBuffer, needConsume} = onReceiveDataToCommand(cachedBuffer);
+      if (!needConsume) {
+        const res = syntax[command].server.handleCommand(commandInfo, store);
+        socket.write(res);
+        if (Buffer.isBuffer(remainingBuffer) && remainingBuffer.byteLength > 0) {
+          cachedBuffer = remainingBuffer;
         }
-        commandInfo = null;
+        onReceiveDataToCommand = null;
       }
-    } catch (err) {
-      return socketWrite(err.message);
     }
+    // try {
+    //   let receivedAllData = false;
+    //   if (!commandInfo) {
+    //     const {info, data} = parseFirstChunkOfCommand(chunk);
+    //     commandInfo = info;
+    //     const {command} = info;
+    //     if (store?.[commandInfo.command] === undefined) {
+    //       throw new Error(getError(ErrorStatus.SERVER_ERROR, `command ${commandInfo.command} not support`));
+    //     }
+    //     if (!Object.prototype.hasOwnProperty.call(syntax, command)) {
+    //       throw new Error(getError(ErrorStatus.CLIENT_ERROR, `command ${command} not support`));
+    //     }
+    //     receivedAllData = syntax[commandInfo.command]?.serverOnData(data, commandInfo);
+    //   } else {
+    //     receivedAllData = syntax[commandInfo.command]?.serverOnData(chunk, commandInfo);
+    //   }
+    //   if (receivedAllData) {
+    //     // let response: string | null = null;
+    //     // const {command, key, bytes} = commandInfo;
+    //     // // if (isNumber(bytes) && commandInfo.bytes > 0) {
+    //     // response = store?.[command](key, commandInfoToRecord(commandInfo));
+    //     // }
+    //     const response = syntax[commandInfo.command].serverResponse(store, commandInfo);
+    //     if (response !== null) {
+    //       socketWrite(response);
+    //     }
+    //     commandInfo = null;
+    //   }
+    // } catch (err) {
+    //   return socketWrite(err.message);
+    // }
     socket.resume();
   }
   socket.on('data', onData);

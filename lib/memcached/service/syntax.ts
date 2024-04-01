@@ -1,4 +1,4 @@
-import {appendCRLF, saveCommandInfoToRecord, tryParseCommandLine} from './convert';
+import {appendCRLF, saveCommandInfoToRecord, tryParseCommand} from './convert';
 import {toInt} from './external';
 import {
   SaveCommandName,
@@ -15,7 +15,7 @@ import {GetResponseInfo} from './types/client';
 interface Handler<CommandInfo, ResponseInfo> {
   server: {
     parseCommand: (line: string) => CommandInfo;
-    handleCommand: (commandInfo: CommandInfo, store: StoreApi) => false | string | Buffer;
+    handleCommand: (commandInfo: CommandInfo, store: StoreApi) => string | Buffer;
   };
   client: {
     toCommandLine: (commandInfo: CommandInfo) => string;
@@ -121,7 +121,7 @@ const getHandler: Handler<GetCommandInfo, Record<string, GetResponseInfo>> = {
           remain?: Buffer;
           onReceiveData?: (chunk: Buffer) => false | Buffer;
         } {
-          const {item, remaining, onReceiveData} = tryParseCommandLine(data, parseFirstLine);
+          const {item, remainingBuffer: remaining, onReceiveData} = tryParseCommand(data, parseFirstLine);
           if (item.command === 'VALUE' && onReceiveData) {
             const remain = onReceiveData(remaining);
             if (remain) {

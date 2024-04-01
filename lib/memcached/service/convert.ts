@@ -68,14 +68,14 @@ interface BytesAndValue {
   value?: Buffer;
 }
 export const firstLineReg = /^(\w+) (.*?)(?: ?\r\n)?$/;
-export function tryParseCommandLine<T extends BytesAndValue>(
+export function tryParseCommand<T extends BytesAndValue>(
   chunk: Buffer,
   parserFunc: (line: string) => T
 ): {
   item: T;
-  remaining?: Buffer;
+  remainingBuffer?: Buffer;
   /** onReceiveData is not undefined means item still need to consume some data */
-  onReceiveData?: (chunk: Buffer) => false | Buffer;
+  onReceiveData?: (chunk: Buffer) => AfterReceiveStatus;
 } {
   const index = chunk.findIndex((it, index) => {
     return it === 0x0d && chunk[index + 1] === 0x0a;
@@ -87,15 +87,15 @@ export function tryParseCommandLine<T extends BytesAndValue>(
   if (!firstLineReg.test(firstLine)) {
     throw new Error(`Error format of command not correct: ${firstLine}`);
   }
-  let remaining = chunk.subarray(index + 2);
+  let remainingBuffer = chunk.subarray(index + 2);
   const item = parserFunc(firstLine);
   const {bytes = 0} = item;
   let notNeedConsumeData = bytes === 0;
-  if (bytes > 0 && remaining.byteLength > 0) {
-    remaining = tryConsumeAllBuffer(item, remaining);
+  if (bytes > 0 && remainingBuffer.byteLength > 0) {
+    remainingBuffer = tryConsumeAllBuffer(item, remainingBuffer);
     notNeedConsumeData = item.bytes === item.value.byteLength;
   }
-  return {item, remaining, onReceiveData: notNeedConsumeData ? undefined : onReceiveData.bind(item)};
+  return {item, remainingBuffer, onReceiveData: notNeedConsumeData ? undefined : onReceiveData.bind(item)};
 }
 
 function tryConsumeAllBuffer(item: BytesAndValue, chunk: Buffer): Buffer | undefined {
@@ -113,6 +113,12 @@ function tryConsumeAllBuffer(item: BytesAndValue, chunk: Buffer): Buffer | undef
   }
   return chunk;
 }
+
+export interface AfterReceiveStatus {
+  consumeLength: number;
+  needConsume: boolean;
+  remainingBuffer?: Buffer;
+}
 /**
  * @param item
  * @param chunk
@@ -120,14 +126,7 @@ function tryConsumeAllBuffer(item: BytesAndValue, chunk: Buffer): Buffer | undef
  * consumeLength: how many bytes consumed on this time
  * remainingBuffer: remaining buffer
  */
-function onReceiveData(
-  item: BytesAndValue,
-  chunk: Buffer
-): {
-  consumeLength: number;
-  needConsume: boolean;
-  remainingBuffer?: Buffer;
-} {
+function onReceiveData(item: BytesAndValue, chunk: Buffer): AfterReceiveStatus {
   const needConsume = () => (item.value ? item.value.byteLength : 0) <= item.bytes;
   if (!Buffer.isBuffer(chunk) || chunk.byteLength === 0) {
     return {consumeLength: 0, needConsume: needConsume()};
