@@ -3,7 +3,7 @@ import http, {IncomingMessage, ServerResponse} from 'http';
 import {getRequestHeaderInfo, getResponseHeaderInfo} from '../common';
 import {concatPath, deepClone, deepMerge} from '../../external';
 import {AllRequestInfo, HttpProxyConfig, ProxyStatus} from './types';
-import {getDataByTransform} from '../../stream';
+import {toStream, getDataByTransform} from '../../stream';
 import {toBuffer} from '../../transform';
 
 /**
@@ -53,7 +53,7 @@ function getRequestInfo(req: IncomingMessage, config: HttpProxyConfig): AllReque
  */
 export async function proxyRequest(req: IncomingMessage, res: ServerResponse, config: HttpProxyConfig) {
   const proxyStatus: ProxyStatus = {ts: Date.now()};
-  const {handleInfoOfProxyReq, handleInfoOfRes2Origin, preRequestCb} = config;
+  const {originData, handleInfoOfProxyReq, handleInfoOfRes2Origin, preRequestCb} = config;
   let reqInfo = getRequestInfo(req, config);
   proxyStatus.requestInfo = reqInfo;
   if (handleInfoOfProxyReq) {
@@ -65,7 +65,7 @@ export async function proxyRequest(req: IncomingMessage, res: ServerResponse, co
   const {href, protocol, requestOptions: proxyRequestOptions} = reqInfo.proxy;
   preRequestCb && preRequestCb(proxyStatus);
   const proxyReq = (protocol === 'https:' ? https : http).request(href, proxyRequestOptions);
-  req
+  (originData ? toStream(originData) : req)
     .pipe(
       getDataByTransform(
         data => {
