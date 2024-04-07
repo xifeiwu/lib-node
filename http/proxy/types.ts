@@ -14,25 +14,24 @@ export interface AllRequestInfo {
 
 export interface HttpProxyConfig {
   targetHref: string;
-  /** Change headers.origin to origin of targetHref */
+  /** Change headers.origin to origin value of targetHref */
   changeOrigin?: boolean;
-  /** Options for proxy request */
+  /** Options for http.request of proxy */
   proxyRequestOptions?: Pick<RequestOptions, 'auth'>;
   /** Handle info of proxy request before request in sent */
-  handleProxyReqInfo?: (info: ProxyRequestInfo) => Promise<ProxyRequestInfo | void> | ProxyRequestInfo | void;
-  // handleProxyReqError?: (err: Error) => void;
-  /** callback before proxy request start */
+  handleInfoOfProxyReq?: (info: ProxyRequestInfo) => Promise<ProxyRequestInfo | void> | ProxyRequestInfo | void;
+  /** callback just before proxy request start(can be used to print proxy info) */
   preRequestCb?: (reqInfo: ProxyStatus) => void;
 
   /** Handle info of response to proxy */
-  handleRes2ProxyInfo?: (info: ResponseInfo) => ResponseInfo | void;
+  handleInfoOfRes2Origin?: (info: ResponseInfo) => ResponseInfo | void;
 }
 
 export interface ProxyStatus {
   id?: string;
   ts: number;
-  request?: {origin: RequestInfo; proxy: ProxyRequestInfo};
-  response?: {
+  requestInfo?: {origin: RequestInfo; proxy: ProxyRequestInfo};
+  responseInfo?: {
     toProxy: ResponseInfo;
     toOrigin: ResponseInfo;
   };

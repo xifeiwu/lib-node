@@ -40,7 +40,7 @@ export function toStream(data: Buffer | string | object) {
   });
 }
 
-const MAX_SIZE = 32 * 1024 * 1024;
+const MAX_SIZE = 16 * 1024 * 1024;
 export function getDataByTransform(
   cb2Data: (data: DataTypeFromBuffer) => void,
   config?: {

@@ -14,7 +14,7 @@ export function getPreRequestCb(config: {
 }) {
   const {statusList, maxSize, maxAge, color} = config;
   return (proxyStatus: ProxyStatus) => {
-    const {ts, request: reqInfo} = proxyStatus;
+    const {ts, requestInfo: reqInfo} = proxyStatus;
     const dt = formatDate(ts, 'MM-ddThh:mm:ss.SSS');
     let id = dt;
     let cnt = 0;

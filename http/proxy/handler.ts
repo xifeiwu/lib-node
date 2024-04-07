@@ -1,17 +1,13 @@
 import https from 'https';
 import http, {IncomingMessage, ServerResponse} from 'http';
 import {getRequestHeaderInfo, getResponseHeaderInfo} from '../common';
-import {
-  concatPath,
-  deepClone,
-  deepMerge,
-} from '../../external';
+import {concatPath, deepClone, deepMerge} from '../../external';
 import {AllRequestInfo, HttpProxyConfig, ProxyStatus} from './types';
 import {getDataByTransform} from '../../stream';
 import {toBuffer} from '../../transform';
 
 /**
- * Get Request Info from origin request, and the Request Info used for proxy.
+ * Get Request Info of both original request and that used for proxy request.
  * @param req
  * @param config
  * @returns
@@ -46,15 +42,22 @@ function getRequestInfo(req: IncomingMessage, config: HttpProxyConfig): AllReque
   };
 }
 /**
- * Proxy thre request.
+ * Custmoiziable Request Proxy.
+ * +--------+                                     +-------+                                     +--------+
+ * |        |                                     |       |   handleProxyReqInfo,               |        |
+ * |        | -----------originRequest----------> |       | -----------proxyRequest-----------> |        |
+ * | Origin |                                     | Proxy |                                     | Target |
+ * |        |   handleRes2OriginInfo,             |       |                                     |        |
+ * |        | <--------response2Origin----------- |       | <---------response2Proxy----------- |        |
+ * +--------+                                     +-------+                                     +--------+
  */
 export async function proxyRequest(req: IncomingMessage, res: ServerResponse, config: HttpProxyConfig) {
   const proxyStatus: ProxyStatus = {ts: Date.now()};
-  const {handleProxyReqInfo, handleRes2ProxyInfo, preRequestCb} = config;
+  const {handleInfoOfProxyReq, handleInfoOfRes2Origin, preRequestCb} = config;
   let reqInfo = getRequestInfo(req, config);
-  proxyStatus.request = reqInfo;
-  if (handleProxyReqInfo) {
-    const tmp = await handleProxyReqInfo(reqInfo.proxy);
+  proxyStatus.requestInfo = reqInfo;
+  if (handleInfoOfProxyReq) {
+    const tmp = await handleInfoOfProxyReq(reqInfo.proxy);
     if (tmp) {
       reqInfo.proxy = tmp;
     }
@@ -66,7 +69,7 @@ export async function proxyRequest(req: IncomingMessage, res: ServerResponse, co
     .pipe(
       getDataByTransform(
         data => {
-          proxyStatus.request.origin.data = data;
+          proxyStatus.requestInfo.origin.data = data;
         },
         {
           targetType: 'json',
@@ -82,37 +85,37 @@ export async function proxyRequest(req: IncomingMessage, res: ServerResponse, co
       });
       proxyReq.on('response', res2Proxy => res(res2Proxy));
     });
-    const res2ProxyInfo = getResponseHeaderInfo(res2Proxy);
-    let res2OriginInfo = deepClone(res2ProxyInfo);
+    const infoOfRes2Proxy = getResponseHeaderInfo(res2Proxy);
+    let infoOfRes2Origin = deepClone(infoOfRes2Proxy);
     /** Rewrite cookie info */
-    for (let [key, value] of Object.entries(res2OriginInfo.headers)) {
+    for (let [key, value] of Object.entries(infoOfRes2Origin.headers)) {
       let newValue = value;
       // if (key.toLowerCase() === 'set-cookie') {
       //   newValue = cookieRewrite(value, 'domain', '0.0.0.0');
       // }
-      res2OriginInfo.headers[key] = newValue;
+      infoOfRes2Origin.headers[key] = newValue;
     }
-    if (handleRes2ProxyInfo) {
-      const tmp = handleRes2ProxyInfo(res2OriginInfo);
+    if (handleInfoOfRes2Origin) {
+      const tmp = handleInfoOfRes2Origin(infoOfRes2Origin);
       if (tmp) {
-        res2OriginInfo = tmp;
+        infoOfRes2Origin = tmp;
       }
     }
-    proxyStatus.response = {
-      toProxy: res2ProxyInfo,
-      toOrigin: res2OriginInfo,
+    proxyStatus.responseInfo = {
+      toProxy: infoOfRes2Proxy,
+      toOrigin: infoOfRes2Origin,
     };
-    const {httpVersion, statusCode, statusMessage, headers} = res2OriginInfo;
+    const {httpVersion, statusCode, statusMessage, headers} = infoOfRes2Origin;
     res.statusCode = statusCode;
     res.statusMessage = statusMessage ?? '';
-    for (const [key, value] of Object.entries(res2OriginInfo.headers)) {
+    for (const [key, value] of Object.entries(infoOfRes2Origin.headers)) {
       res.setHeader(key, value);
     }
     res2Proxy
       .pipe(
         getDataByTransform(
           data => {
-            proxyStatus.response.toProxy.data = data;
+            proxyStatus.responseInfo.toProxy.data = data;
           },
           {
             targetType: 'json',

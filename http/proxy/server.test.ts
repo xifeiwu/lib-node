@@ -9,11 +9,11 @@ import {waitFor} from '../../external';
 export async function proxyToBaidu() {
   const config: HttpProxyConfig = {
     targetHref: 'https://www.baidu.com',
-    handleProxyReqInfo(reqInfo) {
+    handleInfoOfProxyReq(reqInfo) {
       console.log(`reqInfo`);
       console.log(reqInfo);
     },
-    handleRes2ProxyInfo(resInfo) {
+    handleInfoOfRes2Origin(resInfo) {
       console.log(`resInfo`);
       console.log(resInfo);
     },
