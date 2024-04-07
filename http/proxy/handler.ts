@@ -12,8 +12,8 @@ import {toBuffer} from '../../transform';
  * @param config
  * @returns
  */
-function getRequestInfo(req: IncomingMessage, config: HttpProxyConfig): AllRequestInfo {
-  const {targetHref, changeOrigin = true, proxyRequestOptions: defaultRequestOptions = {}} = config;
+function handleRequestInfo(req: IncomingMessage, config: HttpProxyConfig): AllRequestInfo {
+  const {targetHref, changeOrigin, proxyRequestOptions: defaultRequestOptions = {}} = config;
   const {protocol, origin, host, pathname} = new URL(targetHref);
   const {method, url, httpVersion, headers: originHeaders} = getRequestHeaderInfo(req);
   const proxyHeaders = deepClone(originHeaders);
@@ -54,7 +54,7 @@ function getRequestInfo(req: IncomingMessage, config: HttpProxyConfig): AllReque
 export async function proxyRequest(req: IncomingMessage, res: ServerResponse, config: HttpProxyConfig) {
   const proxyStatus: ProxyStatus = {ts: Date.now()};
   const {originData, handleInfoOfProxyReq, handleInfoOfRes2Origin, preRequestCb} = config;
-  let reqInfo = getRequestInfo(req, config);
+  let reqInfo = handleRequestInfo(req, config);
   proxyStatus.requestInfo = reqInfo;
   if (handleInfoOfProxyReq) {
     const tmp = await handleInfoOfProxyReq(reqInfo.proxy);
