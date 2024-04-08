@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import {deepEqual} from '../../external';
 import {getFileList} from '../../fs';
-import {ParamsForFindMockInfoInDir, MockFileContent, RequestConfig} from './types';
+import {ParamsForFindMockInfoInDir, MockFileContent, RequestConfig, MockFileFinder} from './types';
 
 export function findMockFile(
   targetRequestConfig: RequestConfig,
@@ -42,7 +42,6 @@ export function findMockFile(
   return target;
 }
 
-export type MockFileFinder = (targetRequestConfig: RequestConfig) => MockFileContent & {relativePath?: string;};
 
 export function getMockFileFinderByDir(config: ParamsForFindMockInfoInDir): {
   mockFileList: MockFileContent[];

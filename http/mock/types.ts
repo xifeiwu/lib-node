@@ -27,3 +27,7 @@ export interface ParamsForFindMockInfoInDir {
     debugCompare?: boolean;
   };
 }
+
+export type MockFileFinder = (
+  targetRequestConfig: RequestConfig
+) => MockFileContent & {relativePath?: string};
