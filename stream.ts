@@ -1,5 +1,5 @@
-import stream, {Readable, Transform} from 'stream';
-import {isString, isObject, waitFor, isPlainObject} from './external';
+import stream, {Transform} from 'stream';
+import {isString, isObject, waitFor} from './external';
 import {DataTypeFromBuffer, TargetDataTypeFromBuffer, fromBuffer} from './transform';
 
 export function getStreamData(req: stream.Stream): Promise<Buffer> {
@@ -20,9 +20,10 @@ export function getStreamData(req: stream.Stream): Promise<Buffer> {
 }
 
 /**
- * @param {data}, String or Object
+ * @param {data}, null stands for end the reader immediately
+ * TODO: use toBuffer
  */
-export function toStream(data: Buffer | string | object) {
+export function toStream(data: Buffer | string | object | null) {
   if (Buffer.isBuffer(data)) {
     data = data.toString();
   }
@@ -34,7 +35,9 @@ export function toStream(data: Buffer | string | object) {
   }
   return new stream.Readable({
     read() {
-      this.push(data);
+      if (data !== null) {
+        this.push(data);
+      }
       this.push(null);
     },
   });
