@@ -41,7 +41,7 @@ export async function getResponseInfo<T>(
     dataType?: 'buffer' | 'string' | 'json';
   } = {}
 ): Promise<ResponseInfo<T>> {
-  const {maxLength = 32 * 1024, dataType = 'json'} = options;
+  const {maxLength = 32 * 1024 * 1024, dataType = 'json'} = options;
   const data = await getStreamData(response);
   const slicedData = data.subarray(0, maxLength);
   const finalData = fromBuffer(slicedData, dataType);

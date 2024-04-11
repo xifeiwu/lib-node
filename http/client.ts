@@ -6,34 +6,29 @@ import stream from 'stream';
 import {toBuffer} from '../transform';
 import {Socket} from 'net';
 import {getResponseInfo} from './common';
-import {UrlProps, toUrlInstance} from '../external';
+import {UrlProps, toUrlInstance, getUrlPropsFromConfig} from '../external';
 
 type ToBufferParams = Parameters<typeof toBuffer>[0];
 
 /**
  * A custom requestOptions based on http.RequestOptions, and used for requestAndGetResponse function.
  */
-export interface CustomRequestOptions<Payload extends ToBufferParams = any> extends http.RequestOptions {
-  /** pass url is encouraged */
-  url?: string | URL | UrlProps;
+export interface CustomRequestOptions<Payload extends ToBufferParams = any>
+  extends http.RequestOptions,
+    UrlProps {
   data?: Payload;
 }
 export async function requestAndGetResponse<Payload extends ToBufferParams = any>(
   config: CustomRequestOptions<Payload>
 ): Promise<http.IncomingMessage> {
-  const {url, data, ...options} = config;
+  const {urlProps, restProps} = getUrlPropsFromConfig(config);
+  const {data, ...requestOptions} = restProps;
   let clientRequest: http.ClientRequest | null = null;
-  if (url) {
-    const {protocol, href} = toUrlInstance(url);
-    clientRequest = (protocol === 'https:' ? https : http).request(href, options);
-  } else {
-    const {protocol = 'http'} = options;
-    clientRequest = (protocol === 'https:' ? https : http).request(options);
-  }
-  if (data) {
-    clientRequest.write(await toBuffer(data));
-  }
-  clientRequest.end();
+  const {protocol, href} = toUrlInstance(urlProps);
+  console.log(`href`);
+  console.log(href);
+  clientRequest = (protocol === 'https:' ? https : http).request(href, requestOptions);
+  clientRequest.end(data ? await toBuffer(data) : undefined);
   return new Promise((res, rej) => {
     clientRequest.on('response', async response => {
       res(response);
