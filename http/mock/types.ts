@@ -5,7 +5,7 @@ import {DeepEqualConfig, UrlProps} from '../../external';
  * RequestConfig for Mock compare
  */
 export interface RequestConfig<T = any> extends UrlProps {
-  method: string;
+  method?: string;
   data?: T;
 }
 export interface MockFileContent<ResData = any> {

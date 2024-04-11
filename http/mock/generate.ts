@@ -1,9 +1,15 @@
 import fs from 'fs';
 import path from 'path';
-import {isPlainObject, toUrlInstance} from '../../external';
-import {requestAndGetResponseInfo} from '../client';
+import {getUrlPropsFromConfig, isPlainObject, toUrlInstance} from '../../external';
+import {
+  GeneralRequestOptions,
+  HttpRequestOptions,
+  mergeHttpRequestOptions,
+  requestAndGetResponseInfo,
+} from '../client';
 import {MockFileContent, RequestConfig} from './types';
 import {getFileList} from '../../fs';
+import {urlPropsToHref} from '../../../fe/url';
 
 export function convertObjectToCjsContent<T extends MockFileContent>(info: T) {
   const lines = Object.entries(info).map(([key, value]) => {
@@ -16,36 +22,34 @@ export function convertObjectToCjsContent<T extends MockFileContent>(info: T) {
   return lines.join('\n');
 }
 
-interface GenerateOneFileOptions extends GenerateOptions {
-  fileName?: string;
+interface GenerateOneFileOptions extends GenerateByDirOptions {
+  fullPath: string;
 }
 export async function requestAndSaveMockInfo(requestConfig: RequestConfig, options: GenerateOneFileOptions) {
-  const {basrUrl, mockFileDir} = options;
-  if (!fs.existsSync(mockFileDir)) {
-    console.log(`Error, dir not exist: ${mockFileDir}`);
-    console.log(`You can try to create the dir by command:`);
-    console.log(`mkdir -p ${mockFileDir}`);
-    throw new Error();
-  }
-  const {method, data, origin, pathname, pathnameParams, query} = requestConfig;
-  const urlProps = {origin, pathname, pathnameParams, query};
-  if (basrUrl) {
-    urlProps.origin = basrUrl;
-  }
-  const {href} = toUrlInstance(urlProps);
-  const {headers, data: resData} = await requestAndGetResponseInfo({
-    url: href,
-    method,
-    data,
-  });
-  let {fileName} = options;
-  fileName = fileName ?? encodeURIComponent(href);
-  if (!fileName.endsWith('.js')) {
-    fileName = fileName + '.js';
-  }
+  const {generalRequestConfig} = options;
+  const mergedOptions = mergeHttpRequestOptions(requestConfig, generalRequestConfig);
 
-  const fullPath = path.resolve(mockFileDir, fileName);
-  console.log(`writing file ${fullPath}`);
+  let fullPath =
+    options.fullPath ??
+    path.resolve(
+      process.cwd(),
+      encodeURIComponent(urlPropsToHref(getUrlPropsFromConfig(mergedOptions).urlProps))
+    );
+  const dir = path.dirname(fullPath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, {recursive: false});
+  }
+  // if (!fs.existsSync(mockFileDir)) {
+  //   console.log(`Error, dir not exist: ${mockFileDir}`);
+  //   console.log(`You can try to create the dir by command:`);
+  //   console.log(`mkdir -p ${mockFileDir}`);
+  //   throw new Error();
+  // }
+  const {headers, data: resData} = await requestAndGetResponseInfo(mergedOptions);
+  if (!fullPath.endsWith('.js')) {
+    fullPath = fullPath + '.js';
+  }
+  console.log(`writing mock file ${fullPath}`);
   fs.writeFileSync(
     fullPath,
     convertObjectToCjsContent({
@@ -60,19 +64,30 @@ export async function requestAndSaveMockInfo(requestConfig: RequestConfig, optio
   );
 }
 
-interface GenerateOptions {
-  basrUrl?: string;
-  mockFileDir: string;
+interface GenerateByDirOptions {
+  generalRequestConfig?: HttpRequestOptions;
+  outputDir: string;
 }
-export async function generateMockInfoByDir(requestConfigDir: string, options: GenerateOptions) {
+export async function generateMockInfoByDir(requestConfigDir: string, options: GenerateByDirOptions) {
+  const {outputDir} = options;
   if (!fs.existsSync(requestConfigDir)) {
-    throw new Error(`Error, dir not exist: ${requestConfigDir}`);
+    throw new Error(`Error, config dir not exist: ${requestConfigDir}`);
   }
-  const relativeFileList = getFileList(requestConfigDir);
+  if (!fs.existsSync(outputDir)) {
+    throw new Error(`Error, output dir not exist: ${requestConfigDir}`);
+  }
+  const relativeFileList = getFileList(requestConfigDir, {
+    fileFilter({relativePath}) {
+      return relativePath.endsWith('.ts');
+    },
+  });
   for (const relativeFile of relativeFileList) {
-    console.log(`requesting config: ${relativeFile}`);
+    console.log(`reqesting using config from file ${relativeFile}`);
     const fullPath = path.resolve(requestConfigDir, relativeFile);
-    const requestConfig = require(fullPath) as RequestConfig;
-    await requestAndSaveMockInfo(requestConfig, {...options, fileName: relativeFile});
+    const {requestConfig} = require(fullPath) as {requestConfig: GeneralRequestOptions};
+    await requestAndSaveMockInfo(requestConfig, {
+      ...options,
+      fullPath: path.resolve(outputDir, relativeFile),
+    });
   }
 }
