@@ -6,20 +6,42 @@ import stream from 'stream';
 import {toBuffer} from '../transform';
 import {Socket} from 'net';
 import {getResponseInfo} from './common';
-import {UrlProps, toUrlInstance, getUrlPropsFromConfig} from '../external';
+import {UrlProps, toUrlInstance, getUrlPropsFromConfig, deepMerge} from '../external';
 
 type ToBufferParams = Parameters<typeof toBuffer>[0];
 
 /**
- * A custom requestOptions based on http.RequestOptions, and used for requestAndGetResponse function.
+ * A very simple request options can be used for both HttpRequest and AxiosRequest
  */
-export interface CustomRequestOptions<Payload extends ToBufferParams = any>
-  extends http.RequestOptions,
-    UrlProps {
+export interface GeneralRequestOptions<Payload extends ToBufferParams = any> extends UrlProps {
+  method?: string | undefined;
   data?: Payload;
 }
+/**
+ * A custom requestOptions based on http.RequestOptions, and used for requestAndGetResponse function.
+ */
+export interface HttpRequestOptions<Payload extends ToBufferParams = any>
+  extends http.RequestOptions,
+    GeneralRequestOptions<Payload> {}
+
+export function mergeHttpRequestOptions(
+  options1: HttpRequestOptions,
+  options2?: HttpRequestOptions
+): HttpRequestOptions {
+  if (options2 === undefined) {
+    return options1;
+  }
+  const {headers: headers1 = {}, ...restOptions1} = options1;
+  const {headers: headers2, ...restOptions2} = options2;
+  const mergedHeaders = deepMerge(headers1, headers2);
+  return {
+    ...restOptions1,
+    ...restOptions2,
+    headers: mergedHeaders,
+  };
+}
 export async function requestAndGetResponse<Payload extends ToBufferParams = any>(
-  config: CustomRequestOptions<Payload>
+  config: HttpRequestOptions<Payload>
 ): Promise<http.IncomingMessage> {
   const {urlProps, restProps} = getUrlPropsFromConfig(config);
   const {data, ...requestOptions} = restProps;
@@ -42,7 +64,7 @@ export async function requestAndGetResponse<Payload extends ToBufferParams = any
   });
 }
 export async function requestAndGetUpgradeInfo<Payload extends ToBufferParams = any>(
-  config: CustomRequestOptions<Payload>
+  config: HttpRequestOptions<Payload>
 ): Promise<{response: http.IncomingMessage; socket: Socket; head: Buffer}> {
   const {url, data, ...options} = config;
   let clientRequest: http.ClientRequest | null = null;
@@ -71,7 +93,7 @@ export async function requestAndGetUpgradeInfo<Payload extends ToBufferParams = 
 }
 
 export async function requestAndGetResponseInfo<ResData = any, Payload extends ToBufferParams = any>(
-  config: CustomRequestOptions<Payload>,
+  config: HttpRequestOptions<Payload>,
   responseConfig?: Parameters<typeof getResponseInfo>[1]
 ) {
   const response = await requestAndGetResponse<Payload>(config);
