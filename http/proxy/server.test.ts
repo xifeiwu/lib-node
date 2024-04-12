@@ -57,3 +57,13 @@ export async function requestTarget() {
     console.log(err);
   });
 }
+
+/** Web browser can not connect to this server by https protocol, and will show error message: ERR_SSL_PROTOCOL_ERROR */
+export async function test443Port() {
+  await startProxyServer(
+    {
+      targetHref: 'http://elif.site',
+    },
+    {port: 443}
+  );
+}

@@ -1,5 +1,80 @@
+import http from 'http';
 import https from 'https';
 import {getStreamData} from '../../stream';
+import {getAFreePort} from '../../net';
+import {proxyRequest} from './handler';
+import {getRequestHeaderInfo} from '../common';
+import {requestAndGetResponseInfo} from '../client';
+
+/**
+ * For handler2, req.readable is false
+ */
+export async function twoWayOfProxyPayload() {
+  const handler1: http.RequestListener = (req, res) => {
+    console.log(`req.readable`);
+    console.log(req.readable);
+    proxyRequest(req, res, {
+      targetHref: 'http://elif.site',
+      handleInfoOfRes2Origin(info) {
+        const {headers} = info;
+        headers['handler'] = 'handler1';
+        return info;
+      },
+    });
+  };
+  const handler2: http.RequestListener = async (req, res) => {
+    const data = await getStreamData(req);
+    console.log(`req.readable`);
+    console.log(req.readable);
+    proxyRequest(req, res, {
+      originData: data,
+      targetHref: 'http://elif.site',
+      handleInfoOfRes2Origin(info) {
+        const {headers} = info;
+        headers['handler'] = 'handler2';
+        return info;
+      },
+    });
+  };
+  const {origin} = await new Promise<{origin: string}>(async (res, rej) => {
+    const host = '0.0.0.0';
+    const port = await getAFreePort();
+    const origin = `http://${host}:${port}`;
+    const server = http.createServer();
+    server.listen(port, host);
+    server.on('listening', () => {
+      res({origin});
+    });
+    server.on('request', (req, res) => {
+      const {headers} = getRequestHeaderInfo(req);
+      const {handler = '2'} = headers;
+      if (handler === '2') {
+        return handler2(req, res);
+      }
+      handler1(req, res);
+    });
+    server.on('error', err => {
+      rej(err);
+    });
+  });
+  console.log(`listening on ${origin}`);
+
+  const resInfo1 = await requestAndGetResponseInfo({
+    url: `${origin}/api/debug/echo`,
+    headers: {
+      handler: '1',
+    },
+  });
+  console.log(resInfo1);
+  const resInfo2 = await requestAndGetResponseInfo({
+    url: `${origin}/api/debug/echo`,
+    headers: {
+      handler: '2',
+    },
+  });
+  console.log(resInfo2);
+}
+
 export async function tryRequest() {
   const request = https.request(
     'https://pulse-penguin.qe2.conviva.com/ifserver/v1.0/customerCheck?mode=app',
