@@ -96,7 +96,7 @@ export async function proxyRequest(req: IncomingMessage, res: ServerResponse, co
       infoOfRes2Origin.headers[key] = newValue;
     }
     if (handleInfoOfRes2Origin) {
-      const tmp = handleInfoOfRes2Origin(infoOfRes2Origin);
+      const tmp = await handleInfoOfRes2Origin(infoOfRes2Origin);
       if (tmp) {
         infoOfRes2Origin = tmp;
       }

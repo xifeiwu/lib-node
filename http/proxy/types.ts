@@ -36,7 +36,7 @@ export interface HttpProxyConfig {
   preRequestCb?: (proxyStatus: ProxyStatus) => void;
 
   /** Handle info of response to proxy */
-  handleInfoOfRes2Origin?: (info: ResponseInfo) => ResponseInfo | void;
+  handleInfoOfRes2Origin?: (info: ResponseInfo) => Promise<ResponseInfo | void> | ResponseInfo | void;
 }
 
 export interface ProxyStatus {
