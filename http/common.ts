@@ -45,8 +45,9 @@ export async function getResponseInfo<T>(
   const data = await getStreamData(response);
   const slicedData = data.subarray(0, maxLength);
   const finalData = fromBuffer(slicedData, dataType);
-  return {
+  const responseInfo = {
     ...getResponseHeaderInfo(response),
     data: finalData as T,
   };
+  return responseInfo;
 }

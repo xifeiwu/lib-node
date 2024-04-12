@@ -13,6 +13,20 @@ export function testGetFileList() {
   assert.equal(fileList.length, 2);
   assert.ok(isString(fileList[0]));
 }
+
+/**
+ * Just used to check data, can modify anytime.
+ */
+export function testGetFileListByDir() {
+  const targetDir = '/Users/wuxifei/code/conviva/instant-filter/node-based-assist/mock_files/gcp/nlz';
+  const relativeFileList = getFileList(targetDir, {
+    fileFilter({relativePath}) {
+      return relativePath.endsWith('.js');
+    },
+  });
+  console.log(relativeFileList);
+}
+
 export function filePathForGetLineCountMap() {
   const lineCountMap = getLineCountMap(path.join(__dirname, 'fs.ts'));
   console.log(lineCountMap);

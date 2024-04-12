@@ -5,7 +5,7 @@ import https from 'https';
 import stream from 'stream';
 import {toBuffer} from '../transform';
 import {Socket} from 'net';
-import {getResponseInfo} from './common';
+import {ResponseInfo, getResponseInfo} from './common';
 import {UrlProps, toUrlInstance, getUrlPropsFromConfig, deepMerge} from '../external';
 
 type ToBufferParams = Parameters<typeof toBuffer>[0];
@@ -92,12 +92,43 @@ export async function requestAndGetUpgradeInfo<Payload extends ToBufferParams = 
   });
 }
 
+export type ValidateStatus = (responseInfo: ResponseInfo) => boolean;
+export const defaultValidateStatus: ValidateStatus = info => {
+  const {statusCode} = info;
+  return statusCode >= 200 && statusCode < 300;
+};
+export class ResponseError extends Error {
+  isResponseError: boolean = true;
+  requestConfig: HttpRequestOptions;
+  responseInfo: ResponseInfo;
+  constructor(requestConfig: HttpRequestOptions, responseInfo: ResponseInfo) {
+    const {statusCode, statusMessage} = responseInfo;
+    super(`Response code ${statusCode}: ${statusMessage}`);
+    this.requestConfig = requestConfig;
+    this.responseInfo = responseInfo;
+  }
+}
+
 export async function requestAndGetResponseInfo<ResData = any, Payload extends ToBufferParams = any>(
   config: HttpRequestOptions<Payload>,
-  responseConfig?: Parameters<typeof getResponseInfo>[1]
+  responseConfig?: Parameters<typeof getResponseInfo>[1] & {
+    validateStatus?: ValidateStatus | boolean;
+  }
 ) {
   const response = await requestAndGetResponse<Payload>(config);
-  return await getResponseInfo<ResData>(response, responseConfig);
+  let {validateStatus, ...resConfig} = responseConfig ?? {};
+  const responseInfo = await getResponseInfo<ResData>(response, resConfig);
+
+  if (validateStatus) {
+    if (validateStatus === true) {
+      validateStatus = defaultValidateStatus;
+    }
+
+    if (!validateStatus(responseInfo)) {
+      throw new ResponseError(config, responseInfo);
+    }
+  }
+  return responseInfo;
 }
 
 // return file list in the form of <ul><li></li></ul>
