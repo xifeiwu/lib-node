@@ -15,7 +15,12 @@ export function findMockFile(
   if (!targetRequestConfig) {
     return null;
   }
-  const {pathname: targetPathname, method: targetMethod, query: targetQuery, data: targetPayload} = targetRequestConfig;
+  const {
+    pathname: targetPathname,
+    method: targetMethod,
+    query: targetQuery,
+    data: targetPayload,
+  } = targetRequestConfig;
   const target = mockContentList.find(it => {
     const {ignore, requestConfig, includeObjectKeys, excludeObjectKeys, ignoreComparePayload} = it;
     if (ignore || !requestConfig) {
@@ -42,7 +47,6 @@ export function findMockFile(
   return target;
 }
 
-
 export function getMockFileFinderByDir(config: ParamsForFindMockInfoInDir): {
   mockFileList: MockFileContent[];
   finder: MockFileFinder;
@@ -51,16 +55,25 @@ export function getMockFileFinderByDir(config: ParamsForFindMockInfoInDir): {
   if (!fs.existsSync(targetDir)) {
     throw new Error(`Error, dir not exist: ${targetDir}`);
   }
-  let targetFileList: string[] = [];
-  const relativeFileList = getFileList(targetDir);
+  const relativeFileList = getFileList(targetDir, {
+    fileFilter({relativePath}) {
+      return relativePath.endsWith('.js');
+    },
+  });
+  let targetFileList: string[] = relativeFileList;
   const {allowedFileList, debugCompare} = options;
   if (Array.isArray(allowedFileList)) {
     targetFileList = relativeFileList.filter(it => allowedFileList.includes(it));
   }
   const mockFileList = targetFileList.map(relativePath => {
     const fullPath = path.resolve(targetDir, relativePath);
-    const mockFileContent = require(fullPath) as MockFileContent;
-    return {...mockFileContent, relativePath};
+    try {
+      const mockFileContent = require(fullPath) as MockFileContent;
+      return {...mockFileContent, relativePath};
+    } catch (err) {
+      console.log(`Error, require mock file: ${fullPath}`);
+      console.log(err);
+    }
   });
   const finder = (targetRequestConfig: RequestConfig) => {
     if (targetFileList.length === 0) {

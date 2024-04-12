@@ -22,10 +22,18 @@ export function convertObjectToCjsContent<T extends MockFileContent>(info: T) {
   return lines.join('\n');
 }
 
-interface GenerateOneFileOptions extends GenerateByDirOptions {
+interface RequestGeneral {
+  /** request config for all requestConfig under requestConfigDir */
+  generalRequestConfig?: HttpRequestOptions;
+}
+interface RequestOne extends RequestGeneral {
   fullPath: string;
 }
-export async function requestAndSaveMockInfo(requestConfig: RequestConfig, options: GenerateOneFileOptions) {
+interface RequestByDir extends RequestGeneral {
+  outputDir: string;
+}
+
+export async function requestAndSaveMockInfo(requestConfig: RequestConfig, options: RequestOne) {
   const {generalRequestConfig} = options;
   const mergedOptions = mergeHttpRequestOptions(requestConfig, generalRequestConfig);
 
@@ -45,7 +53,7 @@ export async function requestAndSaveMockInfo(requestConfig: RequestConfig, optio
   //   console.log(`mkdir -p ${mockFileDir}`);
   //   throw new Error();
   // }
-  const {headers, data: resData} = await requestAndGetResponseInfo(mergedOptions);
+  const {headers, data: resData} = await requestAndGetResponseInfo(mergedOptions, {validateStatus: true});
   if (!fullPath.endsWith('.js')) {
     fullPath = fullPath + '.js';
   }
@@ -64,11 +72,7 @@ export async function requestAndSaveMockInfo(requestConfig: RequestConfig, optio
   );
 }
 
-interface GenerateByDirOptions {
-  generalRequestConfig?: HttpRequestOptions;
-  outputDir: string;
-}
-export async function generateMockInfoByDir(requestConfigDir: string, options: GenerateByDirOptions) {
+export async function generateMockInfoByDir(requestConfigDir: string, options: RequestByDir) {
   const {outputDir} = options;
   if (!fs.existsSync(requestConfigDir)) {
     throw new Error(`Error, config dir not exist: ${requestConfigDir}`);
