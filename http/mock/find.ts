@@ -47,8 +47,11 @@ export function findMockFile(
   return target;
 }
 
+export interface MockFileContentWithRelativePath extends MockFileContent {
+  relativePath: string;
+}
 export function getMockFileFinderByDir(config: ParamsForFindMockInfoInDir): {
-  mockFileList: MockFileContent[];
+  mockFileList: Array<MockFileContentWithRelativePath>;
   finder: MockFileFinder;
 } {
   const {targetDir, options = {}} = config;
@@ -65,16 +68,19 @@ export function getMockFileFinderByDir(config: ParamsForFindMockInfoInDir): {
   if (Array.isArray(allowedFileList)) {
     targetFileList = relativeFileList.filter(it => allowedFileList.includes(it));
   }
-  const mockFileList = targetFileList.map(relativePath => {
-    const fullPath = path.resolve(targetDir, relativePath);
-    try {
-      const mockFileContent = require(fullPath) as MockFileContent;
-      return {...mockFileContent, relativePath};
-    } catch (err) {
-      console.log(`Error, require mock file: ${fullPath}`);
-      console.log(err);
-    }
-  });
+  const mockFileList = targetFileList
+    .map(relativePath => {
+      const fullPath = path.resolve(targetDir, relativePath);
+      try {
+        const mockFileContent = require(fullPath) as MockFileContent;
+        return {...mockFileContent, relativePath};
+      } catch (err) {
+        console.log(`Error, require mock file: ${fullPath}`);
+        // console.log(err);
+        return null;
+      }
+    })
+    .filter(it => Boolean(it));
   const finder = (targetRequestConfig: RequestConfig) => {
     if (targetFileList.length === 0) {
       return null;
