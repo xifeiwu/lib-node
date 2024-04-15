@@ -1,46 +1,34 @@
 import https from 'https';
 import http, {IncomingMessage, ServerResponse} from 'http';
-import {getRequestHeaderInfo, getResponseHeaderInfo} from '../common';
-import {concatPath, deepClone, deepMerge} from '../../external';
-import {AllRequestInfo, HttpProxyConfig, ProxyStatus} from './types';
+import {ResponseInfo, getRequestHeaderInfo, getResponseHeaderInfo} from '../common';
+import {toUrlInstance, deepClone, deepMerge, getUrlPropsFromConfig} from '../../external';
+import {HttpProxyConfig, ProxyStatus} from './types';
 import {toStream, getDataByTransform} from '../../stream';
 import {toBuffer} from '../../transform';
+import {
+  HttpRequestOptions,
+  httpRequestOptionsToCurlCommand,
+  makeSureHttpRequestOptionsSerializable,
+  validateStatusCode,
+} from '../client';
+import {logWithColor} from '../../log';
 
 /**
- * Get Request Info of both original request and that used for proxy request.
- * @param req
- * @param config
- * @returns
+ * On response to proxy: print more info when http status code is invalid.
+ * @param resInfo
+ * @param proxyReq
  */
-function handleRequestInfo(req: IncomingMessage, config: HttpProxyConfig): AllRequestInfo {
-  const {targetHref, changeOrigin, proxyRequestOptions: defaultRequestOptions = {}} = config;
-  const {protocol, origin, host, pathname} = new URL(targetHref);
-  const {method, url, httpVersion, headers: originHeaders} = getRequestHeaderInfo(req);
-  const proxyHeaders = deepClone(originHeaders);
-  const href = origin + concatPath('/', pathname, url);
-  if (proxyHeaders.host && changeOrigin) {
-    proxyHeaders.host = host;
+export function onRes2Proxy(resInfo: ResponseInfo, proxyReq: HttpRequestOptions) {
+  if (!validateStatusCode(resInfo)) {
+    logWithColor(
+      'red',
+      makeSureHttpRequestOptionsSerializable(proxyReq),
+      httpRequestOptionsToCurlCommand(proxyReq),
+      resInfo
+    );
   }
-  return {
-    origin: {
-      method,
-      url,
-      httpVersion,
-      headers: originHeaders,
-    },
-    proxy: {
-      href,
-      protocol,
-      requestOptions: deepMerge(
-        {
-          method,
-          headers: proxyHeaders,
-        },
-        defaultRequestOptions
-      ),
-    },
-  };
 }
+
 /**
  * Custmoiziable Request Proxy.
  * +--------+                                     +-------+                                     +--------+
@@ -48,23 +36,43 @@ function handleRequestInfo(req: IncomingMessage, config: HttpProxyConfig): AllRe
  * |        | -----------originRequest----------> |       | -----------proxyRequest-----------> |        |
  * | Origin |                                     | Proxy |                                     | Target |
  * |        |   handleRes2OriginInfo,             |       |                                     |        |
- * |        | <--------response2Origin----------- |       | <---------response2Proxy----------- |        |
+ * |        | <---------response2Origin---------- |       | <---------response2Proxy----------- |        |
  * +--------+                                     +-------+                                     +--------+
  */
 export async function proxyRequest(req: IncomingMessage, res: ServerResponse, config: HttpProxyConfig) {
   const proxyStatus: ProxyStatus = {ts: Date.now()};
-  const {originData, handleInfoOfProxyReq, handleInfoOfRes2Origin, preRequestCb} = config;
-  let reqInfo = handleRequestInfo(req, config);
-  proxyStatus.requestInfo = reqInfo;
+  const {
+    defaultRequestOptions,
+    originData,
+    handleInfoOfProxyReq,
+    handleInfoOfRes2Origin,
+    preProxyReq,
+    onRes2Proxy,
+  } = config;
+  const originReqInfo = getRequestHeaderInfo(req);
+  let proxyReqInfo: HttpRequestOptions = deepMerge(defaultRequestOptions, {
+    origin: config.targetHref,
+    url: originReqInfo.url,
+    method: originReqInfo.method,
+    headers: originReqInfo.headers,
+  });
+
+  // let reqInfo = handleRequestInfo(req, config);
   if (handleInfoOfProxyReq) {
-    const tmp = await handleInfoOfProxyReq(reqInfo.proxy);
+    const tmp = await handleInfoOfProxyReq(proxyReqInfo);
     if (tmp) {
-      reqInfo.proxy = tmp;
+      proxyReqInfo = tmp;
     }
   }
-  const {href, protocol, requestOptions: proxyRequestOptions} = reqInfo.proxy;
-  preRequestCb && preRequestCb(proxyStatus);
-  const proxyReq = (protocol === 'https:' ? https : http).request(href, proxyRequestOptions);
+  proxyStatus.requestInfo = {origin: originReqInfo, proxy: proxyReqInfo};
+
+  preProxyReq && preProxyReq(proxyStatus);
+
+  const {urlProps, restProps} = getUrlPropsFromConfig(proxyReqInfo);
+  const {data, ...requestOptions} = restProps;
+  const {protocol, href} = toUrlInstance(urlProps);
+  const proxyReq = (protocol === 'https:' ? https : http).request(href, requestOptions);
+
   (originData ? toStream(originData) : req)
     .pipe(
       getDataByTransform(
@@ -86,6 +94,7 @@ export async function proxyRequest(req: IncomingMessage, res: ServerResponse, co
       proxyReq.on('response', res2Proxy => res(res2Proxy));
     });
     const infoOfRes2Proxy = getResponseHeaderInfo(res2Proxy);
+    onRes2Proxy && onRes2Proxy(infoOfRes2Proxy, proxyReqInfo, res2Proxy);
     let infoOfRes2Origin = deepClone(infoOfRes2Proxy);
     /** Rewrite cookie info */
     for (let [key, value] of Object.entries(infoOfRes2Origin.headers)) {
@@ -105,7 +114,7 @@ export async function proxyRequest(req: IncomingMessage, res: ServerResponse, co
       toProxy: infoOfRes2Proxy,
       toOrigin: infoOfRes2Origin,
     };
-    const {httpVersion, statusCode, statusMessage, headers} = infoOfRes2Origin;
+    const {httpVersion, statusCode, statusMessage} = infoOfRes2Origin;
     res.statusCode = statusCode;
     res.statusMessage = statusMessage ?? '';
     for (const [key, value] of Object.entries(infoOfRes2Origin.headers)) {
@@ -124,11 +133,14 @@ export async function proxyRequest(req: IncomingMessage, res: ServerResponse, co
       )
       .pipe(res);
   } catch (err) {
+    console.log(err);
     res.statusCode = 500;
-    res.statusMessage = 'proxy error';
+    res.statusMessage = 'Error, proxyHandler error';
     const {message, stack} = err as Error;
     const errorInfo = {message, stack};
     proxyStatus.err = errorInfo;
-    res.end(toBuffer(errorInfo));
+    if (res.writable) {
+      res.end(toBuffer(errorInfo));
+    }
   }
 }

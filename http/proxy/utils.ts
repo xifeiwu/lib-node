@@ -52,10 +52,7 @@ export function makeSureSerializable(proxyStatusList: ProxyStatus[]) {
     if (!proxy) {
       return proxyStatus;
     }
-    const {
-      requestOptions: {agent, ...restRequestOptions},
-      ...restProxy
-    } = proxy;
+    const {agent, ...restProxy} = proxy;
     if (!agent) {
       return proxyStatus;
     }
@@ -63,10 +60,7 @@ export function makeSureSerializable(proxyStatusList: ProxyStatus[]) {
       id,
       requestInfo: {
         origin,
-        proxy: {
-          ...restProxy,
-          requestOptions: restRequestOptions,
-        },
+        proxy: restProxy,
       },
       ...restProxyStatus,
     };

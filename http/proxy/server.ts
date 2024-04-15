@@ -27,7 +27,7 @@ export async function startProxyServer(proxyConfig: HttpProxyConfig, httpServerC
         } else {
           proxyRequest(req, res, {
             ...proxyConfig,
-            preRequestCb: getPreRequestCb({
+            preProxyReq: getPreRequestCb({
               statusList: proxyStatusList,
             }),
           });
