@@ -28,13 +28,14 @@ interface RequestGeneral {
 }
 interface RequestOne extends RequestGeneral {
   fullPath: string;
+  otherContents?: Omit<MockFileContent, 'requestConfig'>;
 }
 interface RequestByDir extends RequestGeneral {
   outputDir: string;
 }
 
 export async function requestAndSaveMockInfo(requestConfig: RequestConfig, options: RequestOne) {
-  const {generalRequestConfig} = options;
+  const {generalRequestConfig, otherContents} = options;
   const mergedOptions = mergeHttpRequestOptions(requestConfig, generalRequestConfig);
 
   let fullPath =
@@ -68,6 +69,7 @@ export async function requestAndSaveMockInfo(requestConfig: RequestConfig, optio
       requestConfig,
       resHeaders: headers,
       resData,
+      ...(otherContents ?? {}),
     })
   );
 }
@@ -88,9 +90,10 @@ export async function generateMockInfoByDir(requestConfigDir: string, options: R
   for (const relativeFile of relativeFileList) {
     console.log(`reqesting using config from file ${relativeFile}`);
     const fullPath = path.resolve(requestConfigDir, relativeFile);
-    const {requestConfig} = require(fullPath) as {requestConfig: GeneralRequestOptions};
+    const {requestConfig, ...otherContents} = require(fullPath) as MockFileContent;
     await requestAndSaveMockInfo(requestConfig, {
       ...options,
+      otherContents,
       fullPath: path.resolve(outputDir, relativeFile),
     });
   }

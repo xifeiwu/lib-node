@@ -1,12 +1,21 @@
 import fs from 'fs';
 import path from 'path';
-import {deepEqual} from '../../external';
+import {deepEqual, isObject} from '../../external';
 import {getFileList} from '../../fs';
 import {ParamsForFindMockInfoInDir, MockFileContent, RequestConfig, MockFileFinder} from './types';
 
+function convertPayload(value: any) {
+  if (isObject(value)) {
+    if (Object.keys(value).length === 0) {
+      return undefined;
+    }
+  }
+  return value;
+}
+
 export function findMockFile(
   targetRequestConfig: RequestConfig,
-  mockContentList: MockFileContent[],
+  mockContentList: MockFileContentWithRelativePath[],
   options?: {
     debugCompare?: ParamsForFindMockInfoInDir['options']['debugCompare'];
   }
@@ -22,11 +31,15 @@ export function findMockFile(
     data: targetPayload,
   } = targetRequestConfig;
   const target = mockContentList.find(it => {
-    const {ignore, requestConfig, includeObjectKeys, excludeObjectKeys, ignoreComparePayload} = it;
+    const {relativePath, ignore, requestConfig, includeObjectKeys, excludeObjectKeys, ignoreComparePayload} =
+      it;
     if (ignore || !requestConfig) {
       return false;
     }
     const {method, pathname, query, data: payload} = requestConfig;
+    if (debugCompare) {
+      console.log(`start compare: ${relativePath}`);
+    }
     /** compare method, url, query first, as it is easy to compare */
     const httpHeaderMatched = deepEqual(
       {pathname, method, query},
@@ -35,14 +48,24 @@ export function findMockFile(
         debug: debugCompare,
       }
     );
+    if (!httpHeaderMatched) {
+      return false;
+    }
+
     const payloadMatched =
       ignoreComparePayload === true ||
-      deepEqual(payload, targetPayload, {
+      deepEqual(convertPayload(payload), convertPayload(targetPayload), {
         includeObjectKeys,
         excludeObjectKeys,
         debug: debugCompare,
       });
-    return httpHeaderMatched && payloadMatched;
+    if (!payloadMatched) {
+      return false;
+    }
+    if (debugCompare) {
+      console.log(`matched: ${relativePath}`);
+    }
+    return true;
   });
   return target;
 }
@@ -68,7 +91,7 @@ export function getMockFileFinderByDir(config: ParamsForFindMockInfoInDir): {
   if (Array.isArray(allowedFileList)) {
     targetFileList = relativeFileList.filter(it => allowedFileList.includes(it));
   }
-  const mockFileList = targetFileList
+  const mockFileList: MockFileContentWithRelativePath[] = targetFileList
     .map(relativePath => {
       const fullPath = path.resolve(targetDir, relativePath);
       try {
