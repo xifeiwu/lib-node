@@ -6,7 +6,7 @@ import stream from 'stream';
 import {toBuffer} from '../transform';
 import {Socket} from 'net';
 import {ResponseInfo, getResponseInfo} from './common';
-import {UrlProps, toUrlInstance, getUrlPropsFromConfig, deepMerge} from '../external';
+import {UrlProps, toUrlInstance, getUrlPropsFromConfig, deepMerge, urlPropsToHref} from '../external';
 
 type ToBufferParams = Parameters<typeof toBuffer>[0];
 
@@ -47,8 +47,9 @@ export async function requestAndGetResponse<Payload extends ToBufferParams = any
   const {data, ...requestOptions} = restProps;
   let clientRequest: http.ClientRequest | null = null;
   const {protocol, href} = toUrlInstance(urlProps);
-  console.log(`href`);
-  console.log(href);
+  // console.log(`href`);
+  // console.log(href);
+  // console.log(requestOptions);
   clientRequest = (protocol === 'https:' ? https : http).request(href, requestOptions);
   clientRequest.end(data ? await toBuffer(data) : undefined);
   return new Promise((res, rej) => {
@@ -57,6 +58,10 @@ export async function requestAndGetResponse<Payload extends ToBufferParams = any
     });
     clientRequest.on('upgrade', async response => {
       rej(new Error(`Expect response event, but receive upgrade event.`));
+    });
+    clientRequest.on('timeout', () => {
+      // console.log('timeout');
+      // clientRequest.destroy();
     });
     clientRequest.on('error', error => {
       rej(error);
@@ -93,7 +98,7 @@ export async function requestAndGetUpgradeInfo<Payload extends ToBufferParams = 
 }
 
 export type ValidateStatus = (responseInfo: ResponseInfo) => boolean;
-export const defaultValidateStatus: ValidateStatus = info => {
+export const validateStatusCode: ValidateStatus = info => {
   const {statusCode} = info;
   return statusCode >= 200 && statusCode < 300;
 };
@@ -121,7 +126,7 @@ export async function requestAndGetResponseInfo<ResData = any, Payload extends T
 
   if (validateStatus) {
     if (validateStatus === true) {
-      validateStatus = defaultValidateStatus;
+      validateStatus = validateStatusCode;
     }
 
     if (!validateStatus(responseInfo)) {
@@ -129,6 +134,27 @@ export async function requestAndGetResponseInfo<ResData = any, Payload extends T
     }
   }
   return responseInfo;
+}
+
+export function httpRequestOptionsToCurlCommand(options: HttpRequestOptions) {
+  const {urlProps, restProps} = getUrlPropsFromConfig(options);
+  const href = urlPropsToHref(urlProps);
+  const {method = 'GET', headers = {}, data} = restProps;
+  const command = [
+    'curl',
+    `-X ${method.toUpperCase()}`,
+    href,
+    ...Object.entries(headers).map(([k, v]) => {
+      return `-H '${k}: ${v}'`;
+    }),
+    data ? `-d ${JSON.stringify(data)}` : '',
+  ].join(' ');
+  return command;
+}
+
+export function makeSureHttpRequestOptionsSerializable(options: HttpRequestOptions) {
+  const {agent, ...restProps} = options;
+  return restProps;
 }
 
 // return file list in the form of <ul><li></li></ul>

@@ -18,4 +18,5 @@ export {
   DeepEqualConfig,
   urlPropsToInstance,
   toUrlInstance,
+  urlPropsToHref,
 } from '../fe/common';
