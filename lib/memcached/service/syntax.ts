@@ -1,4 +1,5 @@
-import {appendCRLF, saveCommandInfoToRecord, tryParseCommand} from './convert';
+import net from 'net';
+import {AfterReceiveStatus, appendCRLF, saveCommandInfoToRecord, tryParseCommand} from './convert';
 import {toInt} from './external';
 import {
   SaveCommandName,
@@ -11,6 +12,7 @@ import {
   RecordItem,
 } from './types';
 import {GetResponseInfo} from './types/client';
+import {getCommand} from './common';
 
 interface Handler<CommandInfo, ResponseInfo> {
   server: {
@@ -19,13 +21,13 @@ interface Handler<CommandInfo, ResponseInfo> {
   };
   client: {
     toCommandLine: (commandInfo: CommandInfo) => string;
-    handleResponse: (chunk: Buffer) => (buf: Buffer) => false | ResponseInfo;
+    handleResponse: () => (buf: Buffer, socket: net.Socket) => undefined | ResponseInfo;
   };
 }
 
 const handlSaveCommand: Handler<SaveCommandInfo, ReturnType<SaveFunc>>['server']['handleCommand'] = (
   commandInfo,
-  store,
+  store
 ) => {
   const {command, key, value: data = Buffer.alloc(0), bytes} = commandInfo;
   // if (chunk[chunk.byteLength - 1] === 0x0a) {
@@ -69,9 +71,11 @@ const saveHandler: Handler<SaveCommandInfo, ReturnType<SaveFunc>> = {
       const {key, flags, expireTimeInSeconds: exptime, bytes, casId} = params;
       return [key, flags, toInt(exptime), toInt(bytes)].join(' ');
     },
-    handleResponse(chunk: Buffer) {
-      const resStr = chunk.toString() as ReturnType<SaveFunc>;
-      return () => resStr;
+    handleResponse() {
+      return chunk => {
+        const resStr = chunk.toString() as ReturnType<SaveFunc>;
+        return resStr;
+      };
       // if (resStr !== SaveStatus.STORED) {
       //   throw new Error(resStr);
       // }
@@ -80,8 +84,9 @@ const saveHandler: Handler<SaveCommandInfo, ReturnType<SaveFunc>> = {
   },
 };
 
-const getHandler: Handler<GetCommandInfo, Record<string, GetResponseInfo>> = {
+const getHandler: Handler<GetCommandInfo, GetResponseInfo[]> = {
   server: {
+    // get <key>*\r\n
     parseCommand(line: string) {
       const [command, ...keys] = line.split(' ').filter(it => it.length > 0);
       return {command: command as GetCommandName, keys};
@@ -106,63 +111,106 @@ const getHandler: Handler<GetCommandInfo, Record<string, GetResponseInfo>> = {
       const line = [command, ...keys].join(' ');
       return appendCRLF(line);
     },
-    handleResponse(chunk) {
-      const results: Record<string, GetResponseInfo> = {};
-      function parseFirstLine(line: string) {
-        const [command, key, flags, bytes, casId] = line.split(' ');
-        return {command: command as GetResponseInfo['command'], key, flags, bytes: toInt(bytes), casId};
-      }
-      let tmpItem: {item: GetResponseInfo; onReceiveData?: (chunk: Buffer) => false | Buffer} | null = null;
-      let cachedBuf: Buffer = Buffer.alloc(0);
-      return (chunk: Buffer) => {
-        cachedBuf = Buffer.concat([cachedBuf, chunk]);
-        function getItem(data: Buffer): {
-          item: GetResponseInfo;
-          remain?: Buffer;
-          onReceiveData?: (chunk: Buffer) => false | Buffer;
-        } {
-          const {item, remainingBuffer: remaining, onReceiveData} = tryParseCommand(data, parseFirstLine);
-          if (item.command === 'VALUE' && onReceiveData) {
-            const remain = onReceiveData(remaining);
-            if (remain) {
-              return {item, remain};
-            } else {
-              return {item, onReceiveData};
+    // VALUE <key> <flags> <bytes> [<cas unique>]\r\n
+    // <data block>\r\n
+    // END\r\n
+    handleResponse() {
+      const results: GetResponseInfo[] = [];
+      // function parseFirstLine(line: string): GetResponseInfo {
+      //   const [command, key, flags, bytes, casId] = line.split(' ');
+      //   return {command: command as GetResponseInfo['command'], key, flags, bytes: toInt(bytes), casId};
+      // }
+
+      let commandInfo: GetResponseInfo | null = null;
+      // let tmpItem: {item: GetResponseInfo; onReceiveData?: (chunk: Buffer) => false | Buffer} | null = null;
+      let cachedBuffer: Buffer | undefined = Buffer.alloc(0);
+      let onReceiveDataToCommand: (chunk: Buffer) => AfterReceiveStatus = null;
+      const handleData = (chunk: Buffer, socket: net.Socket) => {
+        socket.pause();
+        if (Buffer.isBuffer(cachedBuffer) && cachedBuffer.byteLength > 0) {
+          cachedBuffer = Buffer.concat([cachedBuffer, chunk]);
+        } else {
+          cachedBuffer = chunk;
+        }
+        while (Buffer.isBuffer(cachedBuffer) && cachedBuffer.byteLength > 0) {
+          if (onReceiveDataToCommand === null) {
+            /** start to parse command(first) line */
+            const command = getCommand(cachedBuffer);
+            const {
+              item,
+              remainingBuffer: remaining,
+              onReceiveData,
+            } = tryParseCommand(cachedBuffer, syntax[command].server.parseCommand);
+            cachedBuffer = remaining;
+            onReceiveDataToCommand = onReceiveData;
+            commandInfo = item;
+            if (!Boolean(onReceiveData)) {
+              if (commandInfo.command === 'END') {
+                return results;
+              }
+              results.push(commandInfo);
+              // const res = syntax[command].server.handleCommand(item.key, store);
+              // socket.write(res);
             }
           } else {
-            return {item, onReceiveData};
-          }
-        }
-        function consume() {
-          if (cachedBuf.byteLength === 0) {
-            return false;
-          }
-          while (!tmpItem) {
-            const {item, remain, onReceiveData} = getItem(cachedBuf);
-            if (item.command === 'END') {
-              return results;
-            } else {
-              if (remain) {
-                results[item.key] = item;
-                cachedBuf = remain;
-              } else {
-                tmpItem = {item, onReceiveData};
-              }
+            const {remainingBuffer, needConsume} = onReceiveDataToCommand(cachedBuffer);
+            cachedBuffer = remainingBuffer;
+            if (!needConsume) {
+              results.push(commandInfo);
+              onReceiveDataToCommand = null;
             }
           }
-          if (tmpItem && cachedBuf.byteLength > 0) {
-            const {item, onReceiveData} = tmpItem;
-            while (cachedBuf.byteLength > 0) {
-              const remain = onReceiveData(cachedBuf);
-              if (remain) {
-                cachedBuf = remain;
-              }
-            }
-          }
-          return false;
         }
-        return consume();
+        socket.resume();
+        // cachedBuf = Buffer.concat([cachedBuf, chunk]);
+        // function getItem(data: Buffer): {
+        //   item: GetResponseInfo;
+        //   remain?: Buffer;
+        //   onReceiveData?: (chunk: Buffer) => false | Buffer;
+        // } {
+        //   const {item, remainingBuffer: remaining, onReceiveData} = tryParseCommand(data, parseFirstLine);
+        //   if (item.command === 'VALUE' && onReceiveData) {
+        //     const remain = onReceiveData(remaining);
+        //     if (remain) {
+        //       return {item, remain};
+        //     } else {
+        //       return {item, onReceiveData};
+        //     }
+        //   } else {
+        //     return {item, onReceiveData};
+        //   }
+        // }
+        // function consume() {
+        //   if (cachedBuf.byteLength === 0) {
+        //     return false;
+        //   }
+        //   while (!tmpItem) {
+        //     const {item, remain, onReceiveData} = getItem(cachedBuf);
+        //     if (item.command === 'END') {
+        //       return results;
+        //     } else {
+        //       if (remain) {
+        //         results[item.key] = item;
+        //         cachedBuf = remain;
+        //       } else {
+        //         tmpItem = {item, onReceiveData};
+        //       }
+        //     }
+        //   }
+        //   if (tmpItem && cachedBuf.byteLength > 0) {
+        //     const {item, onReceiveData} = tmpItem;
+        //     while (cachedBuf.byteLength > 0) {
+        //       const remain = onReceiveData(cachedBuf);
+        //       if (remain) {
+        //         cachedBuf = remain;
+        //       }
+        //     }
+        //   }
+        //   return false;
+        // }
+        // return consume();
       };
+      return handleData;
     },
   },
 };
