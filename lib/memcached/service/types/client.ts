@@ -23,12 +23,12 @@ export interface ClientSaveCommandInfo extends Omit<SaveCommandInfo, 'command' |
 }
 
 type SaveFunc = (item: ClientSaveCommandInfo) => Promise<SaveStatus | ErrorMessage>;
-type GetFunc = (keys: string[]) => Promise<{[key: string]: ClientSaveCommandInfo}>;
+type GetFunc = (keys: string[]) => Promise<GetResponseInfo[]>;
 type AllSaveFunc = {
   [key in SaveCommandName]: SaveFunc;
 };
 type AllGetFunc = {
-  // [key in GetCommandName]: GetFunc;
+  [key in GetCommandName]: GetFunc;
 };
 /** Api for store */
 export interface ClientApi extends AllSaveFunc, AllGetFunc {}

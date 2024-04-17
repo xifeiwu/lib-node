@@ -12,7 +12,7 @@ interface Handler<CommandInfo, ResponseInfo> {
     handleCommand: (commandInfo: CommandInfo, store: StoreApi) => string | Buffer;
   };
   client: {
-    toCommandLine: (commandInfo: CommandInfo) => Buffer;
+    commandInfoToBuffer: (commandInfo: CommandInfo) => Buffer;
     handleResponse: (cb: (error: Error | null, res: ResponseInfo) => void) => DataHandler;
   };
 }
@@ -22,21 +22,6 @@ const handlSaveCommand: Handler<SaveCommandInfo, ReturnType<SaveFunc>>['server']
   store
 ) => {
   const {command, key} = commandInfo;
-  // if (chunk[chunk.byteLength - 1] === 0x0a) {
-  //   chunk = chunk.subarray(-1);
-  // }
-  // if (chunk[chunk.byteLength - 1] === 0x0d) {
-  //   chunk = chunk.subarray(-1);
-  // }
-  // if (commandInfo.value.byteLength < bytes) {
-  //   commandInfo.value = Buffer.concat([data, chunk]);
-  //   return false;
-  // }
-  // if (commandInfo.value.byteLength > bytes) {
-  //   throw new Error(
-  //     `Error, ByteLength, byte is ${bytes}, but actual received ${commandInfo.value.byteLength}`
-  //   );
-  // }
   const saveRes = store[command](key, saveCommandInfoToRecord(commandInfo));
   return appendCRLF(saveRes);
 };
@@ -60,7 +45,7 @@ const saveHandler: Handler<SaveCommandInfo, ReturnType<SaveFunc>> = {
     handleCommand: handlSaveCommand,
   },
   client: {
-    toCommandLine(params) {
+    commandInfoToBuffer(params) {
       const {key, flags, expireTimeInSeconds: exptime, bytes, casId, value} = params;
       return toBuffer([
         [key, flags, toInt(exptime), toInt(bytes), casId].filter(it => it !== undefined).join(' '),
@@ -101,10 +86,10 @@ const getHandler: Handler<GetCommandInfo, GetResponseInfo[]> = {
     },
   },
   client: {
-    toCommandLine(params) {
+    commandInfoToBuffer(params) {
       const {command, keys} = params;
       const line = [command, ...keys].join(' ');
-      return appendCRLF(line);
+      return toBuffer(appendCRLF(line));
     },
     // VALUE <key> <flags> <bytes> [<cas unique>]\r\n
     // <data block>\r\n

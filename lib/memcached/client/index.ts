@@ -5,6 +5,8 @@ import {
   ClientApi,
   ClientSaveCommandInfo,
   ErrorMessage,
+  GetCommandInfo,
+  GetResponseInfo,
   RecordItem,
   SaveCommandInfo,
   SaveCommandName,
@@ -18,15 +20,31 @@ export class connection implements ClientApi {
   constructor(option: TcpNetConnectOpts) {
     this.option = option;
   }
-  // get() {
-  //   return {};
-  // }
+  async get(keys: GetCommandInfo['keys']) {
+    const firstLine = syntax['get'].client.commandInfoToBuffer({
+      command: 'get',
+      keys,
+    });
+    const {socket, dataHandlerQueue} = await getConnection(this.option);
+    socket.write(firstLine);
+    const result = await new Promise<GetResponseInfo[]>((res, rej) => {
+      const dataHandler = syntax['get'].client.handleResponse((err, response) => {
+        if (err) {
+          rej(err);
+        } else {
+          res(response);
+        }
+      });
+      dataHandlerQueue.push(dataHandler);
+    });
+    return result;
+  }
 
   async save(comandInfo: ClientSaveCommandInfo, command: SaveCommandName) {
     const {value, ...restProps} = comandInfo;
     const buffer = toBuffer(value);
     const bytes = buffer.byteLength;
-    const firstLine = syntax[command].client.toCommandLine({
+    const firstLine = syntax[command].client.commandInfoToBuffer({
       command,
       ...restProps,
       bytes,
