@@ -27,7 +27,7 @@ export interface SaveCommandProps {
 /** All props of save command */
 export interface SaveCommandInfo extends SaveCommandProps {
   command: SaveCommandName;
-  value?: Buffer;
+  value: Buffer;
 }
 
 export enum SaveStatus {

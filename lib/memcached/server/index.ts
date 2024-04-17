@@ -25,13 +25,13 @@ async function handleConnection(socket: Socket) {
         const command = getCommand(cachedBuffer);
         const {
           item,
-          remainingBuffer: remaining,
+          remainingBuffer,
           onReceiveData,
         } = tryParseCommand<SaveCommandInfo | GetCommandInfo>(
           cachedBuffer,
           syntax[command].server.parseCommand
         );
-        cachedBuffer = remaining;
+        cachedBuffer = remainingBuffer;
         onReceiveDataToCommand = onReceiveData;
         commandInfo = item;
         if (!Boolean(onReceiveData)) {

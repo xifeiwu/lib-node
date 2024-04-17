@@ -3,7 +3,7 @@ import {isStream} from './common';
 import {getStreamData} from './stream';
 import {isNumber, isPlainObject, isString} from './external';
 
-type CanConvertToBuffer = string | number | object | Uint8Array;
+export type CanConvertToBuffer = string | number | object | Uint8Array;
 export function toBuffer(data: CanConvertToBuffer | Array<CanConvertToBuffer>) {
   if (Array.isArray(data)) {
     if (data.every(isNumber)) {

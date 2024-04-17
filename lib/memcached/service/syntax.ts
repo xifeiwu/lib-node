@@ -1,16 +1,10 @@
 import net from 'net';
 import {AfterReceiveStatus, appendCRLF, saveCommandInfoToRecord, tryParseCommand} from './convert';
-import {toInt} from './external';
-import {
-  SaveCommandName,
-  StoreApi,
-  SaveCommandInfo,
-  SaveFunc,
-  GetCommandInfo,
-  GetCommandName,
-} from './types';
+import {toBuffer, toInt} from './external';
+import {SaveCommandName, StoreApi, SaveCommandInfo, SaveFunc, GetCommandInfo, GetCommandName} from './types';
 import {GetResponseInfo} from './types/client';
 import {DataHandler} from './connection-pool';
+import {BufferCRLF} from './constant';
 
 interface Handler<CommandInfo, ResponseInfo> {
   server: {
@@ -18,7 +12,7 @@ interface Handler<CommandInfo, ResponseInfo> {
     handleCommand: (commandInfo: CommandInfo, store: StoreApi) => string | Buffer;
   };
   client: {
-    toCommandLine: (commandInfo: CommandInfo) => string;
+    toCommandLine: (commandInfo: CommandInfo) => Buffer;
     handleResponse: (cb: (error: Error | null, res: ResponseInfo) => void) => DataHandler;
   };
 }
@@ -60,14 +54,20 @@ const saveHandler: Handler<SaveCommandInfo, ReturnType<SaveFunc>> = {
         expireTimeInSeconds: toInt(exptime),
         bytes: toInt(bytes),
         casId,
+        value: Buffer.alloc(0),
       };
     },
     handleCommand: handlSaveCommand,
   },
   client: {
     toCommandLine(params) {
-      const {key, flags, expireTimeInSeconds: exptime, bytes, casId} = params;
-      return [key, flags, toInt(exptime), toInt(bytes)].join(' ');
+      const {key, flags, expireTimeInSeconds: exptime, bytes, casId, value} = params;
+      return toBuffer([
+        [key, flags, toInt(exptime), toInt(bytes), casId].filter(it => it !== undefined).join(' '),
+        BufferCRLF,
+        value,
+        BufferCRLF,
+      ]);
     },
     handleResponse(cb) {
       return async chunk => {

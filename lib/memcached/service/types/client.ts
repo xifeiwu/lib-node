@@ -10,22 +10,25 @@ export interface GetResponseInfo {
   value?: Buffer;
 }
 
-import {GetCommandName, SaveCommandName, ErrorMessage, Flag, SaveStatus, SaveCommandProps} from './common';
+import {CanConvertToBuffer} from '../external';
+import {GetCommandName, SaveCommandName, ErrorMessage, SaveStatus, SaveCommandInfo} from './common';
 
 /** Record stored on Server Side */
-export interface ClientSaveCommandInfo extends Pick<SaveCommandProps, 'key' | 'bytes' | 'casId' | 'expireTimeInSeconds'> {
-  // flags: Flag;
-  // expiration: number;
-  value: Buffer;
+// export interface ClientSaveCommandInfo
+//   extends Pick<SaveCommandProps, 'key' | 'bytes' | 'casId' | 'expireTimeInSeconds'> {
+//   value: Buffer;
+// }
+export interface ClientSaveCommandInfo extends Omit<SaveCommandInfo, 'command' | 'bytes' | 'value'> {
+  value: CanConvertToBuffer;
 }
 
-export type SaveFunc = (item: ClientSaveCommandInfo) => SaveStatus | ErrorMessage;
-export type GetFunc = (keys: string[]) => {[key: string]: ClientSaveCommandInfo};
-export type AllSaveFunc = {
+type SaveFunc = (item: ClientSaveCommandInfo) => Promise<SaveStatus | ErrorMessage>;
+type GetFunc = (keys: string[]) => Promise<{[key: string]: ClientSaveCommandInfo}>;
+type AllSaveFunc = {
   [key in SaveCommandName]: SaveFunc;
 };
-export type AllGetFunc = {
-  [key in GetCommandName]: GetFunc;
+type AllGetFunc = {
+  // [key in GetCommandName]: GetFunc;
 };
 /** Api for store */
 export interface ClientApi extends AllSaveFunc, AllGetFunc {}
