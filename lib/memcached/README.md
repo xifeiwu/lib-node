@@ -2,12 +2,14 @@
 
 Implementation of memcached client and server.
 
-# Reference
+# Reference Projects
+
+[memcached](https://github.com/3rd-Eden/memcached)
+
+# Protocol
 
 [memcached protocol](https://github.com/memcached/memcached/blob/master/doc/protocol.txt)
 [memcached commands](https://github.com/memcached/memcached/wiki/Commands)
-
-# Protocol
 
 Storage commands
 ----------------

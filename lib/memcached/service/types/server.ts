@@ -1,11 +1,9 @@
-import {GetCommandName, SaveCommandName, ErrorMessage, Flag, SaveStatus} from './common';
+import {GetCommandName, SaveCommandName, ErrorMessage, Flag, SaveStatus, SaveCommandProps} from './common';
 
 /** Record stored on Server Side */
-export interface RecordItem {
+export interface RecordItem extends Pick<SaveCommandProps, 'bytes' | 'casId'> {
   flags: Flag;
   expiration: number;
-  casId?: string;
-  bytes: number;
   value: string;
 }
 

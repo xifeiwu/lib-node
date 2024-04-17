@@ -13,13 +13,20 @@ export type SaveCommandName =
   /** "cas" is a check and set operation which means "store this data but only if no one else has updated since I last fetched it." */
   | 'cas';
 
-export interface SaveCommandInfo {
-  command: SaveCommandName;
+/**
+ * Used in Handle process
+ */
+export interface SaveCommandProps {
   key: string;
   flags: string;
   expireTimeInSeconds: number;
   bytes: number;
   casId?: string;
+}
+
+/** All props of save command */
+export interface SaveCommandInfo extends SaveCommandProps {
+  command: SaveCommandName;
   value?: Buffer;
 }
 

@@ -88,7 +88,7 @@ const getHandler: Handler<GetCommandInfo, GetResponseInfo[]> = {
   server: {
     // get <key>*\r\n
     parseCommand(line: string) {
-      const [command, ...keys] = line.split(' ').filter(it => it.length > 0);
+      const [command, ...keys] = line.split(' ').filter(it => it && it.length > 0);
       return {command: command as GetCommandName, keys};
     },
     // VALUE <key> <flags> <bytes> [<cas unique>]\r\n
@@ -116,13 +116,7 @@ const getHandler: Handler<GetCommandInfo, GetResponseInfo[]> = {
     // END\r\n
     handleResponse() {
       const results: GetResponseInfo[] = [];
-      // function parseFirstLine(line: string): GetResponseInfo {
-      //   const [command, key, flags, bytes, casId] = line.split(' ');
-      //   return {command: command as GetResponseInfo['command'], key, flags, bytes: toInt(bytes), casId};
-      // }
-
       let commandInfo: GetResponseInfo | null = null;
-      // let tmpItem: {item: GetResponseInfo; onReceiveData?: (chunk: Buffer) => false | Buffer} | null = null;
       let cachedBuffer: Buffer | undefined = Buffer.alloc(0);
       let onReceiveDataToCommand: (chunk: Buffer) => AfterReceiveStatus = null;
       const handleData = (chunk: Buffer, socket: net.Socket) => {
@@ -140,7 +134,16 @@ const getHandler: Handler<GetCommandInfo, GetResponseInfo[]> = {
               item,
               remainingBuffer: remaining,
               onReceiveData,
-            } = tryParseCommand(cachedBuffer, syntax[command].server.parseCommand);
+            } = tryParseCommand<GetResponseInfo>(cachedBuffer, (line: string) => {
+              const [command, key, flags, bytes, casId] = line.split(' ').filter(it => it && it.length > 0);
+              return {
+                command: command as GetResponseInfo['command'],
+                key,
+                flags,
+                bytes: toInt(bytes),
+                casId,
+              };
+            });
             cachedBuffer = remaining;
             onReceiveDataToCommand = onReceiveData;
             commandInfo = item;
@@ -215,9 +218,7 @@ const getHandler: Handler<GetCommandInfo, GetResponseInfo[]> = {
   },
 };
 
-export const syntax: {
-  [command in SaveCommandName | GetCommandName]: Handler<any, any>;
-} = {
+export const syntax = {
   set: saveHandler,
   add: saveHandler,
   replace: saveHandler,
