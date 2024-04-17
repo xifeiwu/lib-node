@@ -1,20 +1,16 @@
-// export async function connect(options: TcpNetConnectOpts) {
-//   const socket = await startSocketClient(options);
-//   const
-//   socket.on('data', (chunk: Buffer) => {});
-// }
-import {Socket} from 'dgram';
 import net, {TcpNetConnectOpts} from 'net';
 import {startSocketClient} from '../../../net';
 
-type DataHandler = (
-  chunk: Buffer,
-  socket: net.Socket
-  // cb: (err, data: any) => void
-) => Promise<{
+interface HandleStatus {
   remainingBuffer?: Buffer;
   done?: boolean;
-}>;
+}
+
+export type DataHandler = (
+  chunk: Buffer,
+  socket?: net.Socket
+  // cb: (err, data: any) => void
+) => HandleStatus | Promise<HandleStatus>;
 interface ConnectionInfo {
   socket: net.Socket;
   cachedBuffer?: Buffer;

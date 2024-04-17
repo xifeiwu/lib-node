@@ -68,6 +68,7 @@ export function removeCRLF(data: string | Buffer) {
 interface BytesAndValue {
   bytes?: number;
   value?: Buffer;
+  [key: string]: any;
 }
 export const firstLineReg = /^(\w+) (.*?)(?: ?\r\n)?$/;
 export function tryParseCommand<T extends BytesAndValue>(

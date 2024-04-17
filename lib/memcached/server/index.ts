@@ -1,14 +1,10 @@
 import net, {ServerOpts, Socket} from 'net';
 import {getAFreePort} from '../service/external';
-import {
-  CommandName,
-  GetCommandInfo,
-  SaveCommandInfo,
-} from '../service/types';
+import {CommandName, GetCommandInfo, SaveCommandInfo} from '../service/types';
 import {syntax} from '../service';
 import {store} from './store';
 import {AfterReceiveStatus, firstLineReg, tryParseCommand} from '../service/convert';
-import { getCommand } from '../service/common';
+import {getCommand} from '../service/common';
 
 async function handleConnection(socket: Socket) {
   let commandInfo: SaveCommandInfo | GetCommandInfo | null = null;
@@ -31,12 +27,15 @@ async function handleConnection(socket: Socket) {
           item,
           remainingBuffer: remaining,
           onReceiveData,
-        } = tryParseCommand(cachedBuffer, syntax[command].server.parseCommand);
+        } = tryParseCommand<SaveCommandInfo | GetCommandInfo>(
+          cachedBuffer,
+          syntax[command].server.parseCommand
+        );
         cachedBuffer = remaining;
         onReceiveDataToCommand = onReceiveData;
         commandInfo = item;
         if (!Boolean(onReceiveData)) {
-          const res = syntax[command].server.handleCommand(item.key, store);
+          const res = syntax[command].server.handleCommand(commandInfo as any, store);
           socket.write(res);
         }
       } else {
@@ -44,7 +43,7 @@ async function handleConnection(socket: Socket) {
         const {remainingBuffer, needConsume} = onReceiveDataToCommand(cachedBuffer);
         cachedBuffer = remainingBuffer;
         if (!needConsume) {
-          const res = syntax[command].server.handleCommand(commandInfo, store);
+          const res = syntax[command].server.handleCommand(commandInfo as any, store);
           socket.write(res);
           onReceiveDataToCommand = null;
         }

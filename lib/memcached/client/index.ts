@@ -3,34 +3,39 @@ import {startSocketClient} from '../../../net';
 import {syntax} from '../service';
 import {
   ClientApi,
-  ClientCommandInfo,
+  ClientSaveCommandInfo,
   RecordItem,
   SaveCommandInfo,
   SaveStatus,
   StoreApi,
 } from '../service/types';
 
-export class Storage implements ClientApi {
+export class connection implements ClientApi {
+  option: TcpNetConnectOpts;
+  constructor(option: TcpNetConnectOpts) {
+    this.option = option;
+  }
   get() {
     return {};
   }
-  set(comandInfo: ClientCommandInfo) {
+  set(comandInfo: ClientSaveCommandInfo) {
     syntax['set'].client.toCommandLine(comandInfo);
     return SaveStatus.STORED;
   }
-  add(commandINfo: ClientCommandInfo) {
+  add(commandINfo: ClientSaveCommandInfo) {
     return SaveStatus.STORED;
   }
-  replace(commandINfo: ClientCommandInfo) {
+  replace(commandINfo: ClientSaveCommandInfo) {
     return SaveStatus.STORED;
   }
-  append(commandINfo: ClientCommandInfo) {
+  append(commandINfo: ClientSaveCommandInfo) {
     return SaveStatus.STORED;
   }
-  prepend(commandINfo: ClientCommandInfo) {
+  prepend(commandINfo: ClientSaveCommandInfo) {
     return SaveStatus.STORED;
   }
-  cas(commandINfo: ClientCommandInfo) {
+  cas(commandINfo: ClientSaveCommandInfo) {
     return SaveStatus.STORED;
   }
 }
+

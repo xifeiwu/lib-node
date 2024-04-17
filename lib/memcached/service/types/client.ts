@@ -13,14 +13,14 @@ export interface GetResponseInfo {
 import {GetCommandName, SaveCommandName, ErrorMessage, Flag, SaveStatus, SaveCommandProps} from './common';
 
 /** Record stored on Server Side */
-export interface ClientCommandInfo extends Pick<SaveCommandProps, 'key' | 'bytes' | 'casId' | 'expireTimeInSeconds'> {
+export interface ClientSaveCommandInfo extends Pick<SaveCommandProps, 'key' | 'bytes' | 'casId' | 'expireTimeInSeconds'> {
   // flags: Flag;
   // expiration: number;
   value: Buffer;
 }
 
-export type SaveFunc = (item: ClientCommandInfo) => SaveStatus | ErrorMessage;
-export type GetFunc = (keys: string[]) => {[key: string]: ClientCommandInfo};
+export type SaveFunc = (item: ClientSaveCommandInfo) => SaveStatus | ErrorMessage;
+export type GetFunc = (keys: string[]) => {[key: string]: ClientSaveCommandInfo};
 export type AllSaveFunc = {
   [key in SaveCommandName]: SaveFunc;
 };
