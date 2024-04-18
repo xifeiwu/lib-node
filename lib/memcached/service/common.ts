@@ -1,5 +1,6 @@
-import {firstLineReg} from './convert';
 import {CommandName} from './types';
+
+export const firstLineReg = /^(set|add|replace|append|prepend|cas|get|gets|VALUE|END)( .*?)?(?: ?\r\n)?$/;
 
 export function getCommand(chunk: Buffer): CommandName {
   const index = chunk.findIndex((it, index) => {

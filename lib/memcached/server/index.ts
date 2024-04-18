@@ -3,7 +3,7 @@ import {getAFreePort} from '../service/external';
 import {CommandName, GetCommandInfo, SaveCommandInfo} from '../service/types';
 import {syntax} from '../service';
 import {store} from './store';
-import {AfterReceiveStatus, firstLineReg, tryParseCommand} from '../service/convert';
+import {AfterReceiveStatus, tryParseCommand} from '../service/convert';
 import {getCommand} from '../service/common';
 
 async function handleConnection(socket: Socket) {
@@ -53,8 +53,8 @@ async function handleConnection(socket: Socket) {
   }
   socket.on('data', onData);
 }
-export async function startServer(config: {port: number; host?: string; options?: ServerOpts}) {
-  const {host = '0.0.0.0', port = await getAFreePort(), options} = config;
+export async function startServer(config?: {port?: number; host?: string; options?: ServerOpts}) {
+  const {host = '0.0.0.0', port = await getAFreePort(), options} = config ?? {};
   return new Promise<{host: string; port: number}>((res, rej) => {
     const server = net.createServer(options, handleConnection);
     server.on('listening', () => {

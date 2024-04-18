@@ -29,7 +29,7 @@ export class Storage implements StoreApi {
     if (!isNumber(expiration)) {
       return true;
     }
-    if (expiration > 0 && expiration > Date.now()) {
+    if (expiration > 0 && expiration < Date.now()) {
       return true;
     }
     return false;

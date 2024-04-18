@@ -1,21 +1,7 @@
 import net, {TcpNetConnectOpts} from 'net';
 import {startSocketClient} from '../../../net';
-
-interface HandleStatus {
-  remainingBuffer?: Buffer;
-  done?: boolean;
-}
-
-export type DataHandler = (
-  chunk: Buffer,
-  socket?: net.Socket
-  // cb: (err, data: any) => void
-) => HandleStatus | Promise<HandleStatus>;
-interface ConnectionInfo {
-  socket: net.Socket;
-  cachedBuffer?: Buffer;
-  dataHandlerQueue?: Array<DataHandler>;
-}
+import {getConnectionKey} from '../service/client';
+import {ConnectionInfo, DataHandler} from '../service';
 
 async function getOneConnection(options: TcpNetConnectOpts): Promise<ConnectionInfo> {
   const socket = await startSocketClient(options);
@@ -33,13 +19,13 @@ async function getOneConnection(options: TcpNetConnectOpts): Promise<ConnectionI
     if (info.dataHandlerQueue.length === 0) {
       throw new Error(`no handler but get data`);
     }
-    while (info.cachedBuffer.byteLength > 0) {
+    while (Buffer.isBuffer(info.cachedBuffer) && info.cachedBuffer.byteLength > 0) {
       const {remainingBuffer, done} = (await info.dataHandlerQueue[0](info.cachedBuffer, socket)) ?? {};
+      info.cachedBuffer = remainingBuffer;
       if (done) {
         info.dataHandlerQueue.shift();
         break;
       }
-      info.cachedBuffer = remainingBuffer;
     }
   });
   return info;
@@ -49,8 +35,7 @@ const connectionInfoMap: {
   [key: string]: ConnectionInfo;
 } = {};
 export async function getConnection(options: TcpNetConnectOpts, dataHandler?: DataHandler) {
-  const {host = '', port} = options;
-  const key = host + port;
+  const key = getConnectionKey(options);
   if (!connectionInfoMap[key]) {
     connectionInfoMap[key] = await getOneConnection(options);
   }

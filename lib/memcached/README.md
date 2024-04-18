@@ -5,6 +5,7 @@ Implementation of memcached client and server.
 # Reference Projects
 
 [memcached](https://github.com/3rd-Eden/memcached)
+[nodecached](https://github.com/alexfernandez/nodecached)
 
 # Protocol
 

@@ -1,3 +1,4 @@
+import {firstLineReg} from './common';
 import {BufferCRLF, CRLF, MAX_RELATIVE_SECONDS} from './constant';
 import {isString} from './external';
 import {RecordItem, Flag, SaveCommandInfo} from './types';
@@ -70,7 +71,6 @@ interface BytesAndValue {
   value?: Buffer;
   [key: string]: any;
 }
-export const firstLineReg = /^(\w+) (.*?)(?: ?\r\n)?$/;
 export function tryParseCommand<T extends BytesAndValue>(
   chunk: Buffer,
   parserFirstLine: (line: string) => T
@@ -78,7 +78,7 @@ export function tryParseCommand<T extends BytesAndValue>(
   item: T;
   remainingBuffer?: Buffer;
   /** onReceiveData is not undefined means item still need to consume some data */
-  onReceiveData: ((chunk: Buffer) => AfterReceiveStatus);
+  onReceiveData: (chunk: Buffer) => AfterReceiveStatus;
 } {
   const index = chunk.findIndex((it, index) => {
     return it === 0x0d && chunk[index + 1] === 0x0a;
@@ -86,7 +86,7 @@ export function tryParseCommand<T extends BytesAndValue>(
   if (index === -1) {
     throw new Error('Error tryParseCommandLine: \r\n not found when parsing command line');
   }
-  const firstLine = chunk.subarray(0, index).toString('utf-8');
+  const firstLine = chunk.subarray(0, index + 2).toString('utf-8');
   if (!firstLineReg.test(firstLine)) {
     throw new Error(`Error format of command not correct: ${firstLine}`);
   }
@@ -150,7 +150,7 @@ function onReceiveData(item: BytesAndValue, chunk: Buffer): AfterReceiveStatus {
   if (chunk[0] === 0x0d) {
     chunk = chunk.subarray(1);
   }
-  if (chunk[1] === 0x0a) {
+  if (chunk[0] === 0x0a) {
     chunk = chunk.subarray(1);
   }
 

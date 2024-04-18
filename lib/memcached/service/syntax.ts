@@ -2,9 +2,9 @@ import net from 'net';
 import {AfterReceiveStatus, appendCRLF, saveCommandInfoToRecord, tryParseCommand} from './convert';
 import {toBuffer, toInt} from './external';
 import {SaveCommandName, StoreApi, SaveCommandInfo, SaveFunc, GetCommandInfo, GetCommandName} from './types';
-import {GetResponseInfo} from './types/client';
-import {DataHandler} from './connection-pool';
+import {DataHandler, GetResponseInfo} from './types/client';
 import {BufferCRLF} from './constant';
+import {firstLineReg} from './common';
 
 interface Handler<CommandInfo, ResponseInfo> {
   server: {
@@ -46,9 +46,9 @@ const saveHandler: Handler<SaveCommandInfo, ReturnType<SaveFunc>> = {
   },
   client: {
     commandInfoToBuffer(params) {
-      const {key, flags, expireTimeInSeconds: exptime, bytes, casId, value} = params;
+      const {command, key, flags, expireTimeInSeconds: exptime, bytes, casId, value} = params;
       return toBuffer([
-        [key, flags, toInt(exptime), toInt(bytes), casId].filter(it => it !== undefined).join(' '),
+        [command, key, flags, toInt(exptime), toInt(bytes), casId].filter(it => it !== undefined).join(' '),
         BufferCRLF,
         value,
         BufferCRLF,
@@ -67,8 +67,13 @@ const saveHandler: Handler<SaveCommandInfo, ReturnType<SaveFunc>> = {
 const getHandler: Handler<GetCommandInfo, GetResponseInfo[]> = {
   server: {
     // get <key>*\r\n
-    parseCommand(line: string) {
-      const [command, ...keys] = line.split(' ').filter(it => it && it.length > 0);
+    parseCommand(firstLine: string) {
+      const execRes = firstLineReg.exec(firstLine);
+      if (!execRes) {
+        throw new Error(`Error, Command Format: ${firstLine}`);
+      }
+      const [, command, props] = execRes;
+      const keys = props.split(' ').filter(it => it && it.length > 0);
       return {command: command as GetCommandName, keys};
     },
     // VALUE <key> <flags> <bytes> [<cas unique>]\r\n
@@ -77,19 +82,19 @@ const getHandler: Handler<GetCommandInfo, GetResponseInfo[]> = {
     handleCommand(commandInfo, store) {
       const {command, keys} = commandInfo;
       const records = store[command](keys);
-      const valueList = Object.entries(records).map(([key, record]) => {
+      const valueList = Object.entries(records).map<Buffer>(([key, record]) => {
         const {flags, bytes, casId, value} = record;
         const firstLine = ['VALUE', key, flags, bytes, casId].filter(it => it !== undefined).join(' ');
-        return [firstLine, value];
+        return toBuffer([firstLine, BufferCRLF, value, BufferCRLF]);
       });
-      return [...valueList, 'END'].join('\r\n') + '\r\n';
+      return toBuffer([...valueList, toBuffer(['END', BufferCRLF])]);
     },
   },
   client: {
     commandInfoToBuffer(params) {
       const {command, keys} = params;
       const line = [command, ...keys].join(' ');
-      return toBuffer(appendCRLF(line));
+      return toBuffer([line, BufferCRLF]);
     },
     // VALUE <key> <flags> <bytes> [<cas unique>]\r\n
     // <data block>\r\n
@@ -116,8 +121,13 @@ const getHandler: Handler<GetCommandInfo, GetResponseInfo[]> = {
               item,
               remainingBuffer: remaining,
               onReceiveData,
-            } = tryParseCommand<GetResponseInfo>(cachedBuffer, (line: string) => {
-              const [command, key, flags, bytes, casId] = line.split(' ').filter(it => it && it.length > 0);
+            } = tryParseCommand<GetResponseInfo>(cachedBuffer, (firstLine: string) => {
+              const execRes = firstLineReg.exec(firstLine);
+              if (!execRes) {
+                throw new Error(`Error, Command Format: ${firstLine}`);
+              }
+              const [, command, props] = execRes;
+              const [key, flags, bytes, casId] = (props ?? '').split(' ').filter(it => it && it.length > 0);
               return {
                 command: command as GetResponseInfo['command'],
                 key,
@@ -134,10 +144,9 @@ const getHandler: Handler<GetCommandInfo, GetResponseInfo[]> = {
                 // return results;
                 cb(null, results);
                 done = true;
+              } else {
+                results.push(commandInfo);
               }
-              results.push(commandInfo);
-              // const res = syntax[command].server.handleCommand(item.key, store);
-              // socket.write(res);
             }
           } else {
             const {remainingBuffer, needConsume} = onReceiveDataToCommand(cachedBuffer);

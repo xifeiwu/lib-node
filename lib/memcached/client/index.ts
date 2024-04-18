@@ -1,5 +1,4 @@
 import {TcpNetConnectOpts} from 'net';
-import {startSocketClient} from '../../../net';
 import {syntax, toBuffer} from '../service';
 import {
   ClientApi,
@@ -7,15 +6,13 @@ import {
   ErrorMessage,
   GetCommandInfo,
   GetResponseInfo,
-  RecordItem,
-  SaveCommandInfo,
   SaveCommandName,
   SaveStatus,
-  StoreApi,
 } from '../service/types';
-import {getConnection} from '../service/connection-pool';
+import {getConnection} from './connection';
+import {getConnectionKey} from '../service/client';
 
-export class connection implements ClientApi {
+export class Client implements ClientApi {
   option: TcpNetConnectOpts;
   constructor(option: TcpNetConnectOpts) {
     this.option = option;
@@ -82,4 +79,16 @@ export class connection implements ClientApi {
   async cas(comandInfo: ClientSaveCommandInfo) {
     return await this.save(comandInfo, 'cas');
   }
+}
+
+const clientMap: {
+  [key: string]: Client;
+} = {};
+export function getClient(options: TcpNetConnectOpts) {
+  const key = getConnectionKey(options);
+  if (!clientMap[key]) {
+    clientMap[key] = new Client(options);
+  }
+  const client = clientMap[key];
+  return client;
 }

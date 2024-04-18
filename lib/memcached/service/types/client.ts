@@ -1,3 +1,5 @@
+import net from 'net';
+
 // VALUE <key> <flags> <bytes> [<cas unique>]\r\n
 // <data block>\r\n
 // END\r\n
@@ -32,3 +34,19 @@ type AllGetFunc = {
 };
 /** Api for store */
 export interface ClientApi extends AllSaveFunc, AllGetFunc {}
+
+interface HandleStatus {
+  remainingBuffer?: Buffer;
+  done?: boolean;
+}
+
+export type DataHandler = (
+  chunk: Buffer,
+  socket?: net.Socket
+  // cb: (err, data: any) => void
+) => HandleStatus | Promise<HandleStatus>;
+export interface ConnectionInfo {
+  socket: net.Socket;
+  cachedBuffer?: Buffer;
+  dataHandlerQueue?: Array<DataHandler>;
+}
