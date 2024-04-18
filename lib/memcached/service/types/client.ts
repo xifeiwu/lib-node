@@ -1,6 +1,6 @@
 import net from 'net';
 import {CanConvertToBuffer} from '../external';
-import {GetCommandName, SaveCommandName, ErrorMessage, SaveResponseStatus, SaveCommandInfo} from './common';
+import {GetCommandName, SaveCommandName, ErrorMessage, SaveResponseStatus, SaveCommandInfo, Flag} from './common';
 
 // VALUE <key> <flags> <bytes> [<cas unique>]\r\n
 // <data block>\r\n
@@ -8,7 +8,7 @@ import {GetCommandName, SaveCommandName, ErrorMessage, SaveResponseStatus, SaveC
 export interface GetResponseInfo {
   command: 'VALUE' | 'END';
   key: string;
-  flags: string;
+  flags: Flag;
   bytes: number;
   casId?: string;
   value?: Buffer;
@@ -26,7 +26,9 @@ type AllSaveFunc = {
   [key in SaveCommandName]: SaveFunc;
 };
 type AllGetFunc = {
-  [key in GetCommandName]: GetFunc;
+  gets: <T = any>(keys: string[]) => Promise<{[key: string]: T}>;
+  get: <T = any>(key) => Promise<T>;
+  // [key in GetCommandName]: GetFunc;
 };
 /** Api for store */
 export interface ClientApi extends AllSaveFunc, AllGetFunc {}
@@ -45,10 +47,4 @@ export interface ConnectionInfo {
   socket: net.Socket;
   cachedBuffer?: Buffer;
   dataHandlerQueue?: Array<DataHandler>;
-}
-
-export enum ClientFlag {
-  json = 1 << 1,
-  binary = 1 << 2,
-  numeric = 1 << 3,
 }

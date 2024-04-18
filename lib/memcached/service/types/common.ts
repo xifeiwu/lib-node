@@ -25,7 +25,14 @@ export interface SaveCommandInfo {
   casId?: string;
   value: Buffer;
 }
-export type Flag = string;
+
+export enum Flag {
+  unknown = '-1',
+  string = '0',
+  json = '' + (1 << 1),
+  binary = '' + (1 << 2),
+  number = '' + (1 << 3),
+}
 
 export enum SaveResponseStatus {
   /** "STORED\r\n", to indicate success. */
@@ -49,7 +56,7 @@ export enum ErrorStatus {
   SERVER_ERROR = 'SERVER_ERROR',
 }
 
-export type GetCommandName = 'get';
+export type GetCommandName = 'gets' | 'get';
 export interface GetCommandInfo {
   command: GetCommandName;
   keys: string[];

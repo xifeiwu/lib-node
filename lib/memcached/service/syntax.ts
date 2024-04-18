@@ -1,7 +1,7 @@
 import net from 'net';
 import {AfterReceiveStatus, appendCRLF, saveCommandInfoToRecord, tryParseCommand} from './convert';
 import {toBuffer, toInt} from './external';
-import {SaveCommandName, StoreApi, SaveCommandInfo, SaveFunc, GetCommandInfo, GetCommandName} from './types';
+import {SaveCommandName, StoreApi, SaveCommandInfo, SaveFunc, GetCommandInfo, GetCommandName, Flag} from './types';
 import {DataHandler, GetResponseInfo} from './types/client';
 import {BufferCRLF} from './constant';
 import {firstLineReg} from './common';
@@ -131,7 +131,7 @@ const getHandler: Handler<GetCommandInfo, GetResponseInfo[]> = {
               return {
                 command: command as GetResponseInfo['command'],
                 key,
-                flags,
+                flags: flags as Flag,
                 bytes: toInt(bytes),
                 casId,
               };
