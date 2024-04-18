@@ -2,7 +2,10 @@ import {getClient} from '../client';
 import {startServer} from '../server';
 
 export async function testFlow() {
-  const {host, port} = await startServer();
+  const {host, port} = await startServer({
+    host: '127.0.0.1',
+  });
+  console.log(`start socket server on: ${host}:${port}`);
   const client = getClient({host, port});
   const setRes = await client.set({
     key: 'abc',

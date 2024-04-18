@@ -26,7 +26,7 @@ export function saveCommandInfoToRecord(commandInfo: SaveCommandInfo) {
     expiration: toExpiration(expireTimeInSeconds),
     bytes,
     casId,
-    value: value.toString('utf-8'),
+    value,
   };
   return record;
 }

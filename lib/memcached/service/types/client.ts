@@ -1,4 +1,6 @@
 import net from 'net';
+import {CanConvertToBuffer} from '../external';
+import {GetCommandName, SaveCommandName, ErrorMessage, SaveResponseStatus, SaveCommandInfo} from './common';
 
 // VALUE <key> <flags> <bytes> [<cas unique>]\r\n
 // <data block>\r\n
@@ -12,19 +14,13 @@ export interface GetResponseInfo {
   value?: Buffer;
 }
 
-import {CanConvertToBuffer} from '../external';
-import {GetCommandName, SaveCommandName, ErrorMessage, SaveStatus, SaveCommandInfo} from './common';
-
-/** Record stored on Server Side */
-// export interface ClientSaveCommandInfo
-//   extends Pick<SaveCommandProps, 'key' | 'bytes' | 'casId' | 'expireTimeInSeconds'> {
-//   value: Buffer;
-// }
-export interface ClientSaveCommandInfo extends Omit<SaveCommandInfo, 'command' | 'bytes' | 'value'> {
+export interface ClientSaveCommandInfo extends Pick<SaveCommandInfo, 'key' | 'casId'> {
+  flags?: SaveCommandInfo['flags'];
+  expireTimeInSeconds?: SaveCommandInfo['expireTimeInSeconds'];
   value: CanConvertToBuffer;
 }
 
-type SaveFunc = (item: ClientSaveCommandInfo) => Promise<SaveStatus | ErrorMessage>;
+type SaveFunc = (item: ClientSaveCommandInfo) => Promise<SaveResponseStatus | ErrorMessage>;
 type GetFunc = (keys: string[]) => Promise<GetResponseInfo[]>;
 type AllSaveFunc = {
   [key in SaveCommandName]: SaveFunc;
@@ -49,4 +45,10 @@ export interface ConnectionInfo {
   socket: net.Socket;
   cachedBuffer?: Buffer;
   dataHandlerQueue?: Array<DataHandler>;
+}
+
+export enum ClientFlag {
+  json = 1 << 1,
+  binary = 1 << 2,
+  numeric = 1 << 3,
 }

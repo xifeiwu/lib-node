@@ -13,24 +13,21 @@ export type SaveCommandName =
   /** "cas" is a check and set operation which means "store this data but only if no one else has updated since I last fetched it." */
   | 'cas';
 
-/**
- * Used in Handle process
- */
-export interface SaveCommandProps {
+
+//<cmd> <key> <flags> <exptime> <bytes>
+//<cmd> <key> <flags> <exptime> <bytes> <cas unique>
+export interface SaveCommandInfo {
+  command: SaveCommandName;
   key: string;
   flags: string;
   expireTimeInSeconds: number;
   bytes: number;
   casId?: string;
-}
-
-/** All props of save command */
-export interface SaveCommandInfo extends SaveCommandProps {
-  command: SaveCommandName;
   value: Buffer;
 }
+export type Flag = string;
 
-export enum SaveStatus {
+export enum SaveResponseStatus {
   /** "STORED\r\n", to indicate success. */
   STORED = 'STORED',
   /**
@@ -59,16 +56,3 @@ export interface GetCommandInfo {
 }
 
 export type CommandName = SaveCommandName | GetCommandName;
-
-export type RetrieveAction = '';
-export enum Flag {
-  json = 1 << 1,
-  binary = 1 << 2,
-  numeric = 1 << 3,
-}
-
-// export type CommandInfo<CommandName extends SaveCommandName | GetCommand, T> = {
-//   command: CommandName;
-//   /** Only Command4Store have value after command line */
-//   value?: Buffer;
-// } & T;

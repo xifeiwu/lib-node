@@ -2,27 +2,38 @@ import {TcpNetConnectOpts} from 'net';
 import {syntax, toBuffer} from '../service';
 import {
   ClientApi,
+  ClientFlag,
   ClientSaveCommandInfo,
   ErrorMessage,
   GetCommandInfo,
   GetResponseInfo,
   SaveCommandName,
-  SaveStatus,
+  SaveResponseStatus,
 } from '../service/types';
 import {getConnection} from './connection';
 import {getConnectionKey} from '../service/client';
 
+interface DefaultSaveOptions {
+  flags: ClientSaveCommandInfo['flags'];
+  expireTimeInSeconds: ClientSaveCommandInfo['expireTimeInSeconds'];
+}
 export class Client implements ClientApi {
-  option: TcpNetConnectOpts;
-  constructor(option: TcpNetConnectOpts) {
-    this.option = option;
+  connectOptions: TcpNetConnectOpts;
+  defaultSaveOptions: DefaultSaveOptions;
+  constructor(option: TcpNetConnectOpts, saveOptions?: DefaultSaveOptions) {
+    this.connectOptions = option;
+    this.defaultSaveOptions = {
+      flags: String(ClientFlag.json),
+      expireTimeInSeconds: 3600 * 24,
+      ...(saveOptions ?? {}),
+    };
   }
   async get(keys: GetCommandInfo['keys']) {
     const firstLine = syntax['get'].client.commandInfoToBuffer({
       command: 'get',
       keys,
     });
-    const {socket, dataHandlerQueue} = await getConnection(this.option);
+    const {socket, dataHandlerQueue} = await getConnection(this.connectOptions);
     socket.write(firstLine);
     const result = await new Promise<GetResponseInfo[]>((res, rej) => {
       const dataHandler = syntax['get'].client.handleResponse((err, response) => {
@@ -42,14 +53,15 @@ export class Client implements ClientApi {
     const buffer = toBuffer(value);
     const bytes = buffer.byteLength;
     const firstLine = syntax[command].client.commandInfoToBuffer({
+      ...this.defaultSaveOptions,
       command,
       ...restProps,
       bytes,
       value: buffer,
     });
-    const {socket, dataHandlerQueue} = await getConnection(this.option);
+    const {socket, dataHandlerQueue} = await getConnection(this.connectOptions);
     socket.write(firstLine);
-    const result = await new Promise<SaveStatus | ErrorMessage>((res, rej) => {
+    const result = await new Promise<SaveResponseStatus | ErrorMessage>((res, rej) => {
       const dataHandler = syntax[command].client.handleResponse((err, response) => {
         if (err) {
           rej(err);
@@ -84,10 +96,10 @@ export class Client implements ClientApi {
 const clientMap: {
   [key: string]: Client;
 } = {};
-export function getClient(options: TcpNetConnectOpts) {
-  const key = getConnectionKey(options);
+export function getClient(netOptions: TcpNetConnectOpts, saveOptions?: DefaultSaveOptions) {
+  const key = getConnectionKey(netOptions);
   if (!clientMap[key]) {
-    clientMap[key] = new Client(options);
+    clientMap[key] = new Client(netOptions, saveOptions);
   }
   const client = clientMap[key];
   return client;

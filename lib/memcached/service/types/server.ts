@@ -1,13 +1,12 @@
-import {GetCommandName, SaveCommandName, ErrorMessage, Flag, SaveStatus, SaveCommandProps} from './common';
+import {GetCommandName, SaveCommandName, ErrorMessage, SaveResponseStatus, SaveCommandInfo} from './common';
 
 /** Record stored on Server Side */
-export interface RecordItem extends Pick<SaveCommandProps, 'bytes' | 'casId'> {
-  flags: Flag;
+export interface RecordItem extends Pick<SaveCommandInfo, 'bytes' | 'casId' | 'value'> {
+  flags: string;
   expiration: number;
-  value: string;
 }
 
-export type SaveFunc = (key: string, item: RecordItem) => SaveStatus | ErrorMessage;
+export type SaveFunc = (key: string, item: RecordItem) => SaveResponseStatus | ErrorMessage;
 export type GetFunc = (keys: string[]) => {[key: string]: RecordItem};
 export type AllSaveFunc = {
   [key in SaveCommandName]: SaveFunc;
