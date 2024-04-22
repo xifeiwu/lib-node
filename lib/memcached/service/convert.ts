@@ -1,5 +1,4 @@
-import {BufferCRLF, CRLF, MAX_RELATIVE_SECONDS} from './constant';
-import {isString} from './external';
+import {MAX_RELATIVE_SECONDS} from './constant';
 import {RecordItem, Flag, SaveCommandInfo, GeneralCommandInfo} from './types';
 
 /**
@@ -28,39 +27,6 @@ export function saveCommandInfoToRecord(commandInfo: SaveCommandInfo) {
     value,
   };
   return record;
-}
-
-export function appendCRLF(data: string): string;
-export function appendCRLF(data: Buffer): Buffer;
-export function appendCRLF(data: string | Buffer) {
-  if (isString(data)) {
-    if ((data as string).endsWith(CRLF)) {
-      data = (data as string) + CRLF;
-    }
-  } else if (Buffer.isBuffer(data)) {
-    const length = (data as Buffer).byteLength;
-    if ((data as Buffer)[length - 2] !== BufferCRLF[0] || (data as Buffer)[length - 1] !== BufferCRLF[1]) {
-      data = Buffer.concat([data as Buffer, BufferCRLF]);
-    }
-  }
-  return data;
-}
-
-export function removeCRLF(data: string): string;
-export function removeCRLF(data: Buffer): Buffer;
-export function removeCRLF(data: string | Buffer) {
-  if (isString(data)) {
-    if ((data as string).endsWith(CRLF)) {
-      data = data.slice(-2);
-    }
-  }
-  if (Buffer.isBuffer(data)) {
-    const length = (data as Buffer).byteLength;
-    if ((data as Buffer)[length - 2] !== BufferCRLF[0] || (data as Buffer)[length - 1] !== BufferCRLF[1]) {
-      data = data.subarray(-2);
-    }
-  }
-  return data;
 }
 
 export interface AfterConsumeDataStatus {

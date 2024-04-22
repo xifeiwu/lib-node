@@ -1,5 +1,5 @@
 import net from 'net';
-import {AfterReceiveDataStatus, appendCRLF, saveCommandInfoToRecord, tryConsumeData} from './convert';
+import {AfterReceiveDataStatus, saveCommandInfoToRecord, tryConsumeData} from './convert';
 import {toBuffer, toInt} from './external';
 import {
   SaveCommandName,
@@ -57,7 +57,7 @@ const handlSaveCommand: Handler<SaveCommandInfo, ReturnType<SaveFunc>>['server']
 ) => {
   const {command, key} = commandInfo;
   const saveRes = store[command](key, saveCommandInfoToRecord(commandInfo));
-  return appendCRLF(saveRes);
+  return toBuffer([saveRes, BufferCRLF]);
 };
 
 //<cmd> <key> <flags> <exptime> <bytes>
