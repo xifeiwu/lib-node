@@ -15,20 +15,46 @@ import {
 } from './types';
 import {DataHandler, GetResponseInfo} from './types/client';
 import {BufferCRLF} from './constant';
-import {firstLineReg} from './common';
+import {isNumber, isPlainObject, isString} from '../../../external';
 
-interface Handler<CommandInfo, ResponseInfo> {
-  server: {
-    toCommandInfo: (items: string[]) => CommandInfo;
-    handleCommand: (commandInfo: CommandInfo, store: StoreApi) => string | Buffer | undefined;
-  };
-  client: {
-    commandInfoToBuffer: (commandInfo: CommandInfo) => Buffer;
-    handleResponse: (
-      cb: (error: Error | null, res: ResponseInfo) => void,
-      commandInfo: CommandInfo
-    ) => DataHandler;
-  };
+export const firstLineReg =
+  /^(set|add|replace|append|prepend|cas|get|gets|delete|VALUE|END)( .*?)?(?: ?\r\n)?$/;
+
+export function getValueFlag(value: any): Flag {
+  let flag: Flag = Flag.unknown;
+  if (Buffer.isBuffer(value)) {
+    flag = Flag.binary;
+  } else if (isPlainObject(value)) {
+    flag = Flag.json;
+  } else if (isString(value)) {
+    flag = Flag.string;
+  } else if (isNumber(value)) {
+    flag = Flag.number;
+  }
+  return flag;
+}
+
+export function getValueByFlag(value: Buffer, flag: Flag) {
+  if (flag === Flag.binary) {
+    return value;
+  }
+  const str = value.toString('utf-8');
+  if (flag === Flag.number) {
+    const num = +str;
+    if (isNumber(num)) {
+      return num;
+    }
+  }
+  if (flag === Flag.json) {
+    let json = str;
+    try {
+      json = JSON.parse(str);
+      return json;
+    } catch (err) {
+      /** Ignore */
+    }
+  }
+  return str;
 }
 
 export function parseFirstLine(chunk: Buffer) {
@@ -48,6 +74,20 @@ export function parseFirstLine(chunk: Buffer) {
   return {
     commandItems: [command, ...props],
     remainingBuffer: chunk.subarray(index + 2),
+  };
+}
+
+interface Handler<CommandInfo, ResponseInfo> {
+  server: {
+    toCommandInfo: (items: string[]) => CommandInfo;
+    handleCommand: (commandInfo: CommandInfo, store: StoreApi) => string | Buffer | undefined;
+  };
+  client: {
+    commandInfoToBuffer: (commandInfo: CommandInfo) => Buffer;
+    handleResponse: (
+      cb: (error: Error | null, res: ResponseInfo) => void,
+      commandInfo: CommandInfo
+    ) => DataHandler;
   };
 }
 

@@ -14,7 +14,7 @@ import {
 } from '../service/types';
 import {getConnection} from './connection';
 import {getConnectionKey} from '../service/client';
-import {getValueByFlag, getValueFlag} from '../service/common';
+import {getValueByFlag, getValueFlag} from '../service';
 
 interface DefaultSaveOptions {
   flags: ClientSaveCommandInfo['flags'];
