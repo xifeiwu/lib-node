@@ -35,7 +35,7 @@ export async function getValue() {
 }
 
 export async function testDelete() {
-  await startMemcachedServer();
+  // await startMemcachedServer();
   await saveValue();
   const client = getClient({host: '127.0.0.1', port: PORT.tmpMemcached.port});
   const valueByGet = await client.get('abc');

@@ -182,24 +182,16 @@ const getHandler: Handler<GetCommandInfo, GetResponseInfo[]> = {
 /**
 Deletion
 --------
-
 The command "delete" allows for explicit deletion of items:
-
 delete <key> [noreply]\r\n
-
 - <key> is the key of the item the client wishes the server to delete
-
 - "noreply" optional parameter instructs the server to not send the
   reply.  See the note in Storage commands regarding malformed
   requests.
-
 The response line to this command can be one of:
-
 - "DELETED\r\n" to indicate success
-
 - "NOT_FOUND\r\n" to indicate that the item with this key was not
   found.
-
 See the "flush_all" command below for immediate invalidation
 of all existing items.ss
  */
@@ -211,8 +203,8 @@ const deleteHandler: Handler<DeleteCommandInfo, void> = {
         throw new Error(`Error, Command Format: ${firstLine}`);
       }
       const [, command, props] = execRes;
-      const keys = props.split(' ').filter(it => it && it.length > 0);
-      return {command: command as 'delete', key: keys[0]};
+      const [key, noreply] = props.split(' ').filter(it => it && it.length > 0);
+      return {command: command as 'delete', key, noreply: noreply !== undefined};
     },
     handleCommand(commandInfo, store) {
       const {command, key, noreply} = commandInfo;
