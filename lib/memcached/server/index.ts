@@ -1,15 +1,14 @@
 import net, {ServerOpts, Socket} from 'net';
 import {getAFreePort} from '../service/external';
-import {CommandName, GetCommandInfo, SaveCommandInfo} from '../service/types';
-import {syntax} from '../service';
+import {CommandName, GeneralCommandInfo, GetCommandInfo, SaveCommandInfo} from '../service/types';
+import {parseFirstLine, syntax} from '../service';
 import {store} from './store';
-import {AfterReceiveStatus, tryParseCommand} from '../service/convert';
-import {getCommand} from '../service/common';
+import {AfterReceiveDataStatus, tryConsumeData} from '../service/convert';
 
 async function handleConnection(socket: Socket) {
-  let commandInfo: SaveCommandInfo | GetCommandInfo | null = null;
+  let commandInfo: GeneralCommandInfo | null = null;
   /** whether current command need to consume more data */
-  let onReceiveDataToCommand: (chunk: Buffer) => AfterReceiveStatus = null;
+  let onReceiveDataToCommand: (chunk: Buffer) => AfterReceiveDataStatus = null;
 
   let cachedBuffer: Buffer | undefined = Buffer.alloc(0);
   function onData(chunk: Buffer) {
@@ -20,33 +19,31 @@ async function handleConnection(socket: Socket) {
       cachedBuffer = chunk;
     }
     while (Buffer.isBuffer(cachedBuffer) && cachedBuffer.byteLength > 0) {
-      if (onReceiveDataToCommand === null) {
+      if (!onReceiveDataToCommand) {
         /** start to parse command(first) line */
-        const command = getCommand(cachedBuffer);
-        const {
-          item,
-          remainingBuffer,
-          onReceiveData,
-        } = tryParseCommand<SaveCommandInfo | GetCommandInfo>(
-          cachedBuffer,
-          syntax[command].server.parseCommand
-        );
+        const {commandItems, remainingBuffer: restBuffer} = parseFirstLine(cachedBuffer);
+        const [commandName] = commandItems;
+        commandInfo = syntax[commandName].server.toCommandInfo(commandItems);
+        const {remainingBuffer, onReceiveData} = tryConsumeData(commandInfo, restBuffer);
         cachedBuffer = remainingBuffer;
         onReceiveDataToCommand = onReceiveData;
-        commandInfo = item;
         if (!Boolean(onReceiveData)) {
-          const res = syntax[command].server.handleCommand(commandInfo as any, store);
-          if (res) {
+          const res = syntax[commandName].server.handleCommand(commandInfo as any, store);
+          /** res === undefined means no need to send response to client side */
+          if (res !== undefined) {
             socket.write(res);
           }
         }
       } else {
         const {command} = commandInfo;
-        const {remainingBuffer, needConsume} = onReceiveDataToCommand(cachedBuffer);
+        const {remainingBuffer, needContinueConsume} = onReceiveDataToCommand(cachedBuffer);
         cachedBuffer = remainingBuffer;
-        if (!needConsume) {
+        if (!needContinueConsume) {
           const res = syntax[command].server.handleCommand(commandInfo as any, store);
-          socket.write(res);
+          /** res === undefined means no need to send response to client side */
+          if (res !== undefined) {
+            socket.write(res);
+          }
           onReceiveDataToCommand = null;
         }
       }

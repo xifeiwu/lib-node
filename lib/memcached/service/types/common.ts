@@ -13,6 +13,17 @@ export type SaveCommandName =
   /** "cas" is a check and set operation which means "store this data but only if no one else has updated since I last fetched it." */
   | 'cas';
 
+/**
+ * General interface for commandInfo
+ */
+export interface GeneralCommandInfo {
+  command: string;
+  /** if bytes exist and larger than 0, it means, should receive data part from follow stream */
+  bytes?: number;
+  value?: Buffer;
+  [key: string]: any;
+}
+
 //<cmd> <key> <flags> <exptime> <bytes>
 //<cmd> <key> <flags> <exptime> <bytes> <cas unique>
 export interface SaveCommandInfo {

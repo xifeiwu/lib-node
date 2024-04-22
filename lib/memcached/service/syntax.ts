@@ -1,5 +1,5 @@
 import net from 'net';
-import {AfterReceiveStatus, appendCRLF, saveCommandInfoToRecord, tryParseCommand} from './convert';
+import {AfterReceiveDataStatus, appendCRLF, saveCommandInfoToRecord, tryConsumeData} from './convert';
 import {toBuffer, toInt} from './external';
 import {
   SaveCommandName,
@@ -19,7 +19,7 @@ import {firstLineReg} from './common';
 
 interface Handler<CommandInfo, ResponseInfo> {
   server: {
-    parseCommand: (line: string) => CommandInfo;
+    toCommandInfo: (items: string[]) => CommandInfo;
     handleCommand: (commandInfo: CommandInfo, store: StoreApi) => string | Buffer | undefined;
   };
   client: {
@@ -28,6 +28,26 @@ interface Handler<CommandInfo, ResponseInfo> {
       cb: (error: Error | null, res: ResponseInfo) => void,
       commandInfo: CommandInfo
     ) => DataHandler;
+  };
+}
+
+export function parseFirstLine(chunk: Buffer) {
+  const index = chunk.findIndex((it, index) => {
+    return it === 0x0d && chunk[index + 1] === 0x0a;
+  });
+  if (index === -1) {
+    throw new Error('Error tryParseCommandLine: \r\n not found when parsing command line');
+  }
+  const firstLine = chunk.subarray(0, index + 2).toString('utf-8');
+  const execResults = firstLineReg.exec(firstLine);
+  if (!execResults) {
+    throw new Error(`Error format of command not correct: ${firstLine}`);
+  }
+  const [, command, rest] = execResults;
+  const props = rest ? rest.split(' ').filter(it => it && it.length > 0) : [];
+  return {
+    commandItems: [command, ...props],
+    remainingBuffer: chunk.subarray(index + 2),
   };
 }
 
@@ -44,8 +64,8 @@ const handlSaveCommand: Handler<SaveCommandInfo, ReturnType<SaveFunc>>['server']
 //<cmd> <key> <flags> <exptime> <bytes> <cas unique>
 const saveHandler: Handler<SaveCommandInfo, ReturnType<SaveFunc>> = {
   server: {
-    parseCommand(line: string) {
-      const [command, key, flags, exptime, bytes, casId] = line.split(' ');
+    toCommandInfo(items) {
+      const [command, key, flags, exptime, bytes, casId] = items;
       return {
         command: command as SaveCommandName,
         key,
@@ -78,21 +98,16 @@ const saveHandler: Handler<SaveCommandInfo, ReturnType<SaveFunc>> = {
   },
 };
 
+// get <key>*\r\n
+// VALUE <key> <flags> <bytes> [<cas unique>]\r\n
+// <data block>\r\n
+// "END\r\n"
 const getHandler: Handler<GetCommandInfo, GetResponseInfo[]> = {
   server: {
-    // get <key>*\r\n
-    parseCommand(firstLine: string) {
-      const execRes = firstLineReg.exec(firstLine);
-      if (!execRes) {
-        throw new Error(`Error, Command Format: ${firstLine}`);
-      }
-      const [, command, props] = execRes;
-      const keys = props.split(' ').filter(it => it && it.length > 0);
+    toCommandInfo(items) {
+      const [command, ...keys] = items;
       return {command: command as GetCommandName, keys};
     },
-    // VALUE <key> <flags> <bytes> [<cas unique>]\r\n
-    // <data block>\r\n
-    // "END\r\n"
     handleCommand(commandInfo, store) {
       const {command, keys} = commandInfo;
       const records = store['gets'](keys);
@@ -110,14 +125,10 @@ const getHandler: Handler<GetCommandInfo, GetResponseInfo[]> = {
       const line = [command, ...keys].join(' ');
       return toBuffer([line, BufferCRLF]);
     },
-    // VALUE <key> <flags> <bytes> [<cas unique>]\r\n
-    // <data block>\r\n
-    // END\r\n
     handleResponse(cb) {
       const results: GetResponseInfo[] = [];
       let commandInfo: GetResponseInfo | null = null;
-      // let cachedBuffer: Buffer | undefined = Buffer.alloc(0);
-      let onReceiveDataToCommand: (chunk: Buffer) => AfterReceiveStatus = null;
+      let onReceiveDataToCommand: (chunk: Buffer) => AfterReceiveDataStatus = null;
       const handleData: DataHandler = (chunk: Buffer, socket: net.Socket) => {
         socket.pause();
         // if (Buffer.isBuffer(cachedBuffer) && cachedBuffer.byteLength > 0) {
@@ -126,33 +137,25 @@ const getHandler: Handler<GetCommandInfo, GetResponseInfo[]> = {
         //   cachedBuffer = chunk;
         // }
         let done = false;
+        /** Combine remaining buffer with current chunk is done from outside by caller */
         let cachedBuffer = chunk;
         while (Buffer.isBuffer(cachedBuffer) && cachedBuffer.byteLength > 0) {
-          if (onReceiveDataToCommand === null) {
+          if (!onReceiveDataToCommand) {
             /** start to parse command(first) line */
-            // const command = getCommand(cachedBuffer);
-            const {
-              item,
-              remainingBuffer: remaining,
-              onReceiveData,
-            } = tryParseCommand<GetResponseInfo>(cachedBuffer, (firstLine: string) => {
-              const execRes = firstLineReg.exec(firstLine);
-              if (!execRes) {
-                throw new Error(`Error, Command Format: ${firstLine}`);
-              }
-              const [, command, props] = execRes;
-              const [key, flags, bytes, casId] = (props ?? '').split(' ').filter(it => it && it.length > 0);
-              return {
-                command: command as GetResponseInfo['command'],
-                key,
-                flags: flags as Flag,
-                bytes: toInt(bytes),
-                casId,
-              };
-            });
-            cachedBuffer = remaining;
+            const {commandItems, remainingBuffer: restBuffer} = parseFirstLine(cachedBuffer);
+            // const [commandName] = commandItems;
+            // commandInfo = syntax[commandName].server.toCommandInfo(commandItems);
+            const [command, key, flags, bytes, casId] = commandItems;
+            commandInfo = {
+              command: command as GetResponseInfo['command'],
+              key,
+              flags: flags as Flag,
+              bytes: toInt(bytes),
+              casId,
+            };
+            const {remainingBuffer, onReceiveData} = tryConsumeData(commandInfo, restBuffer);
+            cachedBuffer = remainingBuffer;
             onReceiveDataToCommand = onReceiveData;
-            commandInfo = item;
             if (!Boolean(onReceiveData)) {
               if (commandInfo.command === 'END') {
                 // return results;
@@ -163,9 +166,9 @@ const getHandler: Handler<GetCommandInfo, GetResponseInfo[]> = {
               }
             }
           } else {
-            const {remainingBuffer, needConsume} = onReceiveDataToCommand(cachedBuffer);
+            const {remainingBuffer, needContinueConsume} = onReceiveDataToCommand(cachedBuffer);
             cachedBuffer = remainingBuffer;
-            if (!needConsume) {
+            if (!needContinueConsume) {
               results.push(commandInfo);
               onReceiveDataToCommand = null;
             }
@@ -197,19 +200,14 @@ of all existing items.ss
  */
 const deleteHandler: Handler<DeleteCommandInfo, void> = {
   server: {
-    parseCommand(firstLine) {
-      const execRes = firstLineReg.exec(firstLine);
-      if (!execRes) {
-        throw new Error(`Error, Command Format: ${firstLine}`);
-      }
-      const [, command, props] = execRes;
-      const [key, noreply] = props.split(' ').filter(it => it && it.length > 0);
+    toCommandInfo(items) {
+      const [command, key, noreply] = items;
       return {command: command as 'delete', key, noreply: noreply !== undefined};
     },
     handleCommand(commandInfo, store) {
       const {command, key, noreply} = commandInfo;
       const res = store[command](key);
-      if (noreply === undefined) {
+      if (!noreply) {
         return res;
       }
       return undefined;
