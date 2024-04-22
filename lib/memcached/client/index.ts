@@ -3,10 +3,12 @@ import {syntax, toBuffer} from '../service';
 import {
   ClientApi,
   ClientSaveCommandInfo,
+  DeleteCommandInfo,
   ErrorMessage,
   Flag,
   GetCommandInfo,
   GetResponseInfo,
+  SaveCommandInfo,
   SaveCommandName,
   SaveResponseStatus,
 } from '../service/types';
@@ -35,14 +37,15 @@ export class Client implements ClientApi {
     const flags = getValueFlag(value);
     const buffer = toBuffer(value);
     const bytes = buffer.byteLength;
-    const firstLine = syntax[command].client.commandInfoToBuffer({
+    const saveCommandInfo: SaveCommandInfo = {
       ...this.defaultSaveOptions,
       command,
       ...restProps,
       flags,
       bytes,
       value: buffer,
-    });
+    };
+    const firstLine = syntax[command].client.commandInfoToBuffer(saveCommandInfo);
     const {socket, dataHandlerQueue} = await getConnection(this.connectOptions);
     socket.write(firstLine);
     const result = await new Promise<SaveResponseStatus | ErrorMessage>((res, rej) => {
@@ -52,7 +55,7 @@ export class Client implements ClientApi {
         } else {
           res(response);
         }
-      });
+      }, saveCommandInfo);
       dataHandlerQueue.push(dataHandler);
     });
     return result;
@@ -77,10 +80,11 @@ export class Client implements ClientApi {
   }
 
   async gets<T = any>(keys: GetCommandInfo['keys']) {
-    const firstLine = syntax['get'].client.commandInfoToBuffer({
+    const commandInfo: GetCommandInfo = {
       command: 'get',
       keys,
-    });
+    };
+    const firstLine = syntax['get'].client.commandInfoToBuffer(commandInfo);
     const {socket, dataHandlerQueue} = await getConnection(this.connectOptions);
     socket.write(firstLine);
     const results = await new Promise<GetResponseInfo[]>((res, rej) => {
@@ -90,7 +94,7 @@ export class Client implements ClientApi {
         } else {
           res(response);
         }
-      });
+      }, commandInfo);
       dataHandlerQueue.push(dataHandler);
     });
     const obj = results
@@ -108,6 +112,19 @@ export class Client implements ClientApi {
   async get<T = any>(key: string) {
     const results = await this.gets([key]);
     return results[key];
+  }
+  async delete(key: string, noreply?: boolean) {
+    const commandInfo: DeleteCommandInfo = {key, command: 'delete', noreply};
+    const firstLine = await syntax['delete'].client.commandInfoToBuffer(commandInfo);
+    const {socket, dataHandlerQueue} = await getConnection(this.connectOptions);
+    socket.write(firstLine);
+    const results = await new Promise<Error | true>((res, rej) => {
+      const dataHandler = syntax['delete'].client.handleResponse((err, response) => {
+        res(err ? err : true);
+      }, commandInfo);
+      dataHandlerQueue.push(dataHandler);
+    });
+    return results;
   }
 }
 

@@ -1,7 +1,14 @@
 // import { Params } from "./types";
 
 import {isNumber} from '../../../external';
-import {ErrorMessage, ErrorStatus, SaveCommandName, SaveResponseStatus, StoreApi} from '../service/types';
+import {
+  DeleteResponseStatus,
+  ErrorMessage,
+  ErrorStatus,
+  SaveCommandName,
+  SaveResponseStatus,
+  StoreApi,
+} from '../service/types';
 import {getError} from './service';
 import {RecordItem} from '../service/types';
 
@@ -15,15 +22,6 @@ export class Storage implements StoreApi {
     this.currentSize = 0;
     this.maxSizeMb = 100;
     this.maxCount = 100;
-  }
-  remove(key) {
-    if (!this.record.has(key)) {
-      return false;
-    }
-    const byteLength = this.record.get(key).bytes;
-    this.record.delete(key);
-    this.currentSize == byteLength;
-    return true;
   }
   isOutdate(expiration: number) {
     if (!isNumber(expiration)) {
@@ -112,27 +110,11 @@ export class Storage implements StoreApi {
   cas(key: string, item: RecordItem) {
     return this.store('cas', key, item);
   }
-  purge() {
-    if (this.record.size > this.maxCount) {
-      for (const [key, value] of Object.entries(this.record)) {
-        if (this.isOutdate(value.expiration)) {
-          this.remove(key);
-        }
-      }
-    }
-    for (const [key] of Object.entries(this.record)) {
-      if (this.record.size > this.maxCount || this.currentSize > this.maxSizeMb) {
-        this.remove(key);
-      } else {
-        break;
-      }
-    }
-  }
   /**
    * VALUE <key> <flags> <bytes> [<cas unique>]\r\n
    * <data block>\r\n
    */
-  get(keys: string[]): {[key: string]: RecordItem} {
+  gets(keys: string[]): {[key: string]: RecordItem} {
     return keys.reduce<{[key: string]: RecordItem}>((sum, key) => {
       if (!this.contains(key)) {
         return sum;
@@ -142,6 +124,36 @@ export class Storage implements StoreApi {
         [key]: this.record.get(key),
       };
     }, {});
+  }
+  get(key): RecordItem {
+    const obj = this.gets([key]);
+    return obj[key];
+  }
+
+  delete(key: string) {
+    if (!this.record.has(key)) {
+      return DeleteResponseStatus.NOT_FOUND;
+    }
+    const byteLength = this.record.get(key).bytes;
+    this.record.delete(key);
+    this.currentSize == byteLength;
+    return DeleteResponseStatus.DELETED;
+  }
+  purge() {
+    if (this.record.size > this.maxCount) {
+      for (const [key, value] of Object.entries(this.record)) {
+        if (this.isOutdate(value.expiration)) {
+          this.delete(key);
+        }
+      }
+    }
+    for (const [key] of Object.entries(this.record)) {
+      if (this.record.size > this.maxCount || this.currentSize > this.maxSizeMb) {
+        this.delete(key);
+      } else {
+        break;
+      }
+    }
   }
 }
 

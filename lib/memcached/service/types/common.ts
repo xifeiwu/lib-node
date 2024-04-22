@@ -13,7 +13,6 @@ export type SaveCommandName =
   /** "cas" is a check and set operation which means "store this data but only if no one else has updated since I last fetched it." */
   | 'cas';
 
-
 //<cmd> <key> <flags> <exptime> <bytes>
 //<cmd> <key> <flags> <exptime> <bytes> <cas unique>
 export interface SaveCommandInfo {
@@ -24,14 +23,6 @@ export interface SaveCommandInfo {
   bytes: number;
   casId?: string;
   value: Buffer;
-}
-
-export enum Flag {
-  unknown = '-1',
-  string = '0',
-  json = '' + (1 << 1),
-  binary = '' + (1 << 2),
-  number = '' + (1 << 3),
 }
 
 export enum SaveResponseStatus {
@@ -50,16 +41,53 @@ export enum SaveResponseStatus {
 // const error
 export type ErrorMessage = `${ErrorStatus} ${string}`;
 
-export enum ErrorStatus {
-  Error = 'Error',
-  CLIENT_ERROR = 'CLIENT_ERROR',
-  SERVER_ERROR = 'SERVER_ERROR',
-}
-
 export type GetCommandName = 'gets' | 'get';
 export interface GetCommandInfo {
   command: GetCommandName;
   keys: string[];
 }
 
+// Deletion
+// --------
+
+// The command "delete" allows for explicit deletion of items:
+
+// delete <key> [noreply]\r\n
+
+// - <key> is the key of the item the client wishes the server to delete
+
+// - "noreply" optional parameter instructs the server to not send the
+//   reply.  See the note in Storage commands regarding malformed
+//   requests.
+
+// The response line to this command can be one of:
+
+// - "DELETED\r\n" to indicate success
+
+// - "NOT_FOUND\r\n" to indicate that the item with this key was not
+//   found.
+export interface DeleteCommandInfo {
+  command: 'delete';
+  key: string;
+  noreply?: boolean;
+}
+export enum DeleteResponseStatus {
+  DELETED = 'DELETED',
+  NOT_FOUND = 'NOT_FOUND',
+}
+
 export type CommandName = SaveCommandName | GetCommandName;
+
+export enum Flag {
+  unknown = '-1',
+  string = '0',
+  json = '' + (1 << 1),
+  binary = '' + (1 << 2),
+  number = '' + (1 << 3),
+}
+
+export enum ErrorStatus {
+  Error = 'Error',
+  CLIENT_ERROR = 'CLIENT_ERROR',
+  SERVER_ERROR = 'SERVER_ERROR',
+}

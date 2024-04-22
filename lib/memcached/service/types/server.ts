@@ -1,4 +1,11 @@
-import {GetCommandName, SaveCommandName, ErrorMessage, SaveResponseStatus, SaveCommandInfo} from './common';
+import {
+  GetCommandName,
+  SaveCommandName,
+  ErrorMessage,
+  SaveResponseStatus,
+  SaveCommandInfo,
+  DeleteResponseStatus,
+} from './common';
 
 /** Record stored on Server Side */
 export interface RecordItem extends Pick<SaveCommandInfo, 'bytes' | 'casId' | 'value'> {
@@ -7,12 +14,16 @@ export interface RecordItem extends Pick<SaveCommandInfo, 'bytes' | 'casId' | 'v
 }
 
 export type SaveFunc = (key: string, item: RecordItem) => SaveResponseStatus | ErrorMessage;
-export type GetFunc = (keys: string[]) => {[key: string]: RecordItem};
 export type AllSaveFunc = {
   [key in SaveCommandName]: SaveFunc;
 };
+
 export type AllGetFunc = {
-  [key in GetCommandName]: GetFunc;
+  gets: (keys: string[]) => {[key: string]: RecordItem};
+  get: (keys: string) => RecordItem;
 };
+
+export type DeleteFunc = {delete: (key: string) => DeleteResponseStatus | ErrorMessage};
+
 /** Api for store */
-export interface StoreApi extends AllSaveFunc, AllGetFunc {}
+export interface StoreApi extends AllSaveFunc, AllGetFunc, DeleteFunc {}

@@ -1,7 +1,18 @@
 import net from 'net';
 import {AfterReceiveStatus, appendCRLF, saveCommandInfoToRecord, tryParseCommand} from './convert';
 import {toBuffer, toInt} from './external';
-import {SaveCommandName, StoreApi, SaveCommandInfo, SaveFunc, GetCommandInfo, GetCommandName, Flag} from './types';
+import {
+  SaveCommandName,
+  StoreApi,
+  SaveCommandInfo,
+  SaveFunc,
+  GetCommandInfo,
+  GetCommandName,
+  Flag,
+  DeleteCommandInfo,
+  DeleteFunc,
+  DeleteResponseStatus,
+} from './types';
 import {DataHandler, GetResponseInfo} from './types/client';
 import {BufferCRLF} from './constant';
 import {firstLineReg} from './common';
@@ -9,11 +20,14 @@ import {firstLineReg} from './common';
 interface Handler<CommandInfo, ResponseInfo> {
   server: {
     parseCommand: (line: string) => CommandInfo;
-    handleCommand: (commandInfo: CommandInfo, store: StoreApi) => string | Buffer;
+    handleCommand: (commandInfo: CommandInfo, store: StoreApi) => string | Buffer | undefined;
   };
   client: {
     commandInfoToBuffer: (commandInfo: CommandInfo) => Buffer;
-    handleResponse: (cb: (error: Error | null, res: ResponseInfo) => void) => DataHandler;
+    handleResponse: (
+      cb: (error: Error | null, res: ResponseInfo) => void,
+      commandInfo: CommandInfo
+    ) => DataHandler;
   };
 }
 
@@ -81,7 +95,7 @@ const getHandler: Handler<GetCommandInfo, GetResponseInfo[]> = {
     // "END\r\n"
     handleCommand(commandInfo, store) {
       const {command, keys} = commandInfo;
-      const records = store[command](keys);
+      const records = store['gets'](keys);
       const valueList = Object.entries(records).map<Buffer>(([key, record]) => {
         const {flags, bytes, casId, value} = record;
         const firstLine = ['VALUE', key, flags, bytes, casId].filter(it => it !== undefined).join(' ');
@@ -165,6 +179,70 @@ const getHandler: Handler<GetCommandInfo, GetResponseInfo[]> = {
   },
 };
 
+/**
+Deletion
+--------
+
+The command "delete" allows for explicit deletion of items:
+
+delete <key> [noreply]\r\n
+
+- <key> is the key of the item the client wishes the server to delete
+
+- "noreply" optional parameter instructs the server to not send the
+  reply.  See the note in Storage commands regarding malformed
+  requests.
+
+The response line to this command can be one of:
+
+- "DELETED\r\n" to indicate success
+
+- "NOT_FOUND\r\n" to indicate that the item with this key was not
+  found.
+
+See the "flush_all" command below for immediate invalidation
+of all existing items.ss
+ */
+const deleteHandler: Handler<DeleteCommandInfo, void> = {
+  server: {
+    parseCommand(firstLine) {
+      const execRes = firstLineReg.exec(firstLine);
+      if (!execRes) {
+        throw new Error(`Error, Command Format: ${firstLine}`);
+      }
+      const [, command, props] = execRes;
+      const keys = props.split(' ').filter(it => it && it.length > 0);
+      return {command: command as 'delete', key: keys[0]};
+    },
+    handleCommand(commandInfo, store) {
+      const {command, key, noreply} = commandInfo;
+      const res = store[command](key);
+      if (noreply === undefined) {
+        return res;
+      }
+      return undefined;
+    },
+  },
+  client: {
+    commandInfoToBuffer(commandInfo) {
+      const {command, key, noreply} = commandInfo;
+      return toBuffer([[command, key, noreply].filter(it => !!it).join(' '), BufferCRLF]);
+    },
+    handleResponse(cb, commandInfo) {
+      const {noreply} = commandInfo;
+      if (noreply === undefined) {
+        return async chunk => {
+          const resStr = chunk.toString() as ReturnType<DeleteFunc['delete']>;
+          let error = resStr === DeleteResponseStatus.DELETED ? null : new Error(resStr);
+          cb(error);
+          return {done: true};
+        };
+      } else {
+        cb(null);
+      }
+    },
+  },
+};
 export const syntax = {
   set: saveHandler,
   add: saveHandler,
@@ -172,5 +250,7 @@ export const syntax = {
   append: saveHandler,
   prepend: saveHandler,
   cas: saveHandler,
+  gets: getHandler,
   get: getHandler,
+  delete: deleteHandler,
 };

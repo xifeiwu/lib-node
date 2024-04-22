@@ -36,7 +36,9 @@ async function handleConnection(socket: Socket) {
         commandInfo = item;
         if (!Boolean(onReceiveData)) {
           const res = syntax[command].server.handleCommand(commandInfo as any, store);
-          socket.write(res);
+          if (res) {
+            socket.write(res);
+          }
         }
       } else {
         const {command} = commandInfo;

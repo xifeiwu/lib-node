@@ -1,6 +1,14 @@
 import net from 'net';
 import {CanConvertToBuffer} from '../external';
-import {GetCommandName, SaveCommandName, ErrorMessage, SaveResponseStatus, SaveCommandInfo, Flag} from './common';
+import {
+  GetCommandName,
+  SaveCommandName,
+  ErrorMessage,
+  SaveResponseStatus,
+  SaveCommandInfo,
+  Flag,
+  DeleteCommandInfo,
+} from './common';
 
 // VALUE <key> <flags> <bytes> [<cas unique>]\r\n
 // <data block>\r\n
@@ -28,10 +36,12 @@ type AllSaveFunc = {
 type AllGetFunc = {
   gets: <T = any>(keys: string[]) => Promise<{[key: string]: T}>;
   get: <T = any>(key) => Promise<T>;
-  // [key in GetCommandName]: GetFunc;
+};
+type DeleteFunc = {
+  delete: (key: DeleteCommandInfo['key'], noreply?: DeleteCommandInfo['noreply']) => Promise<Error | true>;
 };
 /** Api for store */
-export interface ClientApi extends AllSaveFunc, AllGetFunc {}
+export interface ClientApi extends AllSaveFunc, AllGetFunc, DeleteFunc {}
 
 interface HandleStatus {
   remainingBuffer?: Buffer;
