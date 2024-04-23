@@ -1,16 +1,8 @@
 import http, {IncomingHttpHeaders} from 'http';
 import {getStreamData} from '../stream';
 import {fromBuffer} from '../transform';
-import {HttpFirstLineInfo} from '../types';
+import {ResponseInfo} from '../types';
 
-// GET /api/test/echo HTTP/1.1
-export interface RequestInfo<T = any> extends HttpFirstLineInfo {
-  // method: string;
-  // url: string;
-  // httpVersion: string;
-  headers: IncomingHttpHeaders;
-  data?: T;
-}
 export function getRequestHeaderInfo(request: http.IncomingMessage) {
   const {method, url, httpVersion, headers} = request;
   return {method, url, httpVersion, headers};
@@ -23,14 +15,6 @@ export async function getRequestInfo(request: http.IncomingMessage) {
   };
 }
 
-// HTTP/1.1 200 OK
-export interface ResponseInfo<T = any> {
-  httpVersion: string;
-  statusCode: number;
-  statusMessage: string;
-  headers: IncomingHttpHeaders;
-  data?: T;
-}
 export function getResponseHeaderInfo(response: http.IncomingMessage): ResponseInfo {
   const {httpVersion, statusCode, statusMessage, headers} = response;
   return {statusCode, statusMessage, httpVersion, headers};

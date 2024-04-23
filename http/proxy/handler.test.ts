@@ -1,10 +1,11 @@
 import http from 'http';
 import https from 'https';
 import {getStreamData} from '../../stream';
-import {getAFreePort} from '../../net';
+// import {getAFreePort} from '../../net/http';
 import {proxyRequest} from './handler';
 import {getRequestHeaderInfo} from '../common';
 import {requestAndGetResponseInfo} from '../client';
+import { getAFreePort } from '../../net';
 
 /**
  * For handler2, req.readable is false

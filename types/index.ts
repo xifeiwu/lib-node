@@ -1,5 +1,1 @@
-export interface HttpFirstLineInfo {
-  method: string;
-  url: string;
-  httpVersion: string;
-}
+export * from './http';

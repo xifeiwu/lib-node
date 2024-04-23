@@ -1,10 +1,10 @@
 import os from 'os';
 import {Writable} from 'stream';
 import net, {ServerOpts, Socket, TcpNetConnectOpts} from 'net';
-import {logWithColor} from './index';
-import {isString, isNumber} from './external';
-import {httpFirstLineReg} from './constants';
-import {HttpFirstLineInfo} from './types';
+import {isString, isNumber} from '../external';
+import {httpFirstLineReg} from '../constants';
+import {HttpFirstLineInfo} from '../types';
+import {logWithColor} from '../log';
 
 export function getLocalIP() {
   let localIP = null;
@@ -139,15 +139,14 @@ export async function startSocketClient(options: TcpNetConnectOpts) {
 }
 
 export async function startSocketServer(
-  config: {
+  handleConnection: (socket: Socket) => void,
+  config?: {
     host?: string;
     port?: number;
     options?: ServerOpts;
-  },
-  handleConnection: (socket: Socket) => void
+  }
 ) {
-  const {host = '127.0.0.1', port = await getAFreePort(), options} = config;
-  // const host = '0.0.0.0';
+  const {host = '0.0.0.0', port = await getAFreePort(), options} = config ?? {};
   return new Promise<{host: string; port: number}>((res, rej) => {
     const server = net.createServer(options, handleConnection);
     server.on('listening', () => {

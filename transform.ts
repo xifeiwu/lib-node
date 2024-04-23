@@ -1,10 +1,7 @@
-import {Readable} from 'stream';
-import {isStream} from './common';
-import {getStreamData} from './stream';
 import {isNumber, isPlainObject, isString} from './external';
 
 export type CanConvertToBuffer = string | number | object | Uint8Array;
-export function toBuffer(data: CanConvertToBuffer | Array<CanConvertToBuffer>) {
+export function toBuffer(data: CanConvertToBuffer | Array<CanConvertToBuffer>): Buffer {
   if (Array.isArray(data)) {
     if (data.every(isNumber)) {
       return Buffer.from(data as Array<number>);
