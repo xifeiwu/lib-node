@@ -3,6 +3,8 @@ import {Writable} from 'stream';
 import net, {ServerOpts, Socket, TcpNetConnectOpts} from 'net';
 import {logWithColor} from './index';
 import {isString, isNumber} from './external';
+import {httpFirstLineReg} from './constants';
+import {HttpFirstLineInfo} from './types';
 
 export function getLocalIP() {
   let localIP = null;
@@ -200,5 +202,40 @@ export function writeDataByInterval(
       resolve();
     }
   }, interval);
-  return new Promise<void>(res => resolve = res);
+  return new Promise<void>(res => (resolve = res));
+}
+
+type ProtocolInfo =
+  | {
+      protocol: 'http';
+      info: HttpFirstLineInfo;
+    }
+  | {
+      protocol: 'socks5';
+    };
+export function getProtocolInfoByFirstChunk(chunk: Buffer): ProtocolInfo {
+  const index = chunk.findIndex((it, index) => {
+    return it === 0x0d && chunk[index + 1] === 0x0a;
+  });
+  const firstLine = (index > 0 ? chunk.subarray(0, index) : chunk).toString('utf-8');
+  if (index !== -1) {
+    const execHttpReg = httpFirstLineReg.exec(firstLine);
+    if (execHttpReg) {
+      const [method, url, httpVersion] = execHttpReg.slice(1);
+      return {
+        protocol: 'http',
+        info: {
+          method,
+          url,
+          httpVersion,
+        },
+      };
+    }
+  } else {
+    if (0x05 === chunk[0]) {
+      return {
+        protocol: 'socks5',
+      };
+    }
+  }
 }

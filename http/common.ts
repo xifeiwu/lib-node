@@ -1,12 +1,13 @@
 import http, {IncomingHttpHeaders} from 'http';
 import {getStreamData} from '../stream';
 import {fromBuffer} from '../transform';
+import {HttpFirstLineInfo} from '../types';
 
 // GET /api/test/echo HTTP/1.1
-export interface RequestInfo<T = any> {
-  method: string;
-  url: string;
-  httpVersion: string;
+export interface RequestInfo<T = any> extends HttpFirstLineInfo {
+  // method: string;
+  // url: string;
+  // httpVersion: string;
   headers: IncomingHttpHeaders;
   data?: T;
 }
