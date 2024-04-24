@@ -86,13 +86,14 @@ export function handleSocketEvents(
   options?: {
     isServer?: boolean;
     color?: Parameters<typeof logWithColor>[0];
+    maxPrintDataLength?: number;
     onData?: (chunk: Buffer) => void;
   }
 ) {
   if (!socket) {
     return;
   }
-  const {isServer = false, color = 'black', onData} = options ?? {};
+  const {isServer = false, color = 'black', maxPrintDataLength, onData} = options ?? {};
   if (!socket) {
     logWithColor(color, `socket is undefined`);
     return;
@@ -107,7 +108,11 @@ export function handleSocketEvents(
       return onData(chunk);
     }
     logWithColor(color, `${tag} data:`);
-    logWithColor(color, chunk);
+    logWithColor(
+      color,
+      `[size: ${chunk.byteLength}]` +
+        (isNumber(maxPrintDataLength) ? chunk.subarray(0, maxPrintDataLength) : chunk).toString()
+    );
     if (isServer) {
       socket.writable && socket.write(chunk);
     }
