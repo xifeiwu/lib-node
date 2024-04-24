@@ -1,7 +1,7 @@
 import http from 'http';
 import {getStreamData} from '../stream';
 import {fromBuffer} from '../transform';
-import {ResponseInfo} from '../types';
+import {HttpResponseInfo} from '../types';
 
 export function getRequestHeaderInfo(request: http.IncomingMessage) {
   const {method, url, httpVersion, headers} = request;
@@ -15,7 +15,7 @@ export async function getRequestInfo(request: http.IncomingMessage) {
   };
 }
 
-export function getResponseHeaderInfo(response: http.IncomingMessage): ResponseInfo {
+export function getResponseHeaderInfo(response: http.IncomingMessage): HttpResponseInfo {
   const {httpVersion, statusCode, statusMessage, headers} = response;
   return {statusCode, statusMessage, httpVersion, headers};
 }
@@ -25,7 +25,7 @@ export async function getResponseInfo<T>(
     maxLength?: number;
     dataType?: 'buffer' | 'string' | 'json';
   } = {}
-): Promise<ResponseInfo<T>> {
+): Promise<HttpResponseInfo<T>> {
   const {maxLength = 32 * 1024 * 1024, dataType = 'json'} = options;
   const data = await getStreamData(response);
   const slicedData = data.subarray(0, maxLength);

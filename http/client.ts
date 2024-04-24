@@ -7,7 +7,7 @@ import {toBuffer} from '../transform';
 import {Socket} from 'net';
 import {getResponseInfo} from './common';
 import {UrlProps, toUrlInstance, getUrlPropsFromConfig, deepMerge, urlPropsToHref} from '../external';
-import {ResponseInfo} from '../types';
+import {HttpResponseInfo} from '../types';
 
 type ToBufferParams = Parameters<typeof toBuffer>[0];
 
@@ -98,7 +98,7 @@ export async function requestAndGetUpgradeInfo<Payload extends ToBufferParams = 
   });
 }
 
-export type ValidateStatus = (responseInfo: ResponseInfo) => boolean;
+export type ValidateStatus = (responseInfo: HttpResponseInfo) => boolean;
 export const validateStatusCode: ValidateStatus = info => {
   const {statusCode} = info;
   return statusCode >= 200 && statusCode < 300;
@@ -106,8 +106,8 @@ export const validateStatusCode: ValidateStatus = info => {
 export class ResponseError extends Error {
   isResponseError: boolean = true;
   requestConfig: HttpRequestOptions;
-  responseInfo: ResponseInfo;
-  constructor(requestConfig: HttpRequestOptions, responseInfo: ResponseInfo) {
+  responseInfo: HttpResponseInfo;
+  constructor(requestConfig: HttpRequestOptions, responseInfo: HttpResponseInfo) {
     const {statusCode, statusMessage} = responseInfo;
     super(`Response code ${statusCode}: ${statusMessage}`);
     this.requestConfig = requestConfig;

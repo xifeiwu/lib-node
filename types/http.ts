@@ -7,7 +7,7 @@ export interface HttpFirstLineInfo {
 }
 
 // GET /api/test/echo HTTP/1.1
-export interface RequestInfo<T = any> extends HttpFirstLineInfo {
+export interface HttpRequestInfo<T = any> extends HttpFirstLineInfo {
   // method: string;
   // url: string;
   // httpVersion: string;
@@ -15,7 +15,7 @@ export interface RequestInfo<T = any> extends HttpFirstLineInfo {
   data?: T;
 }
 // HTTP/1.1 200 OK
-export interface ResponseInfo<T = any> {
+export interface HttpResponseInfo<T = any> {
   httpVersion: string;
   statusCode: number;
   statusMessage: string;

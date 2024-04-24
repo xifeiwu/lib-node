@@ -1,7 +1,7 @@
 import {CanConvertToBuffer, toBuffer} from '../transform';
-import {RequestInfo, ResponseInfo} from '../types';
+import {HttpRequestInfo, HttpResponseInfo} from '../types';
 
-export function getRequestData(info: RequestInfo): Buffer {
+export function getRequestData(info: HttpRequestInfo): Buffer {
   let {method = 'get', url, httpVersion, headers, data} = info;
   let bufferArray: CanConvertToBuffer[] = [];
   if (!/^http\//i.test(httpVersion)) {
@@ -25,7 +25,7 @@ export function getRequestData(info: RequestInfo): Buffer {
   return toBuffer(bufferArray);
 }
 
-export function getResponseData(info: ResponseInfo): Buffer {
+export function getResponseData(info: HttpResponseInfo): Buffer {
   let {httpVersion, statusCode, statusMessage, headers, data} = info;
   let bufferArray: CanConvertToBuffer[] = [];
   if (!/^http\//i.test(httpVersion)) {
