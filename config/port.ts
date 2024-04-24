@@ -11,6 +11,10 @@ export const PORT: {
   };
 } = {
   /** Start: for net feature explore */
+  tmpStart: {
+    port: 3000,
+    description: 'start port for tmp usage',
+  },
   tmpMemcached: {
     port: 3099,
     description: 'tmp port for memcached',

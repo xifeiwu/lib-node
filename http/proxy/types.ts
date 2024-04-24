@@ -1,7 +1,7 @@
 import {RequestOptions, IncomingMessage} from 'http';
-import {RequestInfo, ResponseInfo} from '../common';
 import {toStream} from '../../stream';
 import {HttpRequestOptions} from '../client';
+import {RequestInfo, ResponseInfo} from '../../types';
 
 export interface HttpProxyConfig {
   /**

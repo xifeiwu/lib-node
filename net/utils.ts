@@ -117,6 +117,7 @@ export function handleSocketEvents(
   });
   socket.on('error', err => {
     logWithColor(color, `socket ${tag} error:`, err);
+    console.log(err);
   });
   socket.on('close', hadError => {
     logWithColor(color, `socket ${tag} close${hadError ? ' [hadError].' : '.'}`);
@@ -147,10 +148,10 @@ export async function startSocketServer(
   }
 ) {
   const {host = '0.0.0.0', port = await getAFreePort(), options} = config ?? {};
-  return new Promise<{host: string; port: number}>((res, rej) => {
+  return new Promise<{host: string; port: number; server: net.Server}>((res, rej) => {
     const server = net.createServer(options, handleConnection);
     server.on('listening', () => {
-      res({host, port});
+      res({host, port, server});
     });
     server.on('error', err => {
       rej(err);
@@ -162,20 +163,21 @@ export async function startSocketServer(
 export function writeDataByInterval(
   writer: Writable,
   options?: {
+    contentStr?: string;
     startChar?: string;
-    str?: string;
     maxCount?: number;
-    end?: string;
+    /** string send by .end() */
+    endStr?: string;
     interval?: number;
   }
 ) {
   let resolve: () => void;
-  const {startChar, str, end, interval = 500, maxCount = 3} = options ?? {};
+  const {startChar, contentStr, endStr, interval = 500, maxCount = 3} = options ?? {};
   const content: string[] = [];
   let cnt = 0;
-  if (str) {
+  if (contentStr) {
     while (cnt < maxCount) {
-      content[cnt++] = str;
+      content[cnt++] = contentStr;
     }
   } else if (startChar) {
     const startCharCode = startChar.charCodeAt(0);
@@ -195,8 +197,8 @@ export function writeDataByInterval(
       writer.write(content.shift());
     } else {
       clearInterval(intervalTag);
-      if (end !== undefined) {
-        writer.end(end);
+      if (endStr !== undefined) {
+        writer.end(endStr);
       }
       resolve();
     }

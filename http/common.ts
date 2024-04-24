@@ -1,4 +1,4 @@
-import http, {IncomingHttpHeaders} from 'http';
+import http from 'http';
 import {getStreamData} from '../stream';
 import {fromBuffer} from '../transform';
 import {ResponseInfo} from '../types';

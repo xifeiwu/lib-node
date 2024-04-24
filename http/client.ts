@@ -5,8 +5,9 @@ import https from 'https';
 import stream from 'stream';
 import {toBuffer} from '../transform';
 import {Socket} from 'net';
-import {ResponseInfo, getResponseInfo} from './common';
+import {getResponseInfo} from './common';
 import {UrlProps, toUrlInstance, getUrlPropsFromConfig, deepMerge, urlPropsToHref} from '../external';
+import {ResponseInfo} from '../types';
 
 type ToBufferParams = Parameters<typeof toBuffer>[0];
 
