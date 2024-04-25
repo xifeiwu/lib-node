@@ -1,6 +1,6 @@
 import {Readable} from 'stream';
 import {CanConvertToBuffer, toBuffer} from '../transform';
-import {HttpRequestInfo, HttpResponseInfo} from '../types';
+import {HttpFirstLineInfo, HttpRequestInfo, HttpResponseInfo} from '../types';
 import {httpFirstLineReg, httpHeaderLineReg} from '../constants';
 
 type RequestInfo = Omit<HttpRequestInfo, 'method' | 'headers' | 'httpVersion'> &
@@ -54,41 +54,91 @@ export function getResponseData(info: HttpResponseInfo): Buffer {
   return toBuffer(bufferArray);
 }
 
-interface ReturnValue<T extends Readable> {
-  requestInfo: HttpRequestInfo;
-  reader: T;
+export function getMatcher4LineBreak() {
+  const valueR = 0x0d;
+  const valueN = 0x0a;
+  const status = {
+    matchR: false,
+    matchN: false,
+  };
+  return (n: number) => {
+    if (!status.matchR) {
+      if (n === valueR) {
+        status.matchR = true;
+      }
+    } else {
+      if (n === valueN) {
+        return true;
+      } else {
+        status.matchR = false;
+      }
+    }
+    return false;
+  };
 }
-export async function parseHttpHeaderPart<T extends Readable>(reader: T): Promise<ReturnValue<T>> {
+
+interface ParseFirstLineResults {
+  firstLineInfo?: HttpFirstLineInfo;
+  dataConsumed: Buffer;
+}
+export async function parseHttpFirstLine(reader: Readable): Promise<ParseFirstLineResults> {
   let method: HttpRequestInfo['method'];
   let url: HttpRequestInfo['url'];
   let httpVersion: HttpRequestInfo['httpVersion'];
-  let headers: HttpRequestInfo['headers'] = {};
-  let requestInfo: HttpRequestInfo;
-  let resolve: (v: ReturnValue<T>) => void;
+  const maxLength = 1024;
+  let matcher = getMatcher4LineBreak();
+  let resolve: (v: ParseFirstLineResults) => void;
   let reject: (err: Error) => void;
 
-  const getMatch = () => {
-    const valueR = 0x0d;
-    const valueN = 0x0a;
-    const status = {
-      matchR: false,
-      matchN: false,
-    };
-    return (n: number) => {
-      if (!status.matchR) {
-        if (n === valueR) {
-          status.matchR = true;
+  const onReadable = () => {
+    let cacheBuffer = Buffer.alloc(0);
+    try {
+      while (reader.readableLength > 0) {
+        const oneByte = reader.read(1);
+        if (oneByte === null) {
+          break;
         }
-      } else {
-        if (n === valueN) {
-          return true;
-        } else {
-          status.matchR = false;
+        cacheBuffer = Buffer.concat([cacheBuffer, oneByte]);
+        if (matcher(oneByte[0])) {
+          const line = cacheBuffer.toString('utf-8').trim().replace(/\r\n$/, '');
+          const execResult = httpFirstLineReg.exec(line);
+          if (execResult) {
+            [method, url, httpVersion] = execResult.slice(1);
+          }
+          break;
+        } else if (cacheBuffer.byteLength > maxLength) {
+          break;
         }
       }
-      return false;
-    };
+      resolve({
+        firstLineInfo: method !== undefined ? {method, url, httpVersion} : undefined,
+        dataConsumed: cacheBuffer,
+      });
+    } catch (err) {
+      reject(err);
+    }
   };
+  reader.once('readable', onReadable);
+  return new Promise((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+}
+interface ParseHttpHeaderResults<T extends Readable> {
+  requestInfo: HttpRequestInfo;
+  reader: T;
+  dataConsumed: Buffer;
+}
+export async function parseHttpHeaderPart<T extends Readable>(
+  reader: T,
+  initialValue?: Partial<HttpRequestInfo>
+): Promise<ParseHttpHeaderResults<T>> {
+  let requestInfo: HttpRequestInfo;
+  let resolve: (v: ParseHttpHeaderResults<T>) => void;
+  let reject: (err: Error) => void;
+  let {method, url, httpVersion, headers = {}} = initialValue ?? {};
+  let dataConsumed = Buffer.alloc(0);
+
   const updateValue = (chunk: Buffer) => {
     const line = chunk.toString('utf-8').trim().replace(/\r\n$/, '');
     if (line === '') {
@@ -98,10 +148,7 @@ export async function parseHttpHeaderPart<T extends Readable>(reader: T): Promis
         httpVersion,
         headers,
       };
-      return resolve({
-        requestInfo,
-        reader,
-      });
+      return;
     }
     if (method === undefined) {
       const execResult = httpFirstLineReg.exec(line);
@@ -128,27 +175,35 @@ export async function parseHttpHeaderPart<T extends Readable>(reader: T): Promis
 
   const onReadable = () => {
     let cacheBuffer = Buffer.alloc(0);
-    let match = getMatch();
+    let matcher = getMatcher4LineBreak();
     try {
       while (reader.readableLength > 0) {
         const oneByte = reader.read(1);
+        if (oneByte === null) {
+          break;
+        }
         cacheBuffer = Buffer.concat([cacheBuffer, oneByte]);
-        if (match(oneByte[0])) {
+        if (matcher(oneByte[0])) {
           updateValue(cacheBuffer);
+          dataConsumed = Buffer.concat([dataConsumed, cacheBuffer]);
           cacheBuffer = Buffer.alloc(0);
-          match = getMatch();
+          matcher = getMatcher4LineBreak();
         }
         if (requestInfo) {
-          reader.off('readable', onReadable);
           break;
         }
       }
+      resolve({
+        requestInfo,
+        reader,
+        dataConsumed,
+      });
     } catch (err) {
       reject(err);
     }
   };
-  reader.on('readable', onReadable);
-  return new Promise<ReturnValue<T>>((res, rej) => {
+  reader.once('readable', onReadable);
+  return new Promise<ParseHttpHeaderResults<T>>((res, rej) => {
     resolve = res;
     reject = rej;
   });
