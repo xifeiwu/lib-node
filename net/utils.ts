@@ -87,7 +87,8 @@ export function handleSocketEvents(
     isServer?: boolean;
     color?: Parameters<typeof logWithColor>[0];
     maxPrintDataLength?: number;
-    onData?: (chunk: Buffer) => void;
+    /** As listening on 'data' event will change flowMode, sometimes we do not want to change flowMode */
+    onData?: null | ((chunk: Buffer) => void);
   }
 ) {
   if (!socket) {
@@ -103,22 +104,27 @@ export function handleSocketEvents(
   const remote = `${remoteAddress}:${remotePort}`;
   const tag = [local, '<-', remote].join('');
   logWithColor(color, `start listen events on socket: ${tag}`);
-  socket.on('data', chunk => {
-    if (onData) {
-      return onData(chunk);
-    }
-    logWithColor(color, `${tag} data:`);
-    logWithColor(
-      color,
-      `[size: ${chunk.byteLength}]` +
-        (isNumber(maxPrintDataLength) ? chunk.subarray(0, maxPrintDataLength) : chunk).toString()
-    );
-    if (isServer) {
-      socket.writable && socket.write(chunk);
-    }
-  });
+  if (onData !== null) {
+    socket.on('data', chunk => {
+      if (onData) {
+        return onData(chunk);
+      }
+      logWithColor(color, `${tag} data:`);
+      logWithColor(
+        color,
+        `[size: ${chunk.byteLength}]` +
+          (isNumber(maxPrintDataLength) ? chunk.subarray(0, maxPrintDataLength) : chunk).toString()
+      );
+      if (isServer) {
+        socket.writable && socket.write(chunk);
+      }
+    });
+  }
   socket.on('end', () => {
     logWithColor(color, `socket ${tag} end.`);
+  });
+  socket.on('timeout', () => {
+    logWithColor(color, `socket ${tag} timeout.`);
   });
   socket.on('error', err => {
     logWithColor(color, `socket ${tag} error:`, err);
