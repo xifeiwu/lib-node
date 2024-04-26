@@ -23,7 +23,8 @@ export interface ParamsForFindMockInfoInDir {
   targetDir: string;
   options?: {
     /** relative path */
-    allowedFileList?: string[];
+    includedFileList?: string[];
+    excludedFileList?: string[];
     debugCompare?: boolean;
   };
 }

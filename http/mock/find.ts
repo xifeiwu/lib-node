@@ -87,9 +87,11 @@ export function getMockFileFinderByDir(config: ParamsForFindMockInfoInDir): {
     },
   });
   let targetFileList: string[] = relativeFileList;
-  const {allowedFileList, debugCompare} = options;
-  if (Array.isArray(allowedFileList)) {
-    targetFileList = relativeFileList.filter(it => allowedFileList.includes(it));
+  const {includedFileList, excludedFileList, debugCompare} = options;
+  if (Array.isArray(includedFileList)) {
+    targetFileList = relativeFileList.filter(it => includedFileList.includes(it));
+  } else if (Array.isArray(excludedFileList)) {
+    targetFileList = excludedFileList.filter(it => !excludedFileList.includes(it));
   }
   const mockFileList: MockFileContentWithRelativePath[] = targetFileList
     .map(relativePath => {

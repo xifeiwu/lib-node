@@ -1,4 +1,4 @@
-import {isNumber, isPlainObject, isString} from './external';
+import {isNumber, isPlainObject, isString} from '../external';
 
 export type CanConvertToBuffer = string | number | object | Uint8Array;
 export function toBuffer(data: CanConvertToBuffer | Array<CanConvertToBuffer>): Buffer {
