@@ -18,7 +18,7 @@ export async function twoWayOfProxyPayload() {
       targetHref: 'http://elif.site',
       handleInfoOfRes2Origin(info) {
         const {headers} = info;
-        headers['handler'] = 'handler1';
+        headers.handler = 'handler1';
         return info;
       },
     });
@@ -32,7 +32,7 @@ export async function twoWayOfProxyPayload() {
       targetHref: 'http://elif.site',
       handleInfoOfRes2Origin(info) {
         const {headers} = info;
-        headers['handler'] = 'handler2';
+        headers.handler = 'handler2';
         return info;
       },
     });

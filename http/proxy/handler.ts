@@ -98,8 +98,8 @@ export async function proxyRequest(req: IncomingMessage, res: ServerResponse, co
     onRes2Proxy && onRes2Proxy(infoOfRes2Proxy, proxyReqInfo, res2Proxy);
     let infoOfRes2Origin = deepClone(infoOfRes2Proxy);
     /** Rewrite cookie info */
-    for (let [key, value] of Object.entries(infoOfRes2Origin.headers)) {
-      let newValue = value;
+    for (const [key, value] of Object.entries(infoOfRes2Origin.headers)) {
+      const newValue = value;
       // if (key.toLowerCase() === 'set-cookie') {
       //   newValue = cookieRewrite(value, 'domain', '0.0.0.0');
       // }

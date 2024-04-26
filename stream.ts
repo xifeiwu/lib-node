@@ -10,7 +10,7 @@ export function getStreamData(req: stream.Stream): Promise<Buffer> {
       // result += chunk;
       bufferList.push(chunk);
     });
-    req.on('end', function () {
+    req.on('end', () => {
       resolve(Buffer.concat(bufferList));
     });
     req.on('error', (err: any) => {
