@@ -20,6 +20,7 @@ export interface MockFileContent<ResData = any> {
 }
 
 export interface ParamsForFindMockInfoInDir {
+  ingore?: boolean;
   targetDir: string;
   options?: {
     /** relative path */

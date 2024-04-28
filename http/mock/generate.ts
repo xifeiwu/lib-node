@@ -54,7 +54,9 @@ export async function requestAndSaveMockInfo(requestConfig: RequestConfig, optio
   //   console.log(`mkdir -p ${mockFileDir}`);
   //   throw new Error();
   // }
-  const {headers, data: resData} = await requestAndGetResponseInfo(mergedOptions, {validateStatus: true});
+  const {
+    responseInfo: {headers, data: resData},
+  } = await requestAndGetResponseInfo(mergedOptions, {validateStatus: true});
   if (!fullPath.endsWith('.js')) {
     fullPath = fullPath + '.js';
   }
