@@ -115,13 +115,14 @@ export class ResponseError extends Error {
   }
 }
 
+export type RequestAndGetResponseFunc = typeof requestAndGetResponseInfo;
 export async function requestAndGetResponseInfo<ResData = any, Payload extends ToBufferParams = any>(
-  config: HttpRequestOptions<Payload>,
+  requestOptions: HttpRequestOptions<Payload>,
   responseConfig?: Parameters<typeof getResponseInfo>[1] & {
     validateStatus?: ValidateStatus | boolean;
   }
-) {
-  const response = await requestAndGetResponse<Payload>(config);
+): Promise<{requestOptions: HttpRequestOptions<Payload>; responseInfo: HttpResponseInfo<ResData>}> {
+  const response = await requestAndGetResponse<Payload>(requestOptions);
   let {validateStatus, ...resConfig} = responseConfig ?? {};
   const responseInfo = await getResponseInfo<ResData>(response, resConfig);
 
@@ -131,10 +132,10 @@ export async function requestAndGetResponseInfo<ResData = any, Payload extends T
     }
 
     if (!validateStatus(responseInfo)) {
-      throw new ResponseError(config, responseInfo);
+      throw new ResponseError(requestOptions, responseInfo);
     }
   }
-  return responseInfo;
+  return {requestOptions, responseInfo};
 }
 
 export function httpRequestOptionsToCurlCommand(options: HttpRequestOptions) {
