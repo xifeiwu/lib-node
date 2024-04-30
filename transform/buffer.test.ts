@@ -1,5 +1,5 @@
 import assert from 'assert';
-import {toBuffer} from './transform';
+import {toBuffer} from './buffer';
 
 export async function testToBuffer() {
   console.log(await toBuffer(1));
