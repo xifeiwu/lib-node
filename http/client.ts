@@ -115,8 +115,8 @@ export class ResponseError extends Error {
   }
 }
 
-export type RequestAndGetResponseFunc = typeof requestAndGetResponseInfo;
-export async function requestAndGetResponseInfo<ResData = any, Payload extends ToBufferParams = any>(
+export type requestAndGetRelatedInfoFunc = typeof requestAndGetResponseInfo;
+export async function requestAndGetRelatedInfo<ResData = any, Payload extends ToBufferParams = any>(
   requestOptions: HttpRequestOptions<Payload>,
   responseConfig?: Parameters<typeof getResponseInfo>[1] & {
     validateStatus?: ValidateStatus | boolean;
@@ -136,6 +136,17 @@ export async function requestAndGetResponseInfo<ResData = any, Payload extends T
     }
   }
   return {requestOptions, responseInfo};
+}
+
+export type RequestAndGetResponseFunc = typeof requestAndGetResponseInfo;
+export async function requestAndGetResponseInfo<ResData = any, Payload extends ToBufferParams = any>(
+  requestOptions: HttpRequestOptions<Payload>,
+  responseConfig?: Parameters<typeof getResponseInfo>[1] & {
+    validateStatus?: ValidateStatus | boolean;
+  }
+): Promise<HttpResponseInfo<ResData>> {
+  const {responseInfo} = await requestAndGetRelatedInfo(requestOptions, responseConfig);
+  return responseInfo;
 }
 
 export function httpRequestOptionsToCurlCommand(options: HttpRequestOptions) {
