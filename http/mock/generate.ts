@@ -5,7 +5,7 @@ import {
   GeneralRequestOptions,
   HttpRequestOptions,
   mergeHttpRequestOptions,
-  requestAndGetResponseInfo,
+  requestAndGetRelatedInfo,
 } from '../client';
 import {MockFileContent, RequestConfig} from './types';
 import {getFileList} from '../../fs';
@@ -56,7 +56,7 @@ export async function requestAndSaveMockInfo(requestConfig: RequestConfig, optio
   // }
   const {
     responseInfo: {headers, data: resData},
-  } = await requestAndGetResponseInfo(mergedOptions, {validateStatus: true});
+  } = await requestAndGetRelatedInfo(mergedOptions, {validateStatus: true});
   if (!fullPath.endsWith('.js')) {
     fullPath = fullPath + '.js';
   }
