@@ -1,6 +1,16 @@
 import http, {RequestListener, ServerOptions} from 'http';
 import {toBuffer} from '../transform';
-import {getAFreePort, getRequestInfo} from '..';
+import {createHash} from 'crypto';
+import {IncomingHttpHeaders, IncomingMessage} from 'http';
+import {Duplex} from 'stream';
+import {
+  HttpHeaderPartInfo,
+  HttpRequestInfo,
+  HttpResponseInfo,
+  getAFreePort,
+  getRequestHeaderInfo,
+  getRequestInfo,
+} from '..';
 import {Socket} from 'net';
 
 export async function responseIncomingMessageInfo(
@@ -54,10 +64,48 @@ export async function startHttpServer(
   });
 }
 
-export async function echoRequestInfo(request: http.IncomingMessage, response: http.ServerResponse) {
+export async function responseRequestInfo(request: http.IncomingMessage, response: http.ServerResponse) {
   const requestInfo = await getRequestInfo(request);
   const resData = toBuffer(requestInfo);
   response.setHeader['content-length'] = resData.byteLength;
   response.setHeader['content-type'] = 'application/json';
   response.end(resData);
+}
+
+export const GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
+export function handleUpgrade(
+  req: IncomingMessage,
+  socket?: Duplex,
+  head?: Buffer
+): {requestHeaderPartInfo: HttpHeaderPartInfo; responseInfo: HttpResponseInfo} {
+  const requestHeaderPartInfo = getRequestHeaderInfo(req);
+  const key = requestHeaderPartInfo.headers['sec-websocket-key'];
+  const digest = createHash('sha1')
+    .update(key + GUID)
+    .digest('base64');
+  const responseInfo: HttpResponseInfo = {
+    httpVersion: 'HTTP/1.1',
+    statusCode: 101,
+    statusMessage: 'Switching Protocols',
+    headers: {
+      Upgrade: 'websocket',
+      Connection: 'Upgrade',
+      'Sec-WebSocket-Accept': digest,
+    },
+  };
+  return {requestHeaderPartInfo, responseInfo};
+}
+
+export function handleConnect(
+  req: IncomingMessage,
+  socket?: Duplex,
+  head?: Buffer
+): {requestHeaderPartInfo: HttpRequestInfo; responseInfo: HttpResponseInfo} {
+  const requestHeaderPartInfo = getRequestHeaderInfo(req);
+  const responseInfo: HttpResponseInfo = {
+    httpVersion: 'HTTP/1.1',
+    statusCode: 200,
+    statusMessage: 'Connection Established',
+  };
+  return {requestHeaderPartInfo, responseInfo};
 }

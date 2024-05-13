@@ -2,8 +2,8 @@ import {logWithColor} from '../log';
 import {handleSocketEvents, writeDataByInterval} from '../net';
 import {toBuffer} from '../transform';
 import {requestAndGetConnectInfo, requestAndGetResponseInfo, requestAndGetUpgradeInfo} from './client';
-import {getRequestInfo, getResponseInfo} from './common';
-import {startHttpServer} from './server';
+import {getRequestInfo, getResponseInfo, responseInfoToBuffer} from './common';
+import {handleConnect, handleUpgrade, startHttpServer} from './server';
 
 export async function testRequestAndGetResponseInfo() {
   const {statusCode, data, headers} = await requestAndGetResponseInfo({
@@ -27,12 +27,13 @@ export async function testRequestAndGetResponseInfo() {
 }
 
 export async function getSocketByConnect() {
-  const {origin} = await startHttpServer({
+  const {server, origin} = await startHttpServer({
     async request(req, rep) {
       throw new Error('should no go here');
     },
     connect(req, socket, head) {
-      socket.write(toBuffer(['HTTP/1.1 200 Success\r\n', '\r\n', head]));
+      const {responseInfo} = handleConnect(req);
+      socket.write(responseInfoToBuffer(responseInfo));
       handleSocketEvents(socket, {isServer: true, color: 'red'});
       socket.on('end', () => {
         socket.end();
@@ -54,21 +55,17 @@ export async function getSocketByConnect() {
   setTimeout(() => {
     writeDataByInterval(socket, {endStr: 'bye'});
   });
+  server.close();
 }
 
 export async function getSocketByUpgrade() {
-  const {origin} = await startHttpServer({
+  const {server, origin} = await startHttpServer({
     async request(req, rep) {
       console.log(await getRequestInfo(req));
     },
     upgrade(req, socket, head) {
-      socket.write(
-        'HTTP/1.1 101 Web Socket Protocol Handshake\r\n' +
-          'Upgrade: WebSocket\r\n' +
-          'Connection: Upgrade\r\n' +
-          '\r\n'
-      );
-      console.log('on upgrade');
+      const {responseInfo} = handleUpgrade(req, socket, head);
+      socket.write(responseInfoToBuffer(responseInfo));
       handleSocketEvents(socket, {isServer: true, color: 'red'});
       socket.on('end', () => {
         socket.end();
@@ -86,6 +83,7 @@ export async function getSocketByUpgrade() {
   setTimeout(() => {
     writeDataByInterval(socket, {endStr: 'bye'});
   });
+  server.close();
 }
 
 export async function swithHttpToSocks() {
@@ -94,7 +92,6 @@ export async function swithHttpToSocks() {
       console.log(await getRequestInfo(req));
     },
     async upgrade(req, socket, head) {
-      console.log('on upgrade');
       logWithColor('red', await getRequestInfo(req));
       socket.write(
         'HTTP/1.1 101 Web Socket Protocol Handshake\r\n' +

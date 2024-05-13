@@ -6,7 +6,7 @@ export function toBuffer(data: CanConvertToBuffer | Array<CanConvertToBuffer>): 
     if (data.every(isNumber)) {
       return Buffer.from(data as Array<number>);
     }
-    const bufAll = data.map(toBuffer);
+    const bufAll = data.map(toBuffer).filter(Buffer.isBuffer);
     return Buffer.concat(bufAll);
   }
   let buffer: Buffer = Buffer.alloc(0);

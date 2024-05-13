@@ -6,12 +6,14 @@ export interface HttpFirstLineInfo {
   httpVersion: string;
 }
 
+export interface HttpHeaderPartInfo extends HttpFirstLineInfo {
+  headers?: IncomingHttpHeaders;
+}
 // GET /api/test/echo HTTP/1.1
-export interface HttpRequestInfo<T = any> extends HttpFirstLineInfo {
+export interface HttpRequestInfo<T = any> extends HttpHeaderPartInfo {
   // method: string;
   // url: string;
   // httpVersion: string;
-  headers: IncomingHttpHeaders;
   data?: T;
 }
 // HTTP/1.1 200 OK
@@ -19,6 +21,6 @@ export interface HttpResponseInfo<T = any> {
   httpVersion: string;
   statusCode: number;
   statusMessage: string;
-  headers: IncomingHttpHeaders;
+  headers?: IncomingHttpHeaders;
   data?: T;
 }
