@@ -27,11 +27,12 @@ export interface HttpServerConfig {
 export async function startHttpServer(
   handler: {
     request?: RequestListener;
-    upgrade?: (req, socket: Socket, head: Buffer) => void;
+    upgrade?: (response, socket: Socket, head: Buffer) => void;
+    connect?: (response, socket: Socket, head: Buffer) => void;
   },
   config?: HttpServerConfig
 ) {
-  const {request: handleRequest, upgrade: handleUpgrade} = handler;
+  const {request: handleRequest, upgrade: handleUpgrade, connect: handleConnect} = handler;
   const {host = '0.0.0.0', port = await getAFreePort(), options} = config ?? {};
   const origin = `http://${host}:${port}`;
   return new Promise<{
@@ -46,8 +47,17 @@ export async function startHttpServer(
     });
     handleRequest && server.on('request', handleRequest);
     handleUpgrade && server.on('upgrade', handleUpgrade);
+    handleConnect && server.on('connect', handleConnect);
     server.on('error', err => {
       rej(err);
     });
   });
+}
+
+export async function echoRequestInfo(request: http.IncomingMessage, response: http.ServerResponse) {
+  const requestInfo = await getRequestInfo(request);
+  const resData = toBuffer(requestInfo);
+  response.setHeader['content-length'] = resData.byteLength;
+  response.setHeader['content-type'] = 'application/json';
+  response.end(resData);
 }

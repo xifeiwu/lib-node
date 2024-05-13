@@ -1,8 +1,5 @@
-import fs from 'fs';
-import path from 'path';
 import http from 'http';
 import https from 'https';
-import stream from 'stream';
 import {toBuffer} from '../transform';
 import {Socket} from 'net';
 import {getResponseInfo} from './common';
@@ -41,6 +38,19 @@ export function mergeHttpRequestOptions(
     headers: mergedHeaders,
   };
 }
+
+export class ResponseError extends Error {
+  isResponseError: boolean = true;
+  requestConfig: HttpRequestOptions;
+  responseInfo: HttpResponseInfo;
+  constructor(requestConfig: HttpRequestOptions, responseInfo: HttpResponseInfo) {
+    const {statusCode, statusMessage} = responseInfo;
+    super(`Response code ${statusCode}: ${statusMessage}`);
+    this.requestConfig = requestConfig;
+    this.responseInfo = responseInfo;
+  }
+}
+
 export async function requestAndGetResponse<Payload extends ToBufferParams = any>(
   config: HttpRequestOptions<Payload>
 ): Promise<http.IncomingMessage> {
@@ -69,51 +79,12 @@ export async function requestAndGetResponse<Payload extends ToBufferParams = any
     });
   });
 }
-export async function requestAndGetUpgradeInfo<Payload extends ToBufferParams = any>(
-  config: HttpRequestOptions<Payload>
-): Promise<{response: http.IncomingMessage; socket: Socket; head: Buffer}> {
-  const {url, data, ...options} = config;
-  let clientRequest: http.ClientRequest | null = null;
-  if (url) {
-    const {protocol, href} = toUrlInstance(url);
-    clientRequest = (protocol === 'https:' ? https : http).request(href, options);
-  } else {
-    const {protocol = 'http'} = options;
-    clientRequest = (protocol === 'https:' ? https : http).request(options);
-  }
-  if (data) {
-    clientRequest.write(await toBuffer(data));
-  }
-  clientRequest.end();
-  return new Promise<{response: http.IncomingMessage; socket: Socket; head: Buffer}>((res, rej) => {
-    clientRequest.on('response', async response => {
-      rej(new Error(`Expect upgrade event, but receive response event.`));
-    });
-    clientRequest.on('upgrade', async (response, socket, head) => {
-      res({response, socket, head});
-    });
-    clientRequest.on('error', error => {
-      rej(error);
-    });
-  });
-}
 
 export type ValidateStatus = (responseInfo: HttpResponseInfo) => boolean;
 export const validateStatusCode: ValidateStatus = info => {
   const {statusCode} = info;
   return statusCode >= 200 && statusCode < 300;
 };
-export class ResponseError extends Error {
-  isResponseError: boolean = true;
-  requestConfig: HttpRequestOptions;
-  responseInfo: HttpResponseInfo;
-  constructor(requestConfig: HttpRequestOptions, responseInfo: HttpResponseInfo) {
-    const {statusCode, statusMessage} = responseInfo;
-    super(`Response code ${statusCode}: ${statusMessage}`);
-    this.requestConfig = requestConfig;
-    this.responseInfo = responseInfo;
-  }
-}
 
 export type requestAndGetRelatedInfoFunc = typeof requestAndGetResponseInfo;
 export async function requestAndGetRelatedInfo<ResData = any, Payload extends ToBufferParams = any>(
@@ -138,7 +109,7 @@ export async function requestAndGetRelatedInfo<ResData = any, Payload extends To
   return {requestOptions, responseInfo};
 }
 
-export type RequestAndGetResponseFunc = typeof requestAndGetResponseInfo;
+export type RequestAndGetResponseInfoFunc = typeof requestAndGetResponseInfo;
 export async function requestAndGetResponseInfo<ResData = any, Payload extends ToBufferParams = any>(
   requestOptions: HttpRequestOptions<Payload>,
   responseConfig?: Parameters<typeof getResponseInfo>[1] & {
@@ -147,6 +118,61 @@ export async function requestAndGetResponseInfo<ResData = any, Payload extends T
 ): Promise<HttpResponseInfo<ResData>> {
   const {responseInfo} = await requestAndGetRelatedInfo(requestOptions, responseConfig);
   return responseInfo;
+}
+
+export async function requestAndGetUpgradeInfo<Payload extends ToBufferParams = any>(
+  config: HttpRequestOptions<Payload>
+): Promise<{response: http.IncomingMessage; socket: Socket; head: Buffer}> {
+  const {urlProps, restProps} = getUrlPropsFromConfig(config);
+  const {data, headers = {}, ...requestOptions} = restProps;
+  let clientRequest: http.ClientRequest | null = null;
+  const {protocol, href} = toUrlInstance(urlProps);
+  clientRequest = (protocol === 'https:' ? https : http).request(href, {
+    ...requestOptions,
+    headers: {
+      ...headers,
+      'sec-websocket-key': '50P3cqzG82BIWURMgMisUg==',
+      connection: 'Upgrade',
+      upgrade: 'websocket',
+    },
+  });
+  clientRequest.end(data ? await toBuffer(data) : undefined);
+  return new Promise<{response: http.IncomingMessage; socket: Socket; head: Buffer}>((res, rej) => {
+    clientRequest.on('response', async response => {
+      rej(new Error(`Expect upgrade event, but receive response event.`));
+    });
+    clientRequest.on('upgrade', async (response, socket, head) => {
+      res({response, socket, head});
+    });
+    clientRequest.on('error', error => {
+      rej(error);
+    });
+  });
+}
+
+export async function requestAndGetConnectInfo<Payload extends ToBufferParams = any>(
+  config: HttpRequestOptions<Payload>
+): Promise<{response: http.IncomingMessage; socket: Socket; head: Buffer}> {
+  const {urlProps, restProps} = getUrlPropsFromConfig(config);
+  const {data, ...requestOptions} = restProps;
+  let clientRequest: http.ClientRequest | null = null;
+  const {protocol, href} = toUrlInstance(urlProps);
+  clientRequest = (protocol === 'https:' ? https : http).request(href, {
+    ...requestOptions,
+    method: 'connect',
+  });
+  clientRequest.end(data ? await toBuffer(data) : undefined);
+  return new Promise<{response: http.IncomingMessage; socket: Socket; head: Buffer}>((res, rej) => {
+    clientRequest.on('response', async response => {
+      rej(new Error(`Expect upgrade event, but receive response event.`));
+    });
+    clientRequest.on('connect', async (response, socket, head) => {
+      res({response, socket, head});
+    });
+    clientRequest.on('error', error => {
+      rej(error);
+    });
+  });
 }
 
 export function httpRequestOptionsToCurlCommand(options: HttpRequestOptions) {
