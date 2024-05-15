@@ -37,7 +37,7 @@ export async function getResponseInfo<T>(
   return responseInfo;
 }
 
-export function responseInfoToBuffer(responseInfo: HttpResponseInfo) {
+export function responseInfoToBuffer(responseInfo: Partial<HttpResponseInfo>) {
   const {
     httpVersion = 'http/1.1',
     statusCode = 200,
