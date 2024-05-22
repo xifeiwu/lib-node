@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import childProcess from 'child_process';
+import {selectOption} from './common';
 
 const HOME_PATH = process.env.HOME;
 
@@ -324,6 +325,25 @@ export function getMultipleDirFileList(
     ];
   }, []);
   return allFiles;
+}
+
+export async function selectFileOfDir(
+  targetList: Array<{
+    targetDir: string;
+    options?: GetFileListOption;
+  }>
+) {
+  const fileList = getMultipleDirFileList(targetList);
+  const {relativePath, fullPath} = await selectOption(
+    fileList.map(it => {
+      const {relativePath} = it;
+      return {
+        ...it,
+        label: relativePath,
+      };
+    })
+  );
+  return {relativePath, fullPath};
 }
 
 export function deleteFile(path: string) {

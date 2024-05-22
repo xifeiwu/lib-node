@@ -86,7 +86,7 @@ export const validateStatusCode: ValidateStatus = info => {
   return statusCode >= 200 && statusCode < 300;
 };
 
-export type requestAndGetRelatedInfoFunc = typeof requestAndGetResponseInfo;
+export type RequestAndGetRelatedInfoFunc = typeof requestAndGetRelatedInfo;
 export async function requestAndGetRelatedInfo<ResData = any, Payload extends ToBufferParams = any>(
   requestOptions: HttpRequestOptions<Payload>,
   responseConfig?: Parameters<typeof getResponseInfo>[1] & {

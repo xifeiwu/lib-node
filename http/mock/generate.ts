@@ -1,15 +1,17 @@
 import fs from 'fs';
 import path from 'path';
-import {getUrlPropsFromConfig, isPlainObject, toUrlInstance} from '../../external';
+import {getUrlPropsFromConfig, isPlainObject} from '../../external';
 import {
   GeneralRequestOptions,
   HttpRequestOptions,
+  makeSureHttpRequestOptionsSerializable,
   mergeHttpRequestOptions,
   requestAndGetRelatedInfo,
 } from '../client';
 import {MockFileContent, RequestConfig} from './types';
 import {getFileList} from '../../fs';
 import {urlPropsToHref} from '../../../fe/url';
+import {logWithColor} from '../../log';
 
 export function convertObjectToCjsContent<T extends MockFileContent>(info: T) {
   const lines = Object.entries(info).map(([key, value]) => {
@@ -37,7 +39,6 @@ interface RequestByDir extends RequestGeneral {
 export async function requestAndSaveMockInfo(requestConfig: RequestConfig, options: RequestOne) {
   const {generalRequestConfig, otherContents} = options;
   const mergedOptions = mergeHttpRequestOptions(requestConfig, generalRequestConfig);
-
   let fullPath =
     options.fullPath ??
     path.resolve(
@@ -68,7 +69,7 @@ export async function requestAndSaveMockInfo(requestConfig: RequestConfig, optio
       ignoreComparePayload: false,
       includeObjectKeys: null,
       excludeObjectKeys: null,
-      requestConfig,
+      requestConfig: makeSureHttpRequestOptionsSerializable(requestConfig),
       resHeaders: headers,
       resData,
       ...(otherContents ?? {}),
@@ -79,10 +80,12 @@ export async function requestAndSaveMockInfo(requestConfig: RequestConfig, optio
 export async function generateMockInfoByDir(requestConfigDir: string, options: RequestByDir) {
   const {outputDir} = options;
   if (!fs.existsSync(requestConfigDir)) {
-    throw new Error(`Error, config dir not exist: ${requestConfigDir}`);
+    throw new Error(`Error, request config dir not exist: ${requestConfigDir}`);
   }
   if (!fs.existsSync(outputDir)) {
-    throw new Error(`Error, output dir not exist: ${requestConfigDir}`);
+    logWithColor('yellow', `Will create dir: ${outputDir}`);
+    fs.mkdirSync(outputDir, {recursive: true});
+    // throw new Error(`Error, output dir not exist: ${outputDir}`);
   }
   const relativeFileList = getFileList(requestConfigDir, {
     fileFilter({relativePath}) {
