@@ -139,6 +139,9 @@ export function allDbConfig(): Array<Options> {
   return result;
 }
 
+/**
+ * @deprecated
+ */
 type DB = 'employees' | 'db_feature' | 'housekeeper';
 export const DB_USED: {
   [db in DB]: {
