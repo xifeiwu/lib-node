@@ -1,5 +1,5 @@
 /** Simplified version of import {Options} from 'sequelize'; */
-interface Options {
+interface DBConfig {
   host: string;
   port: number;
   dialect: 'mysql';
@@ -8,8 +8,11 @@ interface Options {
   database: string;
 }
 
-/** site/username/database */
-interface TDBConfig {
+/**
+ * level: site >-> username -> database
+ * For one user of one site owns which databases
+ */
+interface GeneralConfig {
   local: {
     root: 'mysql';
     xifeiwu: 'housekeeper';
@@ -23,13 +26,13 @@ interface TDBConfig {
   };
 }
 
-export type Site = keyof TDBConfig;
+export type DbSite = keyof GeneralConfig;
 
-interface UserConfig<Site extends keyof TDBConfig, UserName extends keyof TDBConfig[Site]> {
+interface UserConfig<Site extends keyof GeneralConfig, UserName extends keyof GeneralConfig[Site]> {
   password: string;
-  databaseList: Array<TDBConfig[Site][UserName]>;
+  databaseList: Array<GeneralConfig[Site][UserName]>;
 }
-interface DBConfig {
+interface DBInfo {
   local: {
     root: UserConfig<'local', 'root'>;
     portaldb: UserConfig<'local', 'portaldb'>;
@@ -44,7 +47,7 @@ interface DBConfig {
 }
 
 const SITE_INFO: {
-  [site in keyof TDBConfig]: Pick<Options, 'host' | 'port' | 'dialect'>;
+  [site in keyof GeneralConfig]: Pick<DBConfig, 'host' | 'port' | 'dialect'>;
 } = {
   local: {
     host: '127.0.0.1',
@@ -58,7 +61,7 @@ const SITE_INFO: {
   },
 };
 
-const DB_CONFIG: DBConfig = {
+const DB_INFO: DBInfo = {
   local: {
     root: {
       password: 'local__mysql',
@@ -93,15 +96,14 @@ const DB_CONFIG: DBConfig = {
   },
 };
 
-export function getDbConfig<Site extends keyof TDBConfig, UserName extends keyof TDBConfig[Site]>(
+export function getDbConfig<Site extends keyof GeneralConfig, UserName extends keyof GeneralConfig[Site]>(
   site: Site,
   username: UserName,
-  database: TDBConfig[Site][UserName]
-): Options {
-  // return {site, userName, database};
+  database: GeneralConfig[Site][UserName]
+): DBConfig {
   const siteConfig = SITE_INFO[site];
   // @ts-ignore
-  const {password, databaseList} = DB_CONFIG[site][username] as UserConfig<any, any>;
+  const {password, databaseList} = DB_INFO[site][username] as UserConfig<any, any>;
   if (!databaseList.includes(database)) {
     throw new Error(`databse ${database} not belongs to ${username as string}`);
   }
@@ -113,9 +115,11 @@ export function getDbConfig<Site extends keyof TDBConfig, UserName extends keyof
     database: database as string,
   };
 }
-export function getDbConfigBySite(site: Site) {
-  const result: Options[] = [];
-  const siteConfig = DB_CONFIG[site];
+
+/** List all dbConfig belongs to one site */
+export function getDbConfigBySite(site: DbSite) {
+  const result: DBConfig[] = [];
+  const siteConfig = DB_INFO[site];
   const siteInfo = SITE_INFO[site];
   for (const [username, useConfig] of Object.entries(siteConfig)) {
     const {password, databaseList} = useConfig as UserConfig<any, any>;
@@ -131,33 +135,10 @@ export function getDbConfigBySite(site: Site) {
   return result;
 }
 
-export function allDbConfig(): Array<Options> {
-  const result: Options[] = [];
-  for (const [site, siteConfig] of Object.entries(DB_CONFIG)) {
-    result.push(...getDbConfigBySite(site as Site));
+export function allDbConfig(): Array<DBConfig> {
+  const result: DBConfig[] = [];
+  for (const [site, siteConfig] of Object.entries(DB_INFO)) {
+    result.push(...getDbConfigBySite(site as DbSite));
   }
   return result;
 }
-
-/**
- * @deprecated
- */
-type DB = 'employees' | 'db_feature' | 'housekeeper';
-export const DB_USED: {
-  [db in DB]: {
-    [site in keyof DBConfig]: Options;
-  };
-} = {
-  employees: {
-    local: getDbConfig('local', 'newbie', 'employees'),
-    elif: getDbConfig('elif', 'newbie', 'employees2'),
-  },
-  db_feature: {
-    local: getDbConfig('local', 'newbie', 'db_feature'),
-    elif: getDbConfig('elif', 'newbie', 'db_feature'),
-  },
-  housekeeper: {
-    local: getDbConfig('local', 'xifeiwu', 'housekeeper'),
-    elif: getDbConfig('elif', 'xifeiwu', 'housekeeper'),
-  },
-};
