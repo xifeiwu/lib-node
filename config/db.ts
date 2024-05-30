@@ -15,13 +15,13 @@ interface DBConfig {
 interface GeneralConfig {
   local: {
     root: 'mysql';
-    xifeiwu: 'housekeeper';
+    project: 'assist';
     newbie: 'db_feature' | 'employees' | 'employees2';
     portaldb: 'portaldb_penguin';
   };
   elif: {
     root: 'mysql';
-    xifeiwu: 'housekeeper';
+    project: 'assist';
     newbie: 'db_feature' | 'employees2';
   };
 }
@@ -36,12 +36,12 @@ interface DBInfo {
   local: {
     root: UserConfig<'local', 'root'>;
     portaldb: UserConfig<'local', 'portaldb'>;
-    xifeiwu: UserConfig<'local', 'xifeiwu'>;
+    project: UserConfig<'local', 'project'>;
     newbie: UserConfig<'local', 'newbie'>;
   };
   elif: {
     root: UserConfig<'elif', 'root'>;
-    xifeiwu: UserConfig<'elif', 'xifeiwu'>;
+    project: UserConfig<'elif', 'project'>;
     newbie: UserConfig<'elif', 'newbie'>;
   };
 }
@@ -61,19 +61,29 @@ const SITE_INFO: {
   },
 };
 
+/**
+User management for mysql:
+DROP user xifeiwu;
+create user 'project' identified by 'Elifxifei2023_';
+GRANT ALL PRIVILEGES ON `assist`.* TO `project`@`%` WITH GRANT OPTION;
+flush PRIVILEGES;
+show grants for project;
+
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, RELOAD, SHUTDOWN, PROCESS, REFERENCES, INDEX, ALTER, SHOW DATABASES, CREATE TEMPORARY TABLES, LOCK TABLES, EXECUTE, REPLICATION SLAVE, REPLICATION CLIENT, CREATE VIEW, SHOW VIEW, CREATE ROUTINE, ALTER ROUTINE, CREATE USER, EVENT, TRIGGER, CREATE TABLESPACE ON *.* TO `portaldb`@`%` WITH GRANT OPTION
+ */
 const DB_INFO: DBInfo = {
   local: {
     root: {
       password: 'local__mysql',
       databaseList: ['mysql'],
     },
-    xifeiwu: {
-      password: 'Elifxifei2023_',
-      databaseList: ['housekeeper'],
-    },
     newbie: {
       password: 'test',
       databaseList: ['db_feature', 'employees', 'employees2'],
+    },
+    project: {
+      password: 'Elifxifei2023_',
+      databaseList: ['assist'],
     },
     portaldb: {
       password: 'portaldb',
@@ -85,13 +95,13 @@ const DB_INFO: DBInfo = {
       password: 'Wuxifei2023_',
       databaseList: ['mysql'],
     },
-    xifeiwu: {
-      password: 'Elifxifei2023_',
-      databaseList: ['housekeeper'],
-    },
     newbie: {
       password: 'Elif-test_0',
       databaseList: ['db_feature', 'employees2'],
+    },
+    project: {
+      password: 'Elifxifei2023_',
+      databaseList: ['assist'],
     },
   },
 };
