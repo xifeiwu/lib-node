@@ -3,7 +3,14 @@ import https from 'https';
 import {toBuffer} from '../transform';
 import {Socket} from 'net';
 import {getResponseInfo} from './common';
-import {UrlProps, toUrlInstance, getUrlPropsFromConfig, deepMerge, urlPropsToHref} from '../external';
+import {
+  UrlProps,
+  toUrlInstance,
+  getUrlPropsFromConfig,
+  deepMerge,
+  urlPropsToHref,
+  isObject,
+} from '../external';
 import {HttpResponseInfo} from '../types';
 
 type ToBufferParams = Parameters<typeof toBuffer>[0];
@@ -186,7 +193,7 @@ export function httpRequestOptionsToCurlCommand(options: HttpRequestOptions) {
     ...Object.entries(headers).map(([k, v]) => {
       return `-H '${k}: ${v}'`;
     }),
-    data ? `-d ${JSON.stringify(data)}` : '',
+    data !== undefined ? `-d ${isObject(data) ? "'" + JSON.stringify(data) + "'" : data}` : '',
   ].join(' ');
   return command;
 }
