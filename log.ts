@@ -92,6 +92,39 @@ const colorMap: {
   },
 };
 
+interface ColorStyle {
+  color?: LogColors;
+}
+export type LoggableContent = object | Buffer | string | number;
+
+export function coloringContent(colorStyle: ColorStyle, content: LoggableContent): string {
+  const {color = 'black'} = colorStyle;
+  let finalStr = '';
+  if (isPlainObject(content) || Array.isArray(content)) {
+    finalStr = util.inspect(content, {depth: 10, colors: false});
+  } else if (Buffer.isBuffer(content)) {
+    finalStr = content.toString();
+  } else {
+    finalStr = String(content);
+  }
+  const colorInfo = colorMap[color];
+  return `${colorInfo.start}${finalStr}${colorInfo.end}`;
+}
+export function colorfulLog(
+  colorStyle: ColorStyle,
+  ...contentList: Array<object | Buffer | string | number>
+) {
+  for (const content of contentList) {
+    const finalStr = coloringContent(colorStyle, content);
+    console.log(finalStr);
+  }
+}
+
+/**
+ * @deprecated will be replaced by colorfulLog
+ * @param color
+ * @param contentList
+ */
 export function logWithColor(color: LogColors, ...contentList: Array<object | Buffer | string | number>) {
   for (const content of contentList) {
     if (content === undefined) {
@@ -106,8 +139,8 @@ export function logWithColor(color: LogColors, ...contentList: Array<object | Bu
       finalStr = String(content);
     }
     const colorInfo = colorMap[color];
-    finalStr.split('\n').forEach(oneLine => {
-      console.log(`${colorInfo.start}${oneLine}${colorInfo.end}`);
-    });
+    // finalStr.split('\n').forEach(oneLine => {
+    console.log(`${colorInfo.start}${finalStr}${colorInfo.end}`);
+    // });
   }
 }

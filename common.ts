@@ -1,6 +1,6 @@
 import readline from 'readline';
 import {isFunction, isObject, isString} from './external';
-import {inspect} from './log';
+import {LoggableContent, coloringContent, inspect, logWithColor} from './log';
 
 /**
  * Determine if a value is a Stream
@@ -47,6 +47,42 @@ export async function selectOption<T extends {label: string}>(
         rej(`index ${index} does not existed in options`);
       } else {
         res(itemList[index]);
+      }
+      interact.close();
+    });
+  });
+}
+
+/**
+ * Go on or not?
+ * Not by default
+ */
+export async function goOnOrNot(config?: {tips?: Array<LoggableContent>; defaultValue?: boolean}) {
+  const {tips = [], defaultValue} = config ?? {};
+  const interact = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+  const optionStr = [...tips, 'Go on or Not?[N/y/Y/yes]?']
+    .map(it =>
+      coloringContent(
+        {
+          color: 'yellow',
+        },
+        it
+      )
+    )
+    .join('\n');
+  return new Promise<boolean>(res => {
+    interact.question(optionStr, answer => {
+      if (answer === undefined && defaultValue !== undefined) {
+        res(defaultValue);
+      } else {
+        if (['y', 'Y', 'yes'].includes(answer)) {
+          res(true);
+        } else {
+          res(false);
+        }
       }
       interact.close();
     });
