@@ -110,7 +110,7 @@ export function coloringContent(colorStyle: ColorStyle, content: LoggableContent
   const colorInfo = colorMap[color];
   return `${colorInfo.start}${finalStr}${colorInfo.end}`;
 }
-export function colorfulLog(
+export function logColorful(
   colorStyle: ColorStyle,
   ...contentList: Array<object | Buffer | string | number>
 ) {
