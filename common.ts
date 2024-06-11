@@ -53,6 +53,24 @@ export async function selectOption<T extends {label: string}>(
   });
 }
 
+const answerToValue = {
+  y: true,
+  yes: true,
+  Y: true,
+  YES: true,
+  n: false,
+  no: false,
+  N: false,
+  NO: false,
+};
+const yesCondition = Object.entries(answerToValue)
+  .filter(([, value]) => value === true)
+  .map(it => it[0])
+  .join('/');
+const noCondition = Object.entries(answerToValue)
+  .filter(([, value]) => value === false)
+  .map(it => it[0])
+  .join('/');
 /**
  * Go on or not?
  * Not by default
@@ -63,7 +81,7 @@ export async function goOnOrNot(config?: {tips?: Array<LoggableContent>; default
     input: process.stdin,
     output: process.stdout,
   });
-  const optionStr = [...tips, 'Go on or Not?[N/y/Y/yes]?']
+  const optionStr = [...tips, `Go on or Not?[${defaultValue ? yesCondition : noCondition}]?`]
     .map(it =>
       coloringContent(
         {
@@ -75,14 +93,10 @@ export async function goOnOrNot(config?: {tips?: Array<LoggableContent>; default
     .join('\n');
   return new Promise<boolean>(res => {
     interact.question(optionStr, answer => {
-      if (answer === undefined && defaultValue !== undefined) {
+      if (answer.trim() === '' && defaultValue !== undefined) {
         res(defaultValue);
       } else {
-        if (['y', 'Y', 'yes'].includes(answer)) {
-          res(true);
-        } else {
-          res(false);
-        }
+        res(answerToValue[answer] ?? false);
       }
       interact.close();
     });
