@@ -1,10 +1,10 @@
 import fs from 'fs';
 import path from 'path';
-import {deepEqual, isObject} from '../../external';
+import {deepEqual, isObject, matchFilters} from '../../external';
 import {getFileList} from '../../fs';
 import {ParamsForFindMockInfoInDir, MockFileContent, RequestConfig, MockFileFinder} from './types';
 
-function convertPayload(value: any) {
+function unifyObject(value: any) {
   if (isObject(value)) {
     if (Object.keys(value).length === 0) {
       return undefined;
@@ -31,8 +31,7 @@ export function findMockFile(
     data: targetPayload,
   } = targetRequestConfig;
   const target = mockContentList.find(it => {
-    const {relativePath, ignore, requestConfig, includeObjectKeys, excludeObjectKeys, ignoreComparePayload} =
-      it;
+    const {relativePath, ignore, requestConfig, payloadCompare = {}, queryCompare = {}} = it;
     if (ignore || !requestConfig) {
       return false;
     }
@@ -40,10 +39,10 @@ export function findMockFile(
     if (debugCompare) {
       console.log(`start compare: ${relativePath}`);
     }
-    /** compare method, url, query first, as it is easy to compare */
+    /** compare method and pathname first */
     const httpHeaderMatched = deepEqual(
-      {pathname, method, query},
-      {pathname: targetPathname, method: targetMethod, query: targetQuery},
+      {pathname, method},
+      {pathname: targetPathname, method: targetMethod},
       {
         debug: debugCompare,
       }
@@ -52,11 +51,22 @@ export function findMockFile(
       return false;
     }
 
+    const queryMatched =
+      queryCompare.ignore === true ||
+      deepEqual(unifyObject(query), unifyObject(targetQuery), {
+        includeObjectKeys: queryCompare.includeObjectKeys,
+        excludeObjectKeys: queryCompare.excludeObjectKeys,
+        debug: debugCompare,
+      });
+    if (!queryMatched) {
+      return false;
+    }
+
     const payloadMatched =
-      ignoreComparePayload === true ||
-      deepEqual(convertPayload(payload), convertPayload(targetPayload), {
-        includeObjectKeys,
-        excludeObjectKeys,
+      payloadCompare.ignore === true ||
+      deepEqual(unifyObject(payload), unifyObject(targetPayload), {
+        includeObjectKeys: payloadCompare.includeObjectKeys,
+        excludeObjectKeys: payloadCompare.excludeObjectKeys,
         debug: debugCompare,
       });
     if (!payloadMatched) {
@@ -89,9 +99,9 @@ export function getMockFileFinderByDir(config: ParamsForFindMockInfoInDir): {
   let targetFileList: string[] = relativeFileList;
   const {includedFileList, excludedFileList, debugCompare} = options;
   if (Array.isArray(includedFileList)) {
-    targetFileList = relativeFileList.filter(it => includedFileList.includes(it));
+    targetFileList = relativeFileList.filter(it => matchFilters(includedFileList, it));
   } else if (Array.isArray(excludedFileList)) {
-    targetFileList = relativeFileList.filter(it => !excludedFileList.includes(it));
+    targetFileList = relativeFileList.filter(it => !matchFilters(excludedFileList, it));
   }
   const mockFileList: MockFileContentWithRelativePath[] = targetFileList
     .map(relativePath => {

@@ -1,8 +1,11 @@
-// mime-db
-
-export type {UrlProps} from '../fe/common';
-export {waitFor, isBoolean, toInt, toString, deepEqual, getUrlPropsFromConfig} from '../fe/common';
 export {
+  UrlProps,
+  waitFor,
+  isBoolean,
+  toInt,
+  toString,
+  deepEqual,
+  getUrlPropsFromConfig,
   customDeepMerge,
   isFunction,
   isObject,
@@ -20,4 +23,6 @@ export {
   toUrlInstance,
   urlPropsToHref,
   PORT,
+  FilterItem,
+  matchFilters,
 } from '../fe/common';

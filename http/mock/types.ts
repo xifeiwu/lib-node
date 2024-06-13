@@ -1,5 +1,5 @@
 import http from 'http';
-import {DeepEqualConfig, UrlProps} from '../../external';
+import {DeepEqualConfig, FilterItem, UrlProps} from '../../external';
 
 /**
  * RequestConfig for Mock compare
@@ -8,12 +8,17 @@ export interface RequestConfig<T = any> extends UrlProps {
   method?: string;
   data?: T;
 }
-export interface MockFileContent<ResData = any> {
-  /** Ignore this mock file */
+
+interface CompareConfig {
   ignore?: boolean;
   includeObjectKeys?: DeepEqualConfig['includeObjectKeys'];
   excludeObjectKeys?: DeepEqualConfig['excludeObjectKeys'];
-  ignoreComparePayload?: boolean;
+}
+export interface MockFileContent<ResData = any> {
+  /** Ignore this mock file */
+  ignore?: boolean;
+  queryCompare?: CompareConfig;
+  payloadCompare?: CompareConfig;
   requestConfig: RequestConfig;
   resHeaders: http.IncomingHttpHeaders;
   resData: ResData;
@@ -24,8 +29,8 @@ export interface ParamsForFindMockInfoInDir {
   targetDir: string;
   options?: {
     /** relative path */
-    includedFileList?: string[];
-    excludedFileList?: string[];
+    includedFileList?: FilterItem[];
+    excludedFileList?: FilterItem[];
     debugCompare?: boolean;
   };
 }
