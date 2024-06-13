@@ -18,7 +18,7 @@ export interface HttpProxyConfig {
   /** Default options for http.request of proxy */
   defaultRequestOptions?: Pick<RequestOptions, 'auth'>;
   /** Handle info of proxy request before request in sent */
-  handleInfoOfProxyReq?: (
+  handleInfoForProxyReq?: (
     info: HttpRequestOptions
   ) => Promise<HttpRequestOptions | void> | HttpRequestOptions | void;
   /**

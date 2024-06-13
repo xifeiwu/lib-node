@@ -33,7 +33,7 @@ export function onRes2Proxy(resInfo: HttpResponseInfo, proxyReq: HttpRequestOpti
 /**
  * Custmoiziable Request Proxy.
  * +--------+                                     +-------+                                     +--------+
- * |        |                                     |       |   handleProxyReqInfo,               |        |
+ * |        |                                     |       |      handleInfoForProxyReq          |        |
  * |        | -----------originRequest----------> |       | -----------proxyRequest-----------> |        |
  * | Origin |                                     | Proxy |                                     | Target |
  * |        |   handleRes2OriginInfo,             |       |                                     |        |
@@ -45,7 +45,7 @@ export async function proxyRequest(req: IncomingMessage, res: ServerResponse, co
   const {
     defaultRequestOptions,
     originData,
-    handleInfoOfProxyReq,
+    handleInfoForProxyReq,
     handleInfoOfRes2Origin,
     preProxyReq,
     onRes2Proxy,
@@ -59,8 +59,8 @@ export async function proxyRequest(req: IncomingMessage, res: ServerResponse, co
   });
 
   // let reqInfo = handleRequestInfo(req, config);
-  if (handleInfoOfProxyReq) {
-    const tmp = await handleInfoOfProxyReq(proxyReqInfo);
+  if (handleInfoForProxyReq) {
+    const tmp = await handleInfoForProxyReq(proxyReqInfo);
     if (tmp) {
       proxyReqInfo = tmp;
     }
