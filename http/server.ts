@@ -6,12 +6,14 @@ import {Duplex} from 'stream';
 import {
   HttpHeaderPartInfo,
   HttpRequestInfo,
+  HttpRequestOptions,
   HttpResponseInfo,
   getAFreePort,
   getRequestHeaderInfo,
   getRequestInfo,
 } from '..';
 import {Socket} from 'net';
+import {deepEqual, UrlProps, toUrlProps, isNumber, waitFor} from '../external';
 
 export async function responseIncomingMessageInfo(
   request: http.IncomingMessage,
@@ -108,4 +110,48 @@ export function handleConnect(
     statusMessage: 'Connection Established',
   };
   return {requestHeaderPartInfo, responseInfo};
+}
+
+interface Action4IncomingMessage {
+  waitInMs?: number;
+}
+
+export interface HttpConditionAndAction {
+  requestConfig: Pick<HttpRequestOptions, 'method' | 'pathname' | 'query'>;
+  action: Action4IncomingMessage;
+}
+
+/**
+ * @returns Whether the request is handled by this function or not
+ */
+export async function handleIncomingMessage(
+  httpStream: {request: http.IncomingMessage; response?: http.ServerResponse},
+  configList?: HttpConditionAndAction[]
+) {
+  const {request, response} = httpStream;
+  const {method, url} = getRequestHeaderInfo(request);
+  const {pathname, query} = toUrlProps(url);
+  if (!Array.isArray(configList)) {
+    return false;
+  }
+  const matchedConfig = configList.find(config => {
+    const {requestConfig} = config;
+    if (requestConfig.method.toLowerCase() !== method.toLowerCase() || requestConfig.pathname !== pathname) {
+      return false;
+    }
+    if (requestConfig.query) {
+      return deepEqual(requestConfig.query, query);
+    }
+    return true;
+  });
+  if (!matchedConfig) {
+    return false;
+  }
+  const {
+    action: {waitInMs},
+  } = matchedConfig;
+  if (isNumber(waitInMs)) {
+    await waitFor(waitInMs);
+  }
+  return false;
 }
