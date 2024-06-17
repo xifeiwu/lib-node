@@ -1,3 +1,6 @@
+import {goOnOrNot, selectOption} from '../common';
+import {logColorful} from '../log';
+
 /** Simplified version of import {Options} from 'sequelize'; */
 interface DBConfig {
   host: string;
@@ -9,6 +12,7 @@ interface DBConfig {
 }
 
 /**
+ * Just easy-to-use type
  * level: site >-> username -> database
  * For one user of one site owns which databases
  */
@@ -26,28 +30,10 @@ interface GeneralConfig {
   };
 }
 
-export type DbSite = keyof GeneralConfig;
-
-interface UserConfig<Site extends keyof GeneralConfig, UserName extends keyof GeneralConfig[Site]> {
-  password: string;
-  databaseList: Array<GeneralConfig[Site][UserName]>;
-}
-interface DBInfo {
-  local: {
-    root: UserConfig<'local', 'root'>;
-    portaldb: UserConfig<'local', 'portaldb'>;
-    project: UserConfig<'local', 'project'>;
-    newbie: UserConfig<'local', 'newbie'>;
-  };
-  elif: {
-    root: UserConfig<'elif', 'root'>;
-    project: UserConfig<'elif', 'project'>;
-    newbie: UserConfig<'elif', 'newbie'>;
-  };
-}
+export type Site = keyof GeneralConfig;
 
 const SITE_INFO: {
-  [site in keyof GeneralConfig]: Pick<DBConfig, 'host' | 'port' | 'dialect'>;
+  [site in Site]: Pick<DBConfig, 'host' | 'port' | 'dialect'>;
 } = {
   local: {
     host: '127.0.0.1',
@@ -61,6 +47,23 @@ const SITE_INFO: {
   },
 };
 
+interface UserConfig<Site extends keyof GeneralConfig, UserName extends keyof GeneralConfig[Site]> {
+  password: string;
+  databaseList: Array<GeneralConfig[Site][UserName]>;
+}
+interface DBInfo {
+  local: {
+    newbie: UserConfig<'local', 'newbie'>;
+    portaldb: UserConfig<'local', 'portaldb'>;
+    project: UserConfig<'local', 'project'>;
+    root: UserConfig<'local', 'root'>;
+  };
+  elif: {
+    newbie: UserConfig<'elif', 'newbie'>;
+    project: UserConfig<'elif', 'project'>;
+    root: UserConfig<'elif', 'root'>;
+  };
+}
 /**
 User management for mysql:
 DROP user xifeiwu;
@@ -106,16 +109,64 @@ const DB_INFO: DBInfo = {
   },
 };
 
-export function getDbConfig<Site extends keyof GeneralConfig, UserName extends keyof GeneralConfig[Site]>(
-  site: Site,
-  username: UserName,
-  database: GeneralConfig[Site][UserName]
-): DBConfig {
+export async function getDbConfig<
+  Site extends keyof GeneralConfig,
+  UserName extends keyof GeneralConfig[Site]
+>(options?: {site?: Site; username?: UserName; database?: GeneralConfig[Site][UserName]}): Promise<DBConfig> {
+  let {site, username, database} = options ?? {};
+  const haveUndefinedValue = [site, username, database].some(it => it === undefined);
+  if (site === undefined) {
+    const sites = Object.keys(SITE_INFO) as Array<Site>;
+    const {label} = await selectOption<{label: Site}>(
+      sites.map(it => ({label: it})),
+      {
+        tip: 'Please select site:',
+      }
+    );
+    site = label;
+  }
   const siteConfig = SITE_INFO[site];
+  if (username === undefined) {
+    const usernames = Object.keys(DB_INFO[site]) as Array<string>;
+    const {label} = await selectOption<{label: string}>(
+      usernames.map(it => ({label: it})),
+      {
+        tip: 'Please select username:',
+      }
+    );
+    username = label as UserName;
+  }
   // @ts-ignore
   const {password, databaseList} = DB_INFO[site][username] as UserConfig<any, any>;
+  if (database === undefined) {
+    const {label} = await selectOption(
+      databaseList.map(it => ({label: it})),
+      {
+        tip: 'Please select database:',
+      }
+    );
+    database = label;
+  }
   if (!databaseList.includes(database)) {
     throw new Error(`databse ${database} not belongs to ${username as string}`);
+  }
+  logColorful(
+    {
+      color: 'red',
+    },
+    {
+      site,
+      username,
+      database,
+    }
+  );
+  if (
+    haveUndefinedValue &&
+    !(await goOnOrNot({
+      defaultValue: true,
+    }))
+  ) {
+    throw new Error('not go on');
   }
   return {
     ...siteConfig,
@@ -127,7 +178,7 @@ export function getDbConfig<Site extends keyof GeneralConfig, UserName extends k
 }
 
 /** List all dbConfig belongs to one site */
-export function getDbConfigBySite(site: DbSite) {
+export function getDbConfigBySite(site: Site) {
   const result: DBConfig[] = [];
   const siteConfig = DB_INFO[site];
   const siteInfo = SITE_INFO[site];
@@ -148,7 +199,7 @@ export function getDbConfigBySite(site: DbSite) {
 export function allDbConfig(): Array<DBConfig> {
   const result: DBConfig[] = [];
   for (const [site, siteConfig] of Object.entries(DB_INFO)) {
-    result.push(...getDbConfigBySite(site as DbSite));
+    result.push(...getDbConfigBySite(site as Site));
   }
   return result;
 }
