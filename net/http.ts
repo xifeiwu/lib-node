@@ -148,18 +148,20 @@ export async function parseHttpHeaderPart<T extends Readable>(
         httpVersion,
         headers,
       };
-      return;
+      return true;
     }
     if (method === undefined) {
       const execResult = httpFirstLineReg.exec(line);
       if (!execResult) {
-        throw new Error(`Error format http first line: ${line}`);
+        return false;
+        // throw new Error(`Error format http first line: ${line}`);
       }
       [method, url, httpVersion] = execResult.slice(1);
     } else {
       const exexResult = httpHeaderLineReg.exec(line);
       if (!exexResult) {
-        throw new Error(`Error format http header line: ${line}`);
+        return false;
+        // throw new Error(`Error format http header line: ${line}`);
       }
       const [field, value] = exexResult.slice(1);
       if (!Object.prototype.hasOwnProperty.call(headers, field)) {
@@ -171,6 +173,7 @@ export async function parseHttpHeaderPart<T extends Readable>(
         (headers[field] as string[]).push(value);
       }
     }
+    return true;
   };
 
   const onReadable = () => {
@@ -183,9 +186,11 @@ export async function parseHttpHeaderPart<T extends Readable>(
           break;
         }
         cacheBuffer = Buffer.concat([cacheBuffer, oneByte]);
+        dataConsumed = Buffer.concat([dataConsumed, oneByte]);
         if (matcher(oneByte[0])) {
-          updateValue(cacheBuffer);
-          dataConsumed = Buffer.concat([dataConsumed, cacheBuffer]);
+          if (!updateValue(cacheBuffer)) {
+            break;
+          }
           cacheBuffer = Buffer.alloc(0);
           matcher = getMatcher4LineBreak();
         }
