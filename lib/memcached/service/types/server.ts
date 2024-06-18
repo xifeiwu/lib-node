@@ -26,4 +26,7 @@ export type AllGetFunc = {
 export type DeleteFunc = {delete: (key: string) => DeleteResponseStatus | ErrorMessage};
 
 /** Api for store */
-export interface StoreApi extends AllSaveFunc, AllGetFunc, DeleteFunc {}
+export interface StoreApi extends AllSaveFunc, AllGetFunc, DeleteFunc {
+  toArray: () => [string, RecordItem][];
+  toJSON: () => object;
+}

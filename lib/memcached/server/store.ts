@@ -12,7 +12,7 @@ import {
 import {getError} from './service';
 import {RecordItem} from '../service/types';
 
-export class Storage implements StoreApi {
+export class Store implements StoreApi {
   record: Map<string, RecordItem>;
   currentSize: number;
   maxSizeMb: number;
@@ -155,6 +155,16 @@ export class Storage implements StoreApi {
       }
     }
   }
+  toArray() {
+    return [...this.record.entries()];
+  }
+  toJSON() {
+    const items = this.toArray();
+    return items.reduce<{[key: string]: RecordItem}>((sum, [key, value]) => {
+      return {
+        ...sum,
+        [key]: value,
+      };
+    }, {});
+  }
 }
-
-export const store = new Storage();
