@@ -38,12 +38,12 @@ export function tryConsumeData(item: GeneralCommandInfo, chunk: Buffer): AfterCo
     remainingBuffer: chunk,
   };
   const {bytes = 0} = item;
-  if (bytes > 0 && Buffer.isBuffer(chunk) && chunk.byteLength > 0) {
+  if (bytes > 0) {
     item.value = Buffer.alloc(0);
     const {remainingBuffer, needContinueConsume} = onReceiveData(item, chunk);
     results.remainingBuffer = remainingBuffer;
     if (needContinueConsume) {
-      results.onReceiveData = onReceiveData.bind(item);
+      results.onReceiveData = onReceiveData.bind(null, item);
     }
   }
   return results;
@@ -61,7 +61,7 @@ export interface AfterReceiveDataStatus {
  * consumeLength: how many bytes consumed on this time
  * remainingBuffer: remaining buffer
  */
-function onReceiveData(item: GeneralCommandInfo, chunk: Buffer): AfterReceiveDataStatus {
+function onReceiveData(item: GeneralCommandInfo, chunk?: Buffer): AfterReceiveDataStatus {
   const needConsume = () => (item.value ? item.value.byteLength : 0) < item.bytes;
   const results: AfterReceiveDataStatus = {
     consumedLength: 0,

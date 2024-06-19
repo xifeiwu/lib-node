@@ -1,5 +1,3 @@
-// import { Params } from "./types";
-
 import {isNumber} from '../../../external';
 import {
   DeleteResponseStatus,
@@ -9,7 +7,7 @@ import {
   SaveResponseStatus,
   StoreApi,
 } from '../service/types';
-import {getError} from './service';
+import {getError, stringifyRecordItem} from './service';
 import {RecordItem} from '../service/types';
 
 export class Store implements StoreApi {
@@ -163,7 +161,7 @@ export class Store implements StoreApi {
     return items.reduce<{[key: string]: RecordItem}>((sum, [key, value]) => {
       return {
         ...sum,
-        [key]: value,
+        [key]: stringifyRecordItem(value),
       };
     }, {});
   }

@@ -1,6 +1,6 @@
 import net, {ServerOpts, Socket} from 'net';
 import {getAFreePort} from '../service/external';
-import {CommandName, GeneralCommandInfo, GetCommandInfo, SaveCommandInfo, StoreApi} from '../service/types';
+import {GeneralCommandInfo, StoreApi} from '../service/types';
 import {parseFirstLine, syntax} from '../service';
 import {Store} from './store';
 import {AfterReceiveDataStatus, tryConsumeData} from '../service/convert';
@@ -8,7 +8,7 @@ import {AfterReceiveDataStatus, tryConsumeData} from '../service/convert';
 export {Store};
 
 export function getConnectionHandler(store: StoreApi) {
-  return async function handleConnection(socket: Socket) {
+  return async function handleConnection(socket: Socket, firstChunk?: Buffer) {
     let commandInfo: GeneralCommandInfo | null = null;
     /** whether current command need to consume more data */
     let onReceiveDataToCommand: (chunk: Buffer) => AfterReceiveDataStatus = null;
@@ -52,6 +52,9 @@ export function getConnectionHandler(store: StoreApi) {
         }
       }
       socket.resume();
+    }
+    if (firstChunk) {
+      onData(firstChunk);
     }
     socket.on('data', onData);
   };
