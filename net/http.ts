@@ -139,31 +139,24 @@ export async function parseHttpHeaderPart<T extends Readable>(
   let {method, url, httpVersion, headers = {}} = initialValue ?? {};
   let dataConsumed = Buffer.alloc(0);
 
+  /**
+   * Update http header value
+   * @param chunk one line
+   * @returns continue or not
+   */
   const updateValue = (chunk: Buffer) => {
     const line = chunk.toString('utf-8').trim().replace(/\r\n$/, '');
-    if (line === '') {
-      requestInfo = {
-        method,
-        url,
-        httpVersion,
-        headers,
-      };
-      return true;
-    }
+    let execResult: RegExpExecArray;
     if (method === undefined) {
-      const execResult = httpFirstLineReg.exec(line);
-      if (!execResult) {
+      execResult = httpFirstLineReg.exec(line);
+      if (execResult) {
+        [method, url, httpVersion] = execResult.slice(1);
+        return true;
+      } else {
         return false;
-        // throw new Error(`Error format http first line: ${line}`);
       }
-      [method, url, httpVersion] = execResult.slice(1);
-    } else {
-      const exexResult = httpHeaderLineReg.exec(line);
-      if (!exexResult) {
-        return false;
-        // throw new Error(`Error format http header line: ${line}`);
-      }
-      const [field, value] = exexResult.slice(1);
+    } else if ((execResult = httpHeaderLineReg.exec(line))) {
+      const [field, value] = execResult.slice(1);
       if (!Object.prototype.hasOwnProperty.call(headers, field)) {
         headers[field] = value;
       } else {
@@ -172,8 +165,18 @@ export async function parseHttpHeaderPart<T extends Readable>(
         }
         (headers[field] as string[]).push(value);
       }
+      return true;
+    } else if (line === '') {
+      requestInfo = {
+        method,
+        url,
+        httpVersion,
+        headers,
+      };
+      /** Meets end of header part, will not continue parse logic */
+      return false;
     }
-    return true;
+    return false;
   };
 
   const onReadable = () => {
@@ -193,9 +196,6 @@ export async function parseHttpHeaderPart<T extends Readable>(
           }
           cacheBuffer = Buffer.alloc(0);
           matcher = getMatcher4LineBreak();
-        }
-        if (requestInfo) {
-          break;
         }
       }
       resolve({
