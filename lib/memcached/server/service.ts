@@ -1,5 +1,5 @@
 import {syntax} from '../service';
-import {ErrorMessage, ErrorStatus} from '../service/types';
+import {ErrorMessage, ErrorStatus, RecordItem} from '../service/types';
 
 export function getError(errorType: ErrorStatus, message: string = ''): ErrorMessage {
   return `${errorType} ${message}`;
@@ -19,5 +19,13 @@ export function parseCommandLine(line: string) {
   return {
     command,
     ...params,
+  };
+}
+
+export function stringifyRecordItem(item: RecordItem) {
+  const {value, ...rest} = item;
+  return {
+    ...rest,
+    value: Buffer.isBuffer(value) ? value.toString() : value,
   };
 }
