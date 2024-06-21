@@ -15,22 +15,6 @@ import {
 import {Socket} from 'net';
 import {deepEqual, UrlProps, toUrlProps, isNumber, waitFor} from '../external';
 
-export async function responseIncomingMessageInfo(
-  request: http.IncomingMessage,
-  response: http.ServerResponse
-) {
-  const data = await getRequestInfo(request);
-  const buffer = await toBuffer(data);
-  const headers = {
-    'content-type': 'application/json',
-    'content-length': buffer.length,
-  };
-  Object.entries(headers).forEach(([key, value]) => {
-    response.setHeader(key, value);
-  });
-  response.end(buffer);
-}
-
 export interface HttpServerConfig {
   host?: string;
   port?: number;
