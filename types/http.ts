@@ -1,4 +1,4 @@
-import {IncomingHttpHeaders} from 'http';
+import {OutgoingHttpHeaders, IncomingHttpHeaders} from 'http';
 
 export interface HttpFirstLineInfo {
   method: string;
@@ -7,7 +7,7 @@ export interface HttpFirstLineInfo {
 }
 
 export interface HttpHeaderPartInfo extends HttpFirstLineInfo {
-  headers?: IncomingHttpHeaders;
+  headers?: OutgoingHttpHeaders;
 }
 // GET /api/test/echo HTTP/1.1
 export interface HttpRequestInfo<T = any> extends HttpHeaderPartInfo {
