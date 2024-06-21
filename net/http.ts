@@ -1,4 +1,4 @@
-import {Readable} from 'stream';
+import {Readable, Transform, isReadable} from 'stream';
 import {CanConvertToBuffer, toBuffer} from '../transform';
 import {HttpFirstLineInfo, HttpRequestInfo, HttpResponseInfo} from '../types';
 import {httpFirstLineReg, httpHeaderLineReg} from '../constants';
@@ -17,13 +17,14 @@ export function getRequestData(info: RequestInfo): Buffer {
     httpVersion = 'HTTP/' + httpVersion;
   }
   const firstLine = [method.toUpperCase(), url, httpVersion.toUpperCase()].join(' ') + '\r\n';
-  if (data) {
+  if (isReadable(data as Readable)) {
+    headers['Transfer-Encoding'] = 'chunked';
+  } else {
     const dataBuffer = toBuffer(data);
     headers['content-length'] = dataBuffer.byteLength + '';
     // headers['connection'] = 'close';
     bufferArray.push(dataBuffer);
   }
-
   const headersLine = Object.entries(headers)
     .map(([key, value]) => {
       return `${key}: ${value}` + '\r\n';
@@ -34,14 +35,17 @@ export function getRequestData(info: RequestInfo): Buffer {
   return toBuffer(bufferArray);
 }
 
-export async function sendHttpRequestByTcp(httpOption: HttpRequestOptions, tcpOptions?: TcpNetConnectOpts) {
+export async function sendHttpRequestThroughSocket(
+  httpOption: HttpRequestOptions,
+  tcpOptions?: TcpNetConnectOpts
+) {
   const {
     urlProps,
     restProps: {method, headers, data},
   } = getUrlPropsFromConfig(httpOption);
   const {origin, ...otherUrlProps} = urlProps;
   const url = urlPropsToHref(otherUrlProps);
-  const {protocol, href, hostname, port} = toUrlInstance(concatOriginWithPathname(origin, url));
+  const {protocol, hostname, port} = toUrlInstance(concatOriginWithPathname(origin, url));
   let finalPort: string | number = port;
   if (!finalPort) {
     finalPort = protocol === 'https:' ? 443 : 80;
@@ -51,7 +55,35 @@ export async function sendHttpRequestByTcp(httpOption: HttpRequestOptions, tcpOp
     host: hostname,
     port: Number(finalPort),
   });
-  client.end(getRequestData({method, url, headers, data}));
+  if (isReadable(data as Readable)) {
+    client.write(getRequestData({method, url, headers, data}));
+    (data as Readable)
+      .pipe(
+        new Transform({
+          transform(chunk, enc, cb) {
+            console.log(`enc`);
+            console.log(enc);
+            // if (enc === 'buffer') {
+            const {byteLength} = chunk;
+            const hexStr = byteLength.toString(16);
+            this.push(hexStr + '\r\n');
+            this.push(chunk);
+            this.push('\r\n');
+            cb && cb();
+          },
+          final(cb) {
+            const byteLength = 0;
+            const hexStr = byteLength.toString(16);
+            this.push(hexStr + '\r\n');
+            this.push('\r\n');
+            cb && cb();
+          },
+        })
+      )
+      .pipe(client);
+  } else {
+    client.end(getRequestData({method, url, headers, data}));
+  }
   return new Promise<string>((res, rej) => {
     const bufList: Buffer[] = [];
     client.on('error', err => {

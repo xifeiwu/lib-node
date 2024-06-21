@@ -25,10 +25,11 @@ export async function startHttpServer(
     request?: RequestListener;
     upgrade?: (response, socket: Socket, head: Buffer) => void;
     connect?: (response, socket: Socket, head: Buffer) => void;
+    connection?: (socket: Socket) => void;
   },
   config?: HttpServerConfig
 ) {
-  const {request: handleRequest, upgrade: handleUpgrade, connect: handleConnect} = handler;
+  const {request: handleRequest, upgrade: handleUpgrade, connect: handleConnect, connection: handleConnection} = handler;
   const {host = '0.0.0.0', port = await getAFreePort(), options} = config ?? {};
   const origin = `http://${host}:${port}`;
   return new Promise<{
@@ -41,6 +42,7 @@ export async function startHttpServer(
     server.on('listening', () => {
       res({host, port, origin, server});
     });
+    handleConnection && server.on('connection', handleConnection);
     handleRequest && server.on('request', handleRequest);
     handleUpgrade && server.on('upgrade', handleUpgrade);
     handleConnect && server.on('connect', handleConnect);

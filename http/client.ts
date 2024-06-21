@@ -12,8 +12,9 @@ import {
   isObject,
 } from '../external';
 import {HttpResponseInfo} from '../types';
+import {Readable, isReadable} from 'stream';
 
-type ToBufferParams = Parameters<typeof toBuffer>[0];
+type ToBufferParams = Parameters<typeof toBuffer>[0] | Readable;
 
 /**
  * A very simple request options can be used for both HttpRequest and AxiosRequest
@@ -69,7 +70,11 @@ export async function requestAndGetResponse<Payload extends ToBufferParams = any
   // console.log(href);
   // console.log(requestOptions);
   clientRequest = (protocol === 'https:' ? https : http).request(href, requestOptions);
-  clientRequest.end(data ? await toBuffer(data) : undefined);
+  if (isReadable(data as Readable)) {
+    (data as Readable).pipe(clientRequest);
+  } else {
+    clientRequest.end(data ? await toBuffer(data) : undefined);
+  }
   return new Promise((res, rej) => {
     clientRequest.on('response', async response => {
       res(response);
