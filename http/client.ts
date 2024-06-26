@@ -11,7 +11,7 @@ import {
   urlPropsToHref,
   isObject,
 } from '../external';
-import {HttpResponseInfo} from '../types';
+import {TcpHttpResponseProps} from '../types';
 import {Readable, isReadable} from 'stream';
 
 type ToBufferParams = Parameters<typeof toBuffer>[0] | Readable;
@@ -50,8 +50,8 @@ export function mergeHttpRequestOptions(
 export class ResponseError extends Error {
   isResponseError: boolean = true;
   requestConfig: HttpRequestOptions;
-  responseInfo: HttpResponseInfo;
-  constructor(requestConfig: HttpRequestOptions, responseInfo: HttpResponseInfo) {
+  responseInfo: TcpHttpResponseProps;
+  constructor(requestConfig: HttpRequestOptions, responseInfo: TcpHttpResponseProps) {
     const {statusCode, statusMessage} = responseInfo;
     super(`Response code ${statusCode}: ${statusMessage}`);
     this.requestConfig = requestConfig;
@@ -92,7 +92,7 @@ export async function requestAndGetResponse<Payload extends ToBufferParams = any
   });
 }
 
-export type ValidateStatus = (responseInfo: HttpResponseInfo) => boolean;
+export type ValidateStatus = (responseInfo: TcpHttpResponseProps) => boolean;
 export const validateStatusCode: ValidateStatus = info => {
   const {statusCode} = info;
   return statusCode >= 200 && statusCode < 300;
@@ -104,7 +104,7 @@ export async function requestAndGetRelatedInfo<ResData = any, Payload extends To
   responseConfig?: Parameters<typeof getResponseInfo>[1] & {
     validateStatus?: ValidateStatus | boolean;
   }
-): Promise<{requestOptions: HttpRequestOptions<Payload>; responseInfo: HttpResponseInfo<ResData>}> {
+): Promise<{requestOptions: HttpRequestOptions<Payload>; responseInfo: TcpHttpResponseProps<ResData>}> {
   const response = await requestAndGetResponse<Payload>(requestOptions);
   let {validateStatus, ...resConfig} = responseConfig ?? {};
   const responseInfo = await getResponseInfo<ResData>(response, resConfig);
@@ -127,7 +127,7 @@ export async function requestAndGetResponseInfo<ResData = any, Payload extends T
   responseConfig?: Parameters<typeof getResponseInfo>[1] & {
     validateStatus?: ValidateStatus | boolean;
   }
-): Promise<HttpResponseInfo<ResData>> {
+): Promise<TcpHttpResponseProps<ResData>> {
   const {responseInfo} = await requestAndGetRelatedInfo(requestOptions, responseConfig);
   return responseInfo;
 }

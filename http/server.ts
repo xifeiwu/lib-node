@@ -4,10 +4,10 @@ import {createHash} from 'crypto';
 import {IncomingHttpHeaders, IncomingMessage} from 'http';
 import {Duplex} from 'stream';
 import {
-  HttpHeaderPartInfo,
-  HttpRequestInfo,
+  TcpHttpHeaderPartProps,
+  TcpHttpRequestProps,
   HttpRequestOptions,
-  HttpResponseInfo,
+  TcpHttpResponseProps,
   getAFreePort,
   getRequestHeaderInfo,
   getRequestInfo,
@@ -65,13 +65,13 @@ export function handleUpgrade(
   req: IncomingMessage,
   socket?: Duplex,
   head?: Buffer
-): {requestHeaderPartInfo: HttpHeaderPartInfo; responseInfo: HttpResponseInfo} {
+): {requestHeaderPartInfo: TcpHttpHeaderPartProps; responseInfo: TcpHttpResponseProps} {
   const requestHeaderPartInfo = getRequestHeaderInfo(req);
   const key = requestHeaderPartInfo.headers['sec-websocket-key'];
   const digest = createHash('sha1')
     .update(key + GUID)
     .digest('base64');
-  const responseInfo: HttpResponseInfo = {
+  const responseInfo: TcpHttpResponseProps = {
     httpVersion: 'HTTP/1.1',
     statusCode: 101,
     statusMessage: 'Switching Protocols',
@@ -88,9 +88,9 @@ export function handleConnect(
   req: IncomingMessage,
   socket?: Duplex,
   head?: Buffer
-): {requestHeaderPartInfo: HttpRequestInfo; responseInfo: HttpResponseInfo} {
+): {requestHeaderPartInfo: TcpHttpRequestProps; responseInfo: TcpHttpResponseProps} {
   const requestHeaderPartInfo = getRequestHeaderInfo(req);
-  const responseInfo: HttpResponseInfo = {
+  const responseInfo: TcpHttpResponseProps = {
     httpVersion: 'HTTP/1.1',
     statusCode: 200,
     statusMessage: 'Connection Established',

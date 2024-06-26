@@ -1,6 +1,6 @@
 import {Readable, Transform, isReadable} from 'stream';
 import {CanConvertToBuffer, toBuffer} from '../transform';
-import {HttpFirstLineInfo, HttpRequestInfo, HttpResponseInfo} from '../types';
+import {TcpHttpFirstLineProps, TcpHttpRequestProps, TcpHttpResponseProps} from '../types';
 import {httpFirstLineReg, httpHeaderLineReg} from '../constants';
 import {HttpRequestOptions} from '../http';
 import {getUrlPropsFromConfig, toUrlInstance, urlPropsToHref} from '../external';
@@ -8,9 +8,33 @@ import {startSocketClient} from './utils';
 import {TcpNetConnectOpts} from 'net';
 import {concatOriginWithPathname} from '../../fe/url';
 
-type RequestInfo = Omit<HttpRequestInfo, 'method' | 'headers' | 'httpVersion'> &
-  Partial<Pick<HttpRequestInfo, 'method' | 'headers' | 'httpVersion'>>;
-export function getRequestData(info: RequestInfo): Buffer {
+export function httpOptionsToTcpConfig(httpOption: HttpRequestOptions): {
+  props: TcpHttpRequestProps;
+  connectionOptions: TcpNetConnectOpts;
+} {
+  const {
+    urlProps,
+    restProps: {method, headers, data},
+  } = getUrlPropsFromConfig(httpOption);
+  const {origin, ...otherUrlProps} = urlProps;
+  const url = urlPropsToHref(otherUrlProps);
+  const {protocol, hostname, port} = toUrlInstance(concatOriginWithPathname(origin, url));
+  let finalPort: string | number = port;
+  if (!finalPort) {
+    finalPort = protocol === 'https:' ? 443 : 80;
+  }
+  return {
+    props: {method, url, headers, data, httpVersion: 'HTTP/1.1'},
+    connectionOptions: {
+      host: hostname,
+      port: Number(finalPort),
+    },
+  };
+}
+
+type TcpRequestProps = Omit<TcpHttpRequestProps, 'method' | 'headers' | 'httpVersion'> &
+  Partial<Pick<TcpHttpRequestProps, 'method' | 'headers' | 'httpVersion'>>;
+export function tcpRequestPropsToBuffer(info: TcpRequestProps): Buffer {
   let {method = 'get', url, httpVersion = 'HTTP/1.1', headers = {}, data} = info;
   let bufferArray: CanConvertToBuffer[] = [];
   if (!/^http\//i.test(httpVersion)) {
@@ -35,39 +59,29 @@ export function getRequestData(info: RequestInfo): Buffer {
   return toBuffer(bufferArray);
 }
 
-export async function sendHttpRequestThroughSocket(
+export async function sendHttpRequestThroughTcp(
   httpOption: HttpRequestOptions,
   tcpOptions?: TcpNetConnectOpts
 ) {
   const {
-    urlProps,
-    restProps: {method, headers, data},
-  } = getUrlPropsFromConfig(httpOption);
-  const {origin, ...otherUrlProps} = urlProps;
-  const url = urlPropsToHref(otherUrlProps);
-  const {protocol, hostname, port} = toUrlInstance(concatOriginWithPathname(origin, url));
-  let finalPort: string | number = port;
-  if (!finalPort) {
-    finalPort = protocol === 'https:' ? 443 : 80;
-  }
+    props: {method, url, headers, data},
+    connectionOptions,
+  } = httpOptionsToTcpConfig(httpOption);
   const client = await startSocketClient({
     ...tcpOptions,
-    host: hostname,
-    port: Number(finalPort),
+    ...connectionOptions,
   });
   if (isReadable(data as Readable)) {
-    client.write(getRequestData({method, url, headers, data}));
+    client.write(tcpRequestPropsToBuffer({method, url, headers, data}));
     (data as Readable)
       .pipe(
         new Transform({
           transform(chunk, enc, cb) {
-            console.log(`enc`);
-            console.log(enc);
-            // if (enc === 'buffer') {
-            const {byteLength} = chunk;
+            const buffer = toBuffer(chunk);
+            const {byteLength} = buffer;
             const hexStr = byteLength.toString(16);
             this.push(hexStr + '\r\n');
-            this.push(chunk);
+            this.push(buffer);
             this.push('\r\n');
             cb && cb();
           },
@@ -82,7 +96,7 @@ export async function sendHttpRequestThroughSocket(
       )
       .pipe(client);
   } else {
-    client.end(getRequestData({method, url, headers, data}));
+    client.end(tcpRequestPropsToBuffer({method, url, headers, data}));
   }
   return new Promise<string>((res, rej) => {
     const bufList: Buffer[] = [];
@@ -99,7 +113,7 @@ export async function sendHttpRequestThroughSocket(
   });
 }
 
-export function getResponseData(info: HttpResponseInfo): Buffer {
+export function tcpResponsePropsToBuffer(info: TcpHttpResponseProps): Buffer {
   let {httpVersion, statusCode, statusMessage, headers, data} = info;
   let bufferArray: CanConvertToBuffer[] = [];
   if (!/^http\//i.test(httpVersion)) {
@@ -148,13 +162,13 @@ export function getMatcher4LineBreak() {
 }
 
 interface ParseFirstLineResults {
-  firstLineInfo?: HttpFirstLineInfo;
+  firstLineInfo?: TcpHttpFirstLineProps;
   dataConsumed: Buffer;
 }
 export async function parseHttpFirstLine(reader: Readable): Promise<ParseFirstLineResults> {
-  let method: HttpRequestInfo['method'];
-  let url: HttpRequestInfo['url'];
-  let httpVersion: HttpRequestInfo['httpVersion'];
+  let method: TcpHttpRequestProps['method'];
+  let url: TcpHttpRequestProps['url'];
+  let httpVersion: TcpHttpRequestProps['httpVersion'];
   const maxLength = 1024;
   let matcher = getMatcher4LineBreak();
   let resolve: (v: ParseFirstLineResults) => void;
@@ -195,15 +209,15 @@ export async function parseHttpFirstLine(reader: Readable): Promise<ParseFirstLi
   });
 }
 interface ParseHttpHeaderResults<T extends Readable> {
-  requestInfo: HttpRequestInfo;
+  requestInfo: TcpHttpRequestProps;
   reader: T;
   dataConsumed: Buffer;
 }
 export async function parseHttpHeaderPart<T extends Readable>(
   reader: T,
-  initialValue?: Partial<HttpRequestInfo>
+  initialValue?: Partial<TcpHttpRequestProps>
 ): Promise<ParseHttpHeaderResults<T>> {
-  let requestInfo: HttpRequestInfo;
+  let requestInfo: TcpHttpRequestProps;
   let resolve: (v: ParseHttpHeaderResults<T>) => void;
   let reject: (err: Error) => void;
   let {method, url, httpVersion, headers = {}} = initialValue ?? {};

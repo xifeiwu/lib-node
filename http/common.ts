@@ -1,13 +1,13 @@
 import http from 'http';
 import {getStreamData} from '../stream';
 import {fromBuffer, toBuffer} from '../transform';
-import {HttpHeaderPartInfo, HttpRequestInfo, HttpResponseInfo} from '../types';
+import {TcpHttpHeaderPartProps, TcpHttpRequestProps, TcpHttpResponseProps} from '../types';
 
-export function getRequestHeaderInfo(request: http.IncomingMessage): HttpHeaderPartInfo {
+export function getRequestHeaderInfo(request: http.IncomingMessage): TcpHttpHeaderPartProps {
   const {method, url, httpVersion, headers} = request;
   return {method, url, httpVersion, headers};
 }
-export async function getRequestInfo(request: http.IncomingMessage): Promise<HttpRequestInfo> {
+export async function getRequestInfo(request: http.IncomingMessage): Promise<TcpHttpRequestProps> {
   const data = fromBuffer(await getStreamData(request), 'json');
   return {
     ...getRequestHeaderInfo(request),
@@ -15,7 +15,7 @@ export async function getRequestInfo(request: http.IncomingMessage): Promise<Htt
   };
 }
 
-export function getResponseHeaderInfo(response: http.IncomingMessage): HttpResponseInfo {
+export function getResponseHeaderInfo(response: http.IncomingMessage): TcpHttpResponseProps {
   const {httpVersion, statusCode, statusMessage, headers} = response;
   return {statusCode, statusMessage, httpVersion, headers};
 }
@@ -25,7 +25,7 @@ export async function getResponseInfo<T>(
     maxLength?: number;
     dataType?: 'buffer' | 'string' | 'json';
   } = {}
-): Promise<HttpResponseInfo<T>> {
+): Promise<TcpHttpResponseProps<T>> {
   const {maxLength = 32 * 1024 * 1024, dataType = 'json'} = options;
   const data = await getStreamData(response);
   const slicedData = data.subarray(0, maxLength);
@@ -37,7 +37,7 @@ export async function getResponseInfo<T>(
   return responseInfo;
 }
 
-export function responseInfoToBuffer(responseInfo: Partial<HttpResponseInfo>) {
+export function responseInfoToBuffer(responseInfo: Partial<TcpHttpResponseProps>) {
   const {
     httpVersion = 'http/1.1',
     statusCode = 200,

@@ -1,5 +1,5 @@
 import {Readable} from 'stream';
-import {getRequestData, parseHttpFirstLine, parseHttpHeaderPart} from './http';
+import {tcpRequestPropsToBuffer, parseHttpFirstLine, parseHttpHeaderPart} from './http';
 import {handleSocketEvents, startSocketClient} from './utils';
 
 export async function testGetRequestData() {
@@ -9,7 +9,7 @@ export async function testGetRequestData() {
   });
   handleSocketEvents(socket);
   socket.end(
-    getRequestData({
+    tcpRequestPropsToBuffer({
       method: 'post',
       url: '/api/debug/echo',
       headers: {
@@ -28,7 +28,7 @@ export async function sendRequestDataByChunk() {
     host: 'elif.site',
     port: 80,
   });
-  const total = getRequestData({
+  const total = tcpRequestPropsToBuffer({
     method: 'post',
     url: '/api/debug/echo',
     headers: {
@@ -51,7 +51,7 @@ export async function testParseHttpHeaderPart() {
   const reader = new Readable({
     read() {
       this.push(
-        getRequestData({
+        tcpRequestPropsToBuffer({
           method: 'post',
           url: '/api/debug/echo',
           headers: {
@@ -82,7 +82,7 @@ export async function testParseHttpFirstLine() {
   const reader = new Readable({
     read() {
       this.push(
-        getRequestData({
+        tcpRequestPropsToBuffer({
           method: 'post',
           url: '/api/debug/echo',
           headers: {

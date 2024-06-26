@@ -6,7 +6,8 @@ export function getStreamData(req: stream.Stream): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const bufferList: Buffer[] = [];
     req.on('data', (chunk: Buffer) => {
-      // console.log(chunk);
+      console.log(`chunk`);
+      console.log(chunk);
       // result += chunk;
       bufferList.push(chunk);
     });
