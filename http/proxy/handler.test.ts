@@ -1,6 +1,6 @@
 import http from 'http';
 import https from 'https';
-import {getStreamData} from '../../stream';
+import {getDataFromReadable} from '../../stream';
 // import {getAFreePort} from '../../net/http';
 import {proxyRequest} from './handler';
 import {getRequestHeaderInfo} from '../common';
@@ -24,7 +24,7 @@ export async function twoWayOfProxyPayload() {
     });
   };
   const handler2: http.RequestListener = async (req, res) => {
-    const data = await getStreamData(req);
+    const data = await getDataFromReadable(req);
     console.log(`req.readable`);
     console.log(req.readable);
     proxyRequest(req, res, {
@@ -113,7 +113,7 @@ export async function tryRequest() {
   );
   request.end();
   request.on('response', async res => {
-    const data = await getStreamData(res);
+    const data = await getDataFromReadable(res);
     const dataStr = data.toString();
     console.log(dataStr);
   });

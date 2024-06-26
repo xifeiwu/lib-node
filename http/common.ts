@@ -1,5 +1,5 @@
 import http from 'http';
-import {getStreamData} from '../stream';
+import {getDataFromReadable} from '../stream';
 import {fromBuffer, toBuffer} from '../transform';
 import {TcpHttpHeaderPartProps, TcpHttpRequestProps, TcpHttpResponseProps} from '../types';
 
@@ -8,7 +8,7 @@ export function getRequestHeaderInfo(request: http.IncomingMessage): TcpHttpHead
   return {method, url, httpVersion, headers};
 }
 export async function getRequestInfo(request: http.IncomingMessage): Promise<TcpHttpRequestProps> {
-  const data = fromBuffer(await getStreamData(request), 'json');
+  const data = fromBuffer(await getDataFromReadable(request), 'json');
   return {
     ...getRequestHeaderInfo(request),
     data,
@@ -27,7 +27,7 @@ export async function getResponseInfo<T>(
   } = {}
 ): Promise<TcpHttpResponseProps<T>> {
   const {maxLength = 32 * 1024 * 1024, dataType = 'json'} = options;
-  const data = await getStreamData(response);
+  const data = await getDataFromReadable(response);
   const slicedData = data.subarray(0, maxLength);
   const finalData = fromBuffer(slicedData, dataType);
   const responseInfo = {

@@ -1,20 +1,20 @@
-import stream, {Transform} from 'stream';
+import stream, {Transform, Readable} from 'stream';
 import {isString, isObject, waitFor} from './external';
 import {DataTypeFromBuffer, TargetDataTypeFromBuffer, fromBuffer} from './transform';
 
-export function getStreamData(req: stream.Stream): Promise<Buffer> {
+export function getDataFromReadable(reader: Readable): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const bufferList: Buffer[] = [];
-    req.on('data', (chunk: Buffer) => {
-      console.log(`chunk`);
-      console.log(chunk);
+    reader.on('data', (chunk: Buffer) => {
+      // console.log(`chunk`);
+      // console.log(chunk);
       // result += chunk;
       bufferList.push(chunk);
     });
-    req.on('end', () => {
+    reader.on('end', () => {
       resolve(Buffer.concat(bufferList));
     });
-    req.on('error', (err: any) => {
+    reader.on('error', (err: any) => {
       reject(err);
     });
   });
