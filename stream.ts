@@ -1,6 +1,6 @@
-import stream, {Transform, Readable} from 'stream';
+import stream, {Transform, Readable, Writable} from 'stream';
 import {isString, isObject, waitFor} from './external';
-import {DataTypeFromBuffer, TargetDataTypeFromBuffer, fromBuffer} from './transform';
+import {DataTypeFromBuffer, TargetDataTypeFromBuffer, fromBuffer, toBuffer} from './transform';
 
 export function getDataFromReadable(reader: Readable): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -20,6 +20,31 @@ export function getDataFromReadable(reader: Readable): Promise<Buffer> {
   });
 }
 
+/**
+ * Get writer with data write to a buffer
+ * @returns
+ */
+export function getCacheWriter() {
+  const bufferList: Buffer[] = [];
+  const writer = new Writable({
+    write(chunk, _enc, cb) {
+      bufferList.push(toBuffer(chunk));
+      cb && cb();
+    },
+    final(cb) {
+      cb && cb();
+    },
+  });
+  const waitCacheData = new Promise<Buffer>((res, rej) => {
+    writer.on('finish', () => {
+      res(Buffer.concat(bufferList));
+    });
+    writer.on('error', err => {
+      rej(err);
+    });
+  });
+  return {writer, waitCacheData};
+}
 /**
  * @param {data}, null stands for end the reader immediately
  * TODO: use toBuffer
