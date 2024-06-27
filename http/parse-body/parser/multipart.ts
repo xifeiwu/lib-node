@@ -66,6 +66,7 @@ class MultipartParser extends Transform {
     super({readableObjectMode: true});
     const {boundaryStr} = options;
     this.boundary = Buffer.from(`\r\n--${boundaryStr}`);
+    this.boundaryChars = {};
     for (let i = 0; i < this.boundary.length; i++) {
       this.boundaryChars[this.boundary[i]] = true;
     }
@@ -74,7 +75,6 @@ class MultipartParser extends Transform {
     this.index = 0;
     this.flags = 0;
     this.state = State.START;
-    this.boundaryChars = {};
   }
 
   _endUnexpected() {
@@ -375,6 +375,7 @@ class Part {
     this.options = {encoding, uploadDir, wayOfHandleFile, hashAlgorithm, hashEncoding};
     this.meta = {};
     this.file = {};
+    this.updateMeta('contentTransferEncoding', 'utf-8');
   }
   get needSaveFile() {
     const {wayOfHandleFile} = this.options;
@@ -387,7 +388,7 @@ class Part {
   get type() {
     return this.meta.contentType === undefined ? 'field' : 'file';
   }
-  updateMeta(key: string, value: string) {
+  updateMeta(key: keyof Meta | string, value: string) {
     if (!this.meta) {
       this.meta = {};
     }
@@ -411,6 +412,10 @@ class Part {
   end(chunk?: Buffer) {
     let resolve: (info: ParsedItem) => void;
     let reject: (err: Error) => void;
+    const promise = new Promise<ParsedItem>((res, rej) => {
+      resolve = res;
+      reject = rej;
+    });
     this.buffer = toBuffer([this.buffer, chunk]);
     const filename = this.getMetaValue('filename');
     const name = this.getMetaValue('name');
@@ -460,10 +465,7 @@ class Part {
         [key]: this.buffer,
       });
     }
-    return new Promise<ParsedItem>((res, rej) => {
-      resolve = res;
-      reject = rej;
-    });
+    return promise;
   }
   revert() {}
 }
@@ -474,6 +476,7 @@ function getTransformForParser(parseOptions: ParserOptions) {
   let headerValue: string;
   let part: Part;
   const transformParserData = new Transform({
+    objectMode: true,
     async transform({name, buffer, start, end}, _enc, cb) {
       if (name === 'partBegin') {
         part = new Part(parseOptions);
@@ -521,7 +524,9 @@ function getTransformForParser(parseOptions: ParserOptions) {
             break;
           }
           default:
-            cb(new FormidableError('unknown transfer-encoding', internalCode.unknownTransferEncoding, 501));
+            return cb(
+              new FormidableError('unknown transfer-encoding', internalCode.unknownTransferEncoding, 501)
+            );
         }
       } else if (name === 'partEnd') {
         this.push(await part.end());
@@ -534,7 +539,10 @@ function getTransformForParser(parseOptions: ParserOptions) {
   return transformParserData;
 }
 
-export const getMultpartParser: GetParserFunc = (headers: IncomingHttpHeaders, parseOptions: ParserOptions) => {
+export const getMultpartParser: GetParserFunc = (
+  headers: IncomingHttpHeaders,
+  parseOptions: ParserOptions
+) => {
   /** content-type:multipart/form-data; boundary=----WebKitFormBoundaryE7DpP5ncpQWn8RRu */
   const {'content-type': contentType} = headers;
   const multipart = /multipart/i.test(contentType);
@@ -552,4 +560,4 @@ export const getMultpartParser: GetParserFunc = (headers: IncomingHttpHeaders, p
   const boundaryStr = execResult[1] || execResult[2];
 
   return [new MultipartParser({boundaryStr}), getTransformForParser(parseOptions)];
-}
+};

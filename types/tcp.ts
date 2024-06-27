@@ -7,7 +7,7 @@ export interface TcpHttpFirstLineProps {
 }
 
 export interface TcpHttpHeaderPartProps extends TcpHttpFirstLineProps {
-  headers?: OutgoingHttpHeaders;
+  headers?: IncomingHttpHeaders;
 }
 // GET /api/test/echo HTTP/1.1
 export interface TcpHttpRequestProps<T = any> extends TcpHttpHeaderPartProps {
