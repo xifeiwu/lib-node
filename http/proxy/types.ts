@@ -1,7 +1,7 @@
 import {RequestOptions, IncomingMessage} from 'http';
 import {toStream} from '../../stream';
 import {HttpRequestOptions} from '../client';
-import {TcpHttpRequestProps, TcpHttpResponseProps} from '../../types';
+import {TcpHttpRequestProps, HttpResponseProps} from '../../types';
 
 export interface HttpProxyConfig {
   /**
@@ -29,9 +29,9 @@ export interface HttpProxyConfig {
   preProxyReq?: (proxyStatus: ProxyStatus) => void;
 
   /** Just on response to proxy */
-  onRes2Proxy?: (info: TcpHttpResponseProps, proxyReqInfo: HttpRequestOptions, response: IncomingMessage) => void;
+  onRes2Proxy?: (info: HttpResponseProps, proxyReqInfo: HttpRequestOptions, response: IncomingMessage) => void;
   /** Handle info of response to proxy */
-  handleInfoOfRes2Origin?: (info: TcpHttpResponseProps) => Promise<TcpHttpResponseProps | void> | TcpHttpResponseProps | void;
+  handleInfoOfRes2Origin?: (info: HttpResponseProps) => Promise<HttpResponseProps | void> | HttpResponseProps | void;
 }
 
 export interface ProxyStatus {
@@ -39,8 +39,8 @@ export interface ProxyStatus {
   ts: number;
   requestInfo?: {origin: TcpHttpRequestProps; proxy: HttpRequestOptions};
   responseInfo?: {
-    toProxy: TcpHttpResponseProps;
-    toOrigin: TcpHttpResponseProps;
+    toProxy: HttpResponseProps;
+    toOrigin: HttpResponseProps;
   };
   err?: {
     message: Error['message'];

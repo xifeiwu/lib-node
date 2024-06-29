@@ -1,9 +1,9 @@
 import http from 'http';
 import {getDataFromReadable} from '../stream';
 import {fromBuffer, toBuffer} from '../transform';
-import {TcpHttpHeaderPartProps, TcpHttpRequestProps, TcpHttpResponseProps} from '../types';
+import {HttpOutgoingHeaderPartProps, TcpHttpRequestProps, HttpResponseProps} from '../types';
 
-export function getRequestHeaderInfo(request: http.IncomingMessage): TcpHttpHeaderPartProps {
+export function getRequestHeaderInfo(request: http.IncomingMessage): HttpOutgoingHeaderPartProps {
   const {method, url, httpVersion, headers} = request;
   return {method, url, httpVersion, headers};
 }
@@ -15,7 +15,7 @@ export async function getRequestInfo(request: http.IncomingMessage): Promise<Tcp
   };
 }
 
-export function getResponseHeaderInfo(response: http.IncomingMessage): TcpHttpResponseProps {
+export function getResponseHeaderInfo(response: http.IncomingMessage): HttpResponseProps {
   const {httpVersion, statusCode, statusMessage, headers} = response;
   return {statusCode, statusMessage, httpVersion, headers};
 }
@@ -25,7 +25,7 @@ export async function getResponseInfo<T>(
     maxLength?: number;
     dataType?: 'buffer' | 'string' | 'json';
   } = {}
-): Promise<TcpHttpResponseProps<T>> {
+): Promise<HttpResponseProps<T>> {
   const {maxLength = 32 * 1024 * 1024, dataType = 'json'} = options;
   const data = await getDataFromReadable(response);
   const slicedData = data.subarray(0, maxLength);
@@ -37,7 +37,7 @@ export async function getResponseInfo<T>(
   return responseInfo;
 }
 
-export function responseInfoToBuffer(responseInfo: Partial<TcpHttpResponseProps>) {
+export function responseInfoToBuffer(responseInfo: Partial<HttpResponseProps>) {
   const {
     httpVersion = 'http/1.1',
     statusCode = 200,

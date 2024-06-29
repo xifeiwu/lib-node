@@ -5,7 +5,7 @@ import childProcess from 'child_process';
 import net, {ServerOpts, Socket, TcpNetConnectOpts} from 'net';
 import {isString, isNumber} from '../external';
 import {httpFirstLineReg} from '../constants';
-import {TcpHttpFirstLineProps} from '../types';
+import {HttpFirstLineProps} from '../types';
 import {logWithColor} from '../log';
 
 export function getLocalIP() {
@@ -264,7 +264,7 @@ export function writeDataByInterval(
 type ProtocolInfo =
   | {
       protocol: 'http';
-      info: TcpHttpFirstLineProps;
+      info: HttpFirstLineProps;
     }
   | {
       protocol: 'socks5';

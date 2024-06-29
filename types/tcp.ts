@@ -1,26 +1,16 @@
-import {OutgoingHttpHeaders, IncomingHttpHeaders} from 'http';
+import {OutgoingHttpHeaders} from 'http';
 
-export interface TcpHttpFirstLineProps {
+// GET /api/test/echo HTTP/1.1
+export interface HttpFirstLineProps {
   method: string;
   url: string;
   httpVersion: string;
 }
 
-export interface TcpHttpHeaderPartProps extends TcpHttpFirstLineProps {
-  headers?: IncomingHttpHeaders;
+export interface HttpOutgoingHeaderPartProps extends HttpFirstLineProps {
+  headers?: OutgoingHttpHeaders;
 }
-// GET /api/test/echo HTTP/1.1
-export interface TcpHttpRequestProps<T = any> extends TcpHttpHeaderPartProps {
-  // method: string;
-  // url: string;
-  // httpVersion: string;
-  data?: T;
-}
-// HTTP/1.1 200 OK
-export interface TcpHttpResponseProps<T = any> {
-  httpVersion: string;
-  statusCode: number;
-  statusMessage: string;
-  headers?: IncomingHttpHeaders;
+
+export interface TcpHttpRequestProps<T = any> extends HttpOutgoingHeaderPartProps {
   data?: T;
 }
