@@ -125,9 +125,9 @@ export function extension(mimeTypeOrContentType): string | false {
  * @param {string} extName
  * @return {boolean|string}
  */
-export function lookup(extName: string): string | false {
+export function lookup(extName: string): string {
   if (!extName || typeof extName !== 'string') {
-    return false;
+    return '';
   }
 
   // get the extension ("ext" or ".ext" or full path)
@@ -136,10 +136,10 @@ export function lookup(extName: string): string | false {
     .slice(1);
 
   if (!extension) {
-    return false;
+    return '';
   }
 
-  return types[extension] || false;
+  return types[extension] || '';
 }
 
 /**

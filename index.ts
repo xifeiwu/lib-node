@@ -8,7 +8,6 @@ export * from './fs';
 export * from './log';
 export * from './process';
 export * from './crypto';
-import {lookup, extension, contentType, charset, compressible} from './mime/mime-types';
-export const mime = {lookup, extension, contentType, charset, compressible};
+export * from './mime';
 export * from './types';
 export * from './external';
