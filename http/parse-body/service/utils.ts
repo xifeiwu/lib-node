@@ -1,3 +1,7 @@
+/**
+ * NOTICE:
+ * Should take care of special character for filename, such as /
+ */
 export function getFileName(headerValue: string) {
   // matches either a quoted-string or a token (RFC 2616 section 19.5.1)
   const m = headerValue.match(/\bfilename=("(.*?)"|([^()<>{}[\]@,;:"?=\s/\t]+))($|;\s)/i);
