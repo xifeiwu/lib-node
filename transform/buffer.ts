@@ -1,6 +1,9 @@
 import {isNumber, isPlainObject, isString} from '../external';
 
-export type CanConvertToBuffer = string | number | object | Uint8Array;
+/**
+ * If value of number is not in format of array, it will be treated as String.
+ */
+export type CanConvertToBuffer = string | number | object | Uint8Array | Buffer;
 export function toBuffer(data: CanConvertToBuffer | Array<CanConvertToBuffer>): Buffer {
   if (Array.isArray(data)) {
     if (data.every(isNumber)) {
@@ -15,7 +18,7 @@ export function toBuffer(data: CanConvertToBuffer | Array<CanConvertToBuffer>): 
   } else if (isString(data)) {
     buffer = Buffer.from(data as string);
   } else if (isNumber(data)) {
-    buffer = Buffer.from([data as number]);
+    buffer = Buffer.from(String(data));
   } else if (Buffer.isBuffer(data)) {
     buffer = data;
   } else if (ArrayBuffer.isView(data)) {
