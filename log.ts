@@ -2,6 +2,7 @@ import util from 'util';
 import path from 'path';
 import {isObject, formatDate, isPlainObject} from './external';
 import {writeFileSync} from './fs';
+import {ColorStyle, LogColors, LoggableContent} from './types';
 
 export function prettyLog(content: any): void;
 export function prettyLog(...args: any[]): void;
@@ -55,7 +56,6 @@ export function toFile(data: string | object, config: {dir: string; fileName: st
   return fullPath;
 }
 
-export type LogColors = 'red' | 'yellow' | 'green' | 'blue' | 'magenta' | 'cyan' | 'black';
 const colorMap: {
   [color in LogColors]: {
     start: string;
@@ -91,11 +91,6 @@ const colorMap: {
     end: '\x1B[39m',
   },
 };
-
-interface ColorStyle {
-  color?: LogColors;
-}
-export type LoggableContent = object | Buffer | string | number;
 
 export function coloringContent(colorStyle: ColorStyle, content: LoggableContent): string {
   const {color = 'black'} = colorStyle;
