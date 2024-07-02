@@ -1,4 +1,4 @@
-import {OutgoingHttpHeaders} from 'http';
+import {IncomingHttpHeaders, OutgoingHttpHeaders} from 'http';
 
 // GET /api/test/echo HTTP/1.1
 export interface HttpFirstLineProps {
@@ -7,10 +7,17 @@ export interface HttpFirstLineProps {
   httpVersion: string;
 }
 
-export interface HttpOutgoingHeaderPartProps extends HttpFirstLineProps {
-  headers?: OutgoingHttpHeaders;
+interface HeaderTypeMap {
+  Server: OutgoingHttpHeaders;
+  Client: IncomingHttpHeaders;
 }
 
-export interface TcpHttpRequestProps<T = any> extends HttpOutgoingHeaderPartProps {
+export interface HttpHeaderPartProps<Side extends 'Server' | 'Client' = 'Client'>
+  extends HttpFirstLineProps {
+  headers?: HeaderTypeMap[Side];
+}
+
+export interface TcpHttpRequestProps<T = any, Side extends 'Server' | 'Client' = 'Client'>
+  extends HttpHeaderPartProps<Side> {
   data?: T;
 }

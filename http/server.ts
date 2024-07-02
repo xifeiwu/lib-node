@@ -4,7 +4,7 @@ import {createHash} from 'crypto';
 import {IncomingHttpHeaders, IncomingMessage} from 'http';
 import {Duplex} from 'stream';
 import {
-  HttpOutgoingHeaderPartProps,
+  HttpHeaderPartProps,
   TcpHttpRequestProps,
   HttpRequestOptions,
   HttpResponseProps,
@@ -65,7 +65,7 @@ export function handleUpgrade(
   req: IncomingMessage,
   socket?: Duplex,
   head?: Buffer
-): {requestHeaderPartInfo: HttpOutgoingHeaderPartProps; responseInfo: HttpResponseProps} {
+): {requestHeaderPartInfo: HttpHeaderPartProps; responseInfo: HttpResponseProps} {
   const requestHeaderPartInfo = getRequestHeaderInfo(req);
   const key = requestHeaderPartInfo.headers['sec-websocket-key'];
   const digest = createHash('sha1')

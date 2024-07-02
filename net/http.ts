@@ -1,6 +1,6 @@
 import {Readable, Transform, isReadable} from 'stream';
-import {CanConvertToBuffer, toBuffer} from '../transform';
-import {TcpHttpFirstLineProps, TcpHttpRequestProps, TcpHttpResponseProps} from '../types';
+import {CanConvertToBuffer, TcpHttpRequestProps, HttpResponseProps} from '../types';
+import {toBuffer} from '../transform';
 import {httpFirstLineReg, httpHeaderLineReg} from '../constants';
 import {HttpRequestOptions} from '../http';
 import {getUrlPropsFromConfig, toUrlInstance, urlPropsToHref} from '../external';

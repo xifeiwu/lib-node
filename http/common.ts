@@ -3,13 +3,13 @@ import {getDataFromReadable} from '../stream';
 import {fromBuffer, toBuffer} from '../transform';
 import {
   CanConvertToBuffer,
-  HttpOutgoingHeaderPartProps,
+  HttpHeaderPartProps,
   HttpResponseProps,
   TcpHttpRequestProps,
 } from '../types';
 import {isPlainObject} from '../external';
 
-export function getRequestHeaderInfo(request: http.IncomingMessage): HttpOutgoingHeaderPartProps {
+export function getRequestHeaderInfo(request: http.IncomingMessage): HttpHeaderPartProps {
   const {method, url, httpVersion, headers} = request;
   return {method, url, httpVersion, headers};
 }
