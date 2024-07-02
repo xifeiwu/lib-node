@@ -1,5 +1,5 @@
 import {Readable, Transform, isReadable} from 'stream';
-import {CanConvertToBuffer, TcpHttpRequestProps, HttpResponseProps} from '../types';
+import {CanConvertToBuffer, TcpHttpRequestProps, HttpResponseProps, HttpFirstLineProps} from '../types';
 import {toBuffer} from '../transform';
 import {httpFirstLineReg, httpHeaderLineReg} from '../constants';
 import {HttpRequestOptions} from '../http';
@@ -113,7 +113,7 @@ export async function sendHttpRequestThroughTcp(
   });
 }
 
-export function tcpResponsePropsToBuffer(info: TcpHttpResponseProps): Buffer {
+export function tcpResponsePropsToBuffer(info: HttpResponseProps): Buffer {
   let {httpVersion, statusCode, statusMessage, headers, data} = info;
   let bufferArray: CanConvertToBuffer[] = [];
   if (!/^http\//i.test(httpVersion)) {
@@ -162,7 +162,7 @@ export function getMatcher4LineBreak() {
 }
 
 interface ParseFirstLineResults {
-  firstLineInfo?: TcpHttpFirstLineProps;
+  firstLineInfo?: HttpFirstLineProps;
   dataConsumed: Buffer;
 }
 export async function parseHttpFirstLine(reader: Readable): Promise<ParseFirstLineResults> {

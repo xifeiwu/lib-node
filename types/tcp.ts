@@ -8,8 +8,8 @@ export interface HttpFirstLineProps {
 }
 
 interface HeaderTypeMap {
-  Server: OutgoingHttpHeaders;
-  Client: IncomingHttpHeaders;
+  Server: IncomingHttpHeaders;
+  Client: OutgoingHttpHeaders;
 }
 
 export interface HttpHeaderPartProps<Side extends 'Server' | 'Client' = 'Client'>

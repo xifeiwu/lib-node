@@ -6,7 +6,7 @@ import net, {ServerOpts, Socket, TcpNetConnectOpts} from 'net';
 import {isString, isNumber} from '../external';
 import {httpFirstLineReg} from '../constants';
 import {HttpFirstLineProps} from '../types';
-import {logWithColor} from '../log';
+import {logColorful} from '../log';
 
 export function getLocalIP() {
   let localIP = null;
@@ -129,7 +129,7 @@ export function handleSocketEvents(
   socket: Socket,
   options?: {
     isServer?: boolean;
-    color?: Parameters<typeof logWithColor>[0];
+    color?: Parameters<typeof logColorful>[0]['color'];
     maxPrintDataLength?: number;
     /** As listening on 'data' event will change flowMode, sometimes we do not want to change flowMode */
     onData?: null | ((chunk: Buffer) => void);
@@ -140,22 +140,24 @@ export function handleSocketEvents(
   }
   const {isServer = false, color = 'black', maxPrintDataLength, onData} = options ?? {};
   if (!socket) {
-    logWithColor(color, `socket is undefined`);
+    logColorful({color}, `socket is undefined`);
     return;
   }
   const {localAddress, localPort, remoteAddress, remotePort} = socket;
   const local = `${localAddress}:${localPort}`;
   const remote = `${remoteAddress}:${remotePort}`;
   const tag = [local, '<-', remote].join('');
-  logWithColor(color, `start listen events on socket: ${tag}`);
+  logColorful({color}, `start listen events on socket: ${tag}`);
   if (onData !== null) {
     socket.on('data', chunk => {
       if (onData) {
         return onData(chunk);
       }
-      logWithColor(color, `${tag} data:`);
-      logWithColor(
-        color,
+      logColorful({color}, `${tag} data:`);
+      logColorful(
+        {
+          color,
+        },
         `[size: ${chunk.byteLength}]` +
           (isNumber(maxPrintDataLength) ? chunk.subarray(0, maxPrintDataLength) : chunk).toString()
       );
@@ -165,17 +167,17 @@ export function handleSocketEvents(
     });
   }
   socket.on('end', () => {
-    logWithColor(color, `socket ${tag} end.`);
+    logColorful({color}, `socket ${tag} end.`);
   });
   socket.on('timeout', () => {
-    logWithColor(color, `socket ${tag} timeout.`);
+    logColorful({color}, `socket ${tag} timeout.`);
   });
   socket.on('error', err => {
-    logWithColor(color, `socket ${tag} error:`, err);
+    logColorful({color}, `socket ${tag} error:`, err);
     console.log(err);
   });
   socket.on('close', hadError => {
-    logWithColor(color, `socket ${tag} close${hadError ? ' [hadError].' : '.'}`);
+    logColorful({color}, `socket ${tag} close${hadError ? ' [hadError].' : '.'}`);
   });
 }
 
@@ -215,6 +217,12 @@ export async function startSocketServer(
   });
 }
 
+/**
+ * @deprecated Shoule be part of stream, not net
+ * @param writer
+ * @param options
+ * @returns
+ */
 export function writeDataByInterval(
   writer: Writable,
   options?: {
