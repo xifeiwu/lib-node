@@ -1,7 +1,13 @@
 import http from 'http';
 import {getDataFromReadable} from '../stream';
 import {fromBuffer, toBuffer} from '../transform';
-import {HttpOutgoingHeaderPartProps, TcpHttpRequestProps, HttpResponseProps} from '../types';
+import {
+  CanConvertToBuffer,
+  HttpOutgoingHeaderPartProps,
+  HttpResponseProps,
+  TcpHttpRequestProps,
+} from '../types';
+import {isPlainObject} from '../external';
 
 export function getRequestHeaderInfo(request: http.IncomingMessage): HttpOutgoingHeaderPartProps {
   const {method, url, httpVersion, headers} = request;
@@ -37,6 +43,13 @@ export async function getResponseInfo<T>(
   return responseInfo;
 }
 
+export function getMimeTypeByDataType(data: CanConvertToBuffer) {
+  if (isPlainObject(data)) {
+    return 'application/json';
+  } else {
+    return 'application/text';
+  }
+}
 export function responseInfoToBuffer(responseInfo: Partial<HttpResponseProps>) {
   const {
     httpVersion = 'http/1.1',
@@ -46,6 +59,13 @@ export function responseInfoToBuffer(responseInfo: Partial<HttpResponseProps>) {
     data,
   } = responseInfo;
   const firstLine = [httpVersion, statusCode, statusMessage].join(' ').toUpperCase();
+  const bufferOfData = toBuffer(data);
+  headers['content-type'] = getMimeTypeByDataType(data);
+  if (bufferOfData.byteLength > 0) {
+    headers['content-length'] = bufferOfData.byteLength + '';
+  } else {
+    headers['content-length'] = 0 + '';
+  }
   const headerLines = Object.entries(headers).map(([key, value]) => {
     return key + ': ' + value;
   });

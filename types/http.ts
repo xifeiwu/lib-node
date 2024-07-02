@@ -5,6 +5,10 @@ interface HeaderTypeMap {
   Server: OutgoingHttpHeaders;
   Client: IncomingHttpHeaders;
 }
+
+/**
+ * Set Client as default type of Side to make use of key words of type IncomingHttpHeaders
+ */
 export interface HttpResponseProps<T = any, Side extends 'Server' | 'Client' = 'Client'> {
   httpVersion: string;
   statusCode: number;
