@@ -47,6 +47,20 @@ export function mergeHttpRequestOptions(
   };
 }
 
+export function sendHttpRequest<Payload extends ToBufferParams = any>(options: HttpRequestOptions<Payload>) {
+  const {urlProps, restProps} = getUrlPropsFromConfig(options);
+  const {data, ...requestOptions} = restProps;
+  let clientRequest: http.ClientRequest | null = null;
+  const {protocol, href} = toUrlInstance(urlProps);
+  clientRequest = (protocol === 'https:' ? https : http).request(href, requestOptions);
+  if (isReadable(data as Readable)) {
+    (data as Readable).pipe(clientRequest);
+  } else {
+    clientRequest.end(data ? toBuffer(data) : undefined);
+  }
+  return clientRequest;
+}
+
 export class ResponseError extends Error {
   isResponseError: boolean = true;
   requestConfig: HttpRequestOptions;
@@ -60,21 +74,9 @@ export class ResponseError extends Error {
 }
 
 export async function requestAndGetResponse<Payload extends ToBufferParams = any>(
-  config: HttpRequestOptions<Payload>
+  options: HttpRequestOptions<Payload>
 ): Promise<http.IncomingMessage> {
-  const {urlProps, restProps} = getUrlPropsFromConfig(config);
-  const {data, ...requestOptions} = restProps;
-  let clientRequest: http.ClientRequest | null = null;
-  const {protocol, href} = toUrlInstance(urlProps);
-  // console.log(`href`);
-  // console.log(href);
-  // console.log(requestOptions);
-  clientRequest = (protocol === 'https:' ? https : http).request(href, requestOptions);
-  if (isReadable(data as Readable)) {
-    (data as Readable).pipe(clientRequest);
-  } else {
-    clientRequest.end(data ? await toBuffer(data) : undefined);
-  }
+  const clientRequest = sendRequest(options);
   return new Promise((res, rej) => {
     clientRequest.on('response', async response => {
       res(response);
