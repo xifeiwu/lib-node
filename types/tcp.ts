@@ -21,3 +21,6 @@ export interface TcpHttpRequestProps<T = any, Side extends 'Server' | 'Client' =
   extends HttpHeaderPartProps<Side> {
   data?: T;
 }
+
+export type TcpRequestProps = Omit<TcpHttpRequestProps, 'method' | 'url' | 'httpVersion' | 'headers'> &
+  Partial<Pick<TcpHttpRequestProps, 'method' | 'url' | 'httpVersion' | 'headers'>>;

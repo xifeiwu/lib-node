@@ -1,9 +1,14 @@
 import {Readable, Transform, isReadable} from 'stream';
-import {CanConvertToBuffer, TcpHttpRequestProps, HttpResponseProps} from '../types';
-import {toBuffer} from '../transform';
-import {HttpRequestOptions} from '.';
-import {getUrlPropsFromConfig, toUrlInstance, urlPropsToHref, concatOriginWithPathname} from '../external';
-import {startSocketClient} from './utils';
+import {
+  CanConvertToBuffer,
+  TcpHttpRequestProps,
+  HttpResponseProps,
+  HttpRequestOptions,
+  TcpRequestProps,
+} from '../../types';
+import {toBuffer} from '../../transform';
+import {getUrlPropsFromConfig, toUrlInstance, urlPropsToHref, concatOriginWithPathname} from '../../external';
+import {startSocketClient} from '../utils';
 import {TcpNetConnectOpts} from 'net';
 
 export function httpOptionsToTcpConfig(httpOption: HttpRequestOptions): {
@@ -30,8 +35,6 @@ export function httpOptionsToTcpConfig(httpOption: HttpRequestOptions): {
   };
 }
 
-type TcpRequestProps = Omit<TcpHttpRequestProps, 'method' | 'url' | 'httpVersion' | 'headers'> &
-  Partial<Pick<TcpHttpRequestProps, 'method' | 'url' | 'httpVersion' | 'headers'>>;
 export function tcpRequestPropsToBuffer(info: TcpRequestProps): Buffer {
   let {method = 'get', url = '/', httpVersion = 'HTTP/1.1', headers = {}, data} = info;
   let bufferArray: CanConvertToBuffer[] = [];

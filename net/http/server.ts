@@ -1,8 +1,6 @@
-import {Readable, Transform, isReadable} from 'stream';
-import {CanConvertToBuffer, TcpHttpRequestProps, HttpResponseProps, HttpFirstLineProps} from '../../types';
+import {Readable} from 'stream';
+import {TcpHttpRequestProps, HttpFirstLineProps} from '../../types';
 import {httpFirstLineReg, httpHeaderLineReg} from '../../constants';
-import {TcpNetConnectOpts} from 'net';
-
 
 export function getMatcher4LineBreak() {
   const valueR = 0x0d;
@@ -26,8 +24,6 @@ export function getMatcher4LineBreak() {
     return false;
   };
 }
-
-
 
 interface ParseFirstLineResults {
   firstLineInfo?: HttpFirstLineProps;

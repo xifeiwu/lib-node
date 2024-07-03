@@ -3,32 +3,9 @@ import https from 'https';
 import {toBuffer} from '../transform';
 import {Socket} from 'net';
 import {getResponseInfo} from './common';
-import {
-  UrlProps,
-  toUrlInstance,
-  getUrlPropsFromConfig,
-  deepMerge,
-  urlPropsToHref,
-  isObject,
-} from '../external';
-import {HttpResponseProps} from '../types';
+import {toUrlInstance, getUrlPropsFromConfig, deepMerge, urlPropsToHref, isObject} from '../external';
+import {HttpRequestOptions, HttpResponseProps, HttpRequestPayload, ValidateStatus} from '../types';
 import {Readable, isReadable} from 'stream';
-
-type ToBufferParams = Parameters<typeof toBuffer>[0] | Readable;
-
-/**
- * A very simple request options can be used for both HttpRequest and AxiosRequest
- */
-export interface GeneralRequestOptions<Payload extends ToBufferParams = any> extends UrlProps {
-  method?: string | undefined;
-  data?: Payload;
-}
-/**
- * A custom requestOptions based on http.RequestOptions, and used for requestAndGetResponse function.
- */
-export interface HttpRequestOptions<Payload extends ToBufferParams = any>
-  extends http.RequestOptions,
-    GeneralRequestOptions<Payload> {}
 
 export function mergeHttpRequestOptions(
   options1: HttpRequestOptions,
@@ -47,7 +24,9 @@ export function mergeHttpRequestOptions(
   };
 }
 
-export function sendHttpRequest<Payload extends ToBufferParams = any>(options: HttpRequestOptions<Payload>) {
+export function sendHttpRequest<Payload extends HttpRequestPayload = any>(
+  options: HttpRequestOptions<Payload>
+) {
   const {urlProps, restProps} = getUrlPropsFromConfig(options);
   const {data, ...requestOptions} = restProps;
   let clientRequest: http.ClientRequest | null = null;
@@ -73,10 +52,10 @@ export class ResponseError extends Error {
   }
 }
 
-export async function requestAndGetResponse<Payload extends ToBufferParams = any>(
+export async function requestAndGetResponse<Payload extends HttpRequestPayload = any>(
   options: HttpRequestOptions<Payload>
 ): Promise<http.IncomingMessage> {
-  const clientRequest = sendRequest(options);
+  const clientRequest = sendHttpRequest(options);
   return new Promise((res, rej) => {
     clientRequest.on('response', async response => {
       res(response);
@@ -94,14 +73,13 @@ export async function requestAndGetResponse<Payload extends ToBufferParams = any
   });
 }
 
-export type ValidateStatus = (responseInfo: HttpResponseProps) => boolean;
 export const validateStatusCode: ValidateStatus = info => {
   const {statusCode} = info;
   return statusCode >= 200 && statusCode < 300;
 };
 
 export type RequestAndGetRelatedInfoFunc = typeof requestAndGetRelatedInfo;
-export async function requestAndGetRelatedInfo<ResData = any, Payload extends ToBufferParams = any>(
+export async function requestAndGetRelatedInfo<ResData = any, Payload extends HttpRequestPayload = any>(
   requestOptions: HttpRequestOptions<Payload>,
   responseConfig?: Parameters<typeof getResponseInfo>[1] & {
     validateStatus?: ValidateStatus | boolean;
@@ -124,7 +102,7 @@ export async function requestAndGetRelatedInfo<ResData = any, Payload extends To
 }
 
 export type RequestAndGetResponseInfoFunc = typeof requestAndGetResponseInfo;
-export async function requestAndGetResponseInfo<ResData = any, Payload extends ToBufferParams = any>(
+export async function requestAndGetResponseInfo<ResData = any, Payload extends HttpRequestPayload = any>(
   requestOptions: HttpRequestOptions<Payload>,
   responseConfig?: Parameters<typeof getResponseInfo>[1] & {
     validateStatus?: ValidateStatus | boolean;
@@ -134,7 +112,7 @@ export async function requestAndGetResponseInfo<ResData = any, Payload extends T
   return responseInfo;
 }
 
-export async function requestAndGetUpgradeInfo<Payload extends ToBufferParams = any>(
+export async function requestAndGetUpgradeInfo<Payload extends HttpRequestPayload = any>(
   config: HttpRequestOptions<Payload>
 ): Promise<{response: http.IncomingMessage; socket: Socket; head: Buffer}> {
   const {urlProps, restProps} = getUrlPropsFromConfig(config);
@@ -164,7 +142,7 @@ export async function requestAndGetUpgradeInfo<Payload extends ToBufferParams = 
   });
 }
 
-export async function requestAndGetConnectInfo<Payload extends ToBufferParams = any>(
+export async function requestAndGetConnectInfo<Payload extends HttpRequestPayload = any>(
   config: HttpRequestOptions<Payload>
 ): Promise<{response: http.IncomingMessage; socket: Socket; head: Buffer}> {
   const {urlProps, restProps} = getUrlPropsFromConfig(config);
