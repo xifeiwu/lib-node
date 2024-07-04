@@ -21,14 +21,14 @@ export async function parseHttpFirstLine(reader: Readable): Promise<ParseFirstLi
 }
 
 interface ParseHttpHeaderResults {
-  requestInfo: HttpHeaderPartProps;
+  headerPartProps: HttpHeaderPartProps;
   dataConsumed: Buffer;
 }
 export async function parseHttpHeaderPart<T extends Readable>(
   reader: T,
   firstLineInfo?: HttpFirstLineProps
 ): Promise<ParseHttpHeaderResults> {
-  let requestInfo: HttpHeaderPartProps;
+  let headerPartProps: HttpHeaderPartProps;
   // let resolve: (v: ParseHttpHeaderResults) => void;
   // let reject: (err: Error) => void;
   let dataConsumed: Buffer = Buffer.alloc(0);
@@ -37,10 +37,10 @@ export async function parseHttpHeaderPart<T extends Readable>(
     if (!parseResult.firstLineInfo) {
       throw new Error(`Parse http first line fail`);
     }
-    requestInfo = {...parseResult.firstLineInfo};
+    headerPartProps = {...parseResult.firstLineInfo};
     dataConsumed = Buffer.concat([dataConsumed, parseResult.dataConsumed]);
   } else {
-    requestInfo = {...firstLineInfo};
+    headerPartProps = {...firstLineInfo};
   }
   let lineBuffer: Buffer;
   while ((lineBuffer = await getOneLineFromReader(reader))) {
@@ -53,28 +53,39 @@ export async function parseHttpHeaderPart<T extends Readable>(
     if (!execResult) {
       throw new Error(`Format error for http header: ${line}`);
     }
-    if (!requestInfo['headers']) {
-      requestInfo['headers'] = {};
+    if (!headerPartProps['headers']) {
+      headerPartProps['headers'] = {};
     }
-    const {headers} = requestInfo;
-    const [field, value] = execResult.slice(1);
+    const {headers} = headerPartProps;
+    const [part1, part2] = execResult.slice(1);
+    const field = part1.toLowerCase();
+    let value: string | number = part2;
+    if (['content-length'].includes(field)) {
+      value = parseInt(part2);
+    }
+
     if (!Object.prototype.hasOwnProperty.call(headers, field)) {
       headers[field] = value;
     } else {
       if (!Array.isArray(headers[field])) {
         headers[field] = [headers[field] as string];
       }
-      (headers[field] as string[]).push(value);
+      (headers[field] as string[]).push(value as string);
     }
   }
-  return {requestInfo, dataConsumed};
+  return {headerPartProps, dataConsumed};
 }
 
 export class HttpIncomingMessage extends Readable {
   socket: Socket;
+  headerPartProps: HttpHeaderPartProps;
   constructor(socket: Socket) {
     super();
     this.socket = socket;
+    // this.requestInfo =
   }
-  parseHeaderPart(socket) {}
+  async parse(reader: Readable) {
+    const {headerPartProps} = await parseHttpHeaderPart(reader);
+    this.headerPartProps = headerPartProps;
+  }
 }
