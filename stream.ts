@@ -1,6 +1,7 @@
 import stream, {Transform, Readable, Writable} from 'stream';
 import {isString, isObject, waitFor} from './external';
 import {DataTypeFromBuffer, TargetDataTypeFromBuffer, fromBuffer, toBuffer} from './transform';
+import {getBufferMatcher} from './common';
 
 export function getDataFromReadable(reader: Readable): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -93,6 +94,46 @@ export function getDataByTransform(
       cb2Data(fromBuffer(Buffer.concat(bufferList), targetType));
       cb && cb();
     },
+  });
+}
+
+export function getOneLineFromReader(reader: Readable) {
+  let resolve: (data: Buffer) => void;
+  let reject: (err: Error) => void;
+  let matcher = getBufferMatcher('\r\n');
+  let resolved = false;
+  const bytes: number[] = [];
+  const onReadable = () => {
+    if (resolved) {
+      return;
+    }
+    let data: Buffer;
+    while ((data = reader.read(1))) {
+      const [oneByte] = data;
+      /** TODO: Which way is more cheap? */
+      // cacheBuffer = Buffer.concat([cacheBuffer, oneByte]);
+      bytes.push(oneByte);
+      if (matcher(oneByte)) {
+        resolve(Buffer.from(bytes));
+        resolved = true;
+        break;
+      }
+    }
+    if (!resolved) {
+      if (reader.closed) {
+        reject(new Error(`data end without suffix \r\n`));
+      } else {
+        /** If unresolve, wait for next chunk */
+        if (!reader.closed) {
+          reader.once('readable', onReadable);
+        }
+      }
+    }
+  };
+  reader.once('readable', onReadable);
+  return new Promise<Buffer>((res, rej) => {
+    resolve = res;
+    reject = rej;
   });
 }
 
