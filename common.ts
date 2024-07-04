@@ -1,6 +1,8 @@
 import readline from 'readline';
-import {isFunction, isObject, isString} from './external';
-import {LoggableContent, coloringContent, inspect, logWithColor} from './log';
+import {isFunction, isNumber, isObject, isString} from './external';
+import {coloringContent, inspect} from './log';
+import {CanConvertToBuffer, LoggableContent} from './types';
+import {toBuffer} from './transform';
 
 /**
  * Determine if a value is a Stream
@@ -101,4 +103,30 @@ export async function goOnOrNot(config?: {tips?: Array<LoggableContent>; default
       interact.close();
     });
   });
+}
+
+export function getBufferMatcher(target: CanConvertToBuffer) {
+  const values = [...toBuffer(target)] as number[];
+  if (values.length === 0) {
+    throw new Error(`target is Empty`);
+  }
+  let index = 0;
+  function resetIndex() {
+    index = 0;
+  }
+  return (n: number | string) => {
+    n = !isNumber(n) ? Buffer.from(n as string)[0] : n;
+    if (n === values[index]) {
+      index++;
+    } else {
+      /** reset index when current match fail */
+      resetIndex();
+    }
+    const matched = index === values.length;
+    /** reset index when all matched success  */
+    if (matched) {
+      resetIndex();
+    }
+    return matched;
+  };
 }
