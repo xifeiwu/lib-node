@@ -107,7 +107,7 @@ export function getOneLineFromReader(reader: Readable) {
   let matcher = getBufferMatcher('\r\n');
   let resolved = false;
   const bytes: number[] = [];
-  const onReadable = () => {
+  const parse = () => {
     if (resolved) {
       return;
     }
@@ -131,14 +131,14 @@ export function getOneLineFromReader(reader: Readable) {
         reject(new Error(`data end without suffix \r\n`));
       } else {
         /** If unresolve, wait for next chunk */
-        reader.once('readable', onReadable);
+        reader.once('readable', parse);
       }
     }
   };
   if (reader.readableLength > 0) {
-    onReadable();
+    parse();
   } else {
-    reader.once('readable', onReadable);
+    reader.once('readable', parse);
   }
   return promise;
 }
