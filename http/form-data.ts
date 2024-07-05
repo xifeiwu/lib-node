@@ -1,9 +1,10 @@
 import fs from 'fs';
 import path from 'path';
 import {mime} from '../mime';
-import {CanConvertToBuffer, toBuffer} from '../transform';
+import {toBuffer} from '../transform';
 import {getDataFromReadable} from '../stream';
 import {Readable} from 'stream';
+import {CanConvertToBuffer} from '../types';
 export class FormFile {
   contentType: string;
   filename: string;
