@@ -1,16 +1,15 @@
-import fs from 'fs';
 import path from 'path';
 import {FormFile, NodeFormData, formDataToBuffer} from './form-data';
 import {requestAndGetResponseInfo} from './client';
-import {sendHttpRequestThroughTcp} from '../net';
+import {sendHttpRequestByTcp, watchSocketState} from '../net';
+import {getDataFromReadable} from '../stream';
+import {startHttpServer4Debug} from './server';
 
 export async function showContentOfFormData() {
   const formData: NodeFormData = {
     a: 1,
     file1: new FormFile(path.resolve(__dirname, 'form-data.ts')),
   };
-  // const writer = fs.createReadStream(path.resolve(__dirname, 'form-data.ts'));
-  // formData.append('form-data.ts', writer);
   const {headers, reader} = await formDataToBuffer(formData, {chunkedTransfer: false});
   // console.log(headers);
   // console.log(reader.toString());
@@ -18,16 +17,6 @@ export async function showContentOfFormData() {
 }
 
 export async function sendFormDataByHttp() {
-  const {headers, reader} = await showContentOfFormData();
-  const responseInfo = await requestAndGetResponseInfo({
-    origin: 'http://127.0.0.1:3300',
-    method: 'post',
-    headers,
-    data: reader,
-  });
-  console.log(responseInfo);
-}
-export async function sendFormDataToEchoByHttp() {
   const {headers, reader} = await showContentOfFormData();
   const responseInfo = await requestAndGetResponseInfo({
     origin: 'http://127.0.0.1:3180',
@@ -40,20 +29,26 @@ export async function sendFormDataToEchoByHttp() {
 }
 
 export async function sendFormDataByTcp() {
+  const {origin} = await startHttpServer4Debug();
   const {headers, reader} = await showContentOfFormData();
-  const {data: responseInfo, socket} = await sendHttpRequestThroughTcp({
-    origin: 'http://127.0.0.1:3300',
-    method: 'post',
-    headers: {
-      ...headers,
-      Host: '127.0.0.1:3300',
-      Connection: 'close',
+  const client = await sendHttpRequestByTcp(
+    {
+      origin: 'http://127.0.0.1:3180',
+      // origin,
+      method: 'post',
+      pathname: '/api/debug/echo',
+      headers: {
+        ...headers,
+        Host: '127.0.0.1:3180',
+        Connection: 'close',
+      },
+      data: reader,
     },
-    data: reader,
-  }, {
-    allowHalfOpen: true,
-  });
-  console.log(responseInfo);
-  console.log(socket.readyState);
-  setInterval(() => {}, 1000);
+    {
+      allowHalfOpen: true,
+    }
+  );
+  watchSocketState(client, {color: 'cyan'});
+  const resData = await getDataFromReadable(client);
+  console.log(resData.toString());
 }

@@ -304,8 +304,8 @@ export function getProtocolInfoByFirstChunk(chunk: Buffer): ProtocolInfo {
   }
 }
 
-export function watchSocketState(socket: Socket, colorStyle: ColorStyle) {
-  const {color} = colorStyle;
+export function watchSocketState(socket: Socket, colorStyle?: ColorStyle) {
+  const {color = 'black'} = colorStyle ?? {};
   const printState = () => {
     const {readable, readyState, writable, bytesWritten, destroyed, bytesRead} = socket;
     logColorful({color}, {bytesRead, readable, writable, bytesWritten, destroyed, readyState});
