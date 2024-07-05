@@ -20,6 +20,7 @@ export function httpOptionsToTcpConfig(httpOption: HttpRequestOptions): {
     restProps: {method, headers, data},
   } = getUrlPropsFromConfig(httpOption);
   const {origin, ...otherUrlProps} = urlProps;
+  /** As otherUrlProps not contain origin, url should only contain pathname + query + hash */
   const url = urlPropsToHref(otherUrlProps);
   const {protocol, hostname, port} = toUrlInstance(concatOriginWithPathname(origin, url));
   let finalPort: string | number = port;

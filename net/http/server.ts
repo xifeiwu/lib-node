@@ -4,10 +4,7 @@ import {HttpHeaderPartProps, HttpFirstLineProps} from '../../types';
 import {httpFirstLineReg, httpHeaderLineReg} from '../../constants';
 import {getDataFromReadable, getOneLineFromBuffer, getOneLineFromReader} from '../../stream';
 import {isNumber} from '../../external';
-import {buffer} from 'stream/consumers';
-import {startSocketClient, startSocketServer, watchSocketState} from '../utils';
-import {IncomingMessage} from 'http';
-import {toBuffer} from '../../transform';
+import {startSocketServer} from '../utils';
 import {responseInfoToBuffer} from '../../http';
 
 interface ParseFirstLineResults {
@@ -180,27 +177,14 @@ export class HttpIncomingMessage extends Readable {
   }
 }
 
+/**
+ *
+ * @param socket
+ * @param options
+ * @returns HttpIncomingMessage after parse headerPart success
+ */
 export async function getHttpIncomingMessage(socket: Socket, options?: {}) {
   const incomingMessage = new HttpIncomingMessage(socket);
   await incomingMessage.parse();
   return incomingMessage;
-}
-
-export async function startHttpServerOnTcp() {
-  const {host, port, server} = await startSocketServer(async socket => {
-    // watchSocketState(socket, {color: 'yellow'});
-    /** Should not consume data before */
-    const incomingMessage = await getHttpIncomingMessage(socket);
-    const data = await getDataFromReadable(incomingMessage);
-    const requestInfo = {
-      ...incomingMessage.headerPartProps,
-      data,
-    };
-    socket.end(
-      responseInfoToBuffer({
-        data: requestInfo,
-      })
-    );
-  });
-  return {host, port, server};
 }

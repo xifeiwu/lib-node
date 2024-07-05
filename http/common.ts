@@ -52,9 +52,9 @@ export function getMimeTypeByDataType(data: CanConvertToBuffer) {
 }
 export function responseInfoToBuffer(responseInfo: Partial<HttpResponseProps>) {
   const {
-    httpVersion = 'http/1.1',
+    httpVersion = 'HTTP/1.1',
     statusCode = 200,
-    statusMessage = 'success',
+    statusMessage = 'OK',
     headers = {},
     data,
   } = responseInfo;

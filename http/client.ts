@@ -29,6 +29,7 @@ export function sendHttpRequest<Payload extends HttpRequestPayload = any>(
 ) {
   const {urlProps, restProps} = getUrlPropsFromConfig(options);
   const {data, ...requestOptions} = restProps;
+  // requestOptions.headers['connection'] = 'keep-alive';
   let clientRequest: http.ClientRequest | null = null;
   const {protocol, href} = toUrlInstance(urlProps);
   clientRequest = (protocol === 'https:' ? https : http).request(href, requestOptions);
