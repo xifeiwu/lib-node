@@ -1,5 +1,6 @@
 import {formatDate, isNumber} from '../../external';
-import {LogColors, logWithColor} from '../../log';
+import {logWithColor} from '../../log';
+import {LogColors} from '../../types';
 import {ProxyStatus} from './types';
 
 const MAX_RROXY_STATUS_LENGTH = 100;

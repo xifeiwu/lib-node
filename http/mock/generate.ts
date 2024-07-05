@@ -2,8 +2,6 @@ import fs from 'fs';
 import path from 'path';
 import {getUrlPropsFromConfig, isPlainObject} from '../../external';
 import {
-  GeneralRequestOptions,
-  HttpRequestOptions,
   makeSureHttpRequestOptionsSerializable,
   mergeHttpRequestOptions,
   requestAndGetRelatedInfo,
@@ -12,6 +10,7 @@ import {MockFileContent, RequestConfig} from './types';
 import {getFileList} from '../../fs';
 import {urlPropsToHref} from '../../../fe/url';
 import {logWithColor} from '../../log';
+import {HttpRequestOptions} from '../../types';
 
 export function convertObjectToCjsContent<T extends MockFileContent>(info: T) {
   const lines = Object.entries(info).map(([key, value]) => {

@@ -1,7 +1,6 @@
 import {RequestOptions, IncomingMessage} from 'http';
 import {toStream} from '../../stream';
-import {HttpRequestOptions} from '../client';
-import {TcpHttpRequestProps, HttpResponseProps} from '../../types';
+import {TcpHttpRequestProps, HttpResponseProps, HttpRequestOptions} from '../../types';
 
 export interface HttpProxyConfig {
   /**
@@ -29,9 +28,15 @@ export interface HttpProxyConfig {
   preProxyReq?: (proxyStatus: ProxyStatus) => void;
 
   /** Just on response to proxy */
-  onRes2Proxy?: (info: HttpResponseProps, proxyReqInfo: HttpRequestOptions, response: IncomingMessage) => void;
+  onRes2Proxy?: (
+    info: HttpResponseProps,
+    proxyReqInfo: HttpRequestOptions,
+    response: IncomingMessage
+  ) => void;
   /** Handle info of response to proxy */
-  handleInfoOfRes2Origin?: (info: HttpResponseProps) => Promise<HttpResponseProps | void> | HttpResponseProps | void;
+  handleInfoOfRes2Origin?: (
+    info: HttpResponseProps
+  ) => Promise<HttpResponseProps | void> | HttpResponseProps | void;
 }
 
 export interface ProxyStatus {

@@ -1,9 +1,6 @@
 import {isNumber, isPlainObject, isString} from '../external';
+import {CanConvertToBuffer} from '../types';
 
-/**
- * @deprecated please import this type from types/
- */
-export type CanConvertToBuffer = string | number | object | Uint8Array | Buffer;
 /**
  * If value of number is not in format of array, it will be treated as String.
  */

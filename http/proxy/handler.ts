@@ -6,13 +6,12 @@ import {HttpProxyConfig, ProxyStatus} from './types';
 import {toStream, getDataByTransform} from '../../stream';
 import {toBuffer} from '../../transform';
 import {
-  HttpRequestOptions,
   httpRequestOptionsToCurlCommand,
   makeSureHttpRequestOptionsSerializable,
   validateStatusCode,
 } from '../client';
-import {logWithColor} from '../../log';
-import {HttpResponseProps} from '../../types';
+import {logColorful} from '../../log';
+import {HttpRequestOptions, HttpResponseProps} from '../../types';
 
 /**
  * On response to proxy: print more info when http status code is invalid.
@@ -21,8 +20,8 @@ import {HttpResponseProps} from '../../types';
  */
 export function onRes2Proxy(resInfo: HttpResponseProps, proxyReq: HttpRequestOptions) {
   if (!validateStatusCode(resInfo)) {
-    logWithColor(
-      'red',
+    logColorful(
+      {color: 'red'},
       makeSureHttpRequestOptionsSerializable(proxyReq),
       httpRequestOptionsToCurlCommand(proxyReq),
       resInfo
