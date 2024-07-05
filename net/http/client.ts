@@ -10,10 +10,11 @@ import {toBuffer} from '../../transform';
 import {getUrlPropsFromConfig, toUrlInstance, urlPropsToHref, concatOriginWithPathname} from '../../external';
 import {startSocketClient} from '../utils';
 import {TcpNetConnectOpts} from 'net';
+import {getDataFromReadable} from '../../stream';
 
 export function httpOptionsToTcpConfig(httpOption: HttpRequestOptions): {
   props: TcpHttpRequestProps;
-  connectionOptions: TcpNetConnectOpts;
+  connectionOptions: Pick<TcpNetConnectOpts, 'host' | 'port'>;
 } {
   const {
     urlProps,
@@ -47,7 +48,11 @@ export function tcpRequestPropsToBuffer(info: TcpRequestProps): Buffer {
     headers['Transfer-Encoding'] = 'chunked';
   } else {
     const dataBuffer = toBuffer(data);
-    headers['content-length'] = dataBuffer.byteLength + '';
+    const headerKeys = Object.keys(headers).map(it => it.toLowerCase());
+    /** Do not set content-length if it already exist in headers, or it will cause error */
+    if (!headerKeys.includes('content-length')) {
+      headers['content-length'] = dataBuffer.byteLength + '';
+    }
     // headers['connection'] = 'close';
     bufferArray.push(dataBuffer);
   }
@@ -61,9 +66,9 @@ export function tcpRequestPropsToBuffer(info: TcpRequestProps): Buffer {
   return toBuffer(bufferArray);
 }
 
-export async function sendHttpRequestThroughTcp(
+export async function sendHttpRequestByTcp(
   httpOption: HttpRequestOptions,
-  tcpOptions?: TcpNetConnectOpts
+  tcpOptions?: Partial<TcpNetConnectOpts>
 ) {
   const {
     props: {method, url, headers, data},
@@ -100,19 +105,16 @@ export async function sendHttpRequestThroughTcp(
   } else {
     client.end(tcpRequestPropsToBuffer({method, url, headers, data}));
   }
-  return new Promise<string>((res, rej) => {
-    const bufList: Buffer[] = [];
-    client.on('error', err => {
-      rej(err);
-    });
-    client.on('data', chunk => {
-      bufList.push(chunk);
-    });
-    client.on('end', chunk => {
-      const data = toBuffer(bufList);
-      res(data.toString());
-    });
-  });
+  return client;
+}
+
+export async function sendHttpRequestByTcpAndGetResponseData(
+  httpOption: HttpRequestOptions,
+  tcpOptions?: TcpNetConnectOpts
+) {
+  const client = await sendHttpRequestByTcp(httpOption, tcpOptions);
+  const data = await getDataFromReadable(client);
+  return data;
 }
 
 export function tcpResponsePropsToBuffer(info: HttpResponseProps): Buffer {
