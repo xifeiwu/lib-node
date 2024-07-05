@@ -3,9 +3,9 @@ import {Writable} from 'stream';
 import readline from 'readline';
 import childProcess from 'child_process';
 import net, {ServerOpts, Socket, TcpNetConnectOpts} from 'net';
-import {isString, isNumber} from '../external';
+import {isString, isNumber, formatDate} from '../external';
 import {httpFirstLineReg} from '../constants';
-import {HttpFirstLineProps} from '../types';
+import {ColorStyle, HttpFirstLineProps} from '../types';
 import {logColorful} from '../log';
 
 export function getLocalIP() {
@@ -302,4 +302,49 @@ export function getProtocolInfoByFirstChunk(chunk: Buffer): ProtocolInfo {
       };
     }
   }
+}
+
+export function watchSocketState(socket: Socket, colorStyle: ColorStyle) {
+  const {color} = colorStyle;
+  const printState = () => {
+    const {readable, readyState, writable, bytesWritten, destroyed, bytesRead} = socket;
+    logColorful({color}, {bytesRead, readable, writable, bytesWritten, destroyed, readyState});
+  };
+  // socket.allowHalfOpen = true;
+  printState();
+  socket.on('data', chunk => {
+    const {byteLength} = chunk;
+    logColorful(
+      {color},
+      `[${formatDate(new Date(), 'yyyy-MM-dd hh:mm:ss.SSS')}] on data [size: ${byteLength}]`
+    );
+    // console.log(chunk.toString());
+    const bytesToPrint = 50;
+    logColorful(
+      {color},
+      byteLength > bytesToPrint ? chunk.subarray(0, bytesToPrint).toString() + '...' : chunk.toString()
+    );
+    printState();
+  });
+  // socket.on('readable', () => {
+  //   logColorful({color}, `[${formatDate(new Date(), 'yyyy-MM-dd hh:mm:ss.SSS')}] on readable`);
+  //   printState();
+  // })
+  socket.on('end', () => {
+    logColorful({color}, `[${formatDate(new Date(), 'yyyy-MM-dd hh:mm:ss.SSS')}] on end`);
+    printState();
+  });
+  socket.on('error', err => {
+    logColorful({color}, `[${formatDate(new Date(), 'yyyy-MM-dd hh:mm:ss.SSS')}] on error`);
+    console.log(err);
+    printState();
+  });
+  socket.on('finish', () => {
+    logColorful({color}, `[${formatDate(new Date(), 'yyyy-MM-dd hh:mm:ss.SSS')}] on finish`);
+    printState();
+  });
+  socket.on('close', () => {
+    logColorful({color}, `[${formatDate(new Date(), 'yyyy-MM-dd hh:mm:ss.SSS')}] on close`);
+    printState();
+  });
 }
