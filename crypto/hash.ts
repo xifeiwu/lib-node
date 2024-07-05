@@ -6,7 +6,7 @@ export async function hashStream(hash: Hash, readable: Readable, encode: BinaryT
       hash.update(chunk);
     });
     readable.on('end', () => {
-      res(hash.digest('hex'));
+      res(hash.digest(encode));
     });
   });
 }
