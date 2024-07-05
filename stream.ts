@@ -100,11 +100,18 @@ export function getDataByTransform(
 export function getOneLineFromReader(reader: Readable) {
   let resolve: (data: Buffer) => void;
   let reject: (err: Error) => void;
+  const promise = new Promise<Buffer>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
   let matcher = getBufferMatcher('\r\n');
   let resolved = false;
   const bytes: number[] = [];
   const onReadable = () => {
     if (resolved) {
+      return;
+    }
+    if (reader.closed) {
       return;
     }
     let data: Buffer;
@@ -124,17 +131,37 @@ export function getOneLineFromReader(reader: Readable) {
         reject(new Error(`data end without suffix \r\n`));
       } else {
         /** If unresolve, wait for next chunk */
-        if (!reader.closed) {
-          reader.once('readable', onReadable);
-        }
+        reader.once('readable', onReadable);
       }
     }
   };
-  reader.once('readable', onReadable);
-  return new Promise<Buffer>((res, rej) => {
-    resolve = res;
-    reject = rej;
-  });
+  if (reader.readableLength > 0) {
+    onReadable();
+  } else {
+    reader.once('readable', onReadable);
+  }
+  return promise;
+}
+
+const crlfMatcher = getBufferMatcher('\r\n');
+export function getOneLineFromBuffer(buffer: Buffer) {
+  // let matcher = getBufferMatcher('\r\n');
+  let success = false;
+  const consumed: number[] = [];
+  while (buffer.byteLength > 0) {
+    const [firstByte] = buffer;
+    consumed.push(firstByte);
+    buffer = buffer.subarray(1);
+    if (crlfMatcher(firstByte)) {
+      success = true;
+      break;
+    }
+  }
+  return {
+    consumed: Buffer.from(consumed),
+    remaining: buffer,
+    success,
+  };
 }
 
 // TODO: fix stream.push() after EOF
