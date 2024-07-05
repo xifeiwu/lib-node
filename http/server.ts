@@ -52,6 +52,9 @@ export async function startHttpServer(
   });
 }
 
+/**
+ * responsee/echo requestInfo
+ */
 export async function responseRequestInfo(request: http.IncomingMessage, response: http.ServerResponse) {
   const requestInfo = await getRequestInfo(request);
   const resData = toBuffer(requestInfo);
@@ -108,6 +111,7 @@ export interface HttpConditionAndAction {
 }
 
 /**
+ * Do some actions by HttpConditionAndAction
  * @returns Whether the request is handled by this function or not
  */
 export async function handleIncomingMessage(

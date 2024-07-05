@@ -1,8 +1,14 @@
+import {Socket} from 'net';
 import {Readable} from 'stream';
 import {HttpHeaderPartProps, HttpFirstLineProps} from '../../types';
 import {httpFirstLineReg, httpHeaderLineReg} from '../../constants';
-import {Socket} from 'node:dgram';
-import {getOneLineFromReader} from '../../stream';
+import {getDataFromReadable, getOneLineFromBuffer, getOneLineFromReader} from '../../stream';
+import {isNumber} from '../../external';
+import {buffer} from 'stream/consumers';
+import {startSocketClient, startSocketServer, watchSocketState} from '../utils';
+import {IncomingMessage} from 'http';
+import {toBuffer} from '../../transform';
+import {responseInfoToBuffer} from '../../http';
 
 interface ParseFirstLineResults {
   firstLineInfo?: HttpFirstLineProps;
@@ -79,13 +85,122 @@ export async function parseHttpHeaderPart<T extends Readable>(
 export class HttpIncomingMessage extends Readable {
   socket: Socket;
   headerPartProps: HttpHeaderPartProps;
+  receivedDataLength: number;
+  handleDataByContentLength: (chunk: Buffer) => void;
+  handleChunkedData: (chunk: Buffer) => void;
   constructor(socket: Socket) {
     super();
+    this.receivedDataLength = 0;
     this.socket = socket;
-    // this.requestInfo =
+    /** Should care of this refer for event callback function */
+    this.handleDataByContentLength = this._handleDataByContentLength.bind(this);
+    this.handleChunkedData = this._handleChunkedData.bind(this);
   }
-  async parse(reader: Readable) {
-    const {headerPartProps} = await parseHttpHeaderPart(reader);
+  /** Should take care of parse sequence */
+  async parse() {
+    await this.parseHeaderPart();
+    this.parseRemainingData();
+  }
+  _read() {}
+  get headers() {
+    const {headers = {}} = this.headerPartProps ?? {};
+    return headers;
+  }
+  get contentLength() {
+    const contentLength = this.headers['content-length'];
+    if (isNumber(contentLength)) {
+      return contentLength as number;
+    }
+  }
+  get chunkedTransfer() {
+    const transferEncoding = this.headers['transfer-encoding'];
+    return transferEncoding === 'chunked';
+  }
+  _handleDataByContentLength(chunk: Buffer) {
+    const {closed, contentLength} = this;
+    if (closed) {
+      this.socket.off('data', this.handleDataByContentLength);
+      return;
+    }
+    let end = false;
+    this.receivedDataLength += chunk.byteLength;
+    if (this.receivedDataLength <= contentLength) {
+      this.push(chunk);
+      if (this.receivedDataLength === contentLength) {
+        this.push(null);
+        end = true;
+      }
+    } else {
+      this.push(chunk.subarray(0, this.receivedDataLength - contentLength));
+      this.push(null);
+      end = true;
+      throw new Error(`receivedData should not be larger than contentLength`);
+    }
+    if (end) {
+      this.socket.off('data', this.handleDataByContentLength);
+    }
+  }
+  _handleChunkedData(chunk: Buffer) {
+    const {consumed: consumedBuffer, success, remaining: remainingBuffer} = getOneLineFromBuffer(chunk);
+    if (!success) {
+      throw new Error(`Get line failure`);
+    }
+    const line = consumedBuffer.toString('utf-8').trim().replace(/\r\n$/, '');
+    const size = parseInt(line);
+    if (!isNumber(size)) {
+      throw new Error(`first line is not a hex number`);
+    }
+    if (size === 0) {
+      this.push(null);
+      this.socket.off('data', this.handleChunkedData);
+      return;
+    }
+    if (remainingBuffer.length < size) {
+      throw new Error(`remainingBuffer.length < size`);
+    }
+    this.push(chunk.subarray(0, size));
+  }
+  async parseHeaderPart() {
+    const {headerPartProps} = await parseHttpHeaderPart(this.socket);
     this.headerPartProps = headerPartProps;
   }
+  parseRemainingData() {
+    /** These getter value should accessed after parseHttpHeaderPart success  */
+    const {socket, headerPartProps, contentLength, chunkedTransfer} = this;
+    this.headerPartProps = headerPartProps;
+    if (isNumber(contentLength)) {
+      if (contentLength === 0) {
+        this.push(null);
+      } else {
+        socket.on('data', this.handleDataByContentLength);
+      }
+    } else if (chunkedTransfer) {
+      socket.on('data', this.handleChunkedData);
+    }
+  }
+}
+
+export async function getHttpIncomingMessage(socket: Socket, options?: {}) {
+  const incomingMessage = new HttpIncomingMessage(socket);
+  await incomingMessage.parse();
+  return incomingMessage;
+}
+
+export async function startHttpServerOnTcp() {
+  const {host, port, server} = await startSocketServer(async socket => {
+    // watchSocketState(socket, {color: 'yellow'});
+    /** Should not consume data before */
+    const incomingMessage = await getHttpIncomingMessage(socket);
+    const data = await getDataFromReadable(incomingMessage);
+    const requestInfo = {
+      ...incomingMessage.headerPartProps,
+      data,
+    };
+    socket.end(
+      responseInfoToBuffer({
+        data: requestInfo,
+      })
+    );
+  });
+  return {host, port, server};
 }
