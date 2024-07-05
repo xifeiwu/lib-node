@@ -1,7 +1,7 @@
 import http, {RequestListener, ServerOptions} from 'http';
 import {toBuffer} from '../transform';
 import {createHash} from 'crypto';
-import {IncomingHttpHeaders, IncomingMessage} from 'http';
+import {IncomingMessage} from 'http';
 import {Duplex} from 'stream';
 import {
   HttpHeaderPartProps,
@@ -11,9 +11,11 @@ import {
   getAFreePort,
   getRequestHeaderInfo,
   getRequestInfo,
+  logColorful,
+  watchSocketState,
 } from '..';
 import {Socket} from 'net';
-import {deepEqual, UrlProps, toUrlProps, isNumber, waitFor} from '../external';
+import {deepEqual, toUrlProps, isNumber, waitFor} from '../external';
 
 export interface HttpServerConfig {
   host?: string;
@@ -29,7 +31,12 @@ export async function startHttpServer(
   },
   config?: HttpServerConfig
 ) {
-  const {request: handleRequest, upgrade: handleUpgrade, connect: handleConnect, connection: handleConnection} = handler;
+  const {
+    request: handleRequest,
+    upgrade: handleUpgrade,
+    connect: handleConnect,
+    connection: handleConnection,
+  } = handler;
   const {host = '0.0.0.0', port = await getAFreePort(), options} = config ?? {};
   const origin = `http://${host}:${port}`;
   return new Promise<{
@@ -144,4 +151,23 @@ export async function handleIncomingMessage(
     await waitFor(waitInMs);
   }
   return false;
+}
+
+/** Mainly for debug */
+export async function startHttpServer4Debug() {
+  const {origin, server} = await startHttpServer({
+    request(request, response) {
+      logColorful({color: 'yellow'}, 'headerPart Info:', getRequestHeaderInfo(request));
+      watchSocketState(request.socket, {color: 'yellow'});
+      responseRequestInfo(request, response);
+    },
+  });
+  // server.on('connection', socket => {
+  //   socket.on('data', chunk => {
+  //     console.log(`chunk.toString()`);
+  //     console.log(chunk.toString());
+  //   });
+  // });
+  console.log(`start http server: ${origin}`);
+  return {origin, server};
 }
