@@ -1,15 +1,10 @@
 import http from 'http';
 import {getDataFromReadable} from '../stream';
 import {fromBuffer, toBuffer} from '../transform';
-import {
-  CanConvertToBuffer,
-  HttpHeaderPartProps,
-  HttpResponseProps,
-  TcpHttpRequestProps,
-} from '../types';
+import {CanConvertToBuffer, HttpHeaderPartProps, HttpResponseProps, TcpHttpRequestProps} from '../types';
 import {isPlainObject} from '../external';
 
-export function getRequestHeaderInfo(request: http.IncomingMessage): HttpHeaderPartProps {
+export function getRequestHeaderInfo(request: http.IncomingMessage): HttpHeaderPartProps<'Server'> {
   const {method, url, httpVersion, headers} = request;
   return {method, url, httpVersion, headers};
 }
@@ -51,13 +46,7 @@ export function getMimeTypeByDataType(data: CanConvertToBuffer) {
   }
 }
 export function responseInfoToBuffer(responseInfo: Partial<HttpResponseProps>) {
-  const {
-    httpVersion = 'HTTP/1.1',
-    statusCode = 200,
-    statusMessage = 'OK',
-    headers = {},
-    data,
-  } = responseInfo;
+  const {httpVersion = 'HTTP/1.1', statusCode = 200, statusMessage = 'OK', headers = {}, data} = responseInfo;
   const firstLine = [httpVersion, statusCode, statusMessage].join(' ').toUpperCase();
   const bufferOfData = toBuffer(data);
   headers['content-type'] = getMimeTypeByDataType(data);

@@ -22,7 +22,7 @@ export interface HttpRequestOptions<Payload extends HttpRequestPayload = any>
   extends RequestOptions,
     GeneralRequestOptions<Payload> {}
 
-interface HeaderTypeMap {
+export interface ResponseSideToHeaderType {
   Server: OutgoingHttpHeaders;
   Client: IncomingHttpHeaders;
 }
@@ -34,6 +34,6 @@ export interface HttpResponseProps<T = any, Side extends 'Server' | 'Client' = '
   httpVersion: string;
   statusCode: number;
   statusMessage: string;
-  headers?: HeaderTypeMap[Side];
+  headers?: ResponseSideToHeaderType[Side];
   data?: T;
 }

@@ -7,14 +7,13 @@ export interface HttpFirstLineProps {
   httpVersion: string;
 }
 
-interface HeaderTypeMap {
+export interface RequestSideToHeaderType {
   Server: IncomingHttpHeaders;
   Client: OutgoingHttpHeaders;
 }
 
-export interface HttpHeaderPartProps<Side extends 'Server' | 'Client' = 'Client'>
-  extends HttpFirstLineProps {
-  headers?: HeaderTypeMap[Side];
+export interface HttpHeaderPartProps<Side extends 'Server' | 'Client' = 'Client'> extends HttpFirstLineProps {
+  headers?: RequestSideToHeaderType[Side];
 }
 
 export interface TcpHttpRequestProps<T = any, Side extends 'Server' | 'Client' = 'Client'>
