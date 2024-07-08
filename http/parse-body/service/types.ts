@@ -4,20 +4,25 @@ import {Transform} from 'stream';
 
 export type GetParserFunc = (headers: IncomingHttpHeaders, parseOptions: ParserOptions) => Array<Transform>;
 
+/**
+ * save means save data to uploadDir directly after end of file, and release the buffer after save success.
+ * cache means save data to value of FileInfo, then the data can be accessed and used in the following logic.
+ */
 type WayOfHandleFile = 'cache' | 'save' | 'cacheAndSave';
+
 export interface ParserOptions {
   maxPayloadSizeinKb?: number;
   maxFileSizeinKb?: number;
   encoding?: BufferEncoding;
   uploadDir: string;
-  wayOfHandleFile?: WayOfHandleFile; // | ((data: Buffer) => WayOfHandleFile);
+  wayOfHandleFile?: WayOfHandleFile;
   hashAlgorithm?: string;
   hashEncoding?: BinaryToTextEncoding;
 }
 
 export interface FileValue {
   encoding?: BufferEncoding;
-  value?: string;
+  value?: Buffer;
 }
 export interface FileInfo extends FileValue {
   name?: string;

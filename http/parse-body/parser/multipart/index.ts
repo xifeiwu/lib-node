@@ -6,7 +6,14 @@ import {Hash, createHash} from 'crypto';
 import {toBuffer} from '../../service/external';
 import path from 'path';
 import {getFileName} from '../../service/utils';
-import {FileInfo, GetParserFunc, ParsedItem, ParserOptions} from '../../service/types';
+import {
+  FileInfo,
+  FileValue,
+  GetParserFunc,
+  ParsedItem,
+  ParsedResult,
+  ParserOptions,
+} from '../../service/types';
 import {MultipartParser} from './parser';
 
 interface Meta {
@@ -60,6 +67,7 @@ class Part {
   getMetaValue(key: keyof Meta) {
     return this.meta[key];
   }
+  /** Create hash object if not exist */
   checkHash() {
     if (!this.hash) {
       this.hash = createHash(this.options.hashAlgorithm);
@@ -72,63 +80,60 @@ class Part {
       this.hash.update(chunk);
     }
   }
-  end(chunk?: Buffer) {
-    let resolve: (info: ParsedItem) => void;
-    let reject: (err: Error) => void;
-    const promise = new Promise<ParsedItem>((res, rej) => {
-      resolve = res;
-      reject = rej;
-    });
+  async end(chunk?: Buffer) {
     this.buffer = toBuffer([this.buffer, chunk]);
     const filename = this.getMetaValue('filename');
     const name = this.getMetaValue('name');
     const key = name ?? filename ?? '';
     if (this.type === 'file') {
+      const result: ParsedResult = {};
       this.checkHash();
       chunk && this.hash.update(chunk);
       const hashValue = this.hash.digest(this.options.hashEncoding);
-      const fileValueInfo: Pick<FileInfo, 'encoding' | 'value'> = {};
+      const fileValueInfo: FileValue = {};
       if (this.needCacheFile) {
-        const encoding = 'base64';
-        fileValueInfo.encoding = encoding;
-        fileValueInfo.value = this.buffer.toString(encoding);
+        // const encoding = 'base64';
+        // fileValueInfo.encoding = encoding;
+        // fileValueInfo.value = this.buffer.toString(encoding);
+        fileValueInfo.value = this.buffer;
       }
       if (this.needSaveFile) {
         const id = hashValue.substring(0, 12);
         const originName = filename ?? name ?? '';
         const finalName = id + '.' + originName;
-        fs.writeFile(path.resolve(this.options.uploadDir, finalName), this.buffer, null, err => {
-          if (err) {
-            reject(err);
-          }
-          this.file = {
-            name: finalName,
-            byteLength: this.buffer.byteLength,
-            wayOfHandleFile: this.options.wayOfHandleFile,
-            hashValue,
-            id,
-            ...fileValueInfo,
-          };
-          resolve({[key]: this.file});
+        await new Promise<void>((resolve, reject) => {
+          fs.writeFile(path.resolve(this.options.uploadDir, finalName), this.buffer, null, err => {
+            if (err) {
+              reject(err);
+            }
+            this.file = {
+              name: finalName,
+              byteLength: this.buffer.byteLength,
+              wayOfHandleFile: this.options.wayOfHandleFile,
+              hashValue,
+              id,
+              ...fileValueInfo,
+            };
+            resolve();
+          });
         });
+        result[key] = this.file;
       } else {
-        resolve({
-          [key]: {
-            name: filename,
-            byteLength: this.buffer.byteLength,
-            ...fileValueInfo,
-          },
-        });
+        result[key] = {
+          name: filename,
+          byteLength: this.buffer.byteLength,
+          ...fileValueInfo,
+        };
       }
       if (!this.needCacheFile) {
         this.buffer = Buffer.alloc(0);
       }
+      return result;
     } else {
-      resolve({
+      return {
         [key]: this.buffer,
-      });
+      };
     }
-    return promise;
   }
   revert() {}
 }
