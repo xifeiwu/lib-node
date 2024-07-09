@@ -1,8 +1,9 @@
 import {ParserOptions} from './types';
 
-export const defaultParseOptions: Partial<ParserOptions> = {
+export const defaultParseOptions: Required<ParserOptions> = {
   // maxPayloadSizeinKb?: number;
   // maxFileSizeinKb?: number;
+  // uploadDir: '',
   encoding: 'utf-8',
   wayOfHandleFile: 'save',
   hashAlgorithm: 'sha1',

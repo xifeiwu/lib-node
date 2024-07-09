@@ -2,7 +2,10 @@ import {Transform} from 'stream';
 import {GetParserFunc, ParserOptions} from '../service/types';
 import {IncomingHttpHeaders} from 'http';
 
-export const getJsonParser: GetParserFunc = (headers: IncomingHttpHeaders, parseOptions: ParserOptions) => {
+export const getJsonParser: GetParserFunc = (
+  headers: IncomingHttpHeaders,
+  parseOptions: Required<ParserOptions>
+) => {
   const {'content-type': contentType} = headers;
   const json = /json/i.test(contentType);
   if (!json) {

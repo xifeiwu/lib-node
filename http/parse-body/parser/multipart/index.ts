@@ -1,143 +1,12 @@
-import fs from 'fs';
 import {IncomingHttpHeaders} from 'http';
 import {Transform} from 'stream';
 import FormidableError, {internalCode} from '../../service/error';
-import {Hash, createHash} from 'crypto';
-import {toBuffer} from '../../service/external';
-import path from 'path';
-import {defaultParseOptions, getFileName} from '../../service/utils';
-import {
-  FileInfo,
-  FileValue,
-  GetParserFunc,
-  ParsedItem,
-  ParsedResult,
-  ParserOptions,
-} from '../../service/types';
+import {getFileName} from '../../service/utils';
+import {GetParserFunc, ParserOptions} from '../../service/types';
 import {MultipartParser} from './parser';
+import {Part} from '../../service/part';
 
-interface Meta {
-  name?: string;
-  filename?: string;
-  contentType?: string;
-  contentTransferEncoding?: string;
-}
-
-type FileRelatedParserOptions = Pick<
-  ParserOptions,
-  'uploadDir' | 'wayOfHandleFile' | 'hashAlgorithm' | 'hashEncoding'
->;
-
-class Part {
-  options: Required<FileRelatedParserOptions>;
-  meta: Meta;
-  file: FileInfo;
-  hash: Hash;
-  buffer: Buffer = Buffer.alloc(0);
-  constructor(options: FileRelatedParserOptions) {
-    const {uploadDir, wayOfHandleFile, hashAlgorithm, hashEncoding} = {
-      ...defaultParseOptions,
-      ...options,
-    };
-    this.options = {uploadDir, wayOfHandleFile, hashAlgorithm, hashEncoding};
-    this.meta = {};
-    this.file = {};
-    this.updateMeta('contentTransferEncoding', 'utf-8');
-  }
-  get needSaveFile() {
-    const {wayOfHandleFile} = this.options;
-    return wayOfHandleFile === 'save' || wayOfHandleFile === 'cacheAndSave';
-  }
-  get needCacheFile() {
-    const {wayOfHandleFile} = this.options;
-    return wayOfHandleFile === 'cache' || wayOfHandleFile === 'cacheAndSave';
-  }
-  /** Type is file when field of contentType exist in meta part */
-  get type() {
-    return this.meta.contentType === undefined ? 'field' : 'file';
-  }
-  updateMeta(key: keyof Meta | string, value: string) {
-    if (!this.meta) {
-      this.meta = {};
-    }
-    this.meta[key] = value;
-  }
-  getMetaValue(key: keyof Meta) {
-    return this.meta[key];
-  }
-  updateFileInfo(info: FileInfo) {
-    for (const [key, value] of Object.entries(info)) {
-      this.file[key] = value;
-    }
-  }
-  /** Create hash object if not exist */
-  checkHash() {
-    if (!this.hash) {
-      this.hash = createHash(this.options.hashAlgorithm);
-    }
-  }
-  write(chunk: Buffer) {
-    this.buffer = toBuffer([this.buffer, chunk]);
-    if (this.type === 'file') {
-      this.checkHash();
-      this.hash.update(chunk);
-    }
-  }
-  async end(chunk?: Buffer) {
-    this.buffer = toBuffer([this.buffer, chunk]);
-    const filename = this.getMetaValue('filename');
-    const name = this.getMetaValue('name');
-    const key = name ?? filename ?? '';
-    if (this.type === 'file') {
-      const result: ParsedResult = {};
-      this.checkHash();
-      chunk && this.hash.update(chunk);
-      const hashValue = this.hash.digest(this.options.hashEncoding);
-      this.updateFileInfo({
-        byteLength: this.buffer.byteLength,
-        wayOfHandleFile: this.options.wayOfHandleFile,
-        hashValue,
-      });
-      if (this.needCacheFile) {
-        this.updateFileInfo({
-          value: this.buffer,
-        });
-      }
-      if (this.needSaveFile) {
-        const id = hashValue.substring(0, 12);
-        const originName = filename ?? name ?? '';
-        const finalName = id + '.' + originName;
-        await new Promise<void>((resolve, reject) => {
-          fs.writeFile(path.resolve(this.options.uploadDir, finalName), this.buffer, null, err => {
-            if (err) {
-              reject(err);
-            }
-            this.updateFileInfo({
-              name: finalName,
-              id,
-            });
-            resolve();
-          });
-        });
-      } else {
-        this.updateFileInfo({
-          name: filename,
-        });
-      }
-      result[key] = this.file;
-      if (!this.needCacheFile) {
-        this.buffer = Buffer.alloc(0);
-      }
-      return result;
-    } else {
-      return {
-        [key]: this.buffer,
-      };
-    }
-  }
-}
-
-function getTransformForParser(parseOptions: ParserOptions) {
+function getTransformForParser(parseOptions: Required<ParserOptions>) {
   const {encoding = 'utf-8'} = parseOptions;
   let headerField: string;
   let headerValue: string;
@@ -155,7 +24,7 @@ function getTransformForParser(parseOptions: ParserOptions) {
         headerValue += buffer.toString(encoding, start, end);
       } else if (name === 'headerEnd') {
         headerField = headerField.toLowerCase();
-        part.updateMeta(headerField, headerValue);
+        part.updateMeta({[headerField]: headerValue});
 
         // matches either a quoted-string or a token (RFC 2616 section 19.5.1)
         const m = headerValue.match(
@@ -164,14 +33,13 @@ function getTransformForParser(parseOptions: ParserOptions) {
         );
         if (headerField === 'content-disposition') {
           if (m) {
-            part.updateMeta('name', m[2] || m[3] || '');
+            part.updateMeta({name: m[2] || m[3] || ''});
           }
-
-          part.updateMeta('filename', getFileName(headerValue));
+          part.updateMeta({filename: getFileName(headerValue)});
         } else if (headerField === 'content-type') {
-          part.updateMeta('contentType', headerValue);
+          part.updateMeta({contentType: headerValue});
         } else if (headerField === 'content-transfer-encoding') {
-          part.updateMeta('contentTransferEncoding', headerValue.toLowerCase());
+          part.updateMeta({contentTransferEncoding: headerValue.toLowerCase()});
         }
 
         headerField = '';
@@ -208,7 +76,7 @@ function getTransformForParser(parseOptions: ParserOptions) {
 
 export const getMultpartParser: GetParserFunc = (
   headers: IncomingHttpHeaders,
-  parseOptions: ParserOptions
+  parseOptions: Required<ParserOptions>
 ) => {
   /** content-type:multipart/form-data; boundary=----WebKitFormBoundaryE7DpP5ncpQWn8RRu */
   const {'content-type': contentType} = headers;

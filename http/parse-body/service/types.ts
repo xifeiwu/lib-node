@@ -2,7 +2,7 @@ import {BinaryToTextEncoding} from 'crypto';
 import {IncomingHttpHeaders} from 'http';
 import {Transform} from 'stream';
 
-export type GetParserFunc = (headers: IncomingHttpHeaders, parseOptions: ParserOptions) => Array<Transform>;
+export type GetParserFunc = (headers: IncomingHttpHeaders, parseOptions: Required<ParserOptions>) => Array<Transform>;
 
 /**
  * save means save data to uploadDir directly after end of file, and release the buffer after save success.
@@ -11,8 +11,8 @@ export type GetParserFunc = (headers: IncomingHttpHeaders, parseOptions: ParserO
 type WayOfHandleFile = 'cache' | 'save' | 'cacheAndSave';
 
 export interface ParserOptions {
-  maxPayloadSizeinKb?: number;
-  maxFileSizeinKb?: number;
+  // maxPayloadSizeinKb?: number;
+  // maxFileSizeinKb?: number;
   encoding?: BufferEncoding;
   uploadDir: string;
   wayOfHandleFile?: WayOfHandleFile;

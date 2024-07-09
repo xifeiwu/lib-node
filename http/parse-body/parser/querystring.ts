@@ -2,6 +2,12 @@ import {Transform} from 'stream';
 import {GetParserFunc, ParserOptions} from '../service/types';
 import {IncomingHttpHeaders} from 'http';
 
+/**
+ * @deprecated rarely used
+ * @param headers
+ * @param parseOptions
+ * @returns
+ */
 export const getQuerystringParser: GetParserFunc = (
   headers: IncomingHttpHeaders,
   parseOptions: ParserOptions

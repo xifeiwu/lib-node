@@ -69,3 +69,27 @@ export async function json() {
   });
   logColorful({}, responseInfo);
 }
+
+export async function octet() {
+  const {origin, host, port, server} = await startServer();
+  const data = {
+    a: 1,
+    b: true,
+    c: 'str',
+    d: {
+      e: new Date(),
+      f: Buffer.alloc(6).fill('f'),
+    },
+  };
+  const responseInfo = await requestAndGetResponseInfo({
+    origin,
+    pathname: '/api/debug/echo',
+    method: 'post',
+    data,
+    headers: {
+      'content-type': 'application/octet-stream',
+      'x-file-name': 'payload.ts',
+    },
+  });
+  logColorful({}, responseInfo);
+}

@@ -8,6 +8,8 @@ import {getRequestHeaderInfo} from '../common';
 import {getMultpartParser} from './parser';
 import {getJsonParser} from './parser/json';
 import path from 'path';
+import {defaultParseOptions} from './service/utils';
+import {getOctetParser} from './parser/octet-stream';
 
 export function getCacheWriter(parserOptions: ParserOptions) {
   const {encoding = 'utf-8'} = parserOptions;
@@ -47,10 +49,11 @@ export function getCacheWriter(parserOptions: ParserOptions) {
 }
 
 export async function parseBody(request: IncomingMessage, parserOptions: ParserOptions) {
-  parserOptions = {
+  const mregedParserOptions: Required<ParserOptions> = {
+    ...defaultParseOptions,
     ...parserOptions,
   };
-  const {uploadDir} = parserOptions;
+  const {uploadDir} = mregedParserOptions;
   if (!uploadDir) {
     throw new Error(`Params of uploadDir is must to have`);
   }
@@ -60,8 +63,8 @@ export async function parseBody(request: IncomingMessage, parserOptions: ParserO
   }
   const {headers: reqHeaders} = getRequestHeaderInfo(request);
   let parserTransforms: Transform[];
-  for (const getParser of [getJsonParser, getMultpartParser]) {
-    const result = getParser(reqHeaders, parserOptions);
+  for (const getParser of [getJsonParser, getOctetParser, getMultpartParser]) {
+    const result = getParser(reqHeaders, mregedParserOptions);
     if (result) {
       parserTransforms = result;
       break;
@@ -70,7 +73,7 @@ export async function parseBody(request: IncomingMessage, parserOptions: ParserO
   if (!parserTransforms) {
     throw new Error(`Parser is not found for content-type: ${reqHeaders['content-type']}`);
   }
-  const {writer, waitCacheData} = getCacheWriter(parserOptions);
+  const {writer, waitCacheData} = getCacheWriter(mregedParserOptions);
   await pipeline([request, ...parserTransforms, writer]);
   const cacheData = await waitCacheData;
   return cacheData;
