@@ -2,7 +2,7 @@ import http from 'http';
 import https from 'https';
 import {toBuffer} from '../transform';
 import {Socket} from 'net';
-import {getMimeTypeByData, getResponseInfo} from './common';
+import {getContentTypeByData, getResponseInfo} from './common';
 import {toUrlInstance, getUrlPropsFromConfig, deepMerge, urlPropsToHref, isObject} from '../external';
 import {HttpRequestOptions, HttpResponseProps, HttpRequestPayload, ValidateStatus} from '../types';
 import {Readable, isReadable} from 'stream';
@@ -34,7 +34,7 @@ export function sendHttpRequest<Payload extends HttpRequestPayload = any>(
     const headerKeys = Object.keys(headers).map(it => it.toLowerCase());
     /** 'content-type' passed have higher priority */
     if (!headerKeys.includes('content-type')) {
-      headers['content-type'] = getMimeTypeByData(data);
+      headers['content-type'] = getContentTypeByData(data);
     }
   }
   let clientRequest: http.ClientRequest | null = null;

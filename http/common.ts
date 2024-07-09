@@ -39,11 +39,11 @@ export async function getResponseInfo<T>(
   return responseInfo;
 }
 
-export function getMimeTypeByData(data: CanConvertToBuffer | Readable) {
+export function getContentTypeByData(data: CanConvertToBuffer | Readable) {
   if (isPlainObject(data)) {
-    return 'application/json';
+    return 'application/json;charset=UTF-8';
   } else {
-    return 'application/text';
+    return 'text/plain';
   }
 }
 
@@ -51,7 +51,7 @@ export function responseInfoToBuffer(responseInfo: Partial<HttpResponseProps>) {
   const {httpVersion = 'HTTP/1.1', statusCode = 200, statusMessage = 'OK', headers = {}, data} = responseInfo;
   const firstLine = [httpVersion, statusCode, statusMessage].join(' ').toUpperCase();
   const bufferOfData = toBuffer(data);
-  headers['content-type'] = getMimeTypeByData(data);
+  headers['content-type'] = getContentTypeByData(data);
   if (bufferOfData.byteLength > 0) {
     headers['content-length'] = bufferOfData.byteLength + '';
   } else {
