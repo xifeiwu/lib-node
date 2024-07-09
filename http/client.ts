@@ -30,8 +30,12 @@ export function sendHttpRequest<Payload extends HttpRequestPayload = any>(
   const {urlProps, restProps} = getUrlPropsFromConfig(options);
   const {data, headers = {}, ...requestOptions} = restProps;
   // requestOptions.headers['connection'] = 'keep-alive';
-  if (data !== undefined && headers['content-type'] === undefined) {
-    headers['content-type'] = getMimeTypeByData(data);
+  if (data !== undefined) {
+    const headerKeys = Object.keys(headers).map(it => it.toLowerCase());
+    /** 'content-type' passed have higher priority */
+    if (!headerKeys.includes('content-type')) {
+      headers['content-type'] = getMimeTypeByData(data);
+    }
   }
   let clientRequest: http.ClientRequest | null = null;
   const {protocol, href} = toUrlInstance(urlProps);
