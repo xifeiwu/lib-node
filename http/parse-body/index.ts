@@ -6,6 +6,7 @@ import {IncomingMessage} from 'http';
 import {ParsedItem, ParsedResult, ParsedValue, ParserOptions} from './service/types';
 import {getRequestHeaderInfo} from '../common';
 import {getMultpartParser} from './parser';
+import {getJsonParser} from './parser/json';
 
 export function getCacheWriter(parserOptions: ParserOptions) {
   const {encoding = 'utf-8'} = parserOptions;
@@ -50,17 +51,17 @@ export async function parseBody(request: IncomingMessage, parserOptions: ParserO
   if (!uploadDir || !fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);
   }
-  const reqHeaderInfo = getRequestHeaderInfo(request);
+  const {headers: reqHeaders} = getRequestHeaderInfo(request);
   let parserTransforms: Transform[];
-  for (const getParser of [getMultpartParser]) {
-    const result = getParser(reqHeaderInfo.headers, parserOptions);
+  for (const getParser of [getJsonParser, getMultpartParser]) {
+    const result = getParser(reqHeaders, parserOptions);
     if (result) {
       parserTransforms = result;
       break;
     }
   }
   if (!parserTransforms) {
-    throw new Error(`parser is not found`);
+    throw new Error(`Parser is not found for content-type: ${reqHeaders['content-type']}`);
   }
   const {writer, waitCacheData} = getCacheWriter(parserOptions);
   await pipeline([request, ...parserTransforms, writer]);
