@@ -75,7 +75,7 @@ export function handleUpgrade(
   req: IncomingMessage,
   socket?: Duplex,
   head?: Buffer
-): {requestHeaderPartInfo: HttpHeaderPartProps; responseInfo: HttpResponseProps} {
+): {requestHeaderPartInfo: HttpHeaderPartProps<'Server'>; responseInfo: HttpResponseProps} {
   const requestHeaderPartInfo = getRequestHeaderInfo(req);
   const key = requestHeaderPartInfo.headers['sec-websocket-key'];
   const digest = createHash('sha1')
