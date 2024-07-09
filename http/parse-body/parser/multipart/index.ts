@@ -52,6 +52,7 @@ class Part {
     const {wayOfHandleFile} = this.options;
     return wayOfHandleFile === 'cache' || wayOfHandleFile === 'cacheAndSave';
   }
+  /** Type is file when field of contentType exist in meta part */
   get type() {
     return this.meta.contentType === undefined ? 'field' : 'file';
   }
@@ -63,6 +64,11 @@ class Part {
   }
   getMetaValue(key: keyof Meta) {
     return this.meta[key];
+  }
+  updateFileInfo(info: FileInfo) {
+    for (const [key, value] of Object.entries(info)) {
+      this.file[key] = value;
+    }
   }
   /** Create hash object if not exist */
   checkHash() {
@@ -87,12 +93,15 @@ class Part {
       this.checkHash();
       chunk && this.hash.update(chunk);
       const hashValue = this.hash.digest(this.options.hashEncoding);
-      const fileValueInfo: FileValue = {};
+      this.updateFileInfo({
+        byteLength: this.buffer.byteLength,
+        wayOfHandleFile: this.options.wayOfHandleFile,
+        hashValue,
+      });
       if (this.needCacheFile) {
-        // const encoding = 'base64';
-        // fileValueInfo.encoding = encoding;
-        // fileValueInfo.value = this.buffer.toString(encoding);
-        fileValueInfo.value = this.buffer;
+        this.updateFileInfo({
+          value: this.buffer,
+        });
       }
       if (this.needSaveFile) {
         const id = hashValue.substring(0, 12);
@@ -103,25 +112,19 @@ class Part {
             if (err) {
               reject(err);
             }
-            this.file = {
+            this.updateFileInfo({
               name: finalName,
-              byteLength: this.buffer.byteLength,
-              wayOfHandleFile: this.options.wayOfHandleFile,
-              hashValue,
               id,
-              ...fileValueInfo,
-            };
+            });
             resolve();
           });
         });
-        result[key] = this.file;
       } else {
-        result[key] = {
+        this.updateFileInfo({
           name: filename,
-          byteLength: this.buffer.byteLength,
-          ...fileValueInfo,
-        };
+        });
       }
+      result[key] = this.file;
       if (!this.needCacheFile) {
         this.buffer = Buffer.alloc(0);
       }
@@ -132,7 +135,6 @@ class Part {
       };
     }
   }
-  revert() {}
 }
 
 function getTransformForParser(parseOptions: ParserOptions) {

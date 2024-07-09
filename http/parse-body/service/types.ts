@@ -20,16 +20,14 @@ export interface ParserOptions {
   hashEncoding?: BinaryToTextEncoding;
 }
 
-export interface FileValue {
-  encoding?: BufferEncoding;
-  value?: Buffer;
-}
-export interface FileInfo extends FileValue {
+export interface FileInfo {
   name?: string;
   byteLength?: number;
   wayOfHandleFile?: ParserOptions['wayOfHandleFile'];
   id?: string;
   hashValue?: string;
+  encoding?: BufferEncoding;
+  value?: Buffer;
 }
 
 export type ParsedValue = Buffer | string | FileInfo;
