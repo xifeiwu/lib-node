@@ -33,6 +33,12 @@ export interface FileInfo extends FileValue {
 }
 
 export type ParsedValue = Buffer | string | FileInfo;
+/**
+ * For Content-Type
+ * json, ParsedValue is string, or object,
+ * multipart, ParsedValue is Buffer
+ * octet, ParseValue is Buffer
+ */
 export interface ParsedItem {
   [key: string]: ParsedValue;
 }

@@ -46,7 +46,13 @@ export function getCacheWriter(parserOptions: ParserOptions) {
 }
 
 export async function parseBody(request: IncomingMessage, parserOptions: ParserOptions) {
-  parserOptions = {encoding: 'utf-8', ...parserOptions};
+  parserOptions = {
+    encoding: 'utf-8',
+    wayOfHandleFile: 'save',
+    hashAlgorithm: 'sha1',
+    hashEncoding: 'base64',
+    ...parserOptions,
+  };
   const {uploadDir} = parserOptions;
   if (!uploadDir || !fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);
