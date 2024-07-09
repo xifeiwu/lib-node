@@ -82,13 +82,13 @@ export const validateStatusCode: ValidateStatus = info => {
   return statusCode >= 200 && statusCode < 300;
 };
 
-export type RequestAndGetRelatedInfoFunc = typeof requestAndGetRelatedInfo;
-export async function requestAndGetRelatedInfo<ResData = any, Payload extends HttpRequestPayload = any>(
+export type RequestAndGetResponseInfoFunc = typeof requestAndGetResponseInfo;
+export async function requestAndGetResponseInfo<ResData = any, Payload extends HttpRequestPayload = any>(
   requestOptions: HttpRequestOptions<Payload>,
   responseConfig?: Parameters<typeof getResponseInfo>[1] & {
     validateStatus?: ValidateStatus | boolean;
   }
-): Promise<{requestOptions: HttpRequestOptions<Payload>; responseInfo: HttpResponseProps<ResData>}> {
+): Promise<HttpResponseProps<ResData>> {
   const response = await requestAndGetResponse<Payload>(requestOptions);
   let {validateStatus, ...resConfig} = responseConfig ?? {};
   const responseInfo = await getResponseInfo<ResData>(response, resConfig);
@@ -102,18 +102,18 @@ export async function requestAndGetRelatedInfo<ResData = any, Payload extends Ht
       throw new ResponseError(requestOptions, responseInfo);
     }
   }
-  return {requestOptions, responseInfo};
+  return responseInfo;
 }
 
-export type RequestAndGetResponseInfoFunc = typeof requestAndGetResponseInfo;
-export async function requestAndGetResponseInfo<ResData = any, Payload extends HttpRequestPayload = any>(
+export type RequestAndGetRelatedInfoFunc = typeof requestAndGetRelatedInfo;
+export async function requestAndGetRelatedInfo<ResData = any, Payload extends HttpRequestPayload = any>(
   requestOptions: HttpRequestOptions<Payload>,
   responseConfig?: Parameters<typeof getResponseInfo>[1] & {
     validateStatus?: ValidateStatus | boolean;
   }
-): Promise<HttpResponseProps<ResData>> {
-  const {responseInfo} = await requestAndGetRelatedInfo(requestOptions, responseConfig);
-  return responseInfo;
+): Promise<{requestOptions: HttpRequestOptions<Payload>; responseInfo: HttpResponseProps<ResData>}> {
+  const responseInfo = await requestAndGetResponseInfo(requestOptions, responseConfig);
+  return {requestOptions, responseInfo};
 }
 
 export async function requestAndGetUpgradeInfo<Payload extends HttpRequestPayload = any>(
