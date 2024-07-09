@@ -77,7 +77,7 @@ export async function proxyRequest(req: IncomingMessage, res: ServerResponse, co
     .pipe(
       getDataByTransform(
         data => {
-          proxyStatus.requestInfo.origin.data = data;
+          proxyReqInfo.data = data;
         },
         {
           targetType: 'json',
