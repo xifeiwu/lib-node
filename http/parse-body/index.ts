@@ -1,52 +1,14 @@
 import fs from 'fs';
-import {Readable, Transform, Writable} from 'stream';
+import path from 'path';
+import {Transform} from 'stream';
 import {pipeline} from 'stream/promises';
-import {toBuffer} from './service/external';
 import {IncomingMessage} from 'http';
-import {ParsedItem, ParsedResult, ParsedValue, ParserOptions} from './service/types';
+import {ParserOptions} from './service/types';
 import {getRequestHeaderInfo} from '../common';
 import {getMultpartParser} from './parser';
 import {getJsonParser} from './parser/json';
-import path from 'path';
-import {defaultParseOptions} from './service/utils';
+import {defaultParseOptions, getCacheWriter} from './service/utils';
 import {getOctetParser} from './parser/octet-stream';
-
-export function getCacheWriter(parserOptions: ParserOptions) {
-  const {encoding = 'utf-8'} = parserOptions;
-  const result: ParsedResult = {};
-  const writer = new Writable({
-    objectMode: true,
-    write(item: ParsedItem, _enc, cb) {
-      for (const [key, value] of Object.entries(item)) {
-        let finalValue: ParsedValue = value;
-        if (Buffer.isBuffer(value)) {
-          finalValue = value.toString(encoding);
-        }
-        if (Object.prototype.hasOwnProperty.call(result, key) && !Array.isArray(result[key])) {
-          result[key] = [result[key] as ParsedValue];
-        }
-        if (Array.isArray(result[key])) {
-          (result[key] as Array<ParsedValue>).push(finalValue);
-        } else {
-          result[key] = finalValue;
-        }
-      }
-      cb && cb();
-    },
-    final(cb) {
-      cb && cb();
-    },
-  });
-  const waitCacheData = new Promise<ParsedResult>((res, rej) => {
-    writer.on('finish', () => {
-      res(result);
-    });
-    writer.on('error', err => {
-      rej(err);
-    });
-  });
-  return {writer, waitCacheData};
-}
 
 export async function parseBody(request: IncomingMessage, parserOptions: ParserOptions) {
   const mregedParserOptions: Required<ParserOptions> = {

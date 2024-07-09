@@ -1,4 +1,5 @@
-import {ParserOptions} from './types';
+import {Writable} from 'stream';
+import {ParsedItem, ParsedResult, ParsedValue, ParserOptions} from './types';
 
 export const defaultParseOptions: Required<ParserOptions> = {
   // maxPayloadSizeinKb?: number;
@@ -26,4 +27,46 @@ export function getFileName(headerValue: string) {
   originalFilename = originalFilename.replace(/&#([\d]{4});/g, (_, code) => String.fromCharCode(code));
 
   return originalFilename;
+}
+
+/**
+ * Cache data on buffer and return them on finalize
+ * @param parserOptions
+ * @returns
+ */
+export function getCacheWriter(parserOptions: ParserOptions) {
+  const {encoding = 'utf-8'} = parserOptions;
+  const result: ParsedResult = {};
+  const writer = new Writable({
+    objectMode: true,
+    write(item: ParsedItem, _enc, cb) {
+      for (const [key, value] of Object.entries(item)) {
+        let finalValue: ParsedValue = value;
+        if (Buffer.isBuffer(value)) {
+          finalValue = value.toString(encoding);
+        }
+        if (Object.prototype.hasOwnProperty.call(result, key) && !Array.isArray(result[key])) {
+          result[key] = [result[key] as ParsedValue];
+        }
+        if (Array.isArray(result[key])) {
+          (result[key] as Array<ParsedValue>).push(finalValue);
+        } else {
+          result[key] = finalValue;
+        }
+      }
+      cb && cb();
+    },
+    final(cb) {
+      cb && cb();
+    },
+  });
+  const waitCacheData = new Promise<ParsedResult>((res, rej) => {
+    writer.on('finish', () => {
+      res(result);
+    });
+    writer.on('error', err => {
+      rej(err);
+    });
+  });
+  return {writer, waitCacheData};
 }
