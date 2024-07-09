@@ -3,11 +3,12 @@ import {ParserOptions} from './types';
 export const defaultParseOptions: Required<ParserOptions> = {
   // maxPayloadSizeinKb?: number;
   // maxFileSizeinKb?: number;
-  // uploadDir: '',
+  uploadDir: '',
   encoding: 'utf-8',
   wayOfHandleFile: 'save',
   hashAlgorithm: 'sha1',
-  hashEncoding: 'base64url',
+  // hashEncoding: 'base64url',
+  hashEncoding: 'hex',
 };
 
 /**
