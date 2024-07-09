@@ -1,3 +1,14 @@
+import {ParserOptions} from './types';
+
+export const defaultParseOptions: Partial<ParserOptions> = {
+  // maxPayloadSizeinKb?: number;
+  // maxFileSizeinKb?: number;
+  encoding: 'utf-8',
+  wayOfHandleFile: 'save',
+  hashAlgorithm: 'sha1',
+  hashEncoding: 'base64url',
+};
+
 /**
  * NOTICE:
  * Should take care of special character for filename, such as /

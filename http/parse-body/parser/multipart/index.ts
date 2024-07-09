@@ -5,7 +5,7 @@ import FormidableError, {internalCode} from '../../service/error';
 import {Hash, createHash} from 'crypto';
 import {toBuffer} from '../../service/external';
 import path from 'path';
-import {getFileName} from '../../service/utils';
+import {defaultParseOptions, getFileName} from '../../service/utils';
 import {
   FileInfo,
   FileValue,
@@ -25,7 +25,7 @@ interface Meta {
 
 type FileRelatedParserOptions = Pick<
   ParserOptions,
-  'encoding' | 'uploadDir' | 'wayOfHandleFile' | 'hashAlgorithm' | 'hashEncoding'
+  'uploadDir' | 'wayOfHandleFile' | 'hashAlgorithm' | 'hashEncoding'
 >;
 
 class Part {
@@ -35,14 +35,11 @@ class Part {
   hash: Hash;
   buffer: Buffer = Buffer.alloc(0);
   constructor(options: FileRelatedParserOptions) {
-    const {
-      encoding = 'utf-8',
-      uploadDir,
-      wayOfHandleFile = 'save',
-      hashAlgorithm = 'sha1',
-      hashEncoding = 'base64',
-    } = options;
-    this.options = {encoding, uploadDir, wayOfHandleFile, hashAlgorithm, hashEncoding};
+    const {uploadDir, wayOfHandleFile, hashAlgorithm, hashEncoding} = {
+      ...defaultParseOptions,
+      ...options,
+    };
+    this.options = {uploadDir, wayOfHandleFile, hashAlgorithm, hashEncoding};
     this.meta = {};
     this.file = {};
     this.updateMeta('contentTransferEncoding', 'utf-8');

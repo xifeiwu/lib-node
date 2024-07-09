@@ -7,6 +7,7 @@ import {ParsedItem, ParsedResult, ParsedValue, ParserOptions} from './service/ty
 import {getRequestHeaderInfo} from '../common';
 import {getMultpartParser} from './parser';
 import {getJsonParser} from './parser/json';
+import path from 'path';
 
 export function getCacheWriter(parserOptions: ParserOptions) {
   const {encoding = 'utf-8'} = parserOptions;
@@ -47,14 +48,14 @@ export function getCacheWriter(parserOptions: ParserOptions) {
 
 export async function parseBody(request: IncomingMessage, parserOptions: ParserOptions) {
   parserOptions = {
-    encoding: 'utf-8',
-    wayOfHandleFile: 'save',
-    hashAlgorithm: 'sha1',
-    hashEncoding: 'base64',
     ...parserOptions,
   };
   const {uploadDir} = parserOptions;
-  if (!uploadDir || !fs.existsSync(uploadDir)) {
+  if (!uploadDir) {
+    throw new Error(`Params of uploadDir is must to have`);
+  }
+  /** Only create one level deep dir */
+  if (!fs.existsSync(uploadDir) && path.dirname(uploadDir)) {
     fs.mkdirSync(uploadDir);
   }
   const {headers: reqHeaders} = getRequestHeaderInfo(request);
