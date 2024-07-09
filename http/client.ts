@@ -2,7 +2,7 @@ import http from 'http';
 import https from 'https';
 import {toBuffer} from '../transform';
 import {Socket} from 'net';
-import {getResponseInfo} from './common';
+import {getMimeTypeByData, getResponseInfo} from './common';
 import {toUrlInstance, getUrlPropsFromConfig, deepMerge, urlPropsToHref, isObject} from '../external';
 import {HttpRequestOptions, HttpResponseProps, HttpRequestPayload, ValidateStatus} from '../types';
 import {Readable, isReadable} from 'stream';
@@ -28,11 +28,14 @@ export function sendHttpRequest<Payload extends HttpRequestPayload = any>(
   options: HttpRequestOptions<Payload>
 ) {
   const {urlProps, restProps} = getUrlPropsFromConfig(options);
-  const {data, ...requestOptions} = restProps;
+  const {data, headers = {}, ...requestOptions} = restProps;
   // requestOptions.headers['connection'] = 'keep-alive';
+  if (data !== undefined && headers['content-type'] === undefined) {
+    headers['content-type'] = getMimeTypeByData(data);
+  }
   let clientRequest: http.ClientRequest | null = null;
   const {protocol, href} = toUrlInstance(urlProps);
-  clientRequest = (protocol === 'https:' ? https : http).request(href, requestOptions);
+  clientRequest = (protocol === 'https:' ? https : http).request(href, {...requestOptions, headers});
   if (isReadable(data as Readable)) {
     (data as Readable).pipe(clientRequest);
   } else {
