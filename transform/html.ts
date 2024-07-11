@@ -1,32 +1,34 @@
 import fs from 'fs';
 import path from 'path';
 import {Readable} from 'stream';
+import {DirRecursiveOptions, getFileInfoTree, getFileList} from '../fs';
 
 // return file list in the form of <ul><li></li></ul>
-export function getFileListInFormOfUl(dir: string, filter?: (fileName: string) => boolean) {
-  filter = filter ? filter : () => true;
+export function listFileByUl(dir: string, options?: DirRecursiveOptions) {
+  options = {
+    maxDepth: 1,
+    ...(options ?? {}),
+  };
   try {
     const stat = fs.statSync(dir);
     if (!stat.isDirectory()) {
       throw new Error('not a directory');
     }
-    const fileList = fs.readdirSync(dir);
-    const liList = Array.prototype.slice
-      .call(fileList)
-      .filter(filter)
-      .map(it => {
-        let item = '';
-        const statInfo = fs.statSync(path.resolve(dir, it));
-        if (statInfo.isDirectory()) {
-          item = `<li><a href="${it}/">${it}/</a></li>`;
-        } else if (statInfo.isFile()) {
-          item = `<li><a href="${it}">${it}</a></li>`;
-        } else {
-          item = `<li style="color: red"><a href="${it}">${it}</a></li>`;
-        }
-        return item;
-      });
-    const ul = ['<ul>', ...liList, '</ul>'].join('');
+    const {children} = getFileInfoTree(dir, options);
+    const liList = children.map(it => {
+      const {relativePath} = it;
+      let item = '';
+      const statInfo = fs.statSync(path.resolve(dir, relativePath));
+      if (statInfo.isDirectory()) {
+        item = `<li><a href="${relativePath}/">${relativePath}/</a></li>`;
+      } else if (statInfo.isFile()) {
+        item = `<li><a href="${relativePath}">${relativePath}</a></li>`;
+      } else {
+        item = `<li style="color: red"><a href="${relativePath}">${relativePath}</a></li>`;
+      }
+      return item;
+    });
+    const ul = ['<ul>', ...liList, '</ul>'].join('\n');
     return ul;
   } catch (err) {
     console.error(`getFileListInFormOfUl fail`);
@@ -34,8 +36,8 @@ export function getFileListInFormOfUl(dir: string, filter?: (fileName: string) =
   }
 }
 
-export function getDirContentInFormOfHtml(dir: string, filter?: (fileName: string) => boolean) {
-  const ulStr = getFileListInFormOfUl(dir, filter);
+export function showDirContentByHtml(dir: string, options?: DirRecursiveOptions) {
+  const ulStr = listFileByUl(dir, options);
   return `<html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
@@ -68,7 +70,7 @@ export async function getFileContentInFormOfStream(targetFile: string) {
 
   const statInfo = fs.statSync(targetFile);
   if (statInfo.isDirectory()) {
-    const body = getDirContentInFormOfHtml(targetFile);
+    const body = showDirContentByHtml(targetFile);
     return new Readable({
       read() {
         this.push(body);

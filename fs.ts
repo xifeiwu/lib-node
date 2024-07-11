@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import childProcess from 'child_process';
 import {selectOption} from './common';
+import {isNumber} from './external';
 
 const HOME_PATH = process.env.HOME;
 
@@ -55,6 +56,8 @@ export type FileFilter = (pathInfo: PathInfo) => boolean;
 export interface DirRecursiveOptions {
   dirFilter?: FileFilter;
   fileFilter?: FileFilter;
+  /** max depth for dir. root dir is level 0 */
+  maxDepth?: number;
 }
 /**
  * @returns relative path list to root
@@ -75,10 +78,17 @@ export function readDirRecursive<T = any>(
   // const relativePath = path.join(pathInfo.prefix, pathInfo.baseName);
   // pathInfo.relativePath = relativePath;
   const {relativePath, depth} = pathInfo;
-  const {dirFilter = () => true, fileFilter = () => true} = options ? options : {};
+  const {
+    dirFilter = () => true,
+    fileFilter = () => true,
+    maxDepth,
+  } = (options ? options : {}) as DirRecursiveOptions;
+  if (isNumber(maxDepth) && depth > maxDepth) {
+    return;
+  }
   const fullpath = path.join(root, relativePath);
   if (!fs.existsSync(fullpath)) {
-    return cb(new Error(`Not exist: ${fullpath}`), {pathInfo});
+    return cb(new Error(`File not exist: ${fullpath}`), {pathInfo});
   }
   if (fs.statSync(fullpath).isDirectory()) {
     if (dirFilter(pathInfo)) {
@@ -110,10 +120,7 @@ export interface FileInfoTreeItem {
 }
 export function getFileInfoTree(
   root: string,
-  options?: {
-    dirFilter?: FileFilter;
-    fileFilter?: FileFilter;
-  }
+  options?: DirRecursiveOptions
 ): FileInfoTreeItem {
   const {dirFilter, fileFilter} = options ?? {};
   const filterMode = Boolean(dirFilter || fileFilter);

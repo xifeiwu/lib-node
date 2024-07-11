@@ -19,9 +19,14 @@ export async function parseBody(request: IncomingMessage, parserOptions: ParserO
   if (!uploadDir) {
     throw new Error(`Params of uploadDir is must to have`);
   }
-  /** Only create one level deep dir */
-  if (!fs.existsSync(uploadDir) && path.dirname(uploadDir)) {
-    fs.mkdirSync(uploadDir);
+  /** Only create one level deeper dir */
+  if (!fs.existsSync(uploadDir)) {
+    const parentDir = path.dirname(uploadDir);
+    if (fs.existsSync(parentDir)) {
+      fs.mkdirSync(uploadDir);
+    } else {
+      throw new Error(`Path(and it's parent path) not exist: ${uploadDir}`);
+    }
   }
   const {headers: reqHeaders} = getRequestHeaderInfo(request);
   let parserTransforms: Transform[];
@@ -39,4 +44,8 @@ export async function parseBody(request: IncomingMessage, parserOptions: ParserO
   await pipeline([request, ...parserTransforms, writer]);
   const cacheData = await waitCacheData;
   return cacheData;
+}
+
+export {
+  ParserOptions
 }
