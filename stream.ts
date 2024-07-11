@@ -1,7 +1,8 @@
 import stream, {Transform, Readable, Writable} from 'stream';
-import {isString, isObject, waitFor} from './external';
+import {waitFor} from './external';
 import {DataTypeFromBuffer, TargetDataTypeFromBuffer, fromBuffer, toBuffer} from './transform';
 import {getBufferMatcher} from './common';
+import {CanConvertToBuffer} from './types';
 
 export function getDataFromReadable(reader: Readable): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -50,20 +51,11 @@ export function getCacheWriter() {
  * @param {data}, null stands for end the reader immediately
  * TODO: use toBuffer
  */
-export function toReadable(data: Buffer | string | object | null) {
-  if (Buffer.isBuffer(data)) {
-    data = data.toString();
-  }
-  if (isObject(data)) {
-    data = JSON.stringify(data);
-  }
-  if (!isString(data)) {
-    console.log(`warning: data should be string or buffer`);
-  }
+export function toReadable(data: CanConvertToBuffer) {
   return new stream.Readable({
     read() {
       if (data !== null) {
-        this.push(data);
+        this.push(toBuffer(data));
       }
       this.push(null);
     },
