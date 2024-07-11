@@ -101,6 +101,7 @@ export const getOctetParser: GetParserFunc = (
     throw new Error(`both content-type and x-file-name should be set for octet-stream request`);
   }
   const part = new Part(parseOptions);
+  /** pass contentType to make sure type of Part is file */
   part.updateMeta({
     filename: filename as string,
     contentType,

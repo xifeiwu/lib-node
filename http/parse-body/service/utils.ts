@@ -4,7 +4,7 @@ import {ParsedItem, ParsedResult, ParsedValue, ParserOptions} from './types';
 export const defaultParseOptions: Required<ParserOptions> = {
   // maxPayloadSizeinKb?: number;
   // maxFileSizeinKb?: number;
-  uploadDir: '',
+  uploadDir: undefined,
   encoding: 'utf-8',
   wayOfHandleFile: 'save',
   hashAlgorithm: 'sha1',

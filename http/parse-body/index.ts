@@ -16,16 +16,19 @@ export async function parseBody(request: IncomingMessage, parserOptions: ParserO
     ...parserOptions,
   };
   const {uploadDir} = mregedParserOptions;
-  if (!uploadDir) {
-    throw new Error(`Params of uploadDir is must to have`);
-  }
-  /** Only create one level deeper dir */
-  if (!fs.existsSync(uploadDir)) {
-    const parentDir = path.dirname(uploadDir);
-    if (fs.existsSync(parentDir)) {
-      fs.mkdirSync(uploadDir);
-    } else {
-      throw new Error(`Path(and it's parent path) not exist: ${uploadDir}`);
+  /**
+   * uploadDir is optional
+   * but if uploadDir is set, it must exist or it's parent dir must exist, or will thown error
+   */
+  if (uploadDir) {
+    /** Only create one level deeper dir */
+    if (!fs.existsSync(uploadDir)) {
+      const parentDir = path.dirname(uploadDir);
+      if (fs.existsSync(parentDir)) {
+        fs.mkdirSync(uploadDir);
+      } else {
+        throw new Error(`Path(and it's parent path) not exist: ${uploadDir}`);
+      }
     }
   }
   const {headers: reqHeaders} = getRequestHeaderInfo(request);
@@ -46,6 +49,4 @@ export async function parseBody(request: IncomingMessage, parserOptions: ParserO
   return cacheData;
 }
 
-export {
-  ParserOptions
-}
+export {ParserOptions};

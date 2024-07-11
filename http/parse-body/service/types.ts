@@ -14,7 +14,7 @@ export interface ParserOptions {
   // maxPayloadSizeinKb?: number;
   // maxFileSizeinKb?: number;
   encoding?: BufferEncoding;
-  uploadDir: string;
+  uploadDir?: string;
   wayOfHandleFile?: WayOfHandleFile;
   hashAlgorithm?: string;
   hashEncoding?: BinaryToTextEncoding;

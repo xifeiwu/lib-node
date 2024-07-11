@@ -7,6 +7,7 @@ import {FileInfo, ParsedResult, ParserOptions} from '../service/types';
 interface Meta {
   name?: string;
   filename?: string;
+  /** if contentType is not undefine, the type is file, or is field */
   contentType?: string;
   contentTransferEncoding?: string;
 }
@@ -27,11 +28,12 @@ export class Part {
     this.options = {uploadDir, wayOfHandleFile, hashAlgorithm, hashEncoding};
     this.meta = {};
     this.file = {};
-    this.updateMeta({'contentTransferEncoding': 'utf-8'});
+    this.updateMeta({contentTransferEncoding: 'utf-8'});
   }
+  /** Not support save file when uploadDir not set */
   get needSaveFile() {
-    const {wayOfHandleFile} = this.options;
-    return wayOfHandleFile === 'save' || wayOfHandleFile === 'cacheAndSave';
+    const {uploadDir, wayOfHandleFile} = this.options;
+    return uploadDir && (wayOfHandleFile === 'save' || wayOfHandleFile === 'cacheAndSave');
   }
   get needCacheFile() {
     const {wayOfHandleFile} = this.options;
