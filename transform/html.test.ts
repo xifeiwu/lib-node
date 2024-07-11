@@ -1,6 +1,6 @@
-import {showDirContentByHtml} from './html';
+import {htmlDirContent} from './html';
 
-export function testShowDirContentByHtml() {
-  const content = showDirContentByHtml(__dirname, {maxDepth: 1});
+export function testHtmlDirContent() {
+  const content = htmlDirContent(__dirname, {maxDepth: 1});
   console.log(content);
 }

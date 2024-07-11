@@ -5,7 +5,7 @@ import {DirRecursiveOptions, getFileInfoTree} from '../fs';
 import {filesize} from '../external';
 
 // return file list in the form of <ul><li></li></ul>
-export function listFileByUl(dir: string, options?: DirRecursiveOptions) {
+export function htmlFileList(dir: string, options?: DirRecursiveOptions) {
   options = {
     maxDepth: 1,
     ...(options ?? {}),
@@ -41,8 +41,8 @@ export function listFileByUl(dir: string, options?: DirRecursiveOptions) {
   }
 }
 
-export function showDirContentByHtml(dir: string, options?: DirRecursiveOptions) {
-  const ulStr = listFileByUl(dir, options);
+export function htmlDirContent(dir: string, options?: DirRecursiveOptions) {
+  const ulStr = htmlFileList(dir, options);
   return `<html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
@@ -75,7 +75,7 @@ export async function getFileContentInFormOfStream(targetFile: string) {
 
   const statInfo = fs.statSync(targetFile);
   if (statInfo.isDirectory()) {
-    const body = showDirContentByHtml(targetFile);
+    const body = htmlDirContent(targetFile);
     return new Readable({
       read() {
         this.push(body);
