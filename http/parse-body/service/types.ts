@@ -20,7 +20,7 @@ export interface ParserOptions {
   hashEncoding?: BinaryToTextEncoding;
 }
 
-export interface FileInfo {
+export interface ParsedFileInfo {
   name?: string;
   byteLength?: number;
   wayOfHandleFile?: ParserOptions['wayOfHandleFile'];
@@ -30,7 +30,7 @@ export interface FileInfo {
   value?: Buffer;
 }
 
-export type ParsedValue = Buffer | string | FileInfo;
+export type ParsedValue = Buffer | string | ParsedFileInfo;
 /**
  * For Content-Type
  * json, ParsedValue is string, or object,

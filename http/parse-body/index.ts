@@ -50,3 +50,4 @@ export async function parseBody(request: IncomingMessage, parserOptions: ParserO
 }
 
 export {ParserOptions};
+export * from './service/types';

@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import {Hash, createHash} from 'crypto';
 import {toBuffer} from '../service/external';
-import {FileInfo, ParsedResult, ParserOptions} from '../service/types';
+import {ParsedFileInfo, ParsedResult, ParserOptions} from '../service/types';
 
 interface Meta {
   name?: string;
@@ -20,7 +20,7 @@ type FileRelatedParserOptions = Pick<
 export class Part {
   options: Required<FileRelatedParserOptions>;
   meta: Meta;
-  file: FileInfo;
+  file: ParsedFileInfo;
   hash: Hash;
   buffer: Buffer = Buffer.alloc(0);
   constructor(options: FileRelatedParserOptions) {
@@ -54,7 +54,7 @@ export class Part {
   getMetaValue(key: keyof Meta) {
     return this.meta[key];
   }
-  updateFileInfo(info: FileInfo) {
+  updateFileInfo(info: ParsedFileInfo) {
     for (const [key, value] of Object.entries(info)) {
       this.file[key] = value;
     }
