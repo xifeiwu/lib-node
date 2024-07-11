@@ -42,6 +42,10 @@ export function htmlFileList(dir: string, options?: DirRecursiveOptions) {
 }
 
 export function htmlDirContent(dir: string, options?: DirRecursiveOptions) {
+  options = {
+    maxDepth: 1,
+    ...(options ?? {}),
+  };
   const ulStr = htmlFileList(dir, options);
   return `<html>
   <head>
