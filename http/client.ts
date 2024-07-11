@@ -32,9 +32,15 @@ export function sendHttpRequest<Payload extends HttpRequestPayload = any>(
   // requestOptions.headers['connection'] = 'keep-alive';
   if (data !== undefined) {
     const headerKeys = Object.keys(headers).map(it => it.toLowerCase());
-    /** 'content-type' passed have higher priority */
-    if (!headerKeys.includes('content-type')) {
-      headers['content-type'] = getContentTypeByData(data);
+    if (isReadable(data as Readable)) {
+      if (!headerKeys.includes('transfer-encoding')) {
+        headers['Transfer-Encoding'] = 'chunked';
+      }
+    } else {
+      /** 'content-type' passed have higher priority */
+      if (!headerKeys.includes('content-type')) {
+        headers['content-type'] = getContentTypeByData(data);
+      }
     }
   }
   let clientRequest: http.ClientRequest | null = null;
