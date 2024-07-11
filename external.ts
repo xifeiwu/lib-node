@@ -27,4 +27,5 @@ export {
   matchFilters,
   toUrlProps,
   concatOriginWithPathname,
+  filesize,
 } from '../fe/common';

@@ -50,7 +50,7 @@ export function getCacheWriter() {
  * @param {data}, null stands for end the reader immediately
  * TODO: use toBuffer
  */
-export function toStream(data: Buffer | string | object | null) {
+export function toReadable(data: Buffer | string | object | null) {
   if (Buffer.isBuffer(data)) {
     data = data.toString();
   }

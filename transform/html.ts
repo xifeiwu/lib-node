@@ -1,7 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import {Readable} from 'stream';
-import {DirRecursiveOptions, getFileInfoTree, getFileList} from '../fs';
+import {DirRecursiveOptions, getFileInfoTree} from '../fs';
+import {filesize} from '../external';
 
 // return file list in the form of <ul><li></li></ul>
 export function listFileByUl(dir: string, options?: DirRecursiveOptions) {
@@ -16,15 +17,19 @@ export function listFileByUl(dir: string, options?: DirRecursiveOptions) {
     }
     const {children} = getFileInfoTree(dir, options);
     const liList = children.map(it => {
-      const {relativePath} = it;
+      const {
+        relativePath,
+        stat: {size},
+      } = it;
       let item = '';
+      const content = `${relativePath} [${filesize(size)}]`;
       const statInfo = fs.statSync(path.resolve(dir, relativePath));
       if (statInfo.isDirectory()) {
-        item = `<li><a href="${relativePath}/">${relativePath}/</a></li>`;
+        item = `<li><a href="${relativePath}/">${content}/</a></li>`;
       } else if (statInfo.isFile()) {
-        item = `<li><a href="${relativePath}">${relativePath}</a></li>`;
+        item = `<li><a href="${relativePath}">${content}</a></li>`;
       } else {
-        item = `<li style="color: red"><a href="${relativePath}">${relativePath}</a></li>`;
+        item = `<li style="color: red"><a href="${relativePath}">${content}</a></li>`;
       }
       return item;
     });

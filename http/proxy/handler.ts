@@ -3,7 +3,7 @@ import http, {IncomingMessage, ServerResponse} from 'http';
 import {getRequestHeaderInfo, getResponseHeaderInfo} from '../common';
 import {toUrlInstance, deepClone, deepMerge, getUrlPropsFromConfig} from '../../external';
 import {HttpProxyConfig, ProxyStatus} from './types';
-import {toStream, getDataByTransform} from '../../stream';
+import {toReadable, getDataByTransform} from '../../stream';
 import {toBuffer} from '../../transform';
 import {
   httpRequestOptionsToCurlCommand,
@@ -73,7 +73,7 @@ export async function proxyRequest(req: IncomingMessage, res: ServerResponse, co
   const {protocol, href} = toUrlInstance(urlProps);
   const proxyReq = (protocol === 'https:' ? https : http).request(href, requestOptions);
 
-  (originData ? toStream(originData) : req)
+  (originData ? toReadable(originData) : req)
     .pipe(
       getDataByTransform(
         data => {

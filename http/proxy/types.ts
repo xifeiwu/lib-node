@@ -1,5 +1,5 @@
 import {RequestOptions, IncomingMessage} from 'http';
-import {toStream} from '../../stream';
+import {toReadable} from '../../stream';
 import {TcpHttpRequestProps, HttpResponseProps, HttpRequestOptions} from '../../types';
 
 export interface HttpProxyConfig {
@@ -13,7 +13,7 @@ export interface HttpProxyConfig {
    * Use customized data other than request stream, use case:
    * 1. Program already got all original data to decide how to handle some logic, the req stream is alreay ended.
    */
-  originData?: Parameters<typeof toStream>[0];
+  originData?: Parameters<typeof toReadable>[0];
   /** Default options for http.request of proxy */
   defaultRequestOptions?: Pick<RequestOptions, 'auth'>;
   /** Handle info of proxy request before request in sent */
