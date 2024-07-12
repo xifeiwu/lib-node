@@ -8,7 +8,7 @@ import {httpFirstLineReg} from '../constants';
 import {ColorStyle, HttpFirstLineProps} from '../types';
 import {logColorful} from '../log';
 
-export function getLocalIP() {
+export function getLocalIpAddress() {
   let localIP = null;
   const ifaces = os.networkInterfaces();
   const keys = ['en0', 'en1', 'en2', 'en3', 'en4', 'en5', 'em0', 'em1', 'em2', 'em3', 'em4', 'em5', 'eth0'];
