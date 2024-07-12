@@ -10,10 +10,10 @@ import {getJsonParser} from './parser/json';
 import {defaultParseOptions, getCacheWriter} from './service/utils';
 import {getOctetParser} from './parser/octet-stream';
 
-export async function parseBody(request: IncomingMessage, parserOptions: ParserOptions) {
+export async function parseBody(request: IncomingMessage, parserOptions?: ParserOptions) {
   const mregedParserOptions: Required<ParserOptions> = {
     ...defaultParseOptions,
-    ...parserOptions,
+    ...(parserOptions ?? {}),
   };
   const {uploadDir} = mregedParserOptions;
   /**
