@@ -84,7 +84,7 @@ export function readDirRecursive<T = any>(
     maxDepth,
   } = (options ? options : {}) as DirRecursiveOptions;
   if (isNumber(maxDepth) && depth > maxDepth) {
-    return;
+    return null;
   }
   const fullpath = path.join(root, relativePath);
   if (!fs.existsSync(fullpath)) {
@@ -102,7 +102,7 @@ export function readDirRecursive<T = any>(
           });
           return child;
         })
-        .filter(it => it !== null);
+        .filter(it => it !== null && it !== undefined);
       return cb(null, {pathInfo, children});
     }
   } else {
@@ -118,10 +118,7 @@ export interface FileInfoTreeItem {
   stat: fs.Stats;
   children?: FileInfoTreeItem[];
 }
-export function getFileInfoTree(
-  root: string,
-  options?: DirRecursiveOptions
-): FileInfoTreeItem {
+export function getFileInfoTree(root: string, options?: DirRecursiveOptions): FileInfoTreeItem {
   const {dirFilter, fileFilter} = options ?? {};
   const filterMode = Boolean(dirFilter || fileFilter);
   return readDirRecursive<FileInfoTreeItem>(
