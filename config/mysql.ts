@@ -1,15 +1,6 @@
 import {goOnOrNot, selectOption} from '../common';
 import {logColorful} from '../log';
-
-/** Simplified version of import {Options} from 'sequelize'; */
-interface DBConfig {
-  host: string;
-  port: number;
-  dialect: 'mysql';
-  username: string;
-  password: string;
-  database: string;
-}
+import {MysqlConfig} from '../types';
 
 /**
  * Just easy-to-use type
@@ -20,20 +11,20 @@ interface GeneralConfig {
   local: {
     root: 'mysql';
     project: 'assist';
-    newbie: 'db_feature' | 'employees' | 'employees2';
+    newbie: 'explore' | 'employees' | 'employees2';
     portaldb: 'portaldb_penguin';
   };
   elif: {
     root: 'mysql';
     project: 'assist';
-    newbie: 'db_feature' | 'employees2';
+    newbie: 'explore' | 'employees2';
   };
 }
 
 export type Site = keyof GeneralConfig;
 
 const SITE_INFO: {
-  [site in Site]: Pick<DBConfig, 'host' | 'port' | 'dialect'>;
+  [site in Site]: Pick<MysqlConfig, 'host' | 'port' | 'dialect'>;
 } = {
   local: {
     host: '127.0.0.1',
@@ -82,7 +73,7 @@ const DB_INFO: DBInfo = {
     },
     newbie: {
       password: 'test',
-      databaseList: ['db_feature', 'employees', 'employees2'],
+      databaseList: ['explore', 'employees', 'employees2'],
     },
     project: {
       password: 'Elifxifei2023_',
@@ -100,7 +91,7 @@ const DB_INFO: DBInfo = {
     },
     newbie: {
       password: 'Elif-test_0',
-      databaseList: ['db_feature', 'employees2'],
+      databaseList: ['explore', 'employees2'],
     },
     project: {
       password: 'Elifxifei2023_',
@@ -109,10 +100,14 @@ const DB_INFO: DBInfo = {
   },
 };
 
-export async function getDbConfig<
+export async function selectDbConfig<
   Site extends keyof GeneralConfig,
   UserName extends keyof GeneralConfig[Site]
->(options?: {site?: Site; username?: UserName; database?: GeneralConfig[Site][UserName]}): Promise<DBConfig> {
+>(options?: {
+  site?: Site;
+  username?: UserName;
+  database?: GeneralConfig[Site][UserName];
+}): Promise<MysqlConfig> {
   let {site, username, database} = options ?? {};
   const haveUndefinedValue = [site, username, database].some(it => it === undefined);
   if (site === undefined) {
@@ -177,9 +172,29 @@ export async function getDbConfig<
   };
 }
 
+export function getDbConfig<
+  Site extends keyof GeneralConfig,
+  UserName extends keyof GeneralConfig[Site]
+>(options: {site: Site; username: UserName; database: GeneralConfig[Site][UserName]}): MysqlConfig {
+  let {site, username, database} = options;
+  const siteConfig = SITE_INFO[site];
+  // @ts-ignore
+  const {password, databaseList} = DB_INFO[site][username] as UserConfig<any, any>;
+  if (!databaseList.includes(database)) {
+    throw new Error(`databse ${database} not belongs to ${username as string}`);
+  }
+  return {
+    ...siteConfig,
+    username: username as string,
+    password,
+    // @ts-ignore
+    database: database as string,
+  };
+}
+
 /** List all dbConfig belongs to one site */
 export function getDbConfigBySite(site: Site) {
-  const result: DBConfig[] = [];
+  const result: MysqlConfig[] = [];
   const siteConfig = DB_INFO[site];
   const siteInfo = SITE_INFO[site];
   for (const [username, useConfig] of Object.entries(siteConfig)) {
@@ -196,8 +211,8 @@ export function getDbConfigBySite(site: Site) {
   return result;
 }
 
-export function allDbConfig(): Array<DBConfig> {
-  const result: DBConfig[] = [];
+export function allDbConfig(): Array<MysqlConfig> {
+  const result: MysqlConfig[] = [];
   for (const [site, siteConfig] of Object.entries(DB_INFO)) {
     result.push(...getDbConfigBySite(site as Site));
   }
