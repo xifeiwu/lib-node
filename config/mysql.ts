@@ -11,13 +11,13 @@ interface GeneralConfig {
   local: {
     root: 'mysql';
     project: 'assist';
-    newbie: 'explore' | 'employees' | 'employees2';
+    explorer: 'explore' | 'employees' | 'employees2';
     portaldb: 'portaldb_penguin';
   };
   elif: {
     root: 'mysql';
     project: 'assist';
-    newbie: 'explore' | 'employees2';
+    explorer: 'explore' | 'employees2';
   };
 }
 
@@ -44,13 +44,13 @@ interface UserConfig<Site extends keyof GeneralConfig, UserName extends keyof Ge
 }
 interface DBInfo {
   local: {
-    newbie: UserConfig<'local', 'newbie'>;
+    explorer: UserConfig<'local', 'explorer'>;
     portaldb: UserConfig<'local', 'portaldb'>;
     project: UserConfig<'local', 'project'>;
     root: UserConfig<'local', 'root'>;
   };
   elif: {
-    newbie: UserConfig<'elif', 'newbie'>;
+    explorer: UserConfig<'elif', 'explorer'>;
     project: UserConfig<'elif', 'project'>;
     root: UserConfig<'elif', 'root'>;
   };
@@ -71,7 +71,7 @@ const DB_INFO: DBInfo = {
       password: 'local__mysql',
       databaseList: ['mysql'],
     },
-    newbie: {
+    explorer: {
       password: 'test',
       databaseList: ['explore', 'employees', 'employees2'],
     },
@@ -89,7 +89,7 @@ const DB_INFO: DBInfo = {
       password: 'Wuxifei2023_',
       databaseList: ['mysql'],
     },
-    newbie: {
+    explorer: {
       password: 'Elif-test_0',
       databaseList: ['explore', 'employees2'],
     },
