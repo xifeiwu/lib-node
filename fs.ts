@@ -54,7 +54,9 @@ interface PathInfo {
  */
 export type FileFilter = (pathInfo: PathInfo) => boolean;
 export interface DirRecursiveOptions {
+  /** Whether Go through/Ignore this dir or not */
   dirFilter?: FileFilter;
+  /** Whether Ignore this dir or not */
   fileFilter?: FileFilter;
   /** max depth for dir. root dir is level 0 */
   maxDepth?: number;
@@ -83,7 +85,8 @@ export function readDirRecursive<T = any>(
     fileFilter = () => true,
     maxDepth,
   } = (options ? options : {}) as DirRecursiveOptions;
-  if (isNumber(maxDepth) && depth > maxDepth) {
+  const largerThanMaxDepth = (d: number) => isNumber(maxDepth) && d > maxDepth;
+  if (largerThanMaxDepth(depth)) {
     return null;
   }
   const fullpath = path.join(root, relativePath);
@@ -92,13 +95,17 @@ export function readDirRecursive<T = any>(
   }
   if (fs.statSync(fullpath).isDirectory()) {
     if (dirFilter(pathInfo)) {
-      const children = fs
-        .readdirSync(fullpath)
+      const fileListOfCurDir = fs.readdirSync(fullpath);
+      const children = fileListOfCurDir
         .map(baseName => {
+          const nextDepth = depth + 1;
+          // if (largerThanMaxDepth(depth + 1)) {
+          //   return null;
+          // }
           const child = readDirRecursive(root, cb, options, {
             baseName,
             relativePath: path.join(relativePath, baseName),
-            depth: depth + 1,
+            depth: nextDepth,
           });
           return child;
         })
@@ -279,6 +286,7 @@ export function getLineCountMap(
 
 export interface GetFileListOption extends DirRecursiveOptions {
   includeDir?: boolean;
+  relativePathFilter?: (relativePath: string) => boolean;
 }
 /**
  * @param root
@@ -286,7 +294,7 @@ export interface GetFileListOption extends DirRecursiveOptions {
  * @returns
  */
 export function getFileList(root: string, options?: GetFileListOption) {
-  const {includeDir = false, ...optionsOfReadDirRecursive} = options ?? {};
+  const {includeDir = false, relativePathFilter = () => true, ...optionsOfReadDirRecursive} = options ?? {};
   const fileList: string[] = [];
   readDirRecursive(
     root,
@@ -301,7 +309,7 @@ export function getFileList(root: string, options?: GetFileListOption) {
     },
     optionsOfReadDirRecursive
   );
-  return fileList;
+  return fileList.filter(relativePathFilter);
 }
 
 export function getMultipleDirFileList(
