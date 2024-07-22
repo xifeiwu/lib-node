@@ -2,7 +2,7 @@ import {isNumber, isPlainObject, isString} from '../external';
 import {CanConvertToBuffer} from '../types';
 
 /**
- * If value of number is not in format of array, it will be treated as String.
+ * Should take care of number: toBuffer(1) is totally different from toBuffer('1')
  */
 export function toBuffer(data: CanConvertToBuffer | Array<CanConvertToBuffer>): Buffer {
   if (Array.isArray(data)) {
@@ -18,7 +18,7 @@ export function toBuffer(data: CanConvertToBuffer | Array<CanConvertToBuffer>): 
   } else if (isString(data)) {
     buffer = Buffer.from(data as string);
   } else if (isNumber(data)) {
-    buffer = Buffer.from(String(data));
+    buffer = Buffer.from([data as number]);
   } else if (Buffer.isBuffer(data)) {
     buffer = data;
   } else if (ArrayBuffer.isView(data)) {
