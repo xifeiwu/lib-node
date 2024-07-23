@@ -9,7 +9,7 @@ import {
 import {toBuffer} from '../../transform';
 import {getUrlPropsFromConfig, toUrlInstance, urlPropsToHref, concatOriginWithPathname} from '../../external';
 import {startSocketClient} from '../utils';
-import {TcpNetConnectOpts} from 'net';
+import {Socket, TcpNetConnectOpts} from 'net';
 import {getDataFromReadable} from '../../stream';
 
 export function httpOptionsToTcpConfig(httpOption: HttpRequestOptions): {
@@ -68,16 +68,21 @@ export function tcpRequestPropsToBuffer(info: TcpRequestProps): Buffer {
 
 export async function sendHttpRequestByTcp(
   httpOption: HttpRequestOptions,
-  tcpOptions?: Partial<TcpNetConnectOpts>
+  tcpOptions?: Partial<TcpNetConnectOpts> | Socket
 ) {
   const {
     props: {method, url, headers, data},
     connectionOptions,
   } = httpOptionsToTcpConfig(httpOption);
-  const client = await startSocketClient({
-    ...tcpOptions,
-    ...connectionOptions,
-  });
+  let client: Socket;
+  if (tcpOptions instanceof Socket) {
+    client = tcpOptions;
+  } else {
+    client = await startSocketClient({
+      ...tcpOptions,
+      ...connectionOptions,
+    });
+  }
   if (isReadable(data as Readable)) {
     client.write(tcpRequestPropsToBuffer({method, url, headers, data}));
     (data as Readable)

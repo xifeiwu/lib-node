@@ -5,7 +5,7 @@ import childProcess from 'child_process';
 import net, {ServerOpts, Socket, TcpNetConnectOpts} from 'net';
 import {isString, isNumber, formatDate} from '../external';
 import {httpFirstLineReg} from '../constants';
-import {ColorStyle, HttpFirstLineProps} from '../types';
+import {ColorStyle, GetSocketOptions, HttpFirstLineProps} from '../types';
 import {logColorful} from '../log';
 
 export function getLocalIpAddress() {
@@ -194,6 +194,13 @@ export async function startSocketClient(options: TcpNetConnectOpts) {
       rej('timeout');
     });
   });
+}
+
+export async function getClientSocket(options: GetSocketOptions) {
+  if (options instanceof Socket) {
+    return options;
+  }
+  return await startSocketClient(options);
 }
 
 export async function startSocketServer(
