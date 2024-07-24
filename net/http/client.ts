@@ -11,7 +11,13 @@ import {getUrlPropsFromConfig, toUrlInstance, urlPropsToHref, concatOriginWithPa
 import {startSocketClient} from '../utils';
 import {Socket, TcpNetConnectOpts} from 'net';
 import {getDataFromReadable} from '../../stream';
+import {normalizeUrlProps} from '../../../fe/url';
 
+/**
+ * Convert HttpRequestOptions to
+ * @param httpOption
+ * @returns
+ */
 export function httpOptionsToTcpConfig(httpOption: HttpRequestOptions): {
   props: TcpHttpRequestProps;
   connectionOptions: Pick<TcpNetConnectOpts, 'host' | 'port'>;
@@ -20,7 +26,8 @@ export function httpOptionsToTcpConfig(httpOption: HttpRequestOptions): {
     urlProps,
     restProps: {method, headers, data},
   } = getUrlPropsFromConfig(httpOption);
-  const {origin, ...otherUrlProps} = urlProps;
+  /** normalize url: otherUrlProps contains tcp url part  */
+  const {origin, ...otherUrlProps} = normalizeUrlProps(urlProps);
   /** As otherUrlProps not contain origin, url should only contain pathname + query + hash */
   const url = urlPropsToHref(otherUrlProps);
   const {protocol, hostname, port} = toUrlInstance(concatOriginWithPathname(origin, url));
