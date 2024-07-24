@@ -23,6 +23,7 @@ export {
   toUrlInstance,
   urlPropsToHref,
   PORT,
+  isRegExp,
   FilterItem,
   matchFilters,
   toUrlProps,
