@@ -315,7 +315,10 @@ export function watchSocketState(socket: Socket, colorStyle?: ColorStyle) {
   const {color = 'black'} = colorStyle ?? {};
   const printState = () => {
     const {
-      localAddress, localPort, remoteAddress, remotePort
+      localAddress,
+      localPort,
+      remoteAddress,
+      remotePort,
       readable,
       readableFlowing,
       readyState,
