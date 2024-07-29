@@ -19,7 +19,7 @@ import {
 } from '../service/types';
 import {deepClone, deepEqual} from '../service/external';
 import {Socket, isIP} from 'net';
-import {connectToSocksServer} from './client';
+import {connectToSocksServer} from '../client';
 import {pipeline} from 'stream';
 import {serverState} from './service';
 
@@ -40,12 +40,11 @@ export async function handleConnection(
   }
 ) {
   const {methodList = [{method: EMethod.NoAuth}], proxyConfigList = []} = options ?? {};
-  const stateTracer: string[] = [serverState.initial];
+  const stateTracer: string[] = [serverState.waitingMethodList];
   const status: SocksStatusOnServerSide = {
     socket,
   };
   try {
-    stateTracer.push(serverState.waitingMethodList);
     const method = await serverWaitMethod(
       socket,
       methodList.map(it => it.method)

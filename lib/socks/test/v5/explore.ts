@@ -1,7 +1,8 @@
 import {startHttpDebugServer} from '../../../../http';
+import {connectToSocksServer} from '../../client';
 import {startSocketServer, tcpRequestPropsToBuffer} from '../../service/external';
 import {EMethod, MethodUserPass} from '../../service/types/v5';
-import {connectToSocksServer} from '../../v5/client';
+// import {connectToSocksServer} from '../../v5/client';
 import {handleConnection} from '../../v5/server';
 
 export async function generalProcess() {
@@ -10,6 +11,7 @@ export async function generalProcess() {
     handleConnection(socket, {methodList: [{method: EMethod.NoAuth}]});
   });
   const status = await connectToSocksServer({
+    socksVersion: 'v5',
     targetSocksServer: {host, port},
     targetServiceInfo: httpOrigin,
   });
@@ -42,6 +44,7 @@ export async function useAuthUserPass() {
     handleConnection(socket, {methodList: [methodUsePass]});
   });
   const status = await connectToSocksServer({
+    socksVersion: 'v5',
     methodList: [methodUsePass],
     targetSocksServer: {host, port},
     targetServiceInfo: httpOrigin,
@@ -87,6 +90,7 @@ export async function proxyRequestOnServerSide() {
   });
   {
     const status = await connectToSocksServer({
+      socksVersion: 'v5',
       targetSocksServer: {host: host1, port: port1},
       targetServiceInfo: {
         address: '0.0.0.0',
@@ -106,6 +110,7 @@ export async function proxyRequestOnServerSide() {
   }
   {
     const status = await connectToSocksServer({
+      socksVersion: 'v5',
       targetSocksServer: {host: host1, port: port1},
       targetServiceInfo: {
         address: '127.0.0.1',

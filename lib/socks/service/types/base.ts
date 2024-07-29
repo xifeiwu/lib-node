@@ -34,18 +34,13 @@ export enum ESocksState {
   finsih = 'finish',
 }
 
-export type SocksVersion = 5 | 6;
-/**
- * can be a socket config or http href
- */
-export type TargetSocket = TcpNetConnectOpts | string;
 
 export interface CommonSocksClientConfig {
-  // socksVersion: SocksVersion;
+  // socksVersion?: SocksVersion;
   /** get tcp connection by net.createConnection */
   // socketConfig?: TcpNetConnectOpts;
   /** get tcp connection by http upgrade */
-  targetSocksServer: TargetSocket;
+  // targetSocksServer: TargetSocket;
   // methodList: Array<MethodAuthInfo>;
   /**
    * can be a origin/href/url
@@ -53,7 +48,7 @@ export interface CommonSocksClientConfig {
   targetServiceInfo: TargetServiceInfo | string;
 }
 
-export interface SocksStatusOnClientSide {
+export interface SocksClientStatus {
   // method?: EMethod;
   stateTracer?: string[];
   // iv?: BinaryLike;
@@ -64,28 +59,12 @@ export interface SocksStatusOnClientSide {
 }
 
 /** connect status on server side */
-export interface SocksStatusOnServerSide extends SocksStatusOnClientSide {
+export interface SocksStatusOnServerSide extends SocksClientStatus {
   socket2Service?: Socket;
-  proxyAsClientStatus?: SocksStatusOnClientSide;
+  proxyAsClientStatus?: SocksClientStatus;
 }
 
-export interface MatchItem {
-  address: string;
-  port: number;
-}
-/** proxy to another socks server when address/port meets condition in matches list */
-export interface SocksProxyConfig {
-  matches: Array<MatchItem | string | RegExp>;
-  targetSocksServer: TargetSocket;
-}
 
-export interface CommonServerConfig {
-  methodList: Array<MethodAuthInfo>;
-  /** proxy to other socks server */
-  proxyAsSocketClientConfigList?: SocksProxyConfig[];
-  /** on fail duration socks conversation */
-  onConnection: (status: SocksStatusOnServerSide) => void;
-}
 
 // export interface SocketServerConfig extends CommonServerConfig {
 //   serverConfig?: {

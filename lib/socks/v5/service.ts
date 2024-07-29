@@ -1,12 +1,12 @@
 const commonState = {
-  initial: 'initial',
+  // initial: 'initial',
   finishedProcess: 'finish process',
   logicError: 'logic error',
   connectionError: 'connection error',
 };
 export const clientState = {
   ...commonState,
-  connectToSocksServer: 'start connect to socks server',
+  // connectToSocksServer: 'start connect to socks server',
   methodNegotiation: 'start method negotiation',
   finishMethodNegotiation: 'finish method negotiation',
   authUserPass: 'start auth username/password',
