@@ -45,7 +45,6 @@ export async function handleConnection(
     socket,
   };
   try {
-    // status.stateTracer = serverState.method_negotiation;
     stateTracer.push(serverState.waitingMethodList);
     const method = await serverWaitMethod(
       socket,
@@ -53,13 +52,11 @@ export async function handleConnection(
     );
     await serverReplyMethod(socket, method);
     stateTracer.push(`${serverState.replyMethod} ${method}`);
-    // status.method = method;
     if (method === EMethod.UserPass) {
       const methodInfo = methodList.find(it => it.method === method) as {
         method: EMethod.UserPass;
         info: UserPassInfo;
       };
-      // status.stateTracer = serverState.auth_username_password_start;
       stateTracer.push(serverState.waitingAuthUserPass);
       const userInfo = await serverWaitUserPass(socket);
       const authSuccess = deepEqual(
@@ -74,12 +71,10 @@ export async function handleConnection(
       }
       await serverReplyUserPassAuthResult(socket, authSuccess);
     }
-    // status.stateTracer = serverState.wait_targer_service_info;
     stateTracer.push(serverState.waitingTargetServiceInfo);
     const targetServiceInfo = await serverWaitTargetServiceInfo(socket);
     status.targetServiceInfo = targetServiceInfo;
     const proxyConfig = (proxyConfigList ?? []).find(getMatchedProxyConfig.bind(null, targetServiceInfo));
-    // status.stateTracer = serverState.connect_to_targer_service;
     stateTracer.push(serverState.connectToTargerService);
     let socket2Service: Socket;
     if (proxyConfig) {
@@ -95,7 +90,7 @@ export async function handleConnection(
         throw createError(ERRORS.proxyError, err?.message);
       }
     } else {
-      const replyServiceInfo = deepClone<TargetServiceInfo>(targetServiceInfo);
+      const repliedServiceInfo = deepClone<TargetServiceInfo>(targetServiceInfo);
       const isDomain = isIP(targetServiceInfo.address) === 0;
       if (isDomain) {
         try {
@@ -108,18 +103,18 @@ export async function handleConnection(
               }
             });
           });
-          replyServiceInfo.address = ip;
-          replyServiceInfo.addressType = getAddressType(ip);
+          repliedServiceInfo.address = ip;
+          repliedServiceInfo.addressType = getAddressType(ip);
         } catch (err) {
           await serverReplyTargetServiceInfo(socket, {
             reply: ETargetServiceConnectState.Host_unreachable,
-            ...replyServiceInfo,
+            ...repliedServiceInfo,
           });
           throw err;
         }
       }
 
-      status.repliedServiceInfo = replyServiceInfo;
+      status.repliedServiceInfo = repliedServiceInfo;
       try {
         socket2Service = await new Promise((res, rej) => {
           const socket = new Socket();
@@ -133,41 +128,37 @@ export async function handleConnection(
             rej(ETargetServiceConnectState.TTL_expired);
           });
           socket.connect({
-            host: replyServiceInfo.address,
-            port: replyServiceInfo.port,
+            host: repliedServiceInfo.address,
+            port: repliedServiceInfo.port,
           });
+        });
+        await serverReplyTargetServiceInfo(socket, {
+          reply: ETargetServiceConnectState.succeeded,
+          ...repliedServiceInfo,
         });
       } catch (err) {
         await serverReplyTargetServiceInfo(socket, {
           reply: err as ETargetServiceConnectState,
-          ...replyServiceInfo,
+          ...repliedServiceInfo,
         });
         throw err;
       }
-
-      // const ipType = ip2Bytes(socket.localAddress || '127.0.0.1');
-      await serverReplyTargetServiceInfo(socket, {
-        reply: ETargetServiceConnectState.succeeded,
-        ...replyServiceInfo,
-      });
     }
     stateTracer.push(serverState.repliedTargetServiceInfo);
     status.socket2Service = socket2Service;
     socket2Service.once('close', () => {
-      // status.stateTracer = serverState.finsih;
       stateTracer.push(serverState.socket2ServiceClosed);
     });
     // useful or not?
-    socket2Service.once('error', err => {
-      // status.stateTracer = serverState.connect_to_targer_service_fail;
-      stateTracer.push(`${serverState.socket2ServiceError}: ${err?.message}`);
-      if (socket2Service.writable) {
-        socket2Service.end();
-      }
-      stateTracer.push(`${serverState.connectionError}: ${err?.message}`);
-    });
+    // socket2Service.once('error', err => {
+    //   stateTracer.push(`${serverState.socket2ServiceError}: ${err?.message}`);
+    //   if (socket2Service.writable) {
+    //     socket2Service.end();
+    //   }
+    //   stateTracer.push(`${serverState.connectionError}: ${err?.message}`);
+    // });
     if (socket.writable && socket2Service.writable) {
-      const {proxyAsClientStatus} = status;
+      // const {proxyAsClientStatus} = status;
       // if (proxyAsClientStatus && proxyAsClientStatus.iv) {
       //   const {cipher} = getCipher(status.proxyAsClientStatus.iv);
       //   const dcipher = getDcipher(status.proxyAsClientStatus.iv);
@@ -195,14 +186,11 @@ export async function handleConnection(
       // }
       socket.resume();
       // status.stateTracer = serverState.success;
-      stateTracer.push(serverState.finsihProcess);
+      stateTracer.push(serverState.finishedProcess);
     } else {
-      if (!socket.writable) {
-        // status.stateTracer = serverState.client_socket_unwritable;
-        stateTracer.push(`${serverState.connectionError}: client socket unwritable`);
-      } else {
-        stateTracer.push(`${serverState.connectionError}: service socket unwritable`);
-      }
+      !socket.writable && stateTracer.push(`${serverState.connectionError}: client socket unwritable`);
+      !socket2Service.writable &&
+        stateTracer.push(`${serverState.connectionError}: target service socket unwritable`);
     }
   } catch (err) {
     const {socket, socket2Service} = status;

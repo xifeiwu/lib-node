@@ -7,7 +7,7 @@ import {handleConnection} from '../../v5/server';
 export async function generalProcess() {
   const {origin: httpOrigin, server} = await startHttpDebugServer();
   const {host, port} = await startSocketServer(socket => {
-    handleConnection(socket, [{method: EMethod.NoAuth}]);
+    handleConnection(socket, {methodList: [{method: EMethod.NoAuth}]});
   });
   const status = await connectToSocksServer({
     targetSocksServer: {host, port},
@@ -39,7 +39,7 @@ export async function useAuthUserPass() {
     },
   };
   const {host, port} = await startSocketServer(socket => {
-    handleConnection(socket, [methodUsePass]);
+    handleConnection(socket, {methodList: [methodUsePass]});
   });
   const status = await connectToSocksServer({
     methodList: [methodUsePass],

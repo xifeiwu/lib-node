@@ -1,5 +1,5 @@
 import dns from 'dns';
-import {waitConectionInfo, replyTargetServiceInfo} from './utils';
+import {serverWaitConectionInfo, serverReplyTargetServiceInfo} from './communication';
 
 import {deepClone, deepEqual} from '../external';
 import {Socket, isIP} from 'net';
@@ -49,7 +49,7 @@ export async function handleCustomConnection(
   };
   try {
     status.state = ESocksState.wait_targer_service_info;
-    const {iv, auth, targetServiceInfo} = await waitConectionInfo(socket);
+    const {iv, auth, targetServiceInfo} = await serverWaitConectionInfo(socket);
     status.iv = iv;
     const authSuccess = deepEqual(authMethod.info, auth);
     if (!authSuccess) {
@@ -67,7 +67,7 @@ export async function handleCustomConnection(
       if (proxyAsClientStatus.error) {
         throw createError(ERRORS.proxy_error);
       }
-      await replyTargetServiceInfo(
+      await serverReplyTargetServiceInfo(
         socket,
         {
           reply: ETargetServiceConnectState.succeeded,
@@ -94,7 +94,7 @@ export async function handleCustomConnection(
           replyServiceInfo.address = ip;
           replyServiceInfo.addressType = getAddressType(ip);
         } catch (err) {
-          await replyTargetServiceInfo(
+          await serverReplyTargetServiceInfo(
             socket,
             {
               reply: ETargetServiceConnectState.Host_unreachable,
@@ -125,7 +125,7 @@ export async function handleCustomConnection(
           });
         });
       } catch (err) {
-        await replyTargetServiceInfo(
+        await serverReplyTargetServiceInfo(
           socket,
           {
             reply: err as ETargetServiceConnectState,
@@ -137,7 +137,7 @@ export async function handleCustomConnection(
       }
 
       // const ipType = ip2Bytes(socket.localAddress || '127.0.0.1');
-      await replyTargetServiceInfo(
+      await serverReplyTargetServiceInfo(
         socket,
         {
           reply: ETargetServiceConnectState.succeeded,

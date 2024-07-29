@@ -10,7 +10,7 @@ import {
   UserPassInfo,
 } from '../service/types';
 import {upgradeProtocol} from '../service';
-import {sendConnectionInfo, waitTargetServiceInfoReplied} from './utils';
+import {clientSendConnectionInfo, clientWaitRepliedTargetServiceInfo} from './communication';
 import {getIv, ivLength} from './service';
 
 /**
@@ -60,7 +60,7 @@ export async function connectToCustomSocksServer(config: ClientConfig) {
       address,
       port,
     };
-    await sendConnectionInfo(socket, {
+    await clientSendConnectionInfo(socket, {
       iv,
       auth,
       targetServiceInfo: {
@@ -69,7 +69,7 @@ export async function connectToCustomSocksServer(config: ClientConfig) {
       },
     });
     status.targetServiceInfo = targetServiceInfo;
-    const replyServiceInfo = await waitTargetServiceInfoReplied(socket, iv);
+    const replyServiceInfo = await clientWaitRepliedTargetServiceInfo(socket, iv);
     status.replyServiceInfo = replyServiceInfo;
     socket.resume();
     status.socket = socket;

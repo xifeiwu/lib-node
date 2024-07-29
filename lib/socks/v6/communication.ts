@@ -1,14 +1,9 @@
 import {Readable, Writable} from 'stream';
 import {ConnectionInfo} from './types';
-import {toBuffer} from '../external';
+import {toBuffer} from '../service/external';
 import {ECommand, ETargetServiceConnectState, TargetServiceInfo} from '../service/types';
-import {
-  ERRORS,
-  bufferToTargeServiceInfo,
-  createError,
-  targetServiceInfoToBuffer,
-} from '../service/protocol';
-import {decript, encrypt, ivLength} from './cipher';
+import {ERRORS, bufferToTargeServiceInfo, createError, targetServiceInfoToBuffer} from '../service';
+import {decript, encrypt, ivLength} from './service';
 import {BinaryLike} from 'crypto';
 
 /**
@@ -43,12 +38,10 @@ import {BinaryLike} from 'crypto';
  * | 1  | iv  |  1   | 1 to 255 |  1   | 1 to 255 |  1  | X'00' |  1   | Variable |    2     |
  * +----+-----+------+----------+------+----------+-----+-------+------+----------+----------+
  */
-export async function sendConnectionInfo(writer: Writable, info: ConnectionInfo) {
+export async function clientSendConnectionInfo(writer: Writable, info: ConnectionInfo) {
   const {iv, auth, targetServiceInfo} = info;
   const {username, password} = auth;
-  const {
-    command = ECommand.CONNECT,
-  } = targetServiceInfo;
+  const {command = ECommand.CONNECT} = targetServiceInfo;
   return new Promise<void>(async (res, rej) => {
     const {data} = encrypt(
       toBuffer([
@@ -58,7 +51,7 @@ export async function sendConnectionInfo(writer: Writable, info: ConnectionInfo)
         password,
         command,
         0,
-        targetServiceInfoToBuffer(targetServiceInfo)
+        targetServiceInfoToBuffer(targetServiceInfo),
       ]),
       iv
     );
@@ -77,7 +70,7 @@ export async function sendConnectionInfo(writer: Writable, info: ConnectionInfo)
   });
 }
 
-export async function waitConectionInfo(reader: Readable) {
+export async function serverWaitConectionInfo(reader: Readable) {
   reader.resume();
   return new Promise<ConnectionInfo>((res, rej) => {
     reader.once('data', (chunk: Buffer) => {
@@ -143,7 +136,7 @@ export async function waitConectionInfo(reader: Readable) {
  *     o  RSV    RESERVED
  * o  ATYP   address type of following address
  */
-export async function replyTargetServiceInfo(
+export async function serverReplyTargetServiceInfo(
   writer: Writable,
   state: {
     reply: ETargetServiceConnectState;
@@ -158,9 +151,15 @@ export async function replyTargetServiceInfo(
       return rej(createError(ERRORS.SocketUnWritable));
     }
     const {data} = encrypt(
-      toBuffer([5, reply, 0, targetServiceInfoToBuffer({
-        address, port
-      })]),
+      toBuffer([
+        5,
+        reply,
+        0,
+        targetServiceInfoToBuffer({
+          address,
+          port,
+        }),
+      ]),
       iv
     );
     writer.write(data, err => {
@@ -195,7 +194,7 @@ export async function replyTargetServiceInfo(
  *     o  RSV    RESERVED
  * o  ATYP   address type of following address
  */
-export async function waitTargetServiceInfoReplied(reader: Readable, iv: BinaryLike) {
+export async function clientWaitRepliedTargetServiceInfo(reader: Readable, iv: BinaryLike) {
   reader.resume();
   return new Promise<TargetServiceInfo>((res, rej) => {
     reader.once('data', (chunk: Buffer) => {

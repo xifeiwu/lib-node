@@ -230,7 +230,7 @@ export async function clientSendTargetServiceInfo(writer: Writable, info: Target
   return new Promise<void>(async (res, rej) => {
     const buffer = toBuffer([5, command, 0, targetServiceInfoToBuffer(info)]);
     if (!writer.writable) {
-      return rej(createError(ERRORS.SocketUnWritable, chunk));
+      return rej(createError(ERRORS.SocketUnWritable));
     }
     writer.write(buffer, err => {
       if (err) {
@@ -319,7 +319,7 @@ export async function serverReplyTargetServiceInfo(
     );
   });
 }
-export async function clientWaitTargetServiceInfoReplied(reader: Readable) {
+export async function clientWaitRepliedTargetServiceInfo(reader: Readable) {
   reader.resume();
   return new Promise<TargetServiceInfo>((res, rej) => {
     reader.once('data', (chunk: Buffer) => {

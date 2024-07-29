@@ -4,14 +4,13 @@ import {
   clientSendMethod,
   clientSendTargetServiceInfo,
   clientSendUserPass,
-  clientWaitTargetServiceInfoReplied,
+  clientWaitRepliedTargetServiceInfo,
 } from './communication';
 import {getSocket, getTargetServiceInfo} from '../service';
 import {
   ECommand,
   EMethod,
   UserPassInfo,
-  TargetServiceInfo,
   SocksStatusOnClientSide,
   SocksClientConfigV5,
 } from '../service/types';
@@ -33,18 +32,11 @@ export async function connectToSocksServer(config: SocksClientConfigV5) {
   methodList.sort((pre, next) => next.method - pre.method);
   const status: SocksStatusOnClientSide = {};
   try {
-    // status.stateTracer = clientState.startConnectToSocksServer;
     stateTracer.push(clientState.connectToSocksServer);
     let socket = await getSocket(targetSocksServer);
     if (!socket) {
       throw new Error(`Error: both socketConfig and httpUrl are not set.`);
     }
-    socket.once('error', () => {
-      if (socket.writable) {
-        socket.end();
-      }
-    });
-
     stateTracer.push(clientState.methodNegotiation);
     await clientSendMethod(
       socket,
@@ -54,8 +46,6 @@ export async function connectToSocksServer(config: SocksClientConfigV5) {
       socket,
       methodList.map(it => it.method)
     );
-    // status.stateTracer = clientState.methodNegotiationSuccess;
-    // status.method = method;
     stateTracer.push(`${clientState.finishMethodNegotiation}, use method ${method}`);
     if (method === EMethod.UserPass) {
       const methodInfo = methodList.find(it => it.method === method) as {
@@ -67,25 +57,16 @@ export async function connectToSocksServer(config: SocksClientConfigV5) {
       await clientWaitUserPassAuthResultReplied(socket);
       stateTracer.push(clientState.authUserPassSuccess);
     }
-    {
-      stateTracer.push(clientState.sendTargetSericeInfo);
-      // const {address, port} = target;
-      // const targetServiceInfo: TargetServiceInfo = {
-      //   address,
-      //   port,
-      // };
-      await clientSendTargetServiceInfo(socket, {
-        command: ECommand.CONNECT,
-        ...targetServiceInfo,
-      });
-      status.targetServiceInfo = targetServiceInfo;
-    }
-    const replyServiceInfo = await clientWaitTargetServiceInfoReplied(socket);
-    status.repliedServiceInfo = replyServiceInfo;
+    stateTracer.push(clientState.sendTargetSericeInfo);
+    await clientSendTargetServiceInfo(socket, {
+      command: ECommand.CONNECT,
+      ...targetServiceInfo,
+    });
+    status.targetServiceInfo = targetServiceInfo;
+    status.repliedServiceInfo = await clientWaitRepliedTargetServiceInfo(socket);
     socket.resume();
     status.socket = socket;
-    // status.stateTracer = clientState.finish;
-    stateTracer.push(clientState.finsihProcess);
+    stateTracer.push(clientState.finishedProcess);
   } catch (err) {
     const {socket} = status;
     socket && socket.writable && socket.end();

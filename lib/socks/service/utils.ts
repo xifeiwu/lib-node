@@ -3,14 +3,13 @@ import {CanConvertToBuffer, isNumber, isPlainObject, isRegExp, toBuffer} from '.
 import {
   SocksStatusOnServerSide,
   EMethod,
-  ESocksState,
   MatchItem,
   SocksProxyConfig,
   TargetServiceInfo,
   TargetSocket,
   EAddressType,
 } from './types';
-import {isString, toUrlInstance} from './external';
+import {isString, toUrlInstance, requestAndGetUpgradeInfo, startSocketClient} from './external';
 
 export const upgradeProtocol = 'socks5';
 
@@ -26,10 +25,6 @@ export function getSocketInfo(socket?: Socket) {
   const id = [local, '<-', remote].join('');
   return {id, readable, writable, destroyed, closed, localAddress, localPort, remoteAddress, remotePort};
 }
-// import {TargetServiceInfo, EAddressType} from './types';
-// import {toBuffer} from '../../external';
-import {requestAndGetUpgradeInfo, startSocketClient} from './external';
-import {urlPropsToHref, urlPropsToInstance} from '../../../external';
 
 export const ERRORS = {
   InvalidSocksVersion: 'only socks version 5 supported',
@@ -228,38 +223,11 @@ export function getMatchedProxyConfig(
   return null;
 }
 
-/**
- * @deprecated maybe not used
- * @param lastState
- * @returns
- */
-// export function getFailState(lastState: ESocksState) {
-//   let failState: ESocksState;
-//   switch (lastState) {
-//     case ESocksState.startConnectToSocksServer:
-//       failState = ESocksState.connectSocksServerFail;
-//       break;
-//     case ESocksState.startMethodNegotiation:
-//       failState = ESocksState.methodNegotiationFail;
-//       break;
-//     case ESocksState.startAuthUserPass:
-//       failState = ESocksState.authUserPassFail;
-//       break;
-//     case ESocksState.sendTargetSericeInfo:
-//       failState = ESocksState.receiveTargetSericeInfoFail;
-//       break;
-//     case ESocksState.startConnectToTargerService:
-//       failState = ESocksState.connectToTargerServiceFail;
-//       break;
-//   }
-//   return failState;
-// }
-
 export function getConnectStatusInJson(status?: SocksStatusOnServerSide) {
   if (!status) {
     return null;
   }
-  const {error, socket, socket2Service, proxyAsClientStatus} = status;
+  const {socket, socket2Service, proxyAsClientStatus} = status;
   const results = {
     ...status,
     socket: getSocketInfo(socket),
@@ -268,13 +236,13 @@ export function getConnectStatusInJson(status?: SocksStatusOnServerSide) {
     // @ts-ignore
     results.socket2Service = getSocketInfo(socket2Service);
   }
-  if (error) {
-    results.error = {
-      name: error.name,
-      message: error.message,
-      stack: error.stack,
-    };
-  }
+  // if (error) {
+  //   results.error = {
+  //     name: error.name,
+  //     message: error.message,
+  //     stack: error.stack,
+  //   };
+  // }
   if (proxyAsClientStatus) {
     // @ts-ignore
     results.proxyAsClientStatus = getConnectStatusInJson(proxyAsClientStatus);
