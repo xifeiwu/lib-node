@@ -9,7 +9,7 @@ import {
 import {getSocket, getTargetServiceInfo} from '../service';
 import {ECommand, EMethod, UserPassInfo, SocksClientStatus, SocksClientConfigV5} from '../service/types';
 import {clientState} from './service';
-import {SocketCommunicationConfig} from '../service/types/cross';
+import {SocketClientCommConfig} from '../service/types/cross';
 import {Socket} from 'net';
 
 /**
@@ -19,7 +19,7 @@ import {Socket} from 'net';
  * NOTICE:
  * Close socket on socket error events of any error thrown during the logic process
  */
-export async function socketCommunication(socket: Socket, config: SocketCommunicationConfig<'v5'>) {
+export async function socketCommunication(socket: Socket, config: SocketClientCommConfig<'v5'>) {
   // const stateTracer: string[] = [clientState.initial];
   const {methodList = [{method: EMethod.NoAuth}], stateTracer} = config;
   let {targetServiceInfo} = config;

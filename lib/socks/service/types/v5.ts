@@ -78,10 +78,13 @@ export enum ETargetServiceConnectState {
   to_FF_unassigned = 0x09,
 }
 
-export interface SocksClientConfigV5 extends CommonSocksClientConfig {
+export interface SocksClientConfigV5 extends CommonSocksClientConfig, SocksServerConfigV5 {
   /** get tcp connection by net.createConnection */
   // socketConfig?: TcpNetConnectOpts;
   /** get tcp connection by http upgrade */
-  methodList?: Array<MethodAuthInfo>;
   // targetServiceInfo: TargetServiceInfo;
+}
+
+export interface SocksServerConfigV5 {
+  methodList?: Array<MethodAuthInfo>;
 }

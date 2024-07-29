@@ -1,6 +1,6 @@
 import {TcpNetConnectOpts} from 'net';
 import {SocksClientStatus, SocksStatusOnServerSide} from './base';
-import {MethodAuthInfo, SocksClientConfigV5} from './v5';
+import {MethodAuthInfo, SocksClientConfigV5, SocksServerConfigV5} from './v5';
 
 interface SocksClientConfigMap {
   v5: SocksClientConfigV5;
@@ -9,12 +9,7 @@ interface SocksClientConfigMap {
 
 export type SocksVersion = keyof SocksClientConfigMap;
 
-// type T = SocksClientConfigMap['v5'];
-
-// export interface  extends .v5 {
-
-// }
-export type SocketCommunicationConfig<Version extends SocksVersion> = SocksClientConfigMap[Version] & {
+export type SocketClientCommConfig<Version extends SocksVersion> = SocksClientConfigMap[Version] & {
   stateTracer: SocksClientStatus['stateTracer'];
 };
 
@@ -38,6 +33,13 @@ export interface SocksProxyConfig {
   targetSocksServer: TargetSocket;
 }
 
+interface SocksServerConfigMap {
+  v5: SocksServerConfigV5;
+}
+export type SocketServerCommConfig<Version extends SocksVersion> = SocksServerConfigMap[Version] & {
+  stateTracer: SocksClientStatus['stateTracer'];
+  proxyConfigList?: SocksProxyConfig[];
+};
 // export interface CommonServerConfig {
 //   methodList: Array<MethodAuthInfo>;
 //   /** proxy to other socks server */
