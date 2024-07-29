@@ -13,6 +13,7 @@ import {
   getRequestInfo,
   logColorful,
   watchSocketState,
+  responseInfoToBuffer,
 } from '..';
 import {Socket} from 'net';
 import {deepEqual, toUrlProps, isNumber, waitFor} from '../external';
@@ -153,13 +154,21 @@ export async function handleIncomingMessage(
   return false;
 }
 
-/** Mainly for debug */
-export async function startHttpServer4Debug() {
-  const {origin, server} = await startHttpServer({
+/** Just echo reuqst, mainly for debug */
+export async function startHttpDebugServer() {
+  const {host, port, origin, server} = await startHttpServer({
     request(request, response) {
       logColorful({color: 'yellow'}, 'headerPart Info:', getRequestHeaderInfo(request));
       watchSocketState(request.socket, {color: 'yellow'});
       responseRequestInfo(request, response);
+    },
+    connect(req, socket, head) {
+      const {responseInfo} = handleConnect(req);
+      socket.write(responseInfoToBuffer(responseInfo));
+      // handleSocketEvents(socket, {isServer: true, color: 'red'});
+      socket.on('end', () => {
+        socket.end();
+      });
     },
   });
   // server.on('connection', socket => {
@@ -169,5 +178,5 @@ export async function startHttpServer4Debug() {
   //   });
   // });
   console.log(`start http server: ${origin}`);
-  return {origin, server};
+  return {host, port, origin, server};
 }

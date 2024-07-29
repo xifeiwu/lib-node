@@ -136,10 +136,10 @@ export async function requestAndGetUpgradeInfo<Payload extends HttpRequestPayloa
   clientRequest = (protocol === 'https:' ? https : http).request(href, {
     ...requestOptions,
     headers: {
+      upgrade: 'websocket',
       ...headers,
       'sec-websocket-key': '50P3cqzG82BIWURMgMisUg==',
       connection: 'Upgrade',
-      upgrade: 'websocket',
     },
   });
   clientRequest.end(data ? await toBuffer(data) : undefined);

@@ -25,6 +25,7 @@ export {
   PORT,
   isRegExp,
   FilterItem,
+  matchFilter,
   matchFilters,
   toUrlProps,
   concatOriginWithPathname,

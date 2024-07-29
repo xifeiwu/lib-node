@@ -3,7 +3,7 @@ import {FormFile, NodeFormData, formDataToBuffer} from './form-data';
 import {requestAndGetResponseInfo} from './client';
 import {sendHttpRequestByTcp, watchSocketState} from '../net';
 import {getDataFromReadable} from '../stream';
-import {startHttpServer4Debug} from './server';
+import {startHttpDebugServer} from './server';
 
 export async function getFormData() {
   const formData: NodeFormData = {
@@ -17,7 +17,7 @@ export async function getFormData() {
 }
 
 export async function sendFormDataByHttp() {
-  const {origin} = await startHttpServer4Debug();
+  const {origin} = await startHttpDebugServer();
   const {headers, reader} = await getFormData();
   const responseInfo = await requestAndGetResponseInfo({
     // origin: 'http://127.0.0.1:3180',
@@ -31,7 +31,7 @@ export async function sendFormDataByHttp() {
 }
 
 export async function sendFormDataByTcp() {
-  const {origin} = await startHttpServer4Debug();
+  const {origin} = await startHttpDebugServer();
   const {headers, reader} = await getFormData();
   const client = await sendHttpRequestByTcp(
     {
