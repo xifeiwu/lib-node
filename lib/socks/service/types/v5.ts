@@ -1,3 +1,5 @@
+import {CommonSocksClientConfig} from './common';
+import {MethodAuthInfo} from './socks';
 /**
  * o  X'00' NO AUTHENTICATION REQUIRED
  * o  X'01' GSSAPI
@@ -75,4 +77,14 @@ export enum ETargetServiceConnectState {
   Command_not_supported = 0x07,
   Address_type_not_supported = 0x08,
   to_FF_unassigned = 0x09,
+}
+
+export interface SocksClientConfigV5 extends CommonSocksClientConfig {
+  // socksVersion: SocksVersion;
+  /** get tcp connection by net.createConnection */
+  // socketConfig?: TcpNetConnectOpts;
+  /** get tcp connection by http upgrade */
+  // targetSocksServer: TargetSocket;
+  methodList?: Array<MethodAuthInfo>;
+  // targetServiceInfo: TargetServiceInfo;
 }

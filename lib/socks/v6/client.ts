@@ -1,5 +1,5 @@
 import {Socket} from 'net';
-import {requestAndGetUpgradeInfo, startSocketClient} from '../external';
+import {requestAndGetUpgradeInfo, startSocketClient} from '../service';
 import {
   ClientConfig,
   ECommand,
@@ -11,7 +11,7 @@ import {
 } from '../service/types';
 import {upgradeProtocol} from '../service';
 import {sendConnectionInfo, waitTargetServiceInfoReplied} from './utils';
-import {getIv, ivLength} from './cipher';
+import {getIv, ivLength} from './service';
 
 /**
  * Connect to socks server by socket from tcp connect or http upgrade

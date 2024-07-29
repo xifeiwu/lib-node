@@ -1,7 +1,7 @@
 import {Readable, Writable} from 'stream';
-import {ERRORS, bufferToTargeServiceInfo, createError, targetServiceInfoToBuffer} from './utils';
-import {ECommand, EMethod, ETargetServiceConnectState, TargetServiceInfo} from './types';
-import {toBuffer} from '../../external';
+import {ERRORS, bufferToTargeServiceInfo, createError, targetServiceInfoToBuffer} from '../service';
+import {ECommand, EMethod, ETargetServiceConnectState, TargetServiceInfo} from '../service/types';
+import {toBuffer} from '../service/external';
 
 /**
  * +----+----------+----------+
@@ -16,7 +16,7 @@ import {toBuffer} from '../../external';
  * o  X'80' to X'FE' RESERVED FOR PRIVATE METHODS
  * o  X'FF' NO ACCEPTABLE METHODS
  */
-export async function sendMethod(writer: Writable, methods: EMethod[]) {
+export async function clientSendMethod(writer: Writable, methods: EMethod[]) {
   return new Promise<void>((res, rej) => {
     if (!writer.writable) {
       return rej(createError(ERRORS.SocketUnWritable));
@@ -31,23 +31,23 @@ export async function sendMethod(writer: Writable, methods: EMethod[]) {
   });
 }
 
-export async function waitMethod(reader: Readable, supportedMethods: EMethod[]) {
+export async function serverWaitMethod(reader: Readable, supportedMethods: EMethod[]) {
   reader.resume();
   return new Promise<EMethod>((res, rej) => {
     reader.once('data', (chunk: Buffer) => {
       reader.pause();
       const [version, count, ...methods] = chunk;
       if (version !== 0x05) {
-        return rej(createError(ERRORS.InvalidSocksVersion));
+        return rej(createError(ERRORS.InvalidSocksVersion, chunk));
       }
       if (count !== methods.length) {
-        return rej(createError(ERRORS.MethodCountNotCorrect));
+        return rej(createError(ERRORS.MethodCountNotCorrect, chunk));
       }
       const method = methods.find(it => supportedMethods.includes(it));
       if (method !== undefined) {
         res(method);
       } else {
-        return rej(createError(ERRORS.invalid_methods));
+        return rej(createError(ERRORS.invalid_methods, chunk));
       }
     });
   });
@@ -65,7 +65,7 @@ export async function waitMethod(reader: Readable, supportedMethods: EMethod[]) 
  * o  X'80' to X'FE' RESERVED FOR PRIVATE METHODS
  * o  X'FF' NO ACCEPTABLE METHODS
  */
-export async function replyMethod(writer: Writable, method: EMethod) {
+export async function serverReplyMethod(writer: Writable, method: EMethod) {
   return new Promise<void>((res, rej) => {
     if (!writer.writable) {
       return rej(createError(ERRORS.SocketUnWritable));
@@ -80,25 +80,25 @@ export async function replyMethod(writer: Writable, method: EMethod) {
   });
 }
 
-export async function waitReplyMethod(reader: Readable, methods: EMethod[]) {
+export async function clientWaitMethodReplied(reader: Readable, methods: EMethod[]) {
   reader.resume();
   return new Promise<EMethod>((res, rej) => {
     reader.once('data', (chunk: Buffer) => {
       reader.pause();
       // const version = chunk[0];
       if (chunk.byteLength > 2) {
-        return rej(createError(ERRORS.InvalidSchemaFormat));
+        return rej(createError(ERRORS.InvalidSchemaFormat, chunk));
       }
       const [version, method] = chunk;
       if (version !== 0x05) {
-        return rej(createError(ERRORS.InvalidSocksVersion));
+        return rej(createError(ERRORS.InvalidSocksVersion, chunk));
       }
       if (method === EMethod.NoAcceptable) {
-        return rej(createError(ERRORS.INVALID_METHOD));
+        return rej(createError(ERRORS.INVALID_METHOD, chunk));
       } else if (methods.includes(method)) {
         return res(method);
       } else {
-        return rej(createError(`${ERRORS.INVALID_METHOD}: ${method}`));
+        return rej(createError(`${ERRORS.INVALID_METHOD}: ${method}`, chunk));
       }
     });
   });
@@ -110,7 +110,7 @@ export async function waitReplyMethod(reader: Readable, methods: EMethod[]) {
  * | 1  |  1   | 1 to 255 |  1   | 1 to 255 |
  * +----+------+----------+------+----------+
  */
-export async function sendUsernamePassword(
+export async function clientSendUserPass(
   writer: Writable,
   info: {
     username: string;
@@ -137,7 +137,7 @@ export async function sendUsernamePassword(
   });
 }
 
-export async function waitUsernamePassword(reader: Readable) {
+export async function serverWaitUserPass(reader: Readable) {
   return new Promise<{
     username: Buffer;
     password: Buffer;
@@ -169,7 +169,7 @@ export async function waitUsernamePassword(reader: Readable) {
  * A STATUS field of X'00' indicates success.
  * If the server returns a `failure' (STATUS value other than X'00') status, it MUST close the connection.
  */
-export async function replyUsernamePasswordAuth(writer: Writable, success: boolean) {
+export async function serverReplyUserPassAuthResult(writer: Writable, success: boolean) {
   return new Promise<void>((res, rej) => {
     if (!writer.writable) {
       return rej(createError(ERRORS.SocketUnWritable));
@@ -184,21 +184,21 @@ export async function replyUsernamePasswordAuth(writer: Writable, success: boole
   });
 }
 
-export async function waitReplyUsernamePasswordAuth(reader: Readable) {
+export async function clientWaitUserPassAuthResultReplied(reader: Readable) {
   reader.resume();
   return new Promise<void>((res, rej) => {
     reader.once('data', (chunk: Buffer) => {
       reader.pause();
       // const version = chunk[0];
       if (chunk.byteLength > 2) {
-        return rej(createError(ERRORS.InvalidSchemaFormat));
+        return rej(createError(ERRORS.InvalidSchemaFormat, chunk));
       }
       const [_version, status] = chunk;
       // if (version !== 0x01) {
       //   return rej(createError(ERRORS.InvalidSocksVersion));
       // }
       if (status !== 0x00) {
-        return rej(createError(ERRORS.username_password_auth_fail));
+        return rej(createError(ERRORS.username_password_auth_fail, chunk));
       }
       res();
     });
@@ -225,17 +225,12 @@ export async function waitReplyUsernamePasswordAuth(reader: Readable) {
  *     o  DST.ADDR       desired destination address
  * o  DST.PORT desired destination port in network octet order
  */
-export async function sendTargetServiceInfo(writer: Writable, info: TargetServiceInfo) {
-  const {command = ECommand.CONNECT, addressType, address, port} = info;
+export async function clientSendTargetServiceInfo(writer: Writable, info: TargetServiceInfo) {
+  const {command = ECommand.CONNECT} = info;
   return new Promise<void>(async (res, rej) => {
-    const buffer = toBuffer([
-      5,
-      command,
-      0,
-      targetServiceInfoToBuffer(info),
-    ]);
+    const buffer = toBuffer([5, command, 0, targetServiceInfoToBuffer(info)]);
     if (!writer.writable) {
-      return rej(createError(ERRORS.SocketUnWritable));
+      return rej(createError(ERRORS.SocketUnWritable, chunk));
     }
     writer.write(buffer, err => {
       if (err) {
@@ -246,7 +241,7 @@ export async function sendTargetServiceInfo(writer: Writable, info: TargetServic
     });
   });
 }
-export async function waitTargetServiceInfo(reader: Readable) {
+export async function serverWaitTargetServiceInfo(reader: Readable) {
   reader.resume();
   return new Promise<TargetServiceInfo>((res, rej) => {
     reader.once('data', (chunk: Buffer) => {
@@ -257,7 +252,7 @@ export async function waitTargetServiceInfo(reader: Readable) {
       }
       const {addressType, address, port} = bufferToTargeServiceInfo(chunk.subarray(3));
       if (address === undefined || port === undefined) {
-        return rej(createError('Can not get domain/port info'));
+        return rej(createError('Can not get domain/port info', chunk));
       }
       res({
         command,
@@ -291,7 +286,7 @@ export async function waitTargetServiceInfo(reader: Readable) {
  *     o  RSV    RESERVED
  * o  ATYP   address type of following address
  */
-export async function replyTargetServiceInfo(
+export async function serverReplyTargetServiceInfo(
   writer: Writable,
   state: {
     reply: ETargetServiceConnectState;
@@ -305,9 +300,15 @@ export async function replyTargetServiceInfo(
       return rej(createError(ERRORS.SocketUnWritable));
     }
     writer.write(
-      toBuffer([5, reply, 0, targetServiceInfoToBuffer({
-        address, port
-      })]),
+      toBuffer([
+        5,
+        reply,
+        0,
+        targetServiceInfoToBuffer({
+          address,
+          port,
+        }),
+      ]),
       err => {
         if (err) {
           rej(err);
@@ -318,17 +319,17 @@ export async function replyTargetServiceInfo(
     );
   });
 }
-export async function waitReplyTargetServiceInfo(reader: Readable) {
+export async function clientWaitTargetServiceInfoReplied(reader: Readable) {
   reader.resume();
   return new Promise<TargetServiceInfo>((res, rej) => {
     reader.once('data', (chunk: Buffer) => {
       reader.pause();
       const [version, reply, _reserve] = chunk;
       if (version !== 0x05) {
-        return rej(createError(ERRORS.InvalidSocksVersion));
+        return rej(createError(ERRORS.InvalidSocksVersion, chunk));
       }
       if (reply !== ETargetServiceConnectState.succeeded) {
-        return rej(createError(ETargetServiceConnectState[reply]));
+        return rej(createError(ETargetServiceConnectState[reply], chunk));
       }
       const {addressType, address, port} = bufferToTargeServiceInfo(chunk.subarray(3));
       res({

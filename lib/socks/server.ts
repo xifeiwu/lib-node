@@ -1,16 +1,13 @@
 import dns from 'dns';
 import {
-  replyMethod,
-  replyTargetServiceInfo,
-  replyUsernamePasswordAuth,
-  waitMethod,
-  waitTargetServiceInfo,
-  waitUsernamePassword,
-  ERRORS,
-  createError,
-  getAddressType,
-} from './protocol';
-import {getMatchedProxyConfig, getFailState} from './utils';
+  serverReplyMethod,
+  serverReplyTargetServiceInfo,
+  serverSendUsernamePasswordResult,
+  serverWaitMethod,
+  serverWaitTargetServiceInfo,
+  serverWaitUserPass,
+} from './communication/communication';
+import {getMatchedProxyConfig, ERRORS, createError, getAddressType, getFailState} from './service';
 import {
   TargetServiceInfo,
   SocksStatusOnServerSide,
@@ -19,13 +16,13 @@ import {
   ETargetServiceConnectState,
   UserPassInfo,
   MethodAuthInfo,
-  ProxyAsSocksClientConfig,
-} from './types';
-import {deepClone, deepEqual} from '../external';
+  SocksProxyConfig,
+} from './service/types';
+import {deepClone, deepEqual} from './service/external';
 import {Socket, isIP} from 'net';
 import {connectToSocksServer} from './client';
 import {pipeline} from 'stream';
-import {getCipher, getDcipher} from '../protocol-custom/cipher';
+// import {getCipher, getDcipher} from '../protocol-custom/cipher';
 
 /**
  * Handle new connection on sock server side
@@ -39,11 +36,11 @@ import {getCipher, getDcipher} from '../protocol-custom/cipher';
 export async function handleConnection(
   socket: Socket,
   methodList: Array<MethodAuthInfo>,
-  proxyAsSocketClientConfigList?: ProxyAsSocksClientConfig[]
+  proxyAsSocketClientConfigList?: SocksProxyConfig[]
 ) {
   // socket.pause();
   const status: SocksStatusOnServerSide = {
-    state: ESocksState.initial,
+    stateTracer: ESocksState.initial,
     socket,
   };
   // function setStatusState(state: ESocksState) {
@@ -52,21 +49,21 @@ export async function handleConnection(
   //   }
   // }
   try {
-    status.state = ESocksState.method_negotiation;
-    const method = await waitMethod(
+    status.stateTracer = ESocksState.startMethodNegotiation;
+    const method = await serverWaitMethod(
       socket,
       methodList.map(it => it.method)
     );
-    await replyMethod(socket, method);
-    status.state = ESocksState.method_negotiation_success;
+    await serverReplyMethod(socket, method);
+    status.stateTracer = ESocksState.methodNegotiationSuccess;
     status.method = method;
     if (method === EMethod.UserPass) {
       const methodInfo = methodList.find(it => it.method === method) as {
         method: EMethod.UserPass;
         info: UserPassInfo;
       };
-      status.state = ESocksState.auth_username_password_start;
-      const userInfo = await waitUsernamePassword(socket);
+      status.stateTracer = ESocksState.startAuthUserPass;
+      const userInfo = await serverWaitUserPass(socket);
       const authSuccess = deepEqual(
         methodInfo.info,
         Object.entries(userInfo).reduce<object>((sum, [key, value]) => {
@@ -77,26 +74,26 @@ export async function handleConnection(
       if (!authSuccess) {
         throw createError(ERRORS.username_password_auth_fail);
       }
-      await replyUsernamePasswordAuth(socket, authSuccess);
-      status.state = ESocksState.auth_username_password_success;
+      await serverSendUsernamePasswordResult(socket, authSuccess);
+      status.stateTracer = ESocksState.authUserPassSuccess;
     }
-    status.state = ESocksState.wait_targer_service_info;
-    const targetServiceInfo = await waitTargetServiceInfo(socket);
+    status.stateTracer = ESocksState.waitTargetServiceInfo;
+    const targetServiceInfo = await serverWaitTargetServiceInfo(socket);
     status.targetServiceInfo = targetServiceInfo;
     const proxyAsClientConfig = (proxyAsSocketClientConfigList ?? []).find(
       getMatchedProxyConfig.bind(null, targetServiceInfo)
     );
-    status.state = ESocksState.connect_to_targer_service;
+    status.stateTracer = ESocksState.startConnectToTargerService;
     let socket2Service: Socket;
     if (proxyAsClientConfig) {
       const proxyAsClientStatus = await connectToSocksServer({...proxyAsClientConfig, targetServiceInfo});
       status.proxyAsClientStatus = proxyAsClientStatus;
       if (proxyAsClientStatus.error) {
-        throw createError(ERRORS.proxy_error);
+        throw createError(ERRORS.proxyError);
       }
-      await replyTargetServiceInfo(socket, {
+      await serverReplyTargetServiceInfo(socket, {
         reply: ETargetServiceConnectState.succeeded,
-        ...proxyAsClientStatus.replyServiceInfo,
+        ...proxyAsClientStatus.repliedServiceInfo,
       });
       socket2Service = proxyAsClientStatus.socket;
     } else {
@@ -106,7 +103,7 @@ export async function handleConnection(
       if (isDomain) {
         try {
           const ip = await new Promise<string>((resolve, reject) => {
-            dns.lookup(targetServiceInfo.address, function(err, ip) {
+            dns.lookup(targetServiceInfo.address, function (err, ip) {
               if (err) {
                 reject(err);
               } else {
@@ -117,7 +114,7 @@ export async function handleConnection(
           replyServiceInfo.address = ip;
           replyServiceInfo.addressType = getAddressType(ip);
         } catch (err) {
-          await replyTargetServiceInfo(socket, {
+          await serverReplyTargetServiceInfo(socket, {
             reply: ETargetServiceConnectState.Host_unreachable,
             ...replyServiceInfo,
           });
@@ -125,7 +122,7 @@ export async function handleConnection(
         }
       }
 
-      status.replyServiceInfo = replyServiceInfo;
+      status.repliedServiceInfo = replyServiceInfo;
       try {
         socket2Service = await new Promise((res, rej) => {
           const socket = new Socket();
@@ -144,7 +141,7 @@ export async function handleConnection(
           });
         });
       } catch (err) {
-        await replyTargetServiceInfo(socket, {
+        await serverReplyTargetServiceInfo(socket, {
           reply: err as ETargetServiceConnectState,
           ...replyServiceInfo,
         });
@@ -152,19 +149,19 @@ export async function handleConnection(
       }
 
       // const ipType = ip2Bytes(socket.localAddress || '127.0.0.1');
-      await replyTargetServiceInfo(socket, {
+      await serverReplyTargetServiceInfo(socket, {
         reply: ETargetServiceConnectState.succeeded,
         ...replyServiceInfo,
       });
     }
-    status.state = ESocksState.connect_to_targer_service_success;
+    status.stateTracer = ESocksState.connectToTargerServiceSuccess;
     status.socket2Service = socket2Service;
     socket2Service.once('close', () => {
-      status.state = ESocksState.finsih;
+      status.stateTracer = ESocksState.finsih;
     });
     // useful or not?
     socket2Service.once('error', err => {
-      status.state = ESocksState.connect_to_targer_service_fail;
+      status.stateTracer = ESocksState.connectToTargerServiceFail;
       if (socket2Service.writable) {
         socket2Service.end();
       }
@@ -172,34 +169,34 @@ export async function handleConnection(
     });
     if (socket.writable && socket2Service.writable) {
       const {proxyAsClientStatus} = status;
-      if (proxyAsClientStatus && proxyAsClientStatus.iv) {
-        const {cipher} = getCipher(status.proxyAsClientStatus.iv);
-        const dcipher = getDcipher(status.proxyAsClientStatus.iv);
-        pipeline(socket, cipher, socket2Service, err => {
-          status.state = ESocksState.socket_connect_between_client_target_fail;
-          status.error = err;
-        });
-        pipeline(socket2Service, dcipher, socket, err => {
-          status.state = ESocksState.socket_connect_between_client_target_fail;
-          status.error = err;
-        });
-      } else {
-        pipeline(socket, socket2Service, err => {
-          status.state = ESocksState.socket_connect_between_client_target_fail;
-          status.error = err;
-        });
-        pipeline(socket2Service, socket, err => {
-          status.state = ESocksState.socket_connect_between_client_target_fail;
-          status.error = err;
-        });
-      }
+      // if (proxyAsClientStatus && proxyAsClientStatus.iv) {
+      //   const {cipher} = getCipher(status.proxyAsClientStatus.iv);
+      //   const dcipher = getDcipher(status.proxyAsClientStatus.iv);
+      //   pipeline(socket, cipher, socket2Service, err => {
+      //     status.state = ESocksState.socket_connect_between_client_target_fail;
+      //     status.error = err;
+      //   });
+      //   pipeline(socket2Service, dcipher, socket, err => {
+      //     status.state = ESocksState.socket_connect_between_client_target_fail;
+      //     status.error = err;
+      //   });
+      // } else {
+      pipeline(socket, socket2Service, err => {
+        status.stateTracer = ESocksState.socket_connect_between_client_target_fail;
+        status.error = err;
+      });
+      pipeline(socket2Service, socket, err => {
+        status.stateTracer = ESocksState.socket_connect_between_client_target_fail;
+        status.error = err;
+      });
+      // }
       socket.resume();
-      status.state = ESocksState.success;
+      status.stateTracer = ESocksState.success;
     } else {
       if (!socket.writable) {
-        status.state = ESocksState.client_socket_unwritable;
+        status.stateTracer = ESocksState.client_socket_unwritable;
       } else {
-        status.state = ESocksState.target_socket_unwritable;
+        status.stateTracer = ESocksState.target_socket_unwritable;
       }
     }
   } catch (err) {

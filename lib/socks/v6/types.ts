@@ -11,9 +11,9 @@ export interface ConnectionInfo {
   targetServiceInfo: SocksStatusOnClientSide['targetServiceInfo'];
 }
 
-export interface CustomProtocol {
-  cipher?: {
-    algorithm?: string;
-    password?: string;
-  };
-}
+// export interface CustomProtocol {
+//   cipher?: {
+//     algorithm?: string;
+//     password?: string;
+//   };
+// }
