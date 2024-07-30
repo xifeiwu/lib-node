@@ -21,12 +21,12 @@ import {Socket, isIP} from 'net';
 import {serverState} from './service';
 import {proxySocksRequest} from '../service/cross';
 
-export async function getTargetServiceInfo(
+export async function getClientRequest(
   socket: Socket,
   config: SocksServerConfig<'v5'>,
-  clientInfo?: SocksClientInfo
+  clientInfo: SocksClientInfo
 ) {
-  const {stateTracer = []} = clientInfo ?? {};
+  const {stateTracer = []} = clientInfo;
   stateTracer.push(serverState.waitingMethodList);
   const {methodList = [{method: EMethod.NoAuth}]} = config ?? {};
   const method = await serverWaitMethod(
@@ -57,10 +57,13 @@ export async function getTargetServiceInfo(
     stateTracer.push(serverState.authUserPassSuccess);
   }
   stateTracer.push(serverState.waitingTargetServiceInfo);
-  const targetServiceInfo = await serverWaitTargetServiceInfo(socket);
+  const clientRequest = await serverWaitTargetServiceInfo(socket);
   stateTracer.push(serverState.gotTargetServiceInfo);
-  stateTracer.push(targetServiceInfo);
-  return {stateTracer, targetServiceInfo};
+  stateTracer.push({
+    key: 'clientRequest',
+    value: clientRequest,
+  });
+  return {stateTracer, clientRequest};
 }
 
 export async function connectToTargetServer(
@@ -86,7 +89,10 @@ export async function connectToTargetServer(
     };
     await serverReplyTargetServiceInfo(socket, replied);
     stateTracer.push(serverState.repliedTargetServiceInfo);
-    stateTracer.push(replied);
+    stateTracer.push({
+      key: 'repliedServiceInfo',
+      value: replied,
+    });
     socket2Service = proxySocket;
   } else {
     const repliedServiceInfo = deepClone<TargetServiceInfo>(targetServiceInfo);
@@ -105,7 +111,7 @@ export async function connectToTargetServer(
         });
         repliedServiceInfo.address = ip;
         repliedServiceInfo.addressType = getAddressType(ip);
-        stateTracer.push({ip});
+        stateTracer.push(ip);
       } catch (err) {
         const reply = {
           reply: ETargetServiceConnectState.Host_unreachable,
@@ -113,7 +119,10 @@ export async function connectToTargetServer(
         };
         await serverReplyTargetServiceInfo(socket, reply);
         stateTracer.push(serverState.repliedTargetServiceInfo);
-        stateTracer.push(reply);
+        stateTracer.push({
+          key: 'repliedServiceInfo',
+          value: reply,
+        });
         throw err;
       }
     }
@@ -143,7 +152,10 @@ export async function connectToTargetServer(
       };
       await serverReplyTargetServiceInfo(socket, reply);
       stateTracer.push(serverState.repliedTargetServiceInfo);
-      stateTracer.push(reply);
+      stateTracer.push({
+        key: 'repliedServiceInfo',
+        value: reply,
+      });
     } catch (err) {
       const reply = {
         reply: ETargetServiceConnectState.Connection_refused,
@@ -151,7 +163,10 @@ export async function connectToTargetServer(
       };
       await serverReplyTargetServiceInfo(socket, reply);
       stateTracer.push(serverState.repliedTargetServiceInfo);
-      stateTracer.push(reply);
+      stateTracer.push({
+        key: 'repliedServiceInfo',
+        value: reply,
+      });
       throw err;
     }
   }

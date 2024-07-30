@@ -4,7 +4,7 @@ import {pipeline} from 'stream';
 import {serverState} from './service';
 import {getSocketInfo} from './service/external';
 import {
-  getTargetServiceInfo as getTargetServiceInfoV5,
+  getClientRequest as getTargetServiceInfoV5,
   connectToTargetServer as connectToTargetServerV5,
 } from './v5/server';
 
@@ -29,7 +29,7 @@ export async function handleConnection<Version extends SocksVersion>(
   const {socksVersion} = config;
   try {
     if (socksVersion === 'v5') {
-      const {targetServiceInfo} = await getTargetServiceInfoV5(
+      const {clientRequest: targetServiceInfo} = await getTargetServiceInfoV5(
         socket,
         {
           ...config,

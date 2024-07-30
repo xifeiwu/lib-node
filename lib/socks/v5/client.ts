@@ -49,14 +49,18 @@ export async function exchangeInfo(
     stateTracer.push(clientState.authUserPassSuccess);
   }
   stateTracer.push(clientState.sendTargetSericeInfo);
-  stateTracer.push(targetServiceInfo);
-  await clientSendTargetServiceInfo(socket, {
+  const clientRequest = {
     command: ECommand.CONNECT,
     ...targetServiceInfo,
+  };
+  stateTracer.push({
+    key: 'clientRequest',
+    value: clientRequest,
   });
+  await clientSendTargetServiceInfo(socket, clientRequest);
   const repliedServiceInfo = await clientWaitRepliedTargetServiceInfo(socket);
   stateTracer.push(clientState.getRepliedTargetSericeInfo);
-  stateTracer.push(repliedServiceInfo);
+  stateTracer.push({key: 'repliedServiceInfo', value: repliedServiceInfo});
   return {
     stateTracer,
     targetServiceInfo,

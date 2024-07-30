@@ -1,5 +1,33 @@
-import {TargetSocket} from './base';
 import {MethodAuthInfo, TargetServiceInfo} from './v5';
+import {Socket, TcpNetConnectOpts} from 'net';
+import {SocketInfo} from '../external';
+import {BinaryLike} from 'crypto';
+
+export type TargetSocket = TcpNetConnectOpts | string;
+
+export interface TracerPropsMap {
+  iv: BinaryLike;
+  clientRequest: TargetServiceInfo;
+  repliedServiceInfo: TargetServiceInfo;
+}
+export type TracerKey = keyof TracerPropsMap;
+export interface TracerObject {
+  key: TracerKey;
+  value: TracerPropsMap[TracerKey];
+}
+export interface SocksClientInfo {
+  socketInfo: Partial<SocketInfo>;
+  stateTracer: Array<string | TracerObject>;
+  // targetServiceInfo?: TargetServiceInfo;
+  repliedServiceInfo?: TargetServiceInfo;
+  socket?: Socket;
+}
+
+/** connect status on server side */
+export interface SocksServerInfo extends SocksClientInfo {
+  socket2Service?: Socket;
+  proxyClientInfo?: SocksClientInfo;
+}
 
 interface SocksExtralConfigV5 {
   methodList?: Array<MethodAuthInfo>;

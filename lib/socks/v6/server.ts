@@ -25,7 +25,14 @@ export async function getTargetServiceInfo(
   stateTracer.push(serverState.waitConnectionInfo);
   const {iv, auth, targetServiceInfo} = await serverWaitConectionInfo(socket);
   stateTracer.push(serverState.gotConnectionInfo);
-  stateTracer.push({targetServiceInfo, iv});
+  stateTracer.push({
+    key: 'clientRequest',
+    value: targetServiceInfo
+  })
+  stateTracer.push({
+    key: 'iv',
+    value: iv,
+  })
   const authSuccess = deepEqual(config.auth, auth);
   stateTracer.push(authSuccess ? serverState.authSuccess : serverState.authFail);
   if (!authSuccess) {

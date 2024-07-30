@@ -1,13 +1,17 @@
 import net, {Socket, TcpNetConnectOpts} from 'net';
-import {CanConvertToBuffer, isNumber, isPlainObject, isRegExp, toBuffer} from './external';
+import {CanConvertToBuffer, getSocketInfo, isNumber, isPlainObject, isRegExp, toBuffer} from './external';
 import {
-  SocksServerInfo,
+  SocksServerStatus,
   EMethod,
   MatchItem,
   SocksProxyConfig,
   TargetServiceInfo,
   TargetSocket,
   EAddressType,
+  SocksClientInfo,
+  TracerPropsMap,
+  TracerObject,
+  TracerKey,
 } from './types';
 import {isString, toUrlInstance, requestAndGetUpgradeInfo, startSocketClient} from './external';
 
@@ -223,7 +227,7 @@ export function getMatchedProxyConfig(
   return null;
 }
 
-export function getConnectStatusInJson(status?: SocksServerInfo) {
+export function getConnectStatusInJson(status?: SocksServerStatus) {
   if (!status) {
     return null;
   }
@@ -303,3 +307,16 @@ export const serverState = {
   socket2ServiceClosed: 'socket to service closed',
   socket2ServiceError: 'socket to service error',
 };
+
+export function getInfoFromStateTracer<Key extends TracerKey>(
+  stateTracer: SocksClientInfo['stateTracer'],
+  key: Key
+): TracerPropsMap[Key] | null {
+  const item = stateTracer.find((it: TracerObject) => {
+    return it?.key && it?.key === key;
+  });
+  if (!item) {
+    return null;
+  }
+  return (item as TracerObject).value as TracerPropsMap[Key];
+}
