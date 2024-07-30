@@ -5,7 +5,7 @@ import childProcess from 'child_process';
 import net, {ServerOpts, Socket, TcpNetConnectOpts} from 'net';
 import {isString, isNumber, formatDate} from '../external';
 import {httpFirstLineReg} from '../constants';
-import {ColorStyle, GetSocketOptions, HttpFirstLineProps} from '../types';
+import {ColorStyle, GetSocketOptions, HttpFirstLineProps, SocketInfo} from '../types';
 import {logColorful} from '../log';
 
 export function getLocalIpAddress() {
@@ -311,40 +311,47 @@ export function getProtocolInfoByFirstChunk(chunk: Buffer): ProtocolInfo {
   }
 }
 
+export function getSocketInfo(socket: Socket): Partial<SocketInfo> {
+  if (!socket || !(socket instanceof Socket)) {
+    return {};
+  }
+  const {
+    localAddress,
+    localPort,
+    remoteAddress,
+    remotePort,
+    readable,
+    readableFlowing,
+    readyState,
+    writable,
+    bytesWritten,
+    destroyed,
+    bytesRead,
+    allowHalfOpen,
+  } = socket;
+  const local = `${localAddress}:${localPort}`;
+  const remote = `${remoteAddress}:${remotePort}`;
+  return {
+    id: [local, '<-', remote].join(''),
+    allowHalfOpen,
+    readable,
+    readableFlowing,
+    bytesRead,
+    writable,
+    bytesWritten,
+    destroyed,
+    readyState,
+    localAddress,
+    localPort,
+    remoteAddress,
+    remotePort,
+  };
+}
+
 export function watchSocketState(socket: Socket, colorStyle?: ColorStyle) {
   const {color = 'black'} = colorStyle ?? {};
   const printState = () => {
-    const {
-      localAddress,
-      localPort,
-      remoteAddress,
-      remotePort,
-      readable,
-      readableFlowing,
-      readyState,
-      writable,
-      bytesWritten,
-      destroyed,
-      bytesRead,
-      allowHalfOpen,
-    } = socket;
-    const local = `${localAddress}:${localPort}`;
-    const remote = `${remoteAddress}:${remotePort}`;
-    logColorful(
-      {color},
-      {
-        allowHalfOpen,
-        readable,
-        readableFlowing,
-        bytesRead,
-        writable,
-        bytesWritten,
-        destroyed,
-        readyState,
-        local,
-        remote,
-      }
-    );
+    logColorful({color}, getSocketInfo(socket));
   };
   // socket.allowHalfOpen = true;
   printState();
