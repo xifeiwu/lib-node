@@ -1,14 +1,14 @@
 import {BinaryLike} from 'crypto';
-import {SocksClientStatus, UserPassInfo} from '../service/types';
+import {SocksClientInfo, UserPassInfo} from '../service/types';
 
-export interface SocksStatusOnCustomClientSide extends SocksClientStatus {
+export interface SocksStatusOnCustomClientSide extends SocksClientInfo {
   iv: Buffer;
 }
 
 export interface ConnectionInfo {
   iv: BinaryLike;
   auth: UserPassInfo;
-  targetServiceInfo: SocksClientStatus['targetServiceInfo'];
+  targetServiceInfo: SocksClientInfo['targetServiceInfo'];
 }
 
 // export interface CustomProtocol {

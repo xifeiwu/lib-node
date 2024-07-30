@@ -1,7 +1,7 @@
 import net, {Socket, TcpNetConnectOpts} from 'net';
 import {CanConvertToBuffer, isNumber, isPlainObject, isRegExp, toBuffer} from './external';
 import {
-  SocksServerStatus,
+  SocksServerInfo,
   EMethod,
   MatchItem,
   SocksProxyConfig,
@@ -223,7 +223,7 @@ export function getMatchedProxyConfig(
   return null;
 }
 
-export function getConnectStatusInJson(status?: SocksServerStatus) {
+export function getConnectStatusInJson(status?: SocksServerInfo) {
   if (!status) {
     return null;
   }

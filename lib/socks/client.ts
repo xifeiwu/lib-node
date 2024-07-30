@@ -1,8 +1,8 @@
 import {clientState, getSocket} from './service';
 import {getSocketInfo} from './service/external';
-import {SocksClientStatus} from './service/types';
+import {SocksClientInfo} from './service/types';
 import {SocketClientConfig, SocksVersion} from './service/types/cross';
-import {clientExchange as clientExchangeV5} from './v5/client';
+import {exchangeInfo as exchangeInfoV5} from './v5/client';
 
 /**
  * Connect to socks server by socket from tcp connect or http upgrade
@@ -15,10 +15,10 @@ export async function connectToSocksServer<Version extends SocksVersion>(
   config: SocketClientConfig<Version>
 ) {
   const {socksVersion, targetSocksServer, ...rest4Exchange} = config;
-  const status: SocksClientStatus = {
+  const status: SocksClientInfo = {
     socketInfo: {},
   };
-  const stateTracer: SocksClientStatus['stateTracer'] = [];
+  const stateTracer: SocksClientInfo['stateTracer'] = [];
   try {
     stateTracer.push(clientState.startNegotiation);
     let socket = await getSocket(targetSocksServer);
@@ -27,7 +27,7 @@ export async function connectToSocksServer<Version extends SocksVersion>(
     }
     status.socket = socket;
     status.socketInfo = getSocketInfo(socket);
-    const {...restProps} = await clientExchangeV5(socket, rest4Exchange, stateTracer);
+    const {...restProps} = await exchangeInfoV5(socket, rest4Exchange, stateTracer);
     // stateTracer.push(...tracer);
     for (const [key, value] of Object.entries(restProps)) {
       status[key] = value;

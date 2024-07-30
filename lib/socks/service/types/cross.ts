@@ -1,5 +1,5 @@
 import {TcpNetConnectOpts} from 'net';
-import {SocksClientStatus, SocksServerStatus} from './base';
+import {SocksClientInfo, SocksServerInfo} from './base';
 import {MethodAuthInfo, SocksClientConfigV5, SocksServerConfigV5} from './v5';
 
 interface SocksClientConfigMap {

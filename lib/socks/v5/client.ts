@@ -7,7 +7,7 @@ import {
   clientWaitRepliedTargetServiceInfo,
 } from './communication';
 import {getTargetServiceInfo} from '../service';
-import {ECommand, EMethod, SocksClientStatus, UserPassInfo} from '../service/types';
+import {ECommand, EMethod, SocksClientInfo, UserPassInfo} from '../service/types';
 import {clientState} from './service';
 import {SocketClientCommConfig} from '../service/types/cross';
 import {Socket} from 'net';
@@ -17,10 +17,10 @@ import {Socket} from 'net';
  * NOTICE:
  * Close socket on socket error events of any error thrown during the logic process
  */
-export async function clientExchange(
+export async function exchangeInfo(
   socket: Socket,
   config: SocketClientCommConfig<'v5'>,
-  stateTracer?: SocksClientStatus['stateTracer']
+  stateTracer?: SocksClientInfo['stateTracer']
 ) {
   stateTracer = stateTracer ?? [];
   const {methodList = [{method: EMethod.NoAuth}]} = config;

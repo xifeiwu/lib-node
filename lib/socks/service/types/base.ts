@@ -1,5 +1,5 @@
-import {ServerOpts, Socket, TcpNetConnectOpts} from 'net';
-import {TargetServiceInfo, EMethod, MethodAuthInfo} from './v5';
+import {Socket} from 'net';
+import {TargetServiceInfo} from './v5';
 import {SocketInfo} from '../external';
 
 /**
@@ -36,50 +36,22 @@ export enum ESocksState {
 }
 
 export interface CommonSocksClientConfig {
-  // socksVersion?: SocksVersion;
-  /** get tcp connection by net.createConnection */
-  // socketConfig?: TcpNetConnectOpts;
-  /** get tcp connection by http upgrade */
-  // targetSocksServer: TargetSocket;
-  // methodList: Array<MethodAuthInfo>;
   /**
    * can be a origin/href/url
    */
   targetServiceInfo: TargetServiceInfo | string;
 }
 
-export interface SocksClientStatus {
+export interface SocksClientInfo {
   socketInfo: Partial<SocketInfo>;
   stateTracer?: Array<string | object>;
-  // iv?: BinaryLike;
   targetServiceInfo?: TargetServiceInfo;
   repliedServiceInfo?: TargetServiceInfo;
   socket?: Socket;
-  // error?: Error;
 }
 
 /** connect status on server side */
-export interface SocksServerStatus extends SocksClientStatus {
+export interface SocksServerInfo extends SocksClientInfo {
   socket2Service?: Socket;
-  proxyClientInfo?: SocksClientStatus;
+  proxyClientInfo?: SocksClientInfo;
 }
-
-// export interface SocketServerConfig extends CommonServerConfig {
-//   serverConfig?: {
-//     host?: string;
-//     port?: number;
-//     options?: ServerOpts;
-//   };
-//   /** start a http server to expose status of socks server by this config */
-//   httpServerConfig?: {
-//     host?: string;
-//     port: number;
-//   };
-// }
-
-// export interface HttpServerConfig extends CommonServerConfig, CustomProtocol {
-//   serverConfig?: {
-//     host?: string;
-//     port: number;
-//   };
-// }

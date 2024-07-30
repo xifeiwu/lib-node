@@ -1,9 +1,12 @@
-import {SocksServerStatus, SocksVersion, SocksServerConfig, SocksClientStatus} from './service/types';
+import {SocksServerInfo, SocksVersion, SocksServerConfig, SocksClientInfo} from './service/types';
 import {Socket} from 'net';
 import {pipeline} from 'stream';
-import {connectToTargetServer, getTargetServiceInfo} from './v5/server';
 import {serverState} from './service';
 import {getSocketInfo} from './service/external';
+import {
+  getTargetServiceInfo as getTargetServiceInfoV5,
+  connectToTargetServer as connectToTargetServerV5,
+} from './v5/server';
 
 /**
  * Handle new connection on sock server side
@@ -18,18 +21,18 @@ export async function handleConnection<Version extends SocksVersion>(
   socket: Socket,
   config?: SocksServerConfig<Version>
 ) {
-  const stateTracer: SocksClientStatus['stateTracer'] = [serverState.startNegotiation];
-  const status: SocksServerStatus = {
+  const stateTracer: SocksClientInfo['stateTracer'] = [serverState.startNegotiation];
+  const status: SocksServerInfo = {
     socketInfo: getSocketInfo(socket),
   };
   try {
-    const {stateTracer: tracerOfGetTargetServiceInfo = [], targetServiceInfo} = await getTargetServiceInfo(
+    const {stateTracer: tracerOfGetTargetServiceInfo = [], targetServiceInfo} = await getTargetServiceInfoV5(
       socket,
       config
     );
     stateTracer.push(...tracerOfGetTargetServiceInfo);
     stateTracer.push('get target service info success');
-    const {socket: socket2Service, proxyClientInfo} = await connectToTargetServer(
+    const {socket: socket2Service, proxyClientInfo} = await connectToTargetServerV5(
       socket,
       targetServiceInfo,
       config,

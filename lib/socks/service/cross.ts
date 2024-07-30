@@ -1,4 +1,4 @@
-import {SocksClientStatus, SocksProxyConfig, TargetServiceInfo} from './types';
+import {SocksClientInfo, SocksProxyConfig, TargetServiceInfo} from './types';
 import {ERRORS, createError, getMatchedProxyConfig} from './utils';
 import {connectToSocksServer} from '../client';
 
@@ -10,7 +10,7 @@ export async function proxySocksRequest(
   targetServiceInfo: TargetServiceInfo,
   proxyConfigList?: SocksProxyConfig[]
 ) {
-  const stateTracer: SocksClientStatus['stateTracer'] = [];
+  const stateTracer: SocksClientInfo['stateTracer'] = [];
   if (!Array.isArray(proxyConfigList) || proxyConfigList.length === 0) {
     return null;
   }
