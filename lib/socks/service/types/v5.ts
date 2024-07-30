@@ -1,4 +1,3 @@
-import {CommonClientExchangeInfoConfig} from './base';
 /**
  * o  X'00' NO AUTHENTICATION REQUIRED
  * o  X'01' GSSAPI

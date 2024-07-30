@@ -21,8 +21,13 @@ import {Socket, isIP} from 'net';
 import {serverState} from './service';
 import {proxySocksRequest} from '../service/cross';
 
-export async function getTargetServiceInfo(socket: Socket, config: SocksServerConfig<'v5'>) {
-  const stateTracer: SocksClientInfo['stateTracer'] = [serverState.waitingMethodList];
+export async function getTargetServiceInfo(
+  socket: Socket,
+  config: SocksServerConfig<'v5'>,
+  clientInfo?: SocksClientInfo
+) {
+  const {stateTracer = []} = clientInfo ?? {};
+  stateTracer.push(serverState.waitingMethodList);
   const {methodList = [{method: EMethod.NoAuth}]} = config ?? {};
   const method = await serverWaitMethod(
     socket,
@@ -62,9 +67,9 @@ export async function connectToTargetServer(
   socket: Socket,
   targetServiceInfo: TargetServiceInfo,
   config: SocksServerConfig<'v5'>,
-  stateTracer?: SocksClientInfo['stateTracer']
+  clientInfo: SocksClientInfo
 ) {
-  stateTracer = stateTracer ?? [];
+  const {stateTracer} = clientInfo;
   stateTracer.push(serverState.startConnectToTargetService);
   const {proxyConfigList} = config;
   let socket2Service: Socket;

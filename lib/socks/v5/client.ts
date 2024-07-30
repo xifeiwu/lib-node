@@ -20,9 +20,9 @@ import {Socket} from 'net';
 export async function exchangeInfo(
   socket: Socket,
   config: SocksClientExchangeInfoConfigV5,
-  stateTracer?: SocksClientInfo['stateTracer']
+  clientInfo?: SocksClientInfo
 ) {
-  stateTracer = stateTracer ?? [];
+  const {stateTracer = []} = clientInfo ?? {};
   const {methodList = [{method: EMethod.NoAuth}]} = config;
   const targetServiceInfo = getTargetServiceInfo(config.targetServiceInfo);
   /** Use authorized method first */
@@ -58,8 +58,8 @@ export async function exchangeInfo(
   stateTracer.push(clientState.getRepliedTargetSericeInfo);
   stateTracer.push(repliedServiceInfo);
   return {
+    stateTracer,
     targetServiceInfo,
     repliedServiceInfo,
-    stateTracer,
   };
 }

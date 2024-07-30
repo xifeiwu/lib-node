@@ -1,6 +1,5 @@
 import { Transform, pipeline } from 'stream';
 import { getCipher, getDcipher, getIv, ivLength } from './cipher';
-import { toBuffer } from '../external';
 
 export async function test() {
   const iv = getIv(ivLength);

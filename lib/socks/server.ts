@@ -21,25 +21,38 @@ export async function handleConnection<Version extends SocksVersion>(
   socket: Socket,
   config?: SocksServerConfig<Version>
 ) {
-  const stateTracer: SocksClientInfo['stateTracer'] = [serverState.startNegotiation];
   const status: SocksServerInfo = {
     socketInfo: getSocketInfo(socket),
+    stateTracer: [serverState.startNegotiation],
   };
+  const {stateTracer} = status;
+  const {socksVersion} = config;
   try {
-    const {stateTracer: tracerOfGetTargetServiceInfo = [], targetServiceInfo} = await getTargetServiceInfoV5(
-      socket,
-      config
-    );
-    stateTracer.push(...tracerOfGetTargetServiceInfo);
-    stateTracer.push('get target service info success');
-    const {socket: socket2Service, proxyClientInfo} = await connectToTargetServerV5(
-      socket,
-      targetServiceInfo,
-      config,
-      stateTracer
-    );
-    status.socket2Service = socket2Service;
-    status.proxyClientInfo = proxyClientInfo;
+    if (socksVersion === 'v5') {
+      const {targetServiceInfo} = await getTargetServiceInfoV5(
+        socket,
+        {
+          ...config,
+          socksVersion: 'v5',
+        },
+        status
+      );
+      // stateTracer.push(...tracerOfGetTargetServiceInfo);
+      stateTracer.push('get target service info success');
+
+      const {socket: socket2Service, proxyClientInfo} = await connectToTargetServerV5(
+        socket,
+        targetServiceInfo,
+        {
+          ...config,
+          socksVersion: 'v5',
+        },
+        status
+      );
+      status.socket2Service = socket2Service;
+      status.proxyClientInfo = proxyClientInfo;
+    }
+    const {socket2Service} = status;
     socket2Service.once('close', () => {
       stateTracer.push(serverState.socket2ServiceClosed);
     });

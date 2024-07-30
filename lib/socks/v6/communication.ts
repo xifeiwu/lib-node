@@ -1,5 +1,5 @@
 import {Readable, Writable} from 'stream';
-import {ConnectionInfo} from './types';
+import {ConnectionInfo} from '../service/types/v6';
 import {toBuffer} from '../service/external';
 import {ECommand, ETargetServiceConnectState, TargetServiceInfo} from '../service/types';
 import {ERRORS, bufferToTargeServiceInfo, createError, targetServiceInfoToBuffer} from '../service';

@@ -1,20 +1,32 @@
 import {Socket} from 'net';
-import {requestAndGetUpgradeInfo, startSocketClient} from '../service';
-import {
-  ClientConfig,
-  ECommand,
-  EMethod,
-  ESocksState,
-  SocksStatusOnClientSide,
-  TargetServiceInfo,
-  UserPassInfo,
-} from '../service/types';
-import {upgradeProtocol} from '../service';
 import {clientSendConnectionInfo, clientWaitRepliedTargetServiceInfo} from './communication';
-import {getIv, ivLength} from './service';
+import {clientState, getIv, ivLength} from './service';
+import {SocksClientInfo, SocksClientExchangeInfoConfigV6, ECommand} from '../service/types';
+import {getTargetServiceInfo} from '../service';
 
-
-
+export async function exchangeInfo(
+  socket: Socket,
+  config: SocksClientExchangeInfoConfigV6,
+  stateTracer?: SocksClientInfo['stateTracer']
+) {
+  stateTracer = stateTracer ?? [];
+  const {ivBytes = 1, auth} = config;
+  const targetServiceInfo = getTargetServiceInfo(config.targetServiceInfo);
+  const iv = getIv(ivBytes);
+  // const {info: auth} = authMethod as {method: EMethod.UserPass; info: UserPassInfo};
+  await clientSendConnectionInfo(socket, {
+    iv,
+    auth,
+    targetServiceInfo: {
+      command: ECommand.CONNECT,
+      ...targetServiceInfo,
+    },
+  });
+  stateTracer.push(clientState.sentConnectionInfo);
+  const replyServiceInfo = await clientWaitRepliedTargetServiceInfo(socket, iv);
+  stateTracer.push(clientState.gotRepliedTargetServiceInfo);
+  stateTracer.push(replyServiceInfo);
+}
 /**
  * Connect to socks server by socket from tcp connect or http upgrade
  * @param config

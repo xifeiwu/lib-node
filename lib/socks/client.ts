@@ -13,22 +13,24 @@ import {exchangeInfo as exchangeInfoV5} from './v5/client';
  */
 export async function connectToSocksServer<Version extends SocksVersion>(config: SocksClientConfig<Version>) {
   const {targetSocksServer, socksVersion, ...rest4Exchange} = config;
-  const status: SocksClientInfo = {
+  const clientInfo: SocksClientInfo = {
     socketInfo: {},
+    stateTracer: [],
   };
-  const stateTracer: SocksClientInfo['stateTracer'] = [];
+  // const stateTracer: SocksClientInfo['stateTracer'] = [];
+  const {stateTracer} = clientInfo;
   try {
     stateTracer.push(clientState.startNegotiation);
     let socket = await getSocket(targetSocksServer);
     if (!socket) {
       throw new Error(`Error: both socketConfig and httpUrl are not set.`);
     }
-    status.socket = socket;
-    status.socketInfo = getSocketInfo(socket);
-    const {...restProps} = await exchangeInfoV5(socket, {socksVersion: 'v5', ...rest4Exchange}, stateTracer);
+    clientInfo.socket = socket;
+    clientInfo.socketInfo = getSocketInfo(socket);
+    const {...restProps} = await exchangeInfoV5(socket, {socksVersion: 'v5', ...rest4Exchange}, clientInfo);
     // stateTracer.push(...tracer);
     for (const [key, value] of Object.entries(restProps)) {
-      status[key] = value;
+      clientInfo[key] = value;
     }
     socket.resume();
     stateTracer.push(clientState.finishNegotiation);
@@ -37,7 +39,7 @@ export async function connectToSocksServer<Version extends SocksVersion>(config:
     // status.error = err;
     throw err;
   } finally {
-    status.stateTracer = stateTracer;
+    clientInfo.stateTracer = stateTracer;
   }
-  return status;
+  return clientInfo;
 }
