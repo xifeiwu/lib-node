@@ -61,7 +61,7 @@ export interface SocksClientStatus {
 /** connect status on server side */
 export interface SocksServerStatus extends SocksClientStatus {
   socket2Service?: Socket;
-  proxyStatus?: SocksClientStatus;
+  proxyClientInfo?: SocksClientStatus;
 }
 
 // export interface SocketServerConfig extends CommonServerConfig {

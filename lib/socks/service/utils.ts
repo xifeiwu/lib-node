@@ -227,7 +227,7 @@ export function getConnectStatusInJson(status?: SocksServerStatus) {
   if (!status) {
     return null;
   }
-  const {socket, socket2Service, proxyStatus: proxyAsClientStatus} = status;
+  const {socket, socket2Service, proxyClientInfo: proxyAsClientStatus} = status;
   const results = {
     ...status,
     socket: getSocketInfo(socket),
@@ -245,7 +245,7 @@ export function getConnectStatusInJson(status?: SocksServerStatus) {
   // }
   if (proxyAsClientStatus) {
     // @ts-ignore
-    results.proxyStatus = getConnectStatusInJson(proxyAsClientStatus);
+    results.proxyClientInfo = getConnectStatusInJson(proxyAsClientStatus);
   }
   return results;
 }

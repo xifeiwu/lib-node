@@ -1,7 +1,7 @@
 import {startHttpDebugServer} from '../../../../http';
 import {connectToSocksServer} from '../../client';
 import {handleConnection} from '../../server';
-import {startSocketServer, tcpRequestPropsToBuffer} from '../../service/external';
+import {PORT, startSocketServer, tcpRequestPropsToBuffer} from '../../service/external';
 import {SocksProxyConfig} from '../../service/types';
 import {EMethod, MethodUserPass} from '../../service/types/v5';
 // import {connectToSocksServer} from '../../v5/client';
@@ -64,7 +64,14 @@ export async function useAuthUserPass() {
 }
 
 export async function proxyRequestOnServerSide() {
-  const {origin: httpOrigin, port: httpPort, server} = await startHttpDebugServer();
+  let startPort = PORT.start3400.port;
+  const {
+    origin: httpOrigin,
+    port: httpPort,
+    server,
+  } = await startHttpDebugServer({
+    port: startPort++,
+  });
   const methodUsePass: MethodUserPass = {
     method: EMethod.UserPass,
     info: {
@@ -72,9 +79,14 @@ export async function proxyRequestOnServerSide() {
       password: 'ddd',
     },
   };
-  const {host: host2, port: port2} = await startSocketServer(socket => {
-    handleConnection(socket, {socksVersion: 'v5', methodList: [methodUsePass]});
-  });
+  const {host: host2, port: port2} = await startSocketServer(
+    socket => {
+      handleConnection(socket, {socksVersion: 'v5', methodList: [methodUsePass]});
+    },
+    {
+      port: startPort++,
+    }
+  );
   const proxyToV5: SocksProxyConfig<'v5'> = {
     matches: [/127.0.0.1/],
     socksVersion: 'v5',
@@ -84,32 +96,37 @@ export async function proxyRequestOnServerSide() {
       port: port2,
     },
   };
-  const {host: host1, port: port1} = await startSocketServer(socket => {
-    handleConnection(socket, {
+  const {host: host1, port: port1} = await startSocketServer(
+    socket => {
+      handleConnection(socket, {
+        socksVersion: 'v5',
+        proxyConfigList: [proxyToV5],
+      });
+    },
+    {
+      port: startPort++,
+    }
+  );
+  {
+    const status = await connectToSocksServer({
       socksVersion: 'v5',
-      proxyConfigList: [proxyToV5],
+      targetSocksServer: {host: host1, port: port1},
+      targetServiceInfo: {
+        address: '0.0.0.0',
+        port: httpPort,
+      },
     });
-  });
-  // {
-  //   const status = await connectToSocksServer({
-  //     socksVersion: 'v5',
-  //     targetSocksServer: {host: host1, port: port1},
-  //     targetServiceInfo: {
-  //       address: '0.0.0.0',
-  //       port: httpPort,
-  //     },
-  //   });
-  //   const {socket} = status;
-  //   socket.write(
-  //     tcpRequestPropsToBuffer({
-  //       method: 'post',
-  //       data: {to: '0.0.0.0'},
-  //     })
-  //   );
-  //   socket.on('data', chunk => {
-  //     console.log(chunk.toString());
-  //   });
-  // }
+    const {socket} = status;
+    socket.write(
+      tcpRequestPropsToBuffer({
+        method: 'post',
+        data: {to: '0.0.0.0'},
+      })
+    );
+    socket.on('data', chunk => {
+      console.log(chunk.toString());
+    });
+  }
   {
     const status = await connectToSocksServer({
       socksVersion: 'v5',

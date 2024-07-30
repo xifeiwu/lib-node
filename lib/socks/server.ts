@@ -3,7 +3,7 @@ import {Socket} from 'net';
 import {pipeline} from 'stream';
 import {connectToTargetServer, getTargetServiceInfo} from './v5/server';
 import {serverState} from './service';
-import { getSocketInfo } from './service/external';
+import {getSocketInfo} from './service/external';
 
 /**
  * Handle new connection on sock server side
@@ -29,14 +29,14 @@ export async function handleConnection<Version extends SocksVersion>(
     );
     stateTracer.push(...tracerOfGetTargetServiceInfo);
     stateTracer.push('get target service info success');
-    const {socket: socket2Service, proxyStatus} = await connectToTargetServer(
+    const {socket: socket2Service, proxyClientInfo} = await connectToTargetServer(
       socket,
       targetServiceInfo,
       config,
       stateTracer
     );
     status.socket2Service = socket2Service;
-    status.proxyStatus = proxyStatus?.clientStatus;
+    status.proxyClientInfo = proxyClientInfo;
     socket2Service.once('close', () => {
       stateTracer.push(serverState.socket2ServiceClosed);
     });

@@ -20,4 +20,5 @@ export {
   CanConvertToBuffer,
   getSocketInfo,
   SocketInfo,
+  PORT,
 } from '../../../index';

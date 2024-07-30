@@ -72,7 +72,7 @@ export async function connectToTargetServer(
   if (proxyStatus) {
     const {
       stateTracer: tracer = [],
-      clientStatus: {repliedServiceInfo, socket},
+      proxyClientInfo: {repliedServiceInfo, socket: proxySocket},
     } = proxyStatus;
     stateTracer.push(...tracer);
     const replied = {
@@ -82,7 +82,7 @@ export async function connectToTargetServer(
     await serverReplyTargetServiceInfo(socket, replied);
     stateTracer.push(serverState.repliedTargetServiceInfo);
     stateTracer.push(replied);
-    socket2Service = socket;
+    socket2Service = proxySocket;
   } else {
     const repliedServiceInfo = deepClone<TargetServiceInfo>(targetServiceInfo);
     const isDomain = isIP(targetServiceInfo.address) === 0;
@@ -151,5 +151,5 @@ export async function connectToTargetServer(
     }
   }
 
-  return {socket: socket2Service, stateTracer, proxyStatus};
+  return {socket: socket2Service, stateTracer, proxyClientInfo: proxyStatus?.proxyClientInfo};
 }

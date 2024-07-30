@@ -22,9 +22,9 @@ export async function proxySocksRequest(
   stateTracer.push(proxyConfig.targetSocksServer);
   try {
     const {socksVersion, ...restProps} = proxyConfig;
-    const clientStatus = await connectToSocksServer({socksVersion, ...restProps, targetServiceInfo});
+    const proxyClientInfo = await connectToSocksServer({socksVersion, ...restProps, targetServiceInfo});
     stateTracer.push(state.proxyToSocksServerSuccess);
-    return {stateTracer, clientStatus};
+    return {stateTracer, proxyClientInfo};
   } catch (err) {
     throw createError(ERRORS.proxyError, err?.message);
   }
