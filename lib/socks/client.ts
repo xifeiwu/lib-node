@@ -1,8 +1,8 @@
-import {getSocket} from './service';
+import {clientState, getSocket} from './service';
+import {getSocketInfo} from './service/external';
 import {SocksClientStatus} from './service/types';
 import {SocketClientConfig, SocksVersion} from './service/types/cross';
-import {socketCommunication as socketCommV5} from './v5/client';
-import {clientState} from './v5/service';
+import {clientExchange as clientExchangeV5} from './v5/client';
 
 /**
  * Connect to socks server by socket from tcp connect or http upgrade
@@ -14,24 +14,28 @@ import {clientState} from './v5/service';
 export async function connectToSocksServer<Version extends SocksVersion>(
   config: SocketClientConfig<Version>
 ) {
-  const {socksVersion, targetSocksServer, ...restConfig4Comm} = config;
-  const status: SocksClientStatus = {};
-  const stateTracer: string[] = [];
+  const {socksVersion, targetSocksServer, ...rest4Exchange} = config;
+  const status: SocksClientStatus = {
+    socketInfo: {},
+  };
+  const stateTracer: SocksClientStatus['stateTracer'] = [];
   try {
-    stateTracer.push('start connect to socks server');
+    stateTracer.push(clientState.startNegotiation);
     let socket = await getSocket(targetSocksServer);
     if (!socket) {
       throw new Error(`Error: both socketConfig and httpUrl are not set.`);
     }
     status.socket = socket;
-    const info = await socketCommV5(socket, {...restConfig4Comm, stateTracer});
-    for (const [key, value] of Object.entries(info)) {
+    status.socketInfo = getSocketInfo(socket);
+    const {...restProps} = await clientExchangeV5(socket, rest4Exchange, stateTracer);
+    // stateTracer.push(...tracer);
+    for (const [key, value] of Object.entries(restProps)) {
       status[key] = value;
     }
     socket.resume();
-    stateTracer.push(clientState.finishedProcess);
+    stateTracer.push(clientState.finishNegotiation);
   } catch (err) {
-    stateTracer.push(`${clientState.logicError}: ${err.message}`);
+    stateTracer.push(`${clientState.catchError}: ${err.message}`);
     // status.error = err;
     throw err;
   } finally {

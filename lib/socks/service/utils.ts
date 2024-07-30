@@ -1,7 +1,7 @@
 import net, {Socket, TcpNetConnectOpts} from 'net';
 import {CanConvertToBuffer, isNumber, isPlainObject, isRegExp, toBuffer} from './external';
 import {
-  SocksStatusOnServerSide,
+  SocksServerStatus,
   EMethod,
   MatchItem,
   SocksProxyConfig,
@@ -15,16 +15,16 @@ export const upgradeProtocol = 'socks5';
 
 export const MethodList = Object.values(EMethod).filter(v => isNumber(v));
 
-export function getSocketInfo(socket?: Socket) {
-  if (!socket) {
-    return null;
-  }
-  const {localAddress, localPort, remoteAddress, remotePort, writable, readable, destroyed, closed} = socket;
-  const local = `${localAddress}:${localPort}`;
-  const remote = `${remoteAddress}:${remotePort}`;
-  const id = [local, '<-', remote].join('');
-  return {id, readable, writable, destroyed, closed, localAddress, localPort, remoteAddress, remotePort};
-}
+// export function getSocketInfo(socket?: Socket) {
+//   if (!socket) {
+//     return null;
+//   }
+//   const {localAddress, localPort, remoteAddress, remotePort, writable, readable, destroyed, closed} = socket;
+//   const local = `${localAddress}:${localPort}`;
+//   const remote = `${remoteAddress}:${remotePort}`;
+//   const id = [local, '<-', remote].join('');
+//   return {id, readable, writable, destroyed, closed, localAddress, localPort, remoteAddress, remotePort};
+// }
 
 export const ERRORS = {
   InvalidSocksVersion: 'only socks version 5 supported',
@@ -32,7 +32,7 @@ export const ERRORS = {
   invalid_methods: 'all methods is not valid',
   IPv6NotSupported: 'ipv6 not supported',
   MethodCountNotCorrect: 'Count of METHODS is not equal to NMETHODS',
-  username_password_auth_fail: 'username/password auth fail',
+  authUserPassFail: 'username/password auth fail',
   MORE_THAN_255_BYTES: 'size too long (limited to 255 bytes)',
   incorrect_address_type: 'addressType is not correct',
   CLIENT_AUTH_FAIL: 'userName/password not correct',
@@ -223,11 +223,11 @@ export function getMatchedProxyConfig(
   return null;
 }
 
-export function getConnectStatusInJson(status?: SocksStatusOnServerSide) {
+export function getConnectStatusInJson(status?: SocksServerStatus) {
   if (!status) {
     return null;
   }
-  const {socket, socket2Service, proxyAsClientStatus} = status;
+  const {socket, socket2Service, proxyStatus: proxyAsClientStatus} = status;
   const results = {
     ...status,
     socket: getSocketInfo(socket),
@@ -245,7 +245,7 @@ export function getConnectStatusInJson(status?: SocksStatusOnServerSide) {
   // }
   if (proxyAsClientStatus) {
     // @ts-ignore
-    results.proxyAsClientStatus = getConnectStatusInJson(proxyAsClientStatus);
+    results.proxyStatus = getConnectStatusInJson(proxyAsClientStatus);
   }
   return results;
 }
@@ -285,3 +285,21 @@ export function getTargetServiceInfo(origin: TargetServiceInfo | string): Target
   }
   return origin as TargetServiceInfo;
 }
+
+const commonState = {
+  catchError: 'catch error',
+};
+export const clientState = {
+  ...commonState,
+  startNegotiation: 'start negotiaiton with socks server',
+  finishNegotiation: 'finsish negotiation with socks server',
+};
+
+export const serverState = {
+  ...commonState,
+  startNegotiation: 'start negotiaiton with socket connection',
+  finishNegotiation: 'finish negotiaiton with socket connection',
+  connectionError: 'connection error',
+  socket2ServiceClosed: 'socket to service closed',
+  socket2ServiceError: 'socket to service error',
+};

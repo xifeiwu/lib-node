@@ -198,7 +198,7 @@ export async function clientWaitUserPassAuthResultReplied(reader: Readable) {
       //   return rej(createError(ERRORS.InvalidSocksVersion));
       // }
       if (status !== 0x00) {
-        return rej(createError(ERRORS.username_password_auth_fail, chunk));
+        return rej(createError(ERRORS.authUserPassFail, chunk));
       }
       res();
     });

@@ -1,5 +1,5 @@
 import {TcpNetConnectOpts} from 'net';
-import {SocksClientStatus, SocksStatusOnServerSide} from './base';
+import {SocksClientStatus, SocksServerStatus} from './base';
 import {MethodAuthInfo, SocksClientConfigV5, SocksServerConfigV5} from './v5';
 
 interface SocksClientConfigMap {
@@ -10,7 +10,7 @@ interface SocksClientConfigMap {
 export type SocksVersion = keyof SocksClientConfigMap;
 
 export type SocketClientCommConfig<Version extends SocksVersion> = SocksClientConfigMap[Version] & {
-  stateTracer: SocksClientStatus['stateTracer'];
+  // stateTracer: SocksClientStatus['stateTracer'];
 };
 
 export type SocketClientConfig<Version extends SocksVersion> = SocksClientConfigMap[Version] & {
@@ -27,17 +27,16 @@ export interface MatchItem {
  */
 export type TargetSocket = TcpNetConnectOpts | string;
 /** proxy to another socks server when address/port meets condition in matches list */
-export interface SocksProxyConfig {
+export type SocksProxyConfig<Version extends SocksVersion = 'v5'> = {
   matches: Array<MatchItem | string | RegExp>;
-  socksVersion: SocksVersion;
-  targetSocksServer: TargetSocket;
-}
+} & Omit<SocketClientConfig<Version>, 'targetServiceInfo'>;
 
 interface SocksServerConfigMap {
   v5: SocksServerConfigV5;
 }
-export type SocketServerCommConfig<Version extends SocksVersion> = SocksServerConfigMap[Version] & {
-  stateTracer: SocksClientStatus['stateTracer'];
+export type SocksServerConfig<Version extends SocksVersion> = SocksServerConfigMap[Version] & {
+  // stateTracer: SocksClientStatus['stateTracer'];
+  socksVersion: Version;
   proxyConfigList?: SocksProxyConfig[];
 };
 // export interface CommonServerConfig {

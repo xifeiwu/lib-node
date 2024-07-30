@@ -6,24 +6,25 @@ import {
   clientSendUserPass,
   clientWaitRepliedTargetServiceInfo,
 } from './communication';
-import {getSocket, getTargetServiceInfo} from '../service';
-import {ECommand, EMethod, UserPassInfo, SocksClientStatus, SocksClientConfigV5} from '../service/types';
+import {getTargetServiceInfo} from '../service';
+import {ECommand, EMethod, SocksClientStatus, UserPassInfo} from '../service/types';
 import {clientState} from './service';
 import {SocketClientCommConfig} from '../service/types/cross';
 import {Socket} from 'net';
 
 /**
  * Connect to socks server by socket from tcp connect or http upgrade
- * @param config
- * @returns
  * NOTICE:
  * Close socket on socket error events of any error thrown during the logic process
  */
-export async function socketCommunication(socket: Socket, config: SocketClientCommConfig<'v5'>) {
-  // const stateTracer: string[] = [clientState.initial];
-  const {methodList = [{method: EMethod.NoAuth}], stateTracer} = config;
-  let {targetServiceInfo} = config;
-  targetServiceInfo = getTargetServiceInfo(targetServiceInfo);
+export async function clientExchange(
+  socket: Socket,
+  config: SocketClientCommConfig<'v5'>,
+  stateTracer?: SocksClientStatus['stateTracer']
+) {
+  stateTracer = stateTracer ?? [];
+  const {methodList = [{method: EMethod.NoAuth}]} = config;
+  const targetServiceInfo = getTargetServiceInfo(config.targetServiceInfo);
   /** Use authorized method first */
   methodList.sort((pre, next) => next.method - pre.method);
 
@@ -48,12 +49,17 @@ export async function socketCommunication(socket: Socket, config: SocketClientCo
     stateTracer.push(clientState.authUserPassSuccess);
   }
   stateTracer.push(clientState.sendTargetSericeInfo);
+  stateTracer.push(targetServiceInfo);
   await clientSendTargetServiceInfo(socket, {
     command: ECommand.CONNECT,
     ...targetServiceInfo,
   });
+  const repliedServiceInfo = await clientWaitRepliedTargetServiceInfo(socket);
+  stateTracer.push(clientState.getRepliedTargetSericeInfo);
+  stateTracer.push(repliedServiceInfo);
   return {
     targetServiceInfo,
-    repliedServiceInfo: await clientWaitRepliedTargetServiceInfo(socket),
+    repliedServiceInfo,
+    stateTracer,
   };
 }

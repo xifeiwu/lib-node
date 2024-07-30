@@ -17,5 +17,7 @@ export {
   startSocketServer,
   toUrlInstance,
   tcpRequestPropsToBuffer,
-  CanConvertToBuffer
+  CanConvertToBuffer,
+  getSocketInfo,
+  SocketInfo,
 } from '../../../index';

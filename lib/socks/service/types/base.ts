@@ -1,5 +1,6 @@
 import {ServerOpts, Socket, TcpNetConnectOpts} from 'net';
 import {TargetServiceInfo, EMethod, MethodAuthInfo} from './v5';
+import {SocketInfo} from '../external';
 
 /**
  * @deprecated should diferent per version
@@ -34,7 +35,6 @@ export enum ESocksState {
   finsih = 'finish',
 }
 
-
 export interface CommonSocksClientConfig {
   // socksVersion?: SocksVersion;
   /** get tcp connection by net.createConnection */
@@ -49,8 +49,8 @@ export interface CommonSocksClientConfig {
 }
 
 export interface SocksClientStatus {
-  // method?: EMethod;
-  stateTracer?: string[];
+  socketInfo: Partial<SocketInfo>;
+  stateTracer?: Array<string | object>;
   // iv?: BinaryLike;
   targetServiceInfo?: TargetServiceInfo;
   repliedServiceInfo?: TargetServiceInfo;
@@ -59,12 +59,10 @@ export interface SocksClientStatus {
 }
 
 /** connect status on server side */
-export interface SocksStatusOnServerSide extends SocksClientStatus {
+export interface SocksServerStatus extends SocksClientStatus {
   socket2Service?: Socket;
-  proxyAsClientStatus?: SocksClientStatus;
+  proxyStatus?: SocksClientStatus;
 }
-
-
 
 // export interface SocketServerConfig extends CommonServerConfig {
 //   serverConfig?: {
