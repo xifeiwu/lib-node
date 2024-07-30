@@ -1,4 +1,4 @@
-import {clientState, getSocket} from './service';
+import {globalClientState, getSocket} from './service';
 import {getSocketInfo} from './service/external';
 import {SocksClientInfo} from './service/types';
 import {SocksClientConfig, SocksVersion} from './service/types/cross';
@@ -20,7 +20,7 @@ export async function connectToSocksServer<Version extends SocksVersion>(config:
   // const stateTracer: SocksClientInfo['stateTracer'] = [];
   const {stateTracer} = clientInfo;
   try {
-    stateTracer.push(clientState.startNegotiation);
+    stateTracer.push(globalClientState.startNegotiation);
     let socket = await getSocket(targetSocksServer);
     if (!socket) {
       throw new Error(`Error: both socketConfig and httpUrl are not set.`);
@@ -33,9 +33,9 @@ export async function connectToSocksServer<Version extends SocksVersion>(config:
       clientInfo[key] = value;
     }
     socket.resume();
-    stateTracer.push(clientState.finishNegotiation);
+    stateTracer.push(globalClientState.finishNegotiation);
   } catch (err) {
-    stateTracer.push(`${clientState.catchError}: ${err.message}`);
+    stateTracer.push(`${globalClientState.catchError}: ${err.message}`);
     // status.error = err;
     throw err;
   } finally {

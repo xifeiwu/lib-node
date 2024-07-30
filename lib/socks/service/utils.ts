@@ -53,6 +53,9 @@ export const ERRORS = {
     'An invalid timeout value was provided. Please enter a value above 0 (in ms).',
   InvalidSocksClientOptionsProxiesLength: 'At least two socks proxies must be provided for chaining.',
   NegotiationError: 'Negotiation error',
+  notFoundClientRequest: 'not found client request info',
+  handleClientRequestFail: 'handle client request fail',
+  connectionError: 'connection error',
   SocketClosed: 'Socket closed',
   SocketUnWritable: 'Socket can not write',
   ProxyConnectionTimedOut: 'Proxy connection timed out',
@@ -293,19 +296,22 @@ export function getTargetServiceInfo(origin: TargetServiceInfo | string): Target
 const commonState = {
   catchError: 'catch error',
 };
-export const clientState = {
+export const globalClientState = {
   ...commonState,
   startNegotiation: 'start negotiaiton with socks server',
   finishNegotiation: 'finsish negotiation with socks server',
 };
 
-export const serverState = {
+export const globalServerState = {
   ...commonState,
   startNegotiation: 'start negotiaiton with socket connection',
+  gotClientRequest: 'got client request info',
   finishNegotiation: 'finish negotiaiton with socket connection',
   connectionError: 'connection error',
   socket2ServiceClosed: 'socket to service closed',
   socket2ServiceError: 'socket to service error',
+  startHandleClientRequest: 'start handle client request',
+  startHandleConnection: 'start handle connection',
 };
 
 export function getInfoFromStateTracer<Key extends TracerKey>(

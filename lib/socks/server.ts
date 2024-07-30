@@ -1,12 +1,13 @@
 import {SocksServerInfo, SocksVersion, SocksServerConfig, SocksClientInfo} from './service/types';
 import {Socket} from 'net';
 import {pipeline} from 'stream';
-import {serverState} from './service';
+import {ERRORS, createError, getInfoFromStateTracer, globalServerState} from './service';
 import {getSocketInfo} from './service/external';
 import {
   getClientRequest as getTargetServiceInfoV5,
   connectToTargetServer as connectToTargetServerV5,
 } from './v5/server';
+import {proxySocksRequest} from './service/cross';
 
 /**
  * Handle new connection on sock server side
@@ -23,13 +24,13 @@ export async function handleConnection<Version extends SocksVersion>(
 ) {
   const status: SocksServerInfo = {
     socketInfo: getSocketInfo(socket),
-    stateTracer: [serverState.startNegotiation],
+    stateTracer: [globalServerState.startNegotiation],
   };
   const {stateTracer} = status;
-  const {socksVersion} = config;
+  const {socksVersion, proxyConfigList} = config;
   try {
     if (socksVersion === 'v5') {
-      const {clientRequest: targetServiceInfo} = await getTargetServiceInfoV5(
+      await getTargetServiceInfoV5(
         socket,
         {
           ...config,
@@ -37,12 +38,34 @@ export async function handleConnection<Version extends SocksVersion>(
         },
         status
       );
-      // stateTracer.push(...tracerOfGetTargetServiceInfo);
-      stateTracer.push('get target service info success');
+    }
+    const clientRequest = getInfoFromStateTracer(stateTracer, 'clientRequest');
+    if (!clientRequest) {
+      throw createError(ERRORS.CLIENT_AUTH_FAIL);
+    }
 
+    // const proxyStatus = proxyConfigList && (await proxySocksRequest(clientRequest, proxyConfigList));
+    //   const {
+    //     stateTracer: tracer = [],
+    //     proxyClientInfo: {repliedServiceInfo, socket: proxySocket},
+    //   } = proxyStatus;
+    //   stateTracer.push(...tracer);
+    //   const replied = {
+    //     reply: ETargetServiceConnectState.succeeded,
+    //     ...(repliedServiceInfo ?? {address: '8.8.8.8', port: 88}),
+    //   };
+    //   await serverReplyTargetServiceInfo(socket, replied);
+    //   stateTracer.push(serverState.repliedTargetServiceInfo);
+    //   stateTracer.push({
+    //     key: 'repliedServiceInfo',
+    //     value: replied,
+    //   });
+    //   socket2Service = proxySocket;
+
+    if (socksVersion === 'v5') {
+      stateTracer.push(globalServerState.gotClientRequest);
       const {socket: socket2Service, proxyClientInfo} = await connectToTargetServerV5(
         socket,
-        targetServiceInfo,
         {
           ...config,
           socksVersion: 'v5',
@@ -54,35 +77,32 @@ export async function handleConnection<Version extends SocksVersion>(
     }
     const {socket2Service} = status;
     socket2Service.once('close', () => {
-      stateTracer.push(serverState.socket2ServiceClosed);
+      stateTracer.push(globalServerState.socket2ServiceClosed);
     });
 
-    if (socket.writable && socket2Service.writable) {
-      pipeline(socket, socket2Service, err => {
-        // status.stateTracer = serverserverState.socket_connect_between_client_target_fail;
-        // status.error = err;
-        stateTracer.push(`${serverState.connectionError}: ${err?.message}`);
-      });
-      pipeline(socket2Service, socket, err => {
-        // status.stateTracer = serverserverState.socket_connect_between_client_target_fail;
-        // status.error = err;
-        stateTracer.push(`${serverState.connectionError}: ${err?.message}`);
-      });
-      // }
-      socket.resume();
-      // status.stateTracer = serverserverState.success;
-      stateTracer.push(serverState.finishNegotiation);
-    } else {
-      !socket.writable && stateTracer.push(`${serverState.connectionError}: client socket unwritable`);
-      !socket2Service.writable &&
-        stateTracer.push(`${serverState.connectionError}: target service socket unwritable`);
+    if (!socket || !socket2Service || socket.destroyed || socket2Service.destroyed) {
+      throw createError(ERRORS.connectionError);
     }
+    pipeline(socket, socket2Service, err => {
+      // status.stateTracer = serverserverState.socket_connect_between_client_target_fail;
+      // status.error = err;
+      stateTracer.push(`${globalServerState.connectionError}: ${err?.message}`);
+    });
+    pipeline(socket2Service, socket, err => {
+      // status.stateTracer = serverserverState.socket_connect_between_client_target_fail;
+      // status.error = err;
+      stateTracer.push(`${globalServerState.connectionError}: ${err?.message}`);
+    });
+    // }
+    socket.resume();
+    // status.stateTracer = serverserverState.success;
+    stateTracer.push(globalServerState.finishNegotiation);
   } catch (err) {
     const {socket, socket2Service} = status;
     const {message = 'there is an error on socket server'} = err ?? {};
     socket2Service && socket2Service.writable && socket2Service.end(message);
     socket && socket.writable && socket.end(message);
-    stateTracer.push(`${serverState.catchError}: ${message}`);
+    stateTracer.push(`${globalServerState.catchError}: ${message}`);
     // status.error = err;
   } finally {
     status.stateTracer = stateTracer;

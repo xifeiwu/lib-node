@@ -58,12 +58,12 @@ export async function exchangeInfo(
     value: clientRequest,
   });
   await clientSendTargetServiceInfo(socket, clientRequest);
-  const repliedServiceInfo = await clientWaitRepliedTargetServiceInfo(socket);
+  const repliedClientRequest = await clientWaitRepliedTargetServiceInfo(socket);
   stateTracer.push(clientState.getRepliedTargetSericeInfo);
-  stateTracer.push({key: 'repliedServiceInfo', value: repliedServiceInfo});
+  stateTracer.push({key: 'repliedClientRequest', value: repliedClientRequest});
   return {
     stateTracer,
     targetServiceInfo,
-    repliedServiceInfo,
+    repliedClientRequest,
   };
 }

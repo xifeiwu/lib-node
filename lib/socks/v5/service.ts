@@ -25,7 +25,6 @@ export const serverState = {
   waitingTargetServiceInfo: 'waiting for target service info',
   gotTargetServiceInfo: 'got target service info',
   startTransferDomainToIp: 'start transfer domain to ip',
-  startConnectToTargetService: 'start connect to target server',
   connectToTargetServiceSuccess: 'connect to target service success',
   repliedTargetServiceInfo: 'replied target service info',
   connectionError: 'connection error',

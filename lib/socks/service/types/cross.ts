@@ -2,13 +2,15 @@ import {MethodAuthInfo, TargetServiceInfo} from './v5';
 import {Socket, TcpNetConnectOpts} from 'net';
 import {SocketInfo} from '../external';
 import {BinaryLike} from 'crypto';
+import { RepliedClientRequest } from './base';
 
 export type TargetSocket = TcpNetConnectOpts | string;
 
 export interface TracerPropsMap {
   iv: BinaryLike;
   clientRequest: TargetServiceInfo;
-  repliedServiceInfo: TargetServiceInfo;
+  repliedClientRequest: RepliedClientRequest;
+  targetSocksServer: TargetSocket;
 }
 export type TracerKey = keyof TracerPropsMap;
 export interface TracerObject {

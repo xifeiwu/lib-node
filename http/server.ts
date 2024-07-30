@@ -156,7 +156,7 @@ export async function startHttpDebugServer(config?: HttpServerConfig) {
     {
       request(request, response) {
         logColorful({color: 'yellow'}, 'headerPart Info:', getRequestHeaderInfo(request));
-        // watchSocketState(request.socket, {color: 'yellow'});
+        watchSocketState(request.socket, {color: 'yellow'});
         responseRequestInfo(request, response);
       },
       connect(req, socket, head) {
@@ -170,12 +170,12 @@ export async function startHttpDebugServer(config?: HttpServerConfig) {
     },
     config
   );
-  // server.on('connection', socket => {
-  //   socket.on('data', chunk => {
-  //     console.log(`chunk.toString()`);
-  //     console.log(chunk.toString());
-  //   });
-  // });
+  server.on('connection', socket => {
+    socket.on('data', chunk => {
+      console.log(`chunk.toString()`);
+      console.log(chunk.toString());
+    });
+  });
   console.log(`start http server: ${origin}`);
   return {host, port, origin, server};
 }
