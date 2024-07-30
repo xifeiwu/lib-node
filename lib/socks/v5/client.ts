@@ -9,7 +9,7 @@ import {
 import {getTargetServiceInfo} from '../service';
 import {ECommand, EMethod, SocksClientInfo, UserPassInfo} from '../service/types';
 import {clientState} from './service';
-import {SocketClientCommConfig} from '../service/types/cross';
+import {SocksClientExchangeInfoConfigV5} from '../service/types/cross';
 import {Socket} from 'net';
 
 /**
@@ -19,7 +19,7 @@ import {Socket} from 'net';
  */
 export async function exchangeInfo(
   socket: Socket,
-  config: SocketClientCommConfig<'v5'>,
+  config: SocksClientExchangeInfoConfigV5,
   stateTracer?: SocksClientInfo['stateTracer']
 ) {
   stateTracer = stateTracer ?? [];

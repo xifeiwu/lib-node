@@ -1,7 +1,7 @@
 import {clientState, getSocket} from './service';
 import {getSocketInfo} from './service/external';
 import {SocksClientInfo} from './service/types';
-import {SocketClientConfig, SocksVersion} from './service/types/cross';
+import {SocksClientConfig, SocksVersion} from './service/types/cross';
 import {exchangeInfo as exchangeInfoV5} from './v5/client';
 
 /**
@@ -11,10 +11,8 @@ import {exchangeInfo as exchangeInfoV5} from './v5/client';
  * NOTICE:
  * Close socket on socket error events of any error thrown during the logic process
  */
-export async function connectToSocksServer<Version extends SocksVersion>(
-  config: SocketClientConfig<Version>
-) {
-  const {socksVersion, targetSocksServer, ...rest4Exchange} = config;
+export async function connectToSocksServer<Version extends SocksVersion>(config: SocksClientConfig<Version>) {
+  const {targetSocksServer, socksVersion, ...rest4Exchange} = config;
   const status: SocksClientInfo = {
     socketInfo: {},
   };
@@ -27,7 +25,7 @@ export async function connectToSocksServer<Version extends SocksVersion>(
     }
     status.socket = socket;
     status.socketInfo = getSocketInfo(socket);
-    const {...restProps} = await exchangeInfoV5(socket, rest4Exchange, stateTracer);
+    const {...restProps} = await exchangeInfoV5(socket, {socksVersion: 'v5', ...rest4Exchange}, stateTracer);
     // stateTracer.push(...tracer);
     for (const [key, value] of Object.entries(restProps)) {
       status[key] = value;
