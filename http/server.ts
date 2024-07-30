@@ -14,15 +14,11 @@ import {
   logColorful,
   watchSocketState,
   responseInfoToBuffer,
+  HttpServerConfig,
 } from '..';
 import {Socket} from 'net';
 import {deepEqual, toUrlProps, isNumber, waitFor} from '../external';
 
-export interface HttpServerConfig {
-  host?: string;
-  port?: number;
-  options?: ServerOptions;
-}
 export async function startHttpServer(
   handler: {
     request?: RequestListener;
@@ -155,22 +151,25 @@ export async function handleIncomingMessage(
 }
 
 /** Just echo reuqst, mainly for debug */
-export async function startHttpDebugServer() {
-  const {host, port, origin, server} = await startHttpServer({
-    request(request, response) {
-      logColorful({color: 'yellow'}, 'headerPart Info:', getRequestHeaderInfo(request));
-      watchSocketState(request.socket, {color: 'yellow'});
-      responseRequestInfo(request, response);
+export async function startHttpDebugServer(config?: HttpServerConfig) {
+  const {host, port, origin, server} = await startHttpServer(
+    {
+      request(request, response) {
+        logColorful({color: 'yellow'}, 'headerPart Info:', getRequestHeaderInfo(request));
+        // watchSocketState(request.socket, {color: 'yellow'});
+        responseRequestInfo(request, response);
+      },
+      connect(req, socket, head) {
+        const {responseInfo} = handleConnect(req);
+        socket.write(responseInfoToBuffer(responseInfo));
+        // handleSocketEvents(socket, {isServer: true, color: 'red'});
+        socket.on('end', () => {
+          socket.end();
+        });
+      },
     },
-    connect(req, socket, head) {
-      const {responseInfo} = handleConnect(req);
-      socket.write(responseInfoToBuffer(responseInfo));
-      // handleSocketEvents(socket, {isServer: true, color: 'red'});
-      socket.on('end', () => {
-        socket.end();
-      });
-    },
-  });
+    config
+  );
   // server.on('connection', socket => {
   //   socket.on('data', chunk => {
   //     console.log(`chunk.toString()`);

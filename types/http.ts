@@ -1,4 +1,4 @@
-import {IncomingHttpHeaders, RequestOptions} from 'http';
+import {IncomingHttpHeaders, RequestOptions, ServerOptions} from 'http';
 import {OutgoingHttpHeaders} from 'http2';
 import {UrlProps} from '../external';
 import {CanConvertToBuffer} from './transform';
@@ -36,4 +36,10 @@ export interface HttpResponseProps<T = any, Side extends 'Server' | 'Client' = '
   statusMessage: string;
   headers?: ResponseSideToHeaderType[Side];
   data?: T;
+}
+
+export interface HttpServerConfig {
+  host?: string;
+  port?: number;
+  options?: ServerOptions;
 }
