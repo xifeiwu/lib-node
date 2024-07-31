@@ -1,6 +1,6 @@
 import {BinaryLike} from 'crypto';
-import {TargetServiceInfo} from './v5';
-import { SocksClientExchangeInfoConfigV6 } from './cross';
+import {ClientRequestInfo} from './v5';
+import { SocksClientV6NegotiationInfo } from './cross';
 
 // export interface SocksStatusOnCustomClientSide extends SocksClientInfo {
 //   iv: Buffer;
@@ -8,6 +8,6 @@ import { SocksClientExchangeInfoConfigV6 } from './cross';
 
 export interface ConnectionInfo {
   iv: BinaryLike;
-  auth: SocksClientExchangeInfoConfigV6['auth'];
-  targetServiceInfo: TargetServiceInfo;
+  auth: SocksClientV6NegotiationInfo['auth'];
+  clientRequestInfo: ClientRequestInfo;
 }

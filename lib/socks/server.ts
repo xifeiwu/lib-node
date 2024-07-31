@@ -1,9 +1,9 @@
 import {
-  SocksServerInfo,
+  SocksServerStatus,
   SocksVersion,
   SocksServerConfig,
-  SocksClientInfo,
-  SocksServerExchangeInfoConfigV6,
+  SocksClientStatus,
+  SocksServerV6NegotiationInfo,
 } from './service/types';
 import {Socket} from 'net';
 import {pipeline} from 'stream';
@@ -31,7 +31,7 @@ export async function handleConnection<Version extends SocksVersion>(
   socket: Socket,
   config?: SocksServerConfig<Version>
 ) {
-  const status: SocksServerInfo = {
+  const status: SocksServerStatus = {
     socketInfo: getSocketInfo(socket),
     stateTracer: [globalServerState.startNegotiation],
   };
@@ -51,16 +51,16 @@ export async function handleConnection<Version extends SocksVersion>(
         socket,
         {
           ...config,
-        } as SocksServerExchangeInfoConfigV6,
+        } as SocksServerV6NegotiationInfo,
         status
       );
     }
-    const clientRequest = getInfoFromStateTracer(stateTracer, 'clientRequest');
-    if (!clientRequest) {
+    const clientRequestInfo = getInfoFromStateTracer(stateTracer, 'clientRequestInfo');
+    if (!clientRequestInfo) {
       throw createError(ERRORS.CLIENT_AUTH_FAIL);
     }
 
-    // const proxyStatus = proxyConfigList && (await proxySocksRequest(clientRequest, proxyConfigList));
+    // const proxyStatus = proxyConfigList && (await proxySocksRequest(clientRequestInfo, proxyConfigList));
     //   const {
     //     stateTracer: tracer = [],
     //     proxyClientInfo: {repliedServiceInfo, socket: proxySocket},
@@ -88,18 +88,18 @@ export async function handleConnection<Version extends SocksVersion>(
         status
       );
       status.socket2Service = socket2Service;
-      status.proxyClientInfo = proxyClientInfo;
+      status.proxyClientStatus = proxyClientInfo;
     } else if (socksVersion === 'v6') {
       stateTracer.push(globalServerState.gotClientRequest);
       const {socket: socket2Service, proxyClientInfo} = await connectToTargetServerV6(
         socket,
         {
           ...config,
-        } as SocksServerExchangeInfoConfigV6,
+        } as SocksServerV6NegotiationInfo,
         status
       );
       status.socket2Service = socket2Service;
-      status.proxyClientInfo = proxyClientInfo;
+      status.proxyClientStatus = proxyClientInfo;
     }
     const {socket2Service} = status;
     socket2Service.once('close', () => {

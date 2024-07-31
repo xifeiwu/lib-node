@@ -35,13 +35,19 @@ export enum EAddressType {
   IPV6 = 0x04,
 }
 
-export interface TargetServiceInfo {
+export interface ClientRequestInfo {
   command?: ECommand;
   addressType?: EAddressType;
   address: string;
   port: number;
 }
 
+export interface RespondClientRequest {
+  reply: EHandleClientRequestState;
+  addressType?: EAddressType
+  address: string;
+  port: number;
+}
 /**
  * +----+-----+-------+------+----------+----------+
  * |VER | REP |  RSV  | ATYP | BND.ADDR | BND.PORT |
@@ -64,7 +70,7 @@ export interface TargetServiceInfo {
  *     o  RSV    RESERVED
  * o  ATYP   address type of following address
  */
-export enum ETargetServiceConnectState {
+export enum EHandleClientRequestState {
   succeeded = 0x00,
   general_SOCKS_server_failure = 0x01,
   connection_not_allowed_by_ruleset = 0x02,

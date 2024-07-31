@@ -5,13 +5,14 @@ import {
   EMethod,
   MatchItem,
   SocksProxyConfig,
-  TargetServiceInfo,
+  ClientRequestInfo,
   TargetSocket,
   EAddressType,
-  SocksClientInfo,
-  TracerPropsMap,
-  TracerObject,
-  TracerKey,
+  SocksClientStatus,
+  SocksStatus,
+  StatusItem,
+  StatusKey,
+  AllSocksProxyConfig,
 } from './types';
 import {isString, toUrlInstance, requestAndGetUpgradeInfo, startSocketClient} from './external';
 
@@ -131,7 +132,7 @@ function port2Buffer(port: number) {
   return toBuffer([high, low]);
 }
 
-export function targetServiceInfoToBuffer(targetServiceInfo: Omit<TargetServiceInfo, 'command'>): Buffer {
+export function targetServiceInfoToBuffer(targetServiceInfo: Omit<ClientRequestInfo, 'command'>): Buffer {
   const {address, port} = targetServiceInfo;
   let addressType = targetServiceInfo.addressType;
   if (!addressType) {
@@ -140,7 +141,7 @@ export function targetServiceInfoToBuffer(targetServiceInfo: Omit<TargetServiceI
   return toBuffer([addressType, address2Buffer(address), port2Buffer(port)]);
 }
 
-export function bufferToTargeServiceInfo(buf: Buffer): Required<Omit<TargetServiceInfo, 'command'>> {
+export function bufferToTargeServiceInfo(buf: Buffer): Required<Omit<ClientRequestInfo, 'command'>> {
   const [addressType] = buf;
   const remainBuffer = buf.subarray(1);
   if (!Object.values(EAddressType).includes(addressType)) {
@@ -197,9 +198,9 @@ export async function getInfoFromFirstChunk(reader: Socket) {
 }
 
 export function getMatchedProxyConfig(
-  target: TargetServiceInfo,
-  config: SocksProxyConfig
-): SocksProxyConfig | null {
+  target: ClientRequestInfo,
+  config: AllSocksProxyConfig
+): AllSocksProxyConfig | null {
   const {matches = []} = config;
   const matched = matches.find(match => {
     /**
@@ -234,7 +235,7 @@ export function getConnectStatusInJson(status?: SocksServerStatus) {
   if (!status) {
     return null;
   }
-  const {socket, socket2Service, proxyClientInfo: proxyAsClientStatus} = status;
+  const {socket, socket2Service, proxyClientStatus: proxyAsClientStatus} = status;
   const results = {
     ...status,
     socket: getSocketInfo(socket),
@@ -252,7 +253,7 @@ export function getConnectStatusInJson(status?: SocksServerStatus) {
   // }
   if (proxyAsClientStatus) {
     // @ts-ignore
-    results.proxyClientInfo = getConnectStatusInJson(proxyAsClientStatus);
+    results.proxyClientStatus = getConnectStatusInJson(proxyAsClientStatus);
   }
   return results;
 }
@@ -282,7 +283,7 @@ export async function getSocket(target: TargetSocket) {
   return socket;
 }
 
-export function getTargetServiceInfo(origin: TargetServiceInfo | string): TargetServiceInfo {
+export function getTargetServiceInfo(origin: ClientRequestInfo | string): ClientRequestInfo {
   if (isString(origin)) {
     const {hostname, port} = toUrlInstance({origin: origin as string});
     return {
@@ -290,7 +291,7 @@ export function getTargetServiceInfo(origin: TargetServiceInfo | string): Target
       port: parseInt(port),
     };
   }
-  return origin as TargetServiceInfo;
+  return origin as ClientRequestInfo;
 }
 
 const commonState = {
@@ -314,17 +315,17 @@ export const globalServerState = {
   startHandleConnection: 'start handle connection',
 };
 
-export function getInfoFromStateTracer<Key extends TracerKey>(
-  stateTracer: SocksClientInfo['stateTracer'],
+export function getInfoFromStateTracer<Key extends StatusKey>(
+  stateTracer: SocksClientStatus['stateTracer'],
   key: Key
-): TracerPropsMap[Key] | null {
-  const item = stateTracer.find((it: TracerObject) => {
+): SocksStatus[Key] | null {
+  const item = stateTracer.find((it: StatusItem) => {
     return it?.key && it?.key === key;
   });
   if (!item) {
     return null;
   }
-  return (item as TracerObject).value as TracerPropsMap[Key];
+  return (item as StatusItem).value as SocksStatus[Key];
 }
 
 /**
@@ -333,9 +334,9 @@ export function getInfoFromStateTracer<Key extends TracerKey>(
  * @param keys 
  * @returns 
  */
-export function getInfosFromStateTracer<Key extends TracerKey>(
-  stateTracer: SocksClientInfo['stateTracer'],
+export function getInfosFromStateTracer<Key extends StatusKey>(
+  stateTracer: SocksClientStatus['stateTracer'],
   keys: Key[]
-): Array<TracerPropsMap[Key] | null> {
+): Array<SocksStatus[Key] | null> {
   return keys.map(key => getInfoFromStateTracer(stateTracer, key));
 }

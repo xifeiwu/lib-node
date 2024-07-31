@@ -15,7 +15,7 @@ export async function generalProcess() {
   const status = await connectToSocksServer({
     socksVersion: 'v5',
     targetSocksServer: {host, port},
-    targetServiceInfo: httpOrigin,
+    clientRequestInfo: httpOrigin,
   });
   const {socket} = status;
   socket.write(
@@ -49,7 +49,7 @@ export async function useAuthUserPass() {
     socksVersion: 'v5',
     methodList: [methodUsePass],
     targetSocksServer: {host, port},
-    targetServiceInfo: httpOrigin,
+    clientRequestInfo: httpOrigin,
   });
   const {socket} = status;
   socket.write(
@@ -111,7 +111,7 @@ export async function proxyRequestOnServerSide() {
     const status = await connectToSocksServer({
       socksVersion: 'v5',
       targetSocksServer: {host: host1, port: port1},
-      targetServiceInfo: {
+      clientRequestInfo: {
         address: '0.0.0.0',
         port: httpPort,
       },
@@ -131,7 +131,7 @@ export async function proxyRequestOnServerSide() {
     const status = await connectToSocksServer({
       socksVersion: 'v5',
       targetSocksServer: {host: host1, port: port1},
-      targetServiceInfo: {
+      clientRequestInfo: {
         address: '127.0.0.1',
         port: httpPort,
       },

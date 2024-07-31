@@ -1,7 +1,7 @@
 import {Readable, Writable} from 'stream';
 import {ConnectionInfo} from '../service/types/v6';
 import {toBuffer} from '../service/external';
-import {ECommand, ETargetServiceConnectState, TargetServiceInfo} from '../service/types';
+import {ECommand, EHandleClientRequestState, ClientRequestInfo} from '../service/types';
 import {ERRORS, bufferToTargeServiceInfo, createError, targetServiceInfoToBuffer} from '../service';
 import {decript, encrypt, defaultIvBytes} from './service';
 import {BinaryLike} from 'crypto';
@@ -39,7 +39,7 @@ import {BinaryLike} from 'crypto';
  * +----+-----+------+----------+------+----------+-----+-------+------+----------+----------+
  */
 export async function clientSendConnectionInfo(writer: Writable, info: ConnectionInfo) {
-  const {iv, auth, targetServiceInfo} = info;
+  const {iv, auth, clientRequestInfo: targetServiceInfo} = info;
   const {username, password} = auth;
   const {command = ECommand.CONNECT} = targetServiceInfo;
   return new Promise<void>(async (res, rej) => {
@@ -103,7 +103,7 @@ export async function serverWaitConectionInfo(reader: Readable) {
           username: username.toString(),
           password: password.toString(),
         },
-        targetServiceInfo: {
+        clientRequestInfo: {
           command,
           addressType,
           address,
@@ -139,7 +139,7 @@ export async function serverWaitConectionInfo(reader: Readable) {
 export async function serverReplyTargetServiceInfo(
   writer: Writable,
   state: {
-    reply: ETargetServiceConnectState;
+    reply: EHandleClientRequestState;
     address: string;
     port: number;
   },
@@ -196,7 +196,7 @@ export async function serverReplyTargetServiceInfo(
  */
 export async function clientWaitRepliedTargetServiceInfo(reader: Readable, iv: BinaryLike) {
   reader.resume();
-  return new Promise<TargetServiceInfo>((res, rej) => {
+  return new Promise<ClientRequestInfo>((res, rej) => {
     reader.once('data', (chunk: Buffer) => {
       reader.pause();
       const buffer = decript(chunk, iv);
@@ -204,8 +204,8 @@ export async function clientWaitRepliedTargetServiceInfo(reader: Readable, iv: B
       if (version !== 0x05) {
         return rej(createError(ERRORS.InvalidSocksVersion));
       }
-      if (reply !== ETargetServiceConnectState.succeeded) {
-        return rej(createError(ETargetServiceConnectState[reply]));
+      if (reply !== EHandleClientRequestState.succeeded) {
+        return rej(createError(EHandleClientRequestState[reply]));
       }
       const {addressType, address, port} = bufferToTargeServiceInfo(buffer.subarray(3));
       res({

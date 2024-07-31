@@ -4,25 +4,25 @@ import {
   clientSendMethod,
   clientSendTargetServiceInfo,
   clientSendUserPass,
-  clientWaitRepliedTargetServiceInfo,
+  clientWaitRequestRespond,
 } from './communication';
 import {getTargetServiceInfo} from '../service';
-import {ECommand, EMethod, SocksClientInfo, UserPassInfo} from '../service/types';
+import {ECommand, EMethod, SocksClientStatus, UserPassInfo} from '../service/types';
 import {clientState} from './service';
-import {SocksClientExchangeInfoConfigV5} from '../service/types/cross';
+import {SocksClientV5NegotiationInfo} from '../service/types/cross';
 import {Socket} from 'net';
 
 /**
  * 
  */
-export async function exchangeInfo(
+export async function infoNegotiation(
   socket: Socket,
-  config: SocksClientExchangeInfoConfigV5,
-  clientInfo?: SocksClientInfo
+  config: SocksClientV5NegotiationInfo,
+  clientInfo?: SocksClientStatus
 ) {
   const {stateTracer = []} = clientInfo ?? {};
   const {methodList = [{method: EMethod.NoAuth}]} = config;
-  const targetServiceInfo = getTargetServiceInfo(config.targetServiceInfo);
+  const targetServiceInfo = getTargetServiceInfo(config.clientRequestInfo);
   /** Use authorized method first */
   methodList.sort((pre, next) => next.method - pre.method);
 
@@ -47,21 +47,21 @@ export async function exchangeInfo(
     stateTracer.push(clientState.authUserPassSuccess);
   }
   stateTracer.push(clientState.sendTargetSericeInfo);
-  const clientRequest = {
+  const clientRequestInfo = {
     command: ECommand.CONNECT,
     ...targetServiceInfo,
   };
   stateTracer.push({
-    key: 'clientRequest',
-    value: clientRequest,
+    key: 'clientRequestInfo',
+    value: clientRequestInfo,
   });
-  await clientSendTargetServiceInfo(socket, clientRequest);
-  const repliedClientRequest = await clientWaitRepliedTargetServiceInfo(socket);
+  await clientSendTargetServiceInfo(socket, clientRequestInfo);
+  const respondClientRequest = await clientWaitRequestRespond(socket);
   stateTracer.push(clientState.getRepliedTargetSericeInfo);
-  stateTracer.push({key: 'repliedClientRequest', value: repliedClientRequest});
+  stateTracer.push({key: 'respondClientRequest', value: respondClientRequest});
   return {
     // stateTracer,
     // targetServiceInfo,
-    repliedClientRequest,
+    respondClientRequest,
   };
 }

@@ -1,6 +1,6 @@
 import {Readable, Writable} from 'stream';
 import {ERRORS, bufferToTargeServiceInfo, createError, targetServiceInfoToBuffer} from '../service';
-import {ECommand, EMethod, ETargetServiceConnectState, TargetServiceInfo} from '../service/types';
+import {ECommand, EMethod, EHandleClientRequestState, ClientRequestInfo, RespondClientRequest} from '../service/types';
 import {toBuffer} from '../service/external';
 
 /**
@@ -225,7 +225,7 @@ export async function clientWaitUserPassAuthResultReplied(reader: Readable) {
  *     o  DST.ADDR       desired destination address
  * o  DST.PORT desired destination port in network octet order
  */
-export async function clientSendTargetServiceInfo(writer: Writable, info: TargetServiceInfo) {
+export async function clientSendTargetServiceInfo(writer: Writable, info: ClientRequestInfo) {
   const {command = ECommand.CONNECT} = info;
   return new Promise<void>(async (res, rej) => {
     const buffer = toBuffer([5, command, 0, targetServiceInfoToBuffer(info)]);
@@ -243,7 +243,7 @@ export async function clientSendTargetServiceInfo(writer: Writable, info: Target
 }
 export async function serverWaitTargetServiceInfo(reader: Readable) {
   reader.resume();
-  return new Promise<TargetServiceInfo>((res, rej) => {
+  return new Promise<ClientRequestInfo>((res, rej) => {
     reader.once('data', (chunk: Buffer) => {
       reader.pause();
       const [version, command, _reserve] = chunk;
@@ -286,15 +286,11 @@ export async function serverWaitTargetServiceInfo(reader: Readable) {
  *     o  RSV    RESERVED
  * o  ATYP   address type of following address
  */
-export async function serverReplyTargetServiceInfo(
+export async function serverRespondClientRequest(
   writer: Writable,
-  state: {
-    reply: ETargetServiceConnectState;
-    address: string;
-    port: number;
-  }
+  respond: RespondClientRequest
 ) {
-  const {reply, address, port} = state;
+  const {reply, address, port} = respond;
   return new Promise<void>((res, rej) => {
     if (!writer.writable) {
       return rej(createError(ERRORS.SocketUnWritable));
@@ -319,20 +315,21 @@ export async function serverReplyTargetServiceInfo(
     );
   });
 }
-export async function clientWaitRepliedTargetServiceInfo(reader: Readable) {
+export async function clientWaitRequestRespond(reader: Readable) {
   reader.resume();
-  return new Promise<TargetServiceInfo>((res, rej) => {
+  return new Promise<RespondClientRequest>((res, rej) => {
     reader.once('data', (chunk: Buffer) => {
       reader.pause();
       const [version, reply, _reserve] = chunk;
       if (version !== 0x05) {
         return rej(createError(ERRORS.InvalidSocksVersion, chunk));
       }
-      if (reply !== ETargetServiceConnectState.succeeded) {
-        return rej(createError(ETargetServiceConnectState[reply], chunk));
+      if (reply !== EHandleClientRequestState.succeeded) {
+        return rej(createError(EHandleClientRequestState[reply], chunk));
       }
       const {addressType, address, port} = bufferToTargeServiceInfo(chunk.subarray(3));
       res({
+        reply,
         addressType,
         address,
         port,
