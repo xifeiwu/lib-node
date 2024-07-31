@@ -21,4 +21,6 @@ export {
   getSocketInfo,
   SocketInfo,
   PORT,
+  HttpRequestOptions,
+  requestAndGetResponseInfo,
 } from '../../../index';

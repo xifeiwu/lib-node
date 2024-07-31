@@ -1,4 +1,4 @@
-import {serverReplyTargetServiceInfo, serverWaitConectionInfo} from './communication';
+import {serverRespondClientRequest, serverWaitConectionInfo} from './communication';
 import {ERRORS, createError, getInfoFromStateTracer, globalServerState} from '../service';
 import {
   ConnectToTargetServerFunc,
@@ -64,7 +64,7 @@ export const connectToTargetServer: ConnectToTargetServerFunc<'v6'> = async (
       reply: EHandleClientRequestState.succeeded,
       ...(respondClientRequest ?? {address: '8.8.8.8', port: 88}),
     };
-    await serverReplyTargetServiceInfo(socket, replied, iv);
+    await serverRespondClientRequest(socket, replied, iv);
     stateTracer.push(serverState.repliedTargetServiceInfo);
     stateTracer.push({
       key: 'respondClientRequest',
@@ -81,7 +81,7 @@ export const connectToTargetServer: ConnectToTargetServerFunc<'v6'> = async (
       key: 'respondClientRequest',
       value: reply,
     });
-    await serverReplyTargetServiceInfo(socket, reply, iv);
+    await serverRespondClientRequest(socket, reply, iv);
     if (connectState !== EHandleClientRequestState.succeeded) {
       throw createError(ERRORS.handleClientRequestFail);
     }

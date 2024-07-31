@@ -3,7 +3,7 @@ import {
   serverRespondClientRequest,
   serverReplyUserPassAuthResult,
   serverWaitMethod,
-  serverWaitTargetServiceInfo,
+  serverWaitClientRequestInfo,
   serverWaitUserPass,
 } from './communication';
 import {ERRORS, createError, getInfoFromStateTracer, globalServerState} from '../service';
@@ -60,7 +60,7 @@ export const getClientRequestInfo: GetClientRequestInfoFunc<'v5'> = async (
     stateTracer.push(serverState.authUserPassSuccess);
   }
   stateTracer.push(serverState.waitingTargetServiceInfo);
-  const clientRequestInfo = await serverWaitTargetServiceInfo(socket);
+  const clientRequestInfo = await serverWaitClientRequestInfo(socket);
   stateTracer.push(serverState.gotTargetServiceInfo);
   stateTracer.push({
     key: 'clientRequestInfo',

@@ -1,5 +1,5 @@
 import {Socket} from 'net';
-import {clientSendConnectionInfo, clientWaitRepliedTargetServiceInfo} from './communication';
+import {clientSendConnectionInfo, clientWaitRequestRespond} from './communication';
 import {clientState, getIv, defaultIvBytes} from './service';
 import {
   SocksClientStatus,
@@ -16,14 +16,14 @@ export const infoNegotiation: InfoNegotiationFunc<'v6'> = async (
 ) => {
   const {stateTracer} = clientInfo;
   const {ivBytes = defaultIvBytes, auth} = config;
-  const targetServiceInfo = getTargetServiceInfo(config.clientRequestInfo);
+  const clientRequestInfo = getTargetServiceInfo(config.clientRequestInfo);
   const iv = getIv(ivBytes);
   await clientSendConnectionInfo(socket, {
     iv,
     auth,
     clientRequestInfo: {
       command: ECommand.CONNECT,
-      ...targetServiceInfo,
+      ...clientRequestInfo,
     },
   });
   stateTracer.push(clientState.sentConnectionInfo);
@@ -31,7 +31,7 @@ export const infoNegotiation: InfoNegotiationFunc<'v6'> = async (
     key: 'iv',
     value: iv,
   });
-  const respondClientRequest = await clientWaitRepliedTargetServiceInfo(socket, iv);
+  const respondClientRequest = await clientWaitRequestRespond(socket, iv);
   stateTracer.push(clientState.gotRepliedTargetServiceInfo);
   stateTracer.push({key: 'respondClientRequest', value: respondClientRequest});
   return {

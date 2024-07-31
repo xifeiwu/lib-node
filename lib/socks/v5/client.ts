@@ -2,7 +2,7 @@ import {
   clientWaitMethodReplied,
   clientWaitUserPassAuthResultReplied,
   clientSendMethod,
-  clientSendTargetServiceInfo,
+  clientSendClientRequestInfo,
   clientSendUserPass,
   clientWaitRequestRespond,
 } from './communication';
@@ -52,7 +52,7 @@ export const infoNegotiation: InfoNegotiationFunc<'v5'> = async (
     key: 'clientRequestInfo',
     value: clientRequestInfo,
   });
-  await clientSendTargetServiceInfo(socket, clientRequestInfo);
+  await clientSendClientRequestInfo(socket, clientRequestInfo);
   const respondClientRequest = await clientWaitRequestRespond(socket);
   stateTracer.push(clientState.getRepliedTargetSericeInfo);
   stateTracer.push({key: 'respondClientRequest', value: respondClientRequest});

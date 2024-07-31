@@ -1,7 +1,13 @@
 import {Readable, Writable} from 'stream';
 import {ERRORS, bufferToTargeServiceInfo, createError, targetServiceInfoToBuffer} from '../service';
-import {ECommand, EMethod, EHandleClientRequestState, ClientRequestInfo, RespondClientRequest} from '../service/types';
-import {toBuffer} from '../service/external';
+import {
+  ECommand,
+  EMethod,
+  EHandleClientRequestState,
+  ClientRequestInfo,
+  RespondClientRequest,
+} from '../service/types';
+import {isNumber, toBuffer} from '../service/external';
 
 /**
  * +----+----------+----------+
@@ -225,8 +231,14 @@ export async function clientWaitUserPassAuthResultReplied(reader: Readable) {
  *     o  DST.ADDR       desired destination address
  * o  DST.PORT desired destination port in network octet order
  */
-export async function clientSendTargetServiceInfo(writer: Writable, info: ClientRequestInfo) {
-  const {command = ECommand.CONNECT} = info;
+export async function clientSendClientRequestInfo(writer: Writable, info: ClientRequestInfo) {
+  const {command = ECommand.CONNECT, address, port} = info;
+  if (!address) {
+    throw new Error(`address is blank`);
+  }
+  if (!isNumber(port)) {
+    throw new Error(`port ${port} is not a number`);
+  }
   return new Promise<void>(async (res, rej) => {
     const buffer = toBuffer([5, command, 0, targetServiceInfoToBuffer(info)]);
     if (!writer.writable) {
@@ -241,7 +253,7 @@ export async function clientSendTargetServiceInfo(writer: Writable, info: Client
     });
   });
 }
-export async function serverWaitTargetServiceInfo(reader: Readable) {
+export async function serverWaitClientRequestInfo(reader: Readable) {
   reader.resume();
   return new Promise<ClientRequestInfo>((res, rej) => {
     reader.once('data', (chunk: Buffer) => {
@@ -286,10 +298,7 @@ export async function serverWaitTargetServiceInfo(reader: Readable) {
  *     o  RSV    RESERVED
  * o  ATYP   address type of following address
  */
-export async function serverRespondClientRequest(
-  writer: Writable,
-  respond: RespondClientRequest
-) {
+export async function serverRespondClientRequest(writer: Writable, respond: RespondClientRequest) {
   const {reply, address, port} = respond;
   return new Promise<void>((res, rej) => {
     if (!writer.writable) {

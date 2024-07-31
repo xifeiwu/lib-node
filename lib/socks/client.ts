@@ -29,7 +29,6 @@ export async function connectToSocksServer<Version extends SocksVersion>(config:
     socketInfo: {},
     stateTracer: [],
   };
-  // const stateTracer: SocksClientInfo['stateTracer'] = [];
   const {stateTracer} = clientInfo;
   try {
     stateTracer.push(globalClientState.startNegotiation);
@@ -49,8 +48,6 @@ export async function connectToSocksServer<Version extends SocksVersion>(config:
     stateTracer.push(`${globalClientState.catchError}: ${err.message}`);
     // status.error = err;
     throw err;
-  } finally {
-    clientInfo.stateTracer = stateTracer;
   }
   return clientInfo;
 }

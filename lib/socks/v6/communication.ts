@@ -1,7 +1,7 @@
 import {Readable, Writable} from 'stream';
 import {ConnectionInfo} from '../service/types/v6';
-import {toBuffer} from '../service/external';
-import {ECommand, EHandleClientRequestState, ClientRequestInfo} from '../service/types';
+import {isNumber, toBuffer} from '../service/external';
+import {ECommand, EHandleClientRequestState, ClientRequestInfo, RespondClientRequest} from '../service/types';
 import {ERRORS, bufferToTargeServiceInfo, createError, targetServiceInfoToBuffer} from '../service';
 import {decript, encrypt, defaultIvBytes} from './service';
 import {BinaryLike} from 'crypto';
@@ -39,9 +39,15 @@ import {BinaryLike} from 'crypto';
  * +----+-----+------+----------+------+----------+-----+-------+------+----------+----------+
  */
 export async function clientSendConnectionInfo(writer: Writable, info: ConnectionInfo) {
-  const {iv, auth, clientRequestInfo: targetServiceInfo} = info;
+  const {iv, auth, clientRequestInfo} = info;
   const {username, password} = auth;
-  const {command = ECommand.CONNECT} = targetServiceInfo;
+  const {command = ECommand.CONNECT, address, port} = clientRequestInfo;
+  if (!address) {
+    throw new Error(`address is blank`);
+  }
+  if (!isNumber(port)) {
+    throw new Error(`port ${port} is not a number`);
+  }
   return new Promise<void>(async (res, rej) => {
     const {data} = encrypt(
       toBuffer([
@@ -51,7 +57,7 @@ export async function clientSendConnectionInfo(writer: Writable, info: Connectio
         password,
         command,
         0,
-        targetServiceInfoToBuffer(targetServiceInfo),
+        targetServiceInfoToBuffer(clientRequestInfo),
       ]),
       iv
     );
@@ -136,7 +142,7 @@ export async function serverWaitConectionInfo(reader: Readable) {
  *     o  RSV    RESERVED
  * o  ATYP   address type of following address
  */
-export async function serverReplyTargetServiceInfo(
+export async function serverRespondClientRequest(
   writer: Writable,
   state: {
     reply: EHandleClientRequestState;
@@ -194,9 +200,9 @@ export async function serverReplyTargetServiceInfo(
  *     o  RSV    RESERVED
  * o  ATYP   address type of following address
  */
-export async function clientWaitRepliedTargetServiceInfo(reader: Readable, iv: BinaryLike) {
+export async function clientWaitRequestRespond(reader: Readable, iv: BinaryLike) {
   reader.resume();
-  return new Promise<ClientRequestInfo>((res, rej) => {
+  return new Promise<RespondClientRequest>((res, rej) => {
     reader.once('data', (chunk: Buffer) => {
       reader.pause();
       const buffer = decript(chunk, iv);
@@ -209,6 +215,7 @@ export async function clientWaitRepliedTargetServiceInfo(reader: Readable, iv: B
       }
       const {addressType, address, port} = bufferToTargeServiceInfo(buffer.subarray(3));
       res({
+        reply,
         addressType,
         address,
         port,

@@ -285,10 +285,15 @@ export async function getSocket(target: TargetSocket) {
 
 export function getTargetServiceInfo(origin: ClientRequestInfo | string): ClientRequestInfo {
   if (isString(origin)) {
-    const {hostname, port} = toUrlInstance({origin: origin as string});
+    const url = toUrlInstance({origin: origin as string});
+    const {protocol, hostname} = url;
+    let port = protocol === 'https:' ? 443 : protocol === 'http:' ? 80 : 0;
+    if (url.port) {
+      port = parseInt(url.port);
+    }
     return {
       address: hostname,
-      port: parseInt(port),
+      port,
     };
   }
   return origin as ClientRequestInfo;
@@ -329,10 +334,10 @@ export function getInfoFromStateTracer<Key extends TracerKey>(
 }
 
 /**
- * @deprecated rarely used as type of data returned is ambiguous 
- * @param stateTracer 
- * @param keys 
- * @returns 
+ * @deprecated rarely used as type of data returned is ambiguous
+ * @param stateTracer
+ * @param keys
+ * @returns
  */
 export function getInfosFromStateTracer<Key extends TracerKey>(
   stateTracer: SocksClientStatus['stateTracer'],
