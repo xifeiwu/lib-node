@@ -1,8 +1,8 @@
 import { Transform, pipeline } from 'stream';
-import { getCipher, getDcipher, getIv, ivLength } from './cipher';
+import { getCipher, getDcipher, getIv, defaultIvBytes } from './cipher';
 
 export async function test() {
-  const iv = getIv(ivLength);
+  const iv = getIv(defaultIvBytes);
   const { cipher } = getCipher(iv);
   const dcipher = getDcipher(iv);
   const socket2Service = new Transform({

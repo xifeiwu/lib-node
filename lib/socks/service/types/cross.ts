@@ -2,14 +2,17 @@ import {MethodAuthInfo, TargetServiceInfo} from './v5';
 import {Socket, TcpNetConnectOpts} from 'net';
 import {SocketInfo} from '../external';
 import {BinaryLike} from 'crypto';
-import { RepliedClientRequest } from './base';
+import {ServerReplyClientRequest} from './base';
 
 export type TargetSocket = TcpNetConnectOpts | string;
 
 export interface TracerPropsMap {
   iv: BinaryLike;
   clientRequest: TargetServiceInfo;
-  repliedClientRequest: RepliedClientRequest;
+  /** ip, port from server to client */
+  repliedClientRequest: TargetServiceInfo;
+  /** include connection state to target service */
+  serverReplyClientRequest: ServerReplyClientRequest;
   targetSocksServer: TargetSocket;
 }
 export type TracerKey = keyof TracerPropsMap;
@@ -57,7 +60,7 @@ export interface SocksClientExchangeInfoConfigV6
   extends CommonClientExchangeInfoConfig,
     SocksExtralConfigV6 {}
 
-interface SocksClientExchangeInfoConfigMap {
+export interface SocksClientExchangeInfoConfigMap {
   v5: SocksClientExchangeInfoConfigV5;
   v6: SocksClientExchangeInfoConfigV6;
 }
@@ -75,7 +78,7 @@ export type SocksClientConfig<Version extends SocksVersion> = SocksClientExchang
 // };
 
 interface CommonServerExchangeInfoConfig {
-  proxyConfigList?: SocksProxyConfig[];
+  proxyConfigList?: Array<SocksProxyConfig<'v5'> | SocksProxyConfig<'v6'>>;
 }
 
 export interface SocksServerExchangeInfoConfigV5

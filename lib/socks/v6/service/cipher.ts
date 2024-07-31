@@ -1,14 +1,14 @@
 import {BinaryLike, randomFillSync} from 'crypto';
 import {Transform} from 'stream';
 
-export const ivLength = 1;
+export const defaultIvBytes = 1;
 
 export function getIv(ivLength: number) {
   return randomFillSync(new Uint8Array(ivLength));
 }
 export function getCipher(iv?: BinaryLike) {
   if (!iv) {
-    iv = getIv(ivLength);
+    iv = getIv(defaultIvBytes);
   }
   const cipher = new Transform({
     transform(chunks, enc, cb) {
@@ -43,7 +43,7 @@ export function getDcipher(iv: BinaryLike) {
 
 export function encrypt(data: Buffer, iv?: BinaryLike) {
   if (!iv) {
-    iv = getIv(ivLength);
+    iv = getIv(defaultIvBytes);
   }
   const output = Buffer.alloc(data.length);
   for (let i = 0; i < data.length; i++) {

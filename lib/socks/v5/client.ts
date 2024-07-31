@@ -13,9 +13,7 @@ import {SocksClientExchangeInfoConfigV5} from '../service/types/cross';
 import {Socket} from 'net';
 
 /**
- * Connect to socks server by socket from tcp connect or http upgrade
- * NOTICE:
- * Close socket on socket error events of any error thrown during the logic process
+ * 
  */
 export async function exchangeInfo(
   socket: Socket,
@@ -62,8 +60,8 @@ export async function exchangeInfo(
   stateTracer.push(clientState.getRepliedTargetSericeInfo);
   stateTracer.push({key: 'repliedClientRequest', value: repliedClientRequest});
   return {
-    stateTracer,
-    targetServiceInfo,
+    // stateTracer,
+    // targetServiceInfo,
     repliedClientRequest,
   };
 }

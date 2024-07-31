@@ -3,7 +3,7 @@ import {ConnectionInfo} from '../service/types/v6';
 import {toBuffer} from '../service/external';
 import {ECommand, ETargetServiceConnectState, TargetServiceInfo} from '../service/types';
 import {ERRORS, bufferToTargeServiceInfo, createError, targetServiceInfoToBuffer} from '../service';
-import {decript, encrypt, ivLength} from './service';
+import {decript, encrypt, defaultIvBytes} from './service';
 import {BinaryLike} from 'crypto';
 
 /**
@@ -78,8 +78,8 @@ export async function serverWaitConectionInfo(reader: Readable) {
       let baseIndex = 0;
       const version = chunk[baseIndex];
       baseIndex += 1;
-      const iv = chunk.subarray(baseIndex, baseIndex + ivLength);
-      baseIndex += ivLength;
+      const iv = chunk.subarray(baseIndex, baseIndex + defaultIvBytes);
+      baseIndex += defaultIvBytes;
       const buffer = decript(chunk.subarray(baseIndex), iv);
       baseIndex = 0;
       const usernameLength = buffer[baseIndex];

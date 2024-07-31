@@ -1,59 +1,57 @@
-import dns from 'dns';
 import {serverReplyTargetServiceInfo, serverWaitConectionInfo} from './communication';
-import {ERRORS, createError, getAddressType} from '../service';
+import {ERRORS, createError, getInfoFromStateTracer, globalServerState} from '../service';
 import {
-  TargetServiceInfo,
-  EMethod,
   ETargetServiceConnectState,
-  UserPassInfo,
-  SocksServerConfig,
   SocksClientInfo,
   SocksServerExchangeInfoConfigV6,
 } from '../service/types/index';
-import {deepClone, deepEqual} from '../service/external';
-import {Socket, isIP} from 'net';
+import {deepEqual} from '../service/external';
+import {Socket} from 'net';
 import {serverState} from './service';
-import {proxySocksRequest} from '../service/cross';
+import {handleConnection, proxySocksRequest} from '../service/cross';
 
-export async function getTargetServiceInfo(
+export async function getClientRequestInfo(
   socket: Socket,
   config: SocksServerExchangeInfoConfigV6,
-  stateTracer?: SocksClientInfo['stateTracer']
+  clientInfo: SocksClientInfo
 ) {
-  const {} = config;
-  stateTracer = stateTracer ?? [];
-  stateTracer.push(serverState.waitConnectionInfo);
+  const {stateTracer} = clientInfo;
+  stateTracer.push(serverState.waitingConnectionInfo);
   const {iv, auth, targetServiceInfo} = await serverWaitConectionInfo(socket);
   stateTracer.push(serverState.gotConnectionInfo);
   stateTracer.push({
     key: 'clientRequest',
-    value: targetServiceInfo
-  })
+    value: targetServiceInfo,
+  });
   stateTracer.push({
     key: 'iv',
     value: iv,
-  })
+  });
   const authSuccess = deepEqual(config.auth, auth);
   stateTracer.push(authSuccess ? serverState.authSuccess : serverState.authFail);
   if (!authSuccess) {
     throw createError(ERRORS.authUserPassFail);
   }
   return {
-    targetServiceInfo, 
+    targetServiceInfo,
   };
 }
 
 export async function connectToTargetServer(
   socket: Socket,
-  targetServiceInfo: TargetServiceInfo,
   config: SocksServerExchangeInfoConfigV6,
-  stateTracer?: SocksClientInfo['stateTracer']
+  clientInfo: SocksClientInfo
 ) {
-  stateTracer = stateTracer ?? [];
-  stateTracer.push(serverState.handleRequest);
+  const {stateTracer} = clientInfo;
+  const clientRequestInfo = getInfoFromStateTracer(stateTracer, 'clientRequest');
+  const iv = getInfoFromStateTracer(stateTracer, 'iv');
+  if ([clientRequestInfo, iv].some(it => it === null)) {
+    throw createError('clientRequestInfo, iv is null');
+  }
+  stateTracer.push(globalServerState.startHandleConnection);
   const {proxyConfigList} = config;
   let socket2Service: Socket;
-  const proxyStatus = proxyConfigList && (await proxySocksRequest(targetServiceInfo, proxyConfigList));
+  const proxyStatus = proxyConfigList && (await proxySocksRequest(clientRequestInfo, proxyConfigList));
   if (proxyStatus) {
     const {
       stateTracer: tracer = [],
@@ -64,76 +62,28 @@ export async function connectToTargetServer(
       reply: ETargetServiceConnectState.succeeded,
       ...(repliedServiceInfo ?? {address: '8.8.8.8', port: 88}),
     };
-    await serverReplyTargetServiceInfo(socket, replied);
+    await serverReplyTargetServiceInfo(socket, replied, iv);
     stateTracer.push(serverState.repliedTargetServiceInfo);
-    stateTracer.push(replied);
+    stateTracer.push({
+      key: 'repliedClientRequest',
+      value: replied,
+    });
     socket2Service = proxySocket;
   } else {
-    const repliedServiceInfo = deepClone<TargetServiceInfo>(targetServiceInfo);
-    const isDomain = isIP(targetServiceInfo.address) === 0;
-    if (isDomain) {
-      stateTracer.push(serverState.startTransferDomainToIp);
-      try {
-        const ip = await new Promise<string>((resolve, reject) => {
-          dns.lookup(targetServiceInfo.address, function (err, ip) {
-            if (err) {
-              reject(err);
-            } else {
-              resolve(ip);
-            }
-          });
-        });
-        repliedServiceInfo.address = ip;
-        repliedServiceInfo.addressType = getAddressType(ip);
-        stateTracer.push({ip});
-      } catch (err) {
-        const reply = {
-          reply: ETargetServiceConnectState.Host_unreachable,
-          ...repliedServiceInfo,
-        };
-        await serverReplyTargetServiceInfo(socket, reply);
-        stateTracer.push(serverState.repliedTargetServiceInfo);
-        stateTracer.push(reply);
-        throw err;
-      }
+    const {socket: theSocket, connectState, repliedServiceInfo} = await handleConnection(clientRequestInfo);
+    const reply = {
+      reply: connectState,
+      ...repliedServiceInfo,
+    };
+    stateTracer.push({
+      key: 'serverReplyClientRequest',
+      value: reply,
+    });
+    await serverReplyTargetServiceInfo(socket, reply, iv);
+    if (connectState !== ETargetServiceConnectState.succeeded) {
+      throw createError(ERRORS.handleClientRequestFail);
     }
-
-    stateTracer.push(serverState.startConnectToTargetService);
-    try {
-      socket2Service = await new Promise((res, rej) => {
-        const socket = new Socket();
-        socket.once('connect', () => {
-          res(socket);
-        });
-        socket.once('error', err => {
-          rej(ETargetServiceConnectState.general_SOCKS_server_failure);
-        });
-        socket.once('timeout', err => {
-          rej(ETargetServiceConnectState.TTL_expired);
-        });
-        socket.connect({
-          host: repliedServiceInfo.address,
-          port: repliedServiceInfo.port,
-        });
-      });
-      stateTracer.push(serverState.connectToTargetServiceSuccess);
-      const reply = {
-        reply: ETargetServiceConnectState.succeeded,
-        ...repliedServiceInfo,
-      };
-      await serverReplyTargetServiceInfo(socket, reply);
-      stateTracer.push(serverState.repliedTargetServiceInfo);
-      stateTracer.push(reply);
-    } catch (err) {
-      const reply = {
-        reply: ETargetServiceConnectState.Connection_refused,
-        ...repliedServiceInfo,
-      };
-      await serverReplyTargetServiceInfo(socket, reply);
-      stateTracer.push(serverState.repliedTargetServiceInfo);
-      stateTracer.push(reply);
-      throw err;
-    }
+    socket2Service = theSocket;
   }
 
   return {socket: socket2Service, stateTracer, proxyClientInfo: proxyStatus?.proxyClientInfo};

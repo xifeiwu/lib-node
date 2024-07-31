@@ -8,7 +8,7 @@ export const clientState = {
 };
 
 export const serverState = {
-  waitConnectionInfo: 'wait connection info',
+  waitingConnectionInfo: 'wait connection info',
   gotConnectionInfo: 'got connection info',
   authSuccess: 'auth success',
   authFail: 'auth fail',

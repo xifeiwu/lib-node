@@ -1,4 +1,3 @@
-import dns from 'dns';
 import {
   serverReplyMethod,
   serverReplyTargetServiceInfo,
@@ -7,23 +6,27 @@ import {
   serverWaitTargetServiceInfo,
   serverWaitUserPass,
 } from './communication';
-import {ERRORS, createError, getAddressType, getInfoFromStateTracer, globalServerState} from '../service';
+import {ERRORS, createError, getInfoFromStateTracer, globalServerState} from '../service';
 import {
-  TargetServiceInfo,
   EMethod,
   ETargetServiceConnectState,
   UserPassInfo,
   SocksServerConfig,
   SocksClientInfo,
+  SocksServerExchangeInfoConfigV5,
+  SocksClientExchangeInfoConfigV5,
 } from '../service/types';
-import {deepClone, deepEqual} from '../service/external';
-import {Socket, isIP} from 'net';
+import {deepEqual} from '../service/external';
+import {Socket} from 'net';
 import {serverState} from './service';
 import {handleConnection, proxySocksRequest} from '../service/cross';
 
-export async function getClientRequest(
+/**
+ * To know what client side want to do
+ */
+export async function getClientRequestInfo(
   socket: Socket,
-  config: SocksServerConfig<'v5'>,
+  config: SocksServerExchangeInfoConfigV5,
   clientInfo: SocksClientInfo
 ) {
   const {stateTracer = []} = clientInfo;
@@ -68,7 +71,7 @@ export async function getClientRequest(
 
 export async function connectToTargetServer(
   socket: Socket,
-  config: SocksServerConfig<'v5'>,
+  config: SocksServerExchangeInfoConfigV5,
   clientInfo: SocksClientInfo
 ) {
   const {stateTracer} = clientInfo;
@@ -90,7 +93,7 @@ export async function connectToTargetServer(
     await serverReplyTargetServiceInfo(socket, replied);
     stateTracer.push(serverState.repliedTargetServiceInfo);
     stateTracer.push({
-      key: 'repliedClientRequest',
+      key: 'serverReplyClientRequest',
       value: replied,
     });
     socket2Service = proxySocket;
@@ -102,11 +105,10 @@ export async function connectToTargetServer(
       ...repliedServiceInfo,
     };
     stateTracer.push({
-      key: 'repliedClientRequest',
+      key: 'serverReplyClientRequest',
       value: reply,
     });
     await serverReplyTargetServiceInfo(socket, reply);
-    //   await serverReplyTargetServiceInfo(socket, reply);
     if (connectState !== ETargetServiceConnectState.succeeded) {
       throw createError(ERRORS.handleClientRequestFail);
     }

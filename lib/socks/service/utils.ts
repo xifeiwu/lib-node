@@ -326,3 +326,16 @@ export function getInfoFromStateTracer<Key extends TracerKey>(
   }
   return (item as TracerObject).value as TracerPropsMap[Key];
 }
+
+/**
+ * @deprecated rarely used as type of data returned is ambiguous 
+ * @param stateTracer 
+ * @param keys 
+ * @returns 
+ */
+export function getInfosFromStateTracer<Key extends TracerKey>(
+  stateTracer: SocksClientInfo['stateTracer'],
+  keys: Key[]
+): Array<TracerPropsMap[Key] | null> {
+  return keys.map(key => getInfoFromStateTracer(stateTracer, key));
+}

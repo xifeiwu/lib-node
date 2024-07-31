@@ -1,6 +1,6 @@
 import {ETargetServiceConnectState} from './v5';
 
-export interface RepliedClientRequest {
+export interface ServerReplyClientRequest {
   reply: ETargetServiceConnectState;
   address: string;
   port: number;

@@ -1,8 +1,8 @@
-## Notice
+## Key Point
 
-Communication between custom socks server and socks client can support:
-1. Using socket by http upgrade, logic of socks server run on http server, socks client starts by a http upgrade request.
-2. Encrypt data run on socket.
+1. Can get socket conneciton by tcp protocol directly or by http upgrade method.
+2. 
+
 
 ## Ref
 

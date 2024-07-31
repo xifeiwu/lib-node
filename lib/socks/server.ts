@@ -1,13 +1,22 @@
-import {SocksServerInfo, SocksVersion, SocksServerConfig, SocksClientInfo} from './service/types';
+import {
+  SocksServerInfo,
+  SocksVersion,
+  SocksServerConfig,
+  SocksClientInfo,
+  SocksServerExchangeInfoConfigV6,
+} from './service/types';
 import {Socket} from 'net';
 import {pipeline} from 'stream';
 import {ERRORS, createError, getInfoFromStateTracer, globalServerState} from './service';
 import {getSocketInfo} from './service/external';
 import {
-  getClientRequest as getTargetServiceInfoV5,
+  getClientRequestInfo as getTargetServiceInfoV5,
   connectToTargetServer as connectToTargetServerV5,
 } from './v5/server';
-import {proxySocksRequest} from './service/cross';
+import {
+  getClientRequestInfo as getTargetServiceInfoV6,
+  connectToTargetServer as connectToTargetServerV6,
+} from './v6/server';
 
 /**
  * Handle new connection on sock server side
@@ -34,8 +43,15 @@ export async function handleConnection<Version extends SocksVersion>(
         socket,
         {
           ...config,
-          socksVersion: 'v5',
         },
+        status
+      );
+    } else if (socksVersion === 'v6') {
+      await getTargetServiceInfoV6(
+        socket,
+        {
+          ...config,
+        } as SocksServerExchangeInfoConfigV6,
         status
       );
     }
@@ -68,8 +84,18 @@ export async function handleConnection<Version extends SocksVersion>(
         socket,
         {
           ...config,
-          socksVersion: 'v5',
         },
+        status
+      );
+      status.socket2Service = socket2Service;
+      status.proxyClientInfo = proxyClientInfo;
+    } else if (socksVersion === 'v6') {
+      stateTracer.push(globalServerState.gotClientRequest);
+      const {socket: socket2Service, proxyClientInfo} = await connectToTargetServerV6(
+        socket,
+        {
+          ...config,
+        } as SocksServerExchangeInfoConfigV6,
         status
       );
       status.socket2Service = socket2Service;
