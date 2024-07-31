@@ -88,8 +88,8 @@ export async function proxyRequestOnServerSide() {
     }
   );
   const proxyToV5: SocksProxyConfig<'v5'> = {
-    matches: [/127.0.0.1/],
     socksVersion: 'v5',
+    matches: [/127.0.0.1/],
     methodList: [methodUsePass],
     targetSocksServer: {
       host: host2,

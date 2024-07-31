@@ -11,10 +11,10 @@ import {
   EMethod,
   EHandleClientRequestState,
   UserPassInfo,
-  SocksServerConfig,
   SocksClientStatus,
-  SocksServerV5NegotiationInfo,
-  SocksClientNegotiationInfoV5,
+  SocksServerNegotiationInfoV5,
+  GetClientRequestInfoFunc,
+  ConnectToTargetServerFunc,
 } from '../service/types';
 import {deepEqual} from '../service/external';
 import {Socket} from 'net';
@@ -24,11 +24,11 @@ import {handleConnection, proxySocksRequest} from '../service/cross';
 /**
  * To know what client side want to do
  */
-export async function getClientRequestInfo(
+export const getClientRequestInfo: GetClientRequestInfoFunc<'v5'> = async (
   socket: Socket,
-  config: SocksServerV5NegotiationInfo,
+  config: SocksServerNegotiationInfoV5,
   clientInfo: SocksClientStatus
-) {
+) => {
   const {stateTracer = []} = clientInfo;
   stateTracer.push(serverState.waitingMethodList);
   const {methodList = [{method: EMethod.NoAuth}]} = config ?? {};
@@ -66,15 +66,14 @@ export async function getClientRequestInfo(
     key: 'clientRequestInfo',
     value: clientRequestInfo,
   });
-  return clientRequestInfo;
-  // return {stateTracer, clientRequest};
+  return {clientRequestInfo};
 }
 
-export async function connectToTargetServer(
+export const connectToTargetServer: ConnectToTargetServerFunc<'v5'> = async (
   socket: Socket,
-  config: SocksServerV5NegotiationInfo,
+  config: SocksServerNegotiationInfoV5,
   clientInfo: SocksClientStatus
-) {
+) => {
   const {stateTracer} = clientInfo;
   const clientRequestInfo = getInfoFromStateTracer(stateTracer, 'clientRequestInfo');
   stateTracer.push(globalServerState.startHandleClientRequest);
@@ -100,7 +99,7 @@ export async function connectToTargetServer(
     socket2Service = proxySocket;
   } else {
     stateTracer.push(globalServerState.startHandleConnection);
-    const {socket: theSocket, connectState, repliedServiceInfo} = await handleConnection(clientRequestInfo);
+    const {socket: theSocket, connectState, respondClientRequest: repliedServiceInfo} = await handleConnection(clientRequestInfo);
     const reply = {
       reply: connectState,
       ...repliedServiceInfo,
@@ -116,5 +115,5 @@ export async function connectToTargetServer(
     socket2Service = theSocket;
   }
 
-  return {socket: socket2Service, stateTracer, proxyClientInfo: proxyStatus?.proxyClientInfo};
+  return {socket: socket2Service, proxyClientInfo: proxyStatus?.proxyClientInfo};
 }

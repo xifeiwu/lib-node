@@ -34,7 +34,7 @@ export async function proxySocksRequest(
 }
 
 export async function handleConnection(clientRequestInfo: ClientRequestInfo) {
-  const repliedServiceInfo = deepClone<ClientRequestInfo>(clientRequestInfo);
+  const respondClientRequest = deepClone<ClientRequestInfo>(clientRequestInfo);
   const isDomain = isIP(clientRequestInfo.address) === 0;
   let state: 'dns' | 'connection' = 'dns';
   let socket: Socket;
@@ -50,8 +50,8 @@ export async function handleConnection(clientRequestInfo: ClientRequestInfo) {
           }
         });
       });
-      repliedServiceInfo.address = ip;
-      repliedServiceInfo.addressType = getAddressType(ip);
+      respondClientRequest.address = ip;
+      respondClientRequest.addressType = getAddressType(ip);
     }
     state = 'connection';
     socket = await new Promise((res, rej) => {
@@ -66,8 +66,8 @@ export async function handleConnection(clientRequestInfo: ClientRequestInfo) {
         rej(EHandleClientRequestState.TTL_expired);
       });
       socket.connect({
-        host: repliedServiceInfo.address,
-        port: repliedServiceInfo.port,
+        host: respondClientRequest.address,
+        port: respondClientRequest.port,
       });
     });
   } catch (err) {
@@ -81,6 +81,6 @@ export async function handleConnection(clientRequestInfo: ClientRequestInfo) {
   return {
     socket,
     connectState,
-    repliedServiceInfo,
+    respondClientRequest,
   };
 }

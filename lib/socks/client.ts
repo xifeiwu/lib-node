@@ -1,10 +1,21 @@
 import {globalClientState, getSocket} from './service';
 import {getSocketInfo} from './service/external';
 import {SocksClientStatus} from './service/types';
-import {SocksClientConfig, SocksClientNegotiationInfoV6, SocksVersion} from './service/types/cross';
-import {infoNegotiation as exchangeInfoV5} from './v5/client';
-import {infoNegotiation as exchangeInfoV6} from './v6/client';
+import {
+  InfoNegotiationFunc,
+  SocksClientConfig,
+  SocksClientNegotiationInfoV6,
+  SocksVersion,
+} from './service/types/cross';
+import {infoNegotiation as infoNegotiationV5} from './v5/client';
+import {infoNegotiation as infoNegotiationV6} from './v6/client';
 
+const infoNegotiation: {
+  [version in SocksVersion]: InfoNegotiationFunc<SocksVersion>;
+} = {
+  v5: infoNegotiationV5,
+  v6: infoNegotiationV6,
+};
 /**
  * Connect to socks server by socket from tcp connect or http upgrade
  * @param config
@@ -28,17 +39,7 @@ export async function connectToSocksServer<Version extends SocksVersion>(config:
     }
     clientInfo.socket = socket;
     clientInfo.socketInfo = getSocketInfo(socket);
-
-    let infoFromNegotiation = {};
-    if (socksVersion === 'v5') {
-      infoFromNegotiation = await exchangeInfoV5(socket, {...rest4Exchange}, clientInfo);
-    } else if (socksVersion === 'v6') {
-      infoFromNegotiation = await exchangeInfoV6(
-        socket,
-        {...rest4Exchange} as unknown as SocksClientNegotiationInfoV6,
-        clientInfo
-      );
-    }
+    const infoFromNegotiation = await infoNegotiation[socksVersion](socket, rest4Exchange, clientInfo);
     for (const [key, value] of Object.entries(infoFromNegotiation)) {
       clientInfo[key] = value;
     }

@@ -3,21 +3,36 @@ import {
   SocksVersion,
   SocksServerConfig,
   SocksClientStatus,
-  SocksServerV6NegotiationInfo,
+  SocksServerNegotiationInfoV6,
+  GetClientRequestInfoFunc,
+  ECommand,
+  ConnectToTargetServerFunc,
 } from './service/types';
 import {Socket} from 'net';
 import {pipeline} from 'stream';
 import {ERRORS, createError, getInfoFromStateTracer, globalServerState} from './service';
 import {getSocketInfo} from './service/external';
 import {
-  getClientRequestInfo as getTargetServiceInfoV5,
+  getClientRequestInfo as getClientRequestInfoV5,
   connectToTargetServer as connectToTargetServerV5,
 } from './v5/server';
 import {
-  getClientRequestInfo as getTargetServiceInfoV6,
+  getClientRequestInfo as getClientRequestInfoV6,
   connectToTargetServer as connectToTargetServerV6,
 } from './v6/server';
 
+const getClientRequestInfo: {
+  [version in SocksVersion]: GetClientRequestInfoFunc<SocksVersion>;
+} = {
+  v5: getClientRequestInfoV5,
+  v6: getClientRequestInfoV6,
+};
+const connectToTargetServer: {
+  [version in SocksVersion]: ConnectToTargetServerFunc<SocksVersion>;
+} = {
+  v5: connectToTargetServerV5,
+  v6: connectToTargetServerV6,
+};
 /**
  * Handle new connection on sock server side
  * @param socket
@@ -38,24 +53,25 @@ export async function handleConnection<Version extends SocksVersion>(
   const {stateTracer} = status;
   const {socksVersion, proxyConfigList} = config;
   try {
-    if (socksVersion === 'v5') {
-      await getTargetServiceInfoV5(
-        socket,
-        {
-          ...config,
-        },
-        status
-      );
-    } else if (socksVersion === 'v6') {
-      await getTargetServiceInfoV6(
-        socket,
-        {
-          ...config,
-        } as SocksServerV6NegotiationInfo,
-        status
-      );
-    }
-    const clientRequestInfo = getInfoFromStateTracer(stateTracer, 'clientRequestInfo');
+    // if (socksVersion === 'v5') {
+    //   await getClientRequestInfoV5(
+    //     socket,
+    //     {
+    //       ...config,
+    //     },
+    //     status
+    //   );
+    // } else if (socksVersion === 'v6') {
+    //   await getClientRequestInfoV6(
+    //     socket,
+    //     {
+    //       ...config,
+    //     } as SocksServerNegotiationInfoV6,
+    //     status
+    //   );
+    // }
+    const {clientRequestInfo} = await getClientRequestInfo[socksVersion](socket, config, status);
+    // const clientRequestInfo = getInfoFromStateTracer(stateTracer, 'clientRequestInfo');
     if (!clientRequestInfo) {
       throw createError(ERRORS.CLIENT_AUTH_FAIL);
     }
@@ -78,9 +94,10 @@ export async function handleConnection<Version extends SocksVersion>(
     //   });
     //   socket2Service = proxySocket;
 
-    if (socksVersion === 'v5') {
+    const {command} = clientRequestInfo;
+    if (command === ECommand.CONNECT) {
       stateTracer.push(globalServerState.gotClientRequest);
-      const {socket: socket2Service, proxyClientInfo} = await connectToTargetServerV5(
+      const {socket: socket2Service, proxyClientStatus} = await connectToTargetServer[socksVersion](
         socket,
         {
           ...config,
@@ -88,18 +105,9 @@ export async function handleConnection<Version extends SocksVersion>(
         status
       );
       status.socket2Service = socket2Service;
-      status.proxyClientStatus = proxyClientInfo;
-    } else if (socksVersion === 'v6') {
-      stateTracer.push(globalServerState.gotClientRequest);
-      const {socket: socket2Service, proxyClientInfo} = await connectToTargetServerV6(
-        socket,
-        {
-          ...config,
-        } as SocksServerV6NegotiationInfo,
-        status
-      );
-      status.socket2Service = socket2Service;
-      status.proxyClientStatus = proxyClientInfo;
+      status.proxyClientStatus = proxyClientStatus;
+    } else {
+      throw createError(`command ${command} not found`);
     }
     const {socket2Service} = status;
     socket2Service.once('close', () => {

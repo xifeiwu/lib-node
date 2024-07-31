@@ -5,7 +5,6 @@ import {BinaryLike} from 'crypto';
 
 export type TargetSocket = TcpNetConnectOpts | string;
 
-
 /**
  * Different between Tracer and Status
  * 1. Tracer used on record logic process, Status used to store important info of Socks end.
@@ -81,12 +80,12 @@ interface CommonServerNegotiationInfo {
   proxyConfigList?: Array<AllSocksProxyConfig>;
 }
 
-export interface SocksServerV5NegotiationInfo extends CommonServerNegotiationInfo, SocksV5NegotiationInfo {}
+export interface SocksServerNegotiationInfoV5 extends CommonServerNegotiationInfo, SocksV5NegotiationInfo {}
 
-export interface SocksServerV6NegotiationInfo extends CommonServerNegotiationInfo, SocksV6NegotiationInfo {}
+export interface SocksServerNegotiationInfoV6 extends CommonServerNegotiationInfo, SocksV6NegotiationInfo {}
 interface SocksServerNegotiationInfo {
-  v5: SocksServerV5NegotiationInfo;
-  v6: SocksServerV6NegotiationInfo;
+  v5: SocksServerNegotiationInfoV5;
+  v6: SocksServerNegotiationInfoV6;
 }
 
 export type SocksServerConfig<Version extends SocksVersion> = SocksServerNegotiationInfo[Version] & {
@@ -104,6 +103,31 @@ export interface MatchItem {
 /** proxy to another socks server when address/port meets condition in matches list */
 export type SocksProxyConfig<Version extends SocksVersion> = {
   matches: Array<MatchItem | string | RegExp>;
-} & Omit<SocksClientConfig<Version>, 'targetServiceInfo'>;
+} & Omit<SocksClientConfig<Version>, 'clientRequestInfo'>;
 
 export type AllSocksProxyConfig = SocksProxyConfig<'v5'> | SocksProxyConfig<'v6'>;
+
+export type InfoNegotiationFunc<Version extends SocksVersion> = (
+  socket: Socket,
+  config: SocksClientNegotiationInfo[Version],
+  clientInfo?: SocksClientStatus
+) => Promise<{
+  respondClientRequest;
+}>;
+
+export type GetClientRequestInfoFunc<Version extends SocksVersion> = (
+  socket: Socket,
+  config: SocksServerNegotiationInfo[Version],
+  clientInfo: SocksClientStatus
+) => Promise<{
+  clientRequestInfo: ClientRequestInfo;
+}>;
+
+export type ConnectToTargetServerFunc<Version extends SocksVersion> = (
+  socket: Socket,
+  config: SocksServerNegotiationInfo[Version],
+  clientInfo: SocksClientStatus
+) => Promise<{
+  socket: Socket;
+  proxyClientStatus?: SocksClientStatus;
+}>;

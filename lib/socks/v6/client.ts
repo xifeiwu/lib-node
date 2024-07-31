@@ -1,14 +1,19 @@
 import {Socket} from 'net';
 import {clientSendConnectionInfo, clientWaitRepliedTargetServiceInfo} from './communication';
 import {clientState, getIv, defaultIvBytes} from './service';
-import {SocksClientStatus, SocksClientNegotiationInfoV6, ECommand} from '../service/types';
+import {
+  SocksClientStatus,
+  SocksClientNegotiationInfoV6,
+  ECommand,
+  InfoNegotiationFunc,
+} from '../service/types';
 import {getTargetServiceInfo} from '../service';
 
-export async function infoNegotiation(
+export const infoNegotiation: InfoNegotiationFunc<'v6'> = async (
   socket: Socket,
   config: SocksClientNegotiationInfoV6,
   clientInfo?: SocksClientStatus
-) {
+) => {
   const {stateTracer} = clientInfo;
   const {ivBytes = defaultIvBytes, auth} = config;
   const targetServiceInfo = getTargetServiceInfo(config.clientRequestInfo);
@@ -30,6 +35,6 @@ export async function infoNegotiation(
   stateTracer.push(clientState.gotRepliedTargetServiceInfo);
   stateTracer.push({key: 'respondClientRequest', value: respondClientRequest});
   return {
-    respondClientRequest
-  }
-}
+    respondClientRequest,
+  };
+};

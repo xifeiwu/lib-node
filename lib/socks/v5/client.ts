@@ -9,17 +9,14 @@ import {
 import {getTargetServiceInfo} from '../service';
 import {ECommand, EMethod, SocksClientStatus, UserPassInfo} from '../service/types';
 import {clientState} from './service';
-import {SocksClientNegotiationInfoV5} from '../service/types/cross';
+import {InfoNegotiationFunc, SocksClientNegotiationInfoV5} from '../service/types/cross';
 import {Socket} from 'net';
 
-/**
- * 
- */
-export async function infoNegotiation(
+export const infoNegotiation: InfoNegotiationFunc<'v5'> = async (
   socket: Socket,
   config: SocksClientNegotiationInfoV5,
   clientInfo?: SocksClientStatus
-) {
+) => {
   const {stateTracer = []} = clientInfo ?? {};
   const {methodList = [{method: EMethod.NoAuth}]} = config;
   const targetServiceInfo = getTargetServiceInfo(config.clientRequestInfo);
@@ -60,8 +57,6 @@ export async function infoNegotiation(
   stateTracer.push(clientState.getRepliedTargetSericeInfo);
   stateTracer.push({key: 'respondClientRequest', value: respondClientRequest});
   return {
-    // stateTracer,
-    // targetServiceInfo,
     respondClientRequest,
   };
-}
+};
