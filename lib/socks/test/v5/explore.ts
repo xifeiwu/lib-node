@@ -1,9 +1,11 @@
 import {startHttpDebugServer} from '../../../../http';
 import {connectToSocksServer} from '../../client';
 import {handleConnection} from '../../server';
-import {PORT, startSocketServer, tcpRequestPropsToBuffer} from '../../service/external';
+import {getInfoFromStateTracer, getInfosFromStateTracer} from '../../service';
+import {PORT, startSocketServer, tcpRequestPropsToBuffer, toReadable} from '../../service/external';
 import {SocksProxyConfig} from '../../service/types';
 import {EMethod, MethodUserPass} from '../../service/types/v5';
+import {eorBuffer, getCipher} from '../../v6/service';
 // import {connectToSocksServer} from '../../v5/client';
 // import {handleConnection} from '../../v5/server';
 
@@ -137,12 +139,17 @@ export async function proxyRequestOnServerSide() {
       },
     });
 
-    const {socket} = status;
+    const {socket, stateTracer} = status;
+    const iv = getInfoFromStateTracer(stateTracer, 'iv');
+    // toReadable()
     socket.write(
-      tcpRequestPropsToBuffer({
-        method: 'post',
-        data: {to: '127.0.0.1'},
-      })
+      eorBuffer(
+        tcpRequestPropsToBuffer({
+          method: 'post',
+          data: {to: '127.0.0.1'},
+        }),
+        iv
+      )
     );
     socket.on('data', chunk => {
       console.log(chunk.toString());

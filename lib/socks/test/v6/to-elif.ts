@@ -1,5 +1,7 @@
 import {connectToSocksServer} from '../../client';
+import {getInfoFromStateTracer} from '../../service';
 import {requestAndGetResponseInfo, HttpRequestOptions, tcpRequestPropsToBuffer} from '../../service/external';
+import {eorBuffer, getDcipher} from '../../v6/service';
 
 export async function httpRequestToGoogle() {
   const options: HttpRequestOptions = {
@@ -66,18 +68,28 @@ export async function requestToElif() {
       // clientRequestInfo: 'https://www.google.com',
       clientRequestInfo: httpOptions.origin,
     });
-    const {socket} = status;
+    const {socket, stateTracer} = status;
+    const iv = getInfoFromStateTracer(stateTracer, 'iv');
+    const deciper = getDcipher(iv);
     socket.write(
-      tcpRequestPropsToBuffer({
-        url: pathname,
-        headers,
-      })
+      eorBuffer(
+        tcpRequestPropsToBuffer({
+          url: pathname,
+          headers,
+        }),
+        iv
+      )
     );
-    socket.on('data', chunk => {
+    socket.pipe(deciper).on('data', chunk => {
       console.log(`chunk.byteLength:`);
       console.log(chunk.byteLength);
       console.log(chunk.toString());
     });
+    // socket.on('data', chunk => {
+    //   console.log(`chunk.byteLength:`);
+    //   console.log(chunk.byteLength);
+    //   console.log(chunk.toString());
+    // });
   } catch (err) {
     console.log(err);
   }

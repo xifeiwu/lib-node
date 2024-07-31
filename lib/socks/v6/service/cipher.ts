@@ -12,8 +12,8 @@ export function getCipher(iv?: BinaryLike) {
   }
   const cipher = new Transform({
     transform(chunks, enc, cb) {
-      console.log(`cipher chunk.toString()`)
-      console.log(chunks.toString())
+      console.log(`cipher chunk.toString()`);
+      console.log(chunks.toString());
       const output = Buffer.alloc(chunks.length);
       for (let i = 0; i < chunks.length; i++) {
         output[i] = chunks[i] ^ iv[0];
@@ -25,11 +25,19 @@ export function getCipher(iv?: BinaryLike) {
   return {cipher, iv};
 }
 
+export function eorBuffer(chunk: Buffer, iv: BinaryLike) {
+  const output = Buffer.alloc(chunk.byteLength);
+  for (let i = 0; i < chunk.byteLength; i++) {
+    output[i] = chunk[i] ^ iv[0];
+  }
+  return output;
+}
+
 export function getDcipher(iv: BinaryLike) {
   const dcipher = new Transform({
     transform(chunks, enc, cb) {
-      console.log(`dcipher chunk.toString()`)
-      console.log(chunks.toString())
+      // console.log(`dcipher chunk.toString()`)
+      // console.log(chunks.toString())
       const output = Buffer.alloc(chunks.length);
       for (let i = 0; i < chunks.length; i++) {
         output[i] = chunks[i] ^ iv[0];

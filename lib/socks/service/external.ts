@@ -23,4 +23,5 @@ export {
   PORT,
   HttpRequestOptions,
   requestAndGetResponseInfo,
+  toReadable,
 } from '../../../index';
