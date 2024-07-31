@@ -1,12 +1,12 @@
 import {Socket} from 'net';
 import {clientSendConnectionInfo, clientWaitRepliedTargetServiceInfo} from './communication';
 import {clientState, getIv, defaultIvBytes} from './service';
-import {SocksClientStatus, SocksClientV6NegotiationInfo, ECommand} from '../service/types';
+import {SocksClientStatus, SocksClientNegotiationInfoV6, ECommand} from '../service/types';
 import {getTargetServiceInfo} from '../service';
 
 export async function infoNegotiation(
   socket: Socket,
-  config: SocksClientV6NegotiationInfo,
+  config: SocksClientNegotiationInfoV6,
   clientInfo?: SocksClientStatus
 ) {
   const {stateTracer} = clientInfo;

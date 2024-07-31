@@ -14,7 +14,7 @@ import {
   SocksServerConfig,
   SocksClientStatus,
   SocksServerV5NegotiationInfo,
-  SocksClientV5NegotiationInfo,
+  SocksClientNegotiationInfoV5,
 } from '../service/types';
 import {deepEqual} from '../service/external';
 import {Socket} from 'net';
@@ -66,6 +66,7 @@ export async function getClientRequestInfo(
     key: 'clientRequestInfo',
     value: clientRequestInfo,
   });
+  return clientRequestInfo;
   // return {stateTracer, clientRequest};
 }
 
@@ -83,12 +84,12 @@ export async function connectToTargetServer(
   if (proxyStatus) {
     const {
       stateTracer: tracer = [],
-      proxyClientInfo: {repliedServiceInfo, socket: proxySocket},
+      proxyClientInfo: {respondClientRequest, socket: proxySocket},
     } = proxyStatus;
     stateTracer.push(...tracer);
     const replied = {
       reply: EHandleClientRequestState.succeeded,
-      ...(repliedServiceInfo ?? {address: '8.8.8.8', port: 88}),
+      ...(respondClientRequest ?? {address: '8.8.8.8', port: 88}),
     };
     await serverRespondClientRequest(socket, replied);
     stateTracer.push(serverState.repliedTargetServiceInfo);

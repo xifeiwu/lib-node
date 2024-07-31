@@ -5,29 +5,35 @@ import {BinaryLike} from 'crypto';
 
 export type TargetSocket = TcpNetConnectOpts | string;
 
-interface ClientStatusV5 {
+
+/**
+ * Different between Tracer and Status
+ * 1. Tracer used on record logic process, Status used to store important info of Socks end.
+ */
+interface TracerInfoV5 {
   method: EMethod;
 }
-interface ClientStatusV6 {
+interface TracerInfoV6 {
   iv: BinaryLike;
 }
-export interface SocksStatus extends ClientStatusV5, ClientStatusV6 {
-  clientRequestInfo: ClientRequestInfo;
+export interface TracerInfo extends TracerInfoV5, TracerInfoV6 {
   targetSocksServer: TargetSocket;
+  clientRequestInfo?: ClientRequestInfo;
   respondClientRequest: RespondClientRequest;
 }
 
-export type StatusKey = keyof SocksStatus;
-export interface StatusItem {
-  key: StatusKey;
-  value: SocksStatus[StatusKey];
+export type TracerKey = keyof TracerInfo;
+export interface TracerItem {
+  key: TracerKey;
+  value: TracerInfo[TracerKey];
 }
+
 export interface SocksClientStatus {
   socket?: Socket;
-  socketInfo: Partial<SocketInfo>;
-  stateTracer: Array<string | StatusItem>;
-  // targetServiceInfo?: TargetServiceInfo;
-  // repliedServiceInfo?: ClientRequestInfo;
+  socketInfo?: Partial<SocketInfo>;
+  stateTracer: Array<string | TracerItem>;
+  clientRequestInfo?: ClientRequestInfo;
+  respondClientRequest?: RespondClientRequest;
 }
 
 /** connect status on server side */
@@ -53,13 +59,13 @@ interface SocksV6NegotiationInfo {
   };
 }
 
-export interface SocksClientV5NegotiationInfo extends CommonClientNegotiationInfo, SocksV5NegotiationInfo {}
+export interface SocksClientNegotiationInfoV5 extends CommonClientNegotiationInfo, SocksV5NegotiationInfo {}
 
-export interface SocksClientV6NegotiationInfo extends CommonClientNegotiationInfo, SocksV6NegotiationInfo {}
+export interface SocksClientNegotiationInfoV6 extends CommonClientNegotiationInfo, SocksV6NegotiationInfo {}
 
 export interface SocksClientNegotiationInfo {
-  v5: SocksClientV5NegotiationInfo;
-  v6: SocksClientV6NegotiationInfo;
+  v5: SocksClientNegotiationInfoV5;
+  v6: SocksClientNegotiationInfoV6;
 }
 
 export type SocksVersion = keyof SocksClientNegotiationInfo;

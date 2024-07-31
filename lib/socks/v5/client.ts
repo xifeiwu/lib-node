@@ -9,7 +9,7 @@ import {
 import {getTargetServiceInfo} from '../service';
 import {ECommand, EMethod, SocksClientStatus, UserPassInfo} from '../service/types';
 import {clientState} from './service';
-import {SocksClientV5NegotiationInfo} from '../service/types/cross';
+import {SocksClientNegotiationInfoV5} from '../service/types/cross';
 import {Socket} from 'net';
 
 /**
@@ -17,7 +17,7 @@ import {Socket} from 'net';
  */
 export async function infoNegotiation(
   socket: Socket,
-  config: SocksClientV5NegotiationInfo,
+  config: SocksClientNegotiationInfoV5,
   clientInfo?: SocksClientStatus
 ) {
   const {stateTracer = []} = clientInfo ?? {};

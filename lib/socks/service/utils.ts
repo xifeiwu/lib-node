@@ -9,9 +9,9 @@ import {
   TargetSocket,
   EAddressType,
   SocksClientStatus,
-  SocksStatus,
-  StatusItem,
-  StatusKey,
+  TracerInfo,
+  TracerItem,
+  TracerKey,
   AllSocksProxyConfig,
 } from './types';
 import {isString, toUrlInstance, requestAndGetUpgradeInfo, startSocketClient} from './external';
@@ -315,17 +315,17 @@ export const globalServerState = {
   startHandleConnection: 'start handle connection',
 };
 
-export function getInfoFromStateTracer<Key extends StatusKey>(
+export function getInfoFromStateTracer<Key extends TracerKey>(
   stateTracer: SocksClientStatus['stateTracer'],
   key: Key
-): SocksStatus[Key] | null {
-  const item = stateTracer.find((it: StatusItem) => {
+): TracerInfo[Key] | null {
+  const item = stateTracer.find((it: TracerItem) => {
     return it?.key && it?.key === key;
   });
   if (!item) {
     return null;
   }
-  return (item as StatusItem).value as SocksStatus[Key];
+  return (item as TracerItem).value as TracerInfo[Key];
 }
 
 /**
@@ -334,9 +334,9 @@ export function getInfoFromStateTracer<Key extends StatusKey>(
  * @param keys 
  * @returns 
  */
-export function getInfosFromStateTracer<Key extends StatusKey>(
+export function getInfosFromStateTracer<Key extends TracerKey>(
   stateTracer: SocksClientStatus['stateTracer'],
   keys: Key[]
-): Array<SocksStatus[Key] | null> {
+): Array<TracerInfo[Key] | null> {
   return keys.map(key => getInfoFromStateTracer(stateTracer, key));
 }

@@ -1,7 +1,7 @@
 import {globalClientState, getSocket} from './service';
 import {getSocketInfo} from './service/external';
 import {SocksClientStatus} from './service/types';
-import {SocksClientConfig, SocksClientV6NegotiationInfo, SocksVersion} from './service/types/cross';
+import {SocksClientConfig, SocksClientNegotiationInfoV6, SocksVersion} from './service/types/cross';
 import {infoNegotiation as exchangeInfoV5} from './v5/client';
 import {infoNegotiation as exchangeInfoV6} from './v6/client';
 
@@ -35,7 +35,7 @@ export async function connectToSocksServer<Version extends SocksVersion>(config:
     } else if (socksVersion === 'v6') {
       infoFromNegotiation = await exchangeInfoV6(
         socket,
-        {...rest4Exchange} as unknown as SocksClientV6NegotiationInfo,
+        {...rest4Exchange} as unknown as SocksClientNegotiationInfoV6,
         clientInfo
       );
     }

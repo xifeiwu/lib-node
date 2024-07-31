@@ -1,13 +1,9 @@
 import {BinaryLike} from 'crypto';
 import {ClientRequestInfo} from './v5';
-import { SocksClientV6NegotiationInfo } from './cross';
-
-// export interface SocksStatusOnCustomClientSide extends SocksClientInfo {
-//   iv: Buffer;
-// }
+import {SocksClientNegotiationInfoV6} from './cross';
 
 export interface ConnectionInfo {
   iv: BinaryLike;
-  auth: SocksClientV6NegotiationInfo['auth'];
+  auth: SocksClientNegotiationInfoV6['auth'];
   clientRequestInfo: ClientRequestInfo;
 }
