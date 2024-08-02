@@ -2,7 +2,7 @@ import util from 'util';
 import path from 'path';
 import {isObject, formatDate, isPlainObject} from './external';
 import {writeFileSync} from './fs';
-import {ColorStyle, LogColors, LoggableContent} from './types';
+import {CanConvertToBuffer, ColorStyle, LogColors, LoggableContent} from './types';
 
 export function prettyLog(content: any): void;
 export function prettyLog(...args: any[]): void;

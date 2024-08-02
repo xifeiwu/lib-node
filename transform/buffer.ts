@@ -1,4 +1,4 @@
-import {isNumber, isPlainObject, isString} from '../external';
+import {filesize, isNumber, isPlainObject, isString} from '../external';
 import {CanConvertToBuffer} from '../types';
 
 /**
@@ -49,4 +49,23 @@ export function fromBuffer(buffer: Buffer, dataType: TargetDataTypeFromBuffer): 
     finalData = buffer.toString();
   }
   return finalData;
+}
+
+export function largeDataToString(
+  data: CanConvertToBuffer,
+  options?: {
+    maxPrintSize?: number;
+  }
+) {
+  const buf = toBuffer(data);
+  const {maxPrintSize} = options ?? {};
+  if (!isNumber(maxPrintSize)) {
+    return buf.toString();
+  }
+  const remainingSize = buf.byteLength - maxPrintSize;
+  let str = buf.subarray(0, maxPrintSize).toString();
+  if (remainingSize > 0) {
+    str += `...[${filesize(remainingSize)} remaining]`;
+  }
+  return str;
 }
