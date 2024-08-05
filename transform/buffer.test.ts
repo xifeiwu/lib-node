@@ -30,3 +30,12 @@ export async function testToBuffer() {
     assert.deepEqual([...buf], expected);
   }
 }
+
+export async function bufferConvert() {
+  const command = 1;
+  const addressType = 1;
+  const address = '127.0.0.1';
+  const port = 3005;
+  const buffer = toBuffer([5, command, 0, addressType, address, port]);
+  console.log(buffer);
+}
