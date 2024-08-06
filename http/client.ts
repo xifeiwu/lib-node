@@ -56,12 +56,12 @@ export function sendHttpRequest<Payload extends HttpRequestPayload = any>(
 
 export class ResponseError extends Error {
   isResponseError: boolean = true;
-  requestConfig: HttpRequestOptions;
+  requestOptions: HttpRequestOptions;
   responseInfo: HttpResponseProps;
-  constructor(requestConfig: HttpRequestOptions, responseInfo: HttpResponseProps) {
+  constructor(requestOptions: HttpRequestOptions, responseInfo: HttpResponseProps) {
     const {statusCode, statusMessage} = responseInfo;
     super(`Response code ${statusCode}: ${statusMessage}`);
-    this.requestConfig = requestConfig;
+    this.requestOptions = requestOptions;
     this.responseInfo = responseInfo;
   }
 }
