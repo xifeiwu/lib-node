@@ -68,6 +68,10 @@ export interface DirRecursiveOptions {
  */
 export function goThroughDir<T = any>(
   root: string,
+  /**
+   * Should take care about return value of cb function if want to get a correct structure by goThroughDir
+   * Should return null if not want the item to be part of children list of parent dir
+   */
   cb: (err: Error | null, res: {pathInfo: PathInfo; children?: T[]}) => T | null,
   /** option passed through each recursive without any change */
   options?: DirRecursiveOptions,
@@ -156,6 +160,41 @@ export function getFileInfoTree(root: string, options?: DirRecursiveOptions): Fi
   );
 }
 
+interface FileSize {
+  relativePath: string;
+  size: number;
+  children?: FileSize[];
+}
+export function getFileSizeTree(
+  root: string,
+  options?: {
+    sortChildren?: FlatChildrenOptions<FileSize>['sortChildren'];
+  }
+) {
+  const {sortChildren = () => 0} = options ?? {};
+  const fileInfoTree = getFileInfoTree(root);
+  function toFileSize(fileInfo: FileInfoTreeItem): FileSize {
+    const {relativePath, stat, children} = fileInfo;
+    if (Array.isArray(children)) {
+      const childrenFileSize = children.map(toFileSize).sort(sortChildren);
+      const totalSize = childrenFileSize.reduce<number>((sum, it) => {
+        return sum + it.size;
+      }, 0);
+      return {
+        relativePath,
+        size: totalSize,
+        children: childrenFileSize,
+      };
+    } else {
+      return {
+        relativePath,
+        size: stat.size,
+      };
+    }
+  }
+  return toFileSize(fileInfoTree);
+}
+
 interface FlatChildrenOptions<T = any> {
   sortChildren?: (a: T, b: T) => number;
   includeDir?: boolean;
@@ -189,44 +228,8 @@ export function flatChildren<T extends {children?: any[]}>(mapInfo: T, options?:
   return mapToList(mapInfo);
 }
 
-interface FileSize {
-  relativePath: string;
-  size: number;
-  children?: FileSize[];
-}
-export function getFileSizeTree(
-  root: string,
-  options?: {
-    sortChildren?: (prev: FileSize, next: FileSize) => number;
-  }
-) {
-  const {sortChildren = () => 0} = options ?? {};
-  const fileInfoTree = getFileInfoTree(root);
-  function toFileSize(fileInfo: FileInfoTreeItem): FileSize {
-    const {relativePath, stat, children} = fileInfo;
-    if (Array.isArray(children)) {
-      const childrenFileSize = children.map(toFileSize).sort(sortChildren);
-      const totalSize = childrenFileSize.reduce<number>((sum, it) => {
-        return sum + it.size;
-      }, 0);
-      return {
-        relativePath,
-        size: totalSize,
-        children: childrenFileSize,
-      };
-    } else {
-      return {
-        relativePath,
-        size: stat.size,
-      };
-    }
-  }
-  return toFileSize(fileInfoTree);
-}
-
 export interface GetFileListOption extends DirRecursiveOptions {
   includeDir?: boolean;
-  relativePathFilter?: (relativePath: string) => boolean;
 }
 /**
  * @param root
@@ -234,7 +237,7 @@ export interface GetFileListOption extends DirRecursiveOptions {
  * @returns
  */
 export function getFileList(root: string, options?: GetFileListOption) {
-  const {includeDir = false, relativePathFilter = () => true, ...optionsOfReadDirRecursive} = options ?? {};
+  const {includeDir, ...goThroughDirOptions} = options ?? {};
   const fileList: string[] = [];
   goThroughDir(
     root,
@@ -242,14 +245,15 @@ export function getFileList(root: string, options?: GetFileListOption) {
       if (err) {
         return null;
       }
-      if (Array.isArray(children) && !includeDir) {
+      const isDir = Array.isArray(children);
+      if (isDir && !includeDir) {
         return null;
       }
       fileList.push(relativePath);
     },
-    optionsOfReadDirRecursive
+    goThroughDirOptions
   );
-  return fileList.filter(relativePathFilter);
+  return fileList;
 }
 
 export function getMultipleDirFileList(
@@ -278,31 +282,6 @@ export function getMultipleDirFileList(
   }, []);
   return allFiles;
 }
-
-// export function getFileSizeList() {
-//   const fileInfoTree = getFileInfoTree(__dirname);
-//   function getFileSize(it: FileInfoTreeItem): FileSize {
-//     const {relativePath, stat, children} = it;
-//     if (stat.isDirectory()) {
-//       /** sort child by size */
-//       const childrenInfo = children.map(getFileSize).sort((prev, next) => {
-//         return next.size - prev.size;
-//       });
-//       const totalSize = childrenInfo.reduce<number>((sum, it) => {
-//         return sum + it.size;
-//       }, 0);
-//       return {
-//         relativePath,
-//         children: childrenInfo,
-//         size: totalSize,
-//       };
-//     } else {
-//       return {relativePath, size: stat.size};
-//     }
-//   }
-//   const fileSizeInfo = getFileSize(fileInfoTree);
-//   console.log(fileSizeInfo);
-// }
 
 interface LineCountMapItem {
   relativePath: string;

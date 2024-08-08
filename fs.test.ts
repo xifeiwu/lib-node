@@ -1,7 +1,7 @@
+import path from 'path';
 import assert from 'assert';
 import {FileInfoTreeItem, flatChildren, getFileInfoTree, getFileList, getLineCountMap} from './fs';
 import {isString} from './external';
-import path from 'path';
 
 export function testGetFileList() {
   const fileList = getFileList(__dirname, {
@@ -18,10 +18,10 @@ export function testGetFileList() {
  * Just used to check data, can modify anytime.
  */
 export function testGetFileListByDir() {
-  const targetDir = '/Users/wuxifei/code/conviva/instant-filter/node-based-assist/mock_files/gcp/nlz';
+  const targetDir = path.resolve(__dirname, 'net');
   const relativeFileList = getFileList(targetDir, {
     fileFilter({relativePath}) {
-      return relativePath.endsWith('.js');
+      return relativePath.endsWith('test.ts');
     },
   });
   console.log(relativeFileList);
