@@ -224,6 +224,62 @@ export function getFileSizeTree(
   }
   return toFileSize(fileInfoTree);
 }
+
+export interface GetFileListOption extends DirRecursiveOptions {
+  includeDir?: boolean;
+  relativePathFilter?: (relativePath: string) => boolean;
+}
+/**
+ * @param root
+ * @param options
+ * @returns
+ */
+export function getFileList(root: string, options?: GetFileListOption) {
+  const {includeDir = false, relativePathFilter = () => true, ...optionsOfReadDirRecursive} = options ?? {};
+  const fileList: string[] = [];
+  readDirRecursive(
+    root,
+    (err, {pathInfo: {relativePath}, children}) => {
+      if (err) {
+        return null;
+      }
+      if (Array.isArray(children) && !includeDir) {
+        return null;
+      }
+      fileList.push(relativePath);
+    },
+    optionsOfReadDirRecursive
+  );
+  return fileList.filter(relativePathFilter);
+}
+
+export function getMultipleDirFileList(
+  targetList: Array<{
+    targetDir: string;
+    options?: GetFileListOption;
+  }>
+): Array<{relativePath: string; fullPath: string}> {
+  const allFiles = targetList.reduce<
+    Array<{
+      fullPath: string;
+      relativePath: string;
+    }>
+  >((sum, it) => {
+    const {targetDir, options} = it;
+    const fileList = getFileList(targetDir, options);
+    return [
+      ...sum,
+      ...fileList.map(relativePath => {
+        return {
+          relativePath,
+          fullPath: path.join(targetDir, relativePath),
+        };
+      }),
+    ];
+  }, []);
+  return allFiles;
+}
+
 // export function getFileSizeList() {
 //   const fileInfoTree = getFileInfoTree(__dirname);
 //   function getFileSize(it: FileInfoTreeItem): FileSize {
@@ -282,61 +338,6 @@ export function getLineCountMap(
     },
     options
   );
-}
-
-export interface GetFileListOption extends DirRecursiveOptions {
-  includeDir?: boolean;
-  relativePathFilter?: (relativePath: string) => boolean;
-}
-/**
- * @param root
- * @param options
- * @returns
- */
-export function getFileList(root: string, options?: GetFileListOption) {
-  const {includeDir = false, relativePathFilter = () => true, ...optionsOfReadDirRecursive} = options ?? {};
-  const fileList: string[] = [];
-  readDirRecursive(
-    root,
-    (err, {pathInfo: {relativePath}, children}) => {
-      if (err) {
-        return null;
-      }
-      if (Array.isArray(children) && !includeDir) {
-        return null;
-      }
-      fileList.push(relativePath);
-    },
-    optionsOfReadDirRecursive
-  );
-  return fileList.filter(relativePathFilter);
-}
-
-export function getMultipleDirFileList(
-  targetList: Array<{
-    targetDir: string;
-    options?: GetFileListOption;
-  }>
-): Array<{relativePath: string; fullPath: string}> {
-  const allFiles = targetList.reduce<
-    Array<{
-      fullPath: string;
-      relativePath: string;
-    }>
-  >((sum, it) => {
-    const {targetDir, options} = it;
-    const fileList = getFileList(targetDir, options);
-    return [
-      ...sum,
-      ...fileList.map(relativePath => {
-        return {
-          relativePath,
-          fullPath: path.join(targetDir, relativePath),
-        };
-      }),
-    ];
-  }, []);
-  return allFiles;
 }
 
 export async function selectFileOfDir(
