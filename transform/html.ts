@@ -1,11 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 import {Readable} from 'stream';
-import {DirRecursiveOptions, getFileInfoTree} from '../fs';
+import {GoThroughDirOptions, getFileInfoTree} from '../fs';
 import {filesize} from '../external';
 
 // return file list in the form of <ul><li></li></ul>
-export function htmlFileList(dir: string, options?: DirRecursiveOptions) {
+export function htmlFileList(dir: string, options?: GoThroughDirOptions) {
   options = {
     maxDepth: 1,
     ...(options ?? {}),
@@ -41,7 +41,7 @@ export function htmlFileList(dir: string, options?: DirRecursiveOptions) {
   }
 }
 
-export function htmlDirContent(dir: string, options?: DirRecursiveOptions) {
+export function htmlDirContent(dir: string, options?: GoThroughDirOptions) {
   options = {
     maxDepth: 1,
     ...(options ?? {}),
