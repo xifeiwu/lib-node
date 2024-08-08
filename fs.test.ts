@@ -5,7 +5,7 @@ import path from 'path';
 
 export function testGetFileList() {
   const fileList = getFileList(__dirname, {
-    fileFilter({baseName}) {
+    fileFilter({fileName: baseName}) {
       return baseName.startsWith('fs');
     },
   });
@@ -52,7 +52,7 @@ export function testGetLineCountMap() {
 
 export function testGetFileInfoTree() {
   const fileInfoTree = getFileInfoTree(__dirname, {
-    fileFilter({baseName}) {
+    fileFilter({fileName: baseName}) {
       return baseName.startsWith('fs');
     },
   });

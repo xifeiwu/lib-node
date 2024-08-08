@@ -44,7 +44,9 @@ export function findFileListByNameUpward(dir: string, name: string) {
 }
 
 interface PathInfo {
-  baseName: string;
+  /** filename */
+  fileName: string;
+  /** relativePath to root dir */
   relativePath: string;
   depth: number;
 }
@@ -62,7 +64,7 @@ export interface DirRecursiveOptions {
   maxDepth?: number;
 }
 /**
- * @returns relative path list to root
+ * @returns traversal all dir and file of root dir, and return value returned from cb function
  */
 export function readDirRecursive<T = any>(
   root: string,
@@ -73,7 +75,7 @@ export function readDirRecursive<T = any>(
   pathInfo?: PathInfo
 ) {
   pathInfo = pathInfo || {
-    baseName: '',
+    fileName: '',
     relativePath: '.',
     depth: 0,
   };
@@ -97,14 +99,14 @@ export function readDirRecursive<T = any>(
     if (dirFilter(pathInfo)) {
       const fileListOfCurDir = fs.readdirSync(fullpath);
       const children = fileListOfCurDir
-        .map(baseName => {
+        .map(name => {
           const nextDepth = depth + 1;
           // if (largerThanMaxDepth(depth + 1)) {
           //   return null;
           // }
           const child = readDirRecursive(root, cb, options, {
-            baseName,
-            relativePath: path.join(relativePath, baseName),
+            fileName: name,
+            relativePath: path.join(relativePath, name),
             depth: nextDepth,
           });
           return child;
@@ -408,6 +410,7 @@ export function getFilePathInfo(fullPath: string): {
   dirPath: string;
   extName: string;
   fileName: string;
+  /** fileName exclude extName */
   fileBaseName: string;
 } {
   const dirPath = path.dirname(fullPath);
