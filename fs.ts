@@ -64,9 +64,9 @@ export interface DirRecursiveOptions {
   maxDepth?: number;
 }
 /**
- * @returns traversal all dir and file of root dir, and return value returned from cb function
+ * @returns go through dir, and return value returned from cb function
  */
-export function readDirRecursive<T = any>(
+export function goThroughDir<T = any>(
   root: string,
   cb: (err: Error | null, res: {pathInfo: PathInfo; children?: T[]}) => T | null,
   /** option passed through each recursive without any change */
@@ -92,19 +92,16 @@ export function readDirRecursive<T = any>(
     return null;
   }
   const fullpath = path.join(root, relativePath);
-  if (!fs.existsSync(fullpath)) {
-    return cb(new Error(`File not exist: ${fullpath}`), {pathInfo});
-  }
+  // if (!fs.existsSync(fullpath)) {
+    // return cb(new Error(`File not exist: ${fullpath}`), {pathInfo});
+  // }
   if (fs.statSync(fullpath).isDirectory()) {
     if (dirFilter(pathInfo)) {
       const fileListOfCurDir = fs.readdirSync(fullpath);
       const children = fileListOfCurDir
         .map(name => {
           const nextDepth = depth + 1;
-          // if (largerThanMaxDepth(depth + 1)) {
-          //   return null;
-          // }
-          const child = readDirRecursive(root, cb, options, {
+          const child = goThroughDir(root, cb, options, {
             fileName: name,
             relativePath: path.join(relativePath, name),
             depth: nextDepth,
@@ -128,31 +125,30 @@ export interface FileInfoTreeItem {
   children?: FileInfoTreeItem[];
 }
 export function getFileInfoTree(root: string, options?: DirRecursiveOptions): FileInfoTreeItem {
-  const {dirFilter, fileFilter} = options ?? {};
-  const filterMode = Boolean(dirFilter || fileFilter);
-  return readDirRecursive<FileInfoTreeItem>(
+  // const {dirFilter, fileFilter} = options ?? {};
+  // const filterMode = Boolean(dirFilter || fileFilter);
+  return goThroughDir<FileInfoTreeItem>(
     root,
     (err, {pathInfo, children}) => {
       if (err) {
         throw err;
-        // return null;
       }
       const {relativePath} = pathInfo;
-      const isDir = Array.isArray(children);
+      // const isDir = Array.isArray(children);
       /** in filterMode, filter out dir info when it's children is empty */
-      if (filterMode) {
-        if (isDir) {
-          if (dirFilter) {
-            if (!dirFilter(pathInfo)) {
-              return null;
-            }
-          } else {
-            if (children.length === 0) {
-              return null;
-            }
-          }
-        }
-      }
+      // if (filterMode) {
+      //   if (isDir) {
+      //     if (dirFilter) {
+      //       if (!dirFilter(pathInfo)) {
+      //         return null;
+      //       }
+      //     } else {
+      //       if (children.length === 0) {
+      //         return null;
+      //       }
+      //     }
+      //   }
+      // }
       const stat = fs.statSync(path.join(root, relativePath));
       return {stat, relativePath, children};
     },
@@ -239,7 +235,7 @@ export interface GetFileListOption extends DirRecursiveOptions {
 export function getFileList(root: string, options?: GetFileListOption) {
   const {includeDir = false, relativePathFilter = () => true, ...optionsOfReadDirRecursive} = options ?? {};
   const fileList: string[] = [];
-  readDirRecursive(
+  goThroughDir(
     root,
     (err, {pathInfo: {relativePath}, children}) => {
       if (err) {
@@ -323,7 +319,7 @@ export function getLineCountMap(
     filePath = '.';
   }
   const fullPath = path.resolve(filePath);
-  return readDirRecursive<LineCountMapItem>(
+  return goThroughDir<LineCountMapItem>(
     fullPath,
     (err, {pathInfo: {relativePath}, children}) => {
       const fullPath = path.join(filePath, relativePath);
