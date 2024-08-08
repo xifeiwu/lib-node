@@ -93,7 +93,7 @@ export function goThroughDir<T = any>(
   }
   const fullpath = path.join(root, relativePath);
   // if (!fs.existsSync(fullpath)) {
-    // return cb(new Error(`File not exist: ${fullpath}`), {pathInfo});
+  // return cb(new Error(`File not exist: ${fullpath}`), {pathInfo});
   // }
   if (fs.statSync(fullpath).isDirectory()) {
     if (dirFilter(pathInfo)) {
@@ -156,17 +156,18 @@ export function getFileInfoTree(root: string, options?: DirRecursiveOptions): Fi
   );
 }
 
+interface FlatChildrenOptions<T = any> {
+  sortChildren?: (a: T, b: T) => number;
+  includeDir?: boolean;
+}
 /**
  * mapInfo container more info. Can convert to list by this function for some usecase.
  * @param mapInfo
  * @param options
  * @returns
  */
-export function flatChildren<T extends {children?: any[]}>(
-  mapInfo: T,
-  options?: {sortChildren?: (a: T, b: T) => number; ignoreParent?: boolean}
-) {
-  const {sortChildren, ignoreParent} = options ?? {};
+export function flatChildren<T extends {children?: any[]}>(mapInfo: T, options?: FlatChildrenOptions) {
+  const {sortChildren, includeDir = true} = options ?? {};
   function mapToList(map: T): T[] {
     const {children, ...others} = map;
     if (Array.isArray(children)) {
@@ -176,10 +177,10 @@ export function flatChildren<T extends {children?: any[]}>(
       const reducedChildren = children.map(mapToList).reduce<T[]>((sum, it) => {
         return [...sum, ...it];
       }, []);
-      if (ignoreParent) {
-        return reducedChildren;
-      } else {
+      if (includeDir) {
         return [map, ...reducedChildren];
+      } else {
+        return reducedChildren;
       }
     } else {
       return [map];
