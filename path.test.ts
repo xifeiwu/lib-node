@@ -1,5 +1,5 @@
 import {getFilePathInfo} from './path';
-import {runFuncTestCases} from './general';
+import {runFuncTestCases} from './test';
 
 export function testGetFilePathInfo() {
   runFuncTestCases(getFilePathInfo, [
@@ -13,7 +13,8 @@ export function testGetFilePathInfo() {
       },
     },
     {
-      params: ['zMovie/modules/lib/node'],
+      description: ['folder can also be basename'],
+      params: ['zMovie/modules/lib/node/'],
       expected: {
         dirname: 'zMovie/modules/lib',
         extname: '',
@@ -30,5 +31,5 @@ export function testGetFilePathInfo() {
         bareBasename: 'path.test',
       },
     },
-  ]);
+  ], true);
 }
