@@ -1,4 +1,4 @@
-import {goOnOrNot, selectOption} from '../common';
+import {goOnOrNot, selectOption} from '../general';
 import {logColorful} from '../log';
 import {MysqlConfig} from '../types';
 

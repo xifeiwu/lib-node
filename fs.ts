@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import childProcess from 'child_process';
-import {selectOption} from './common';
+import {selectOption} from './general';
 import {isNumber} from './external';
 
 const HOME_PATH = process.env.HOME;

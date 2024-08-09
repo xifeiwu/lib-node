@@ -1,4 +1,4 @@
-export * from './common';
+export * from './general';
 export * from './transform';
 export * from './net';
 export * from './stream';

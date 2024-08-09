@@ -1,7 +1,7 @@
 import stream, {Transform, Readable, Writable} from 'stream';
 import {waitFor} from './external';
 import {DataTypeFromBuffer, TargetDataTypeFromBuffer, fromBuffer, toBuffer} from './transform';
-import {getBufferMatcher} from './common';
+import {getBufferMatcher} from './general';
 import {CanConvertToBuffer} from './types';
 
 export function getDataFromReadable(reader: Readable): Promise<Buffer> {
