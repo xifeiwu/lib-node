@@ -392,26 +392,6 @@ export function getModulePath(moduleName: string, currentPath: string) {
   return fullPath;
 }
 
-export function getFilePathInfo(fullPath: string): {
-  dirPath: string;
-  extName: string;
-  fileName: string;
-  /** fileName exclude extName */
-  fileBaseName: string;
-} {
-  const dirPath = path.dirname(fullPath);
-  const extName = path.extname(fullPath);
-  const fileName = path.basename(fullPath);
-  const fileBaseName = path.basename(fileName, extName);
-  const pathInfo = {
-    dirPath,
-    fileName,
-    extName,
-    fileBaseName,
-  };
-  return pathInfo;
-}
-
 export function writeFileSync(fullPath: string, data: string | NodeJS.ArrayBufferView) {
   const dirName = path.dirname(fullPath);
   if (!fs.existsSync(dirName)) {

@@ -5,6 +5,7 @@ export * from './stream';
 export * from './config';
 export * from './http';
 export * from './fs';
+export * from './path';
 export * from './log';
 export * from './process';
 export * from './crypto';
