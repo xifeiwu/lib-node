@@ -1,12 +1,10 @@
-import assert from 'assert';
 import {getFilePathInfo} from './path';
-import {TestCase} from './types/test';
-import { logColorful } from './log';
+import {runFuncTestCases} from './general';
 
 export function testGetFilePathInfo() {
-  const allCases: TestCase<string, ReturnType<typeof getFilePathInfo>>[] = [
+  runFuncTestCases(getFilePathInfo, [
     {
-      data: '/zMovie/modules/lib/node',
+      params: ['/zMovie/modules/lib/node'],
       expected: {
         dirname: '/zMovie/modules/lib',
         extname: '',
@@ -15,7 +13,7 @@ export function testGetFilePathInfo() {
       },
     },
     {
-      data: 'zMovie/modules/lib/node',
+      params: ['zMovie/modules/lib/node'],
       expected: {
         dirname: 'zMovie/modules/lib',
         extname: '',
@@ -24,7 +22,7 @@ export function testGetFilePathInfo() {
       },
     },
     {
-      data: 'zMovie/modules/lib/node/path.test.ts',
+      params: ['zMovie/modules/lib/node/path.test.ts'],
       expected: {
         dirname: 'zMovie/modules/lib/node',
         extname: '.ts',
@@ -32,10 +30,5 @@ export function testGetFilePathInfo() {
         bareBasename: 'path.test',
       },
     },
-  ];
-  for (const oneCase of allCases) {
-    const {data, expected, description} = oneCase;
-    description && logColorful({}, ...description);
-    assert.deepEqual(getFilePathInfo(data), expected);
-  }
+  ]);
 }
