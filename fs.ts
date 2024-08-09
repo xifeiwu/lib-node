@@ -45,7 +45,7 @@ export function findFileListByNameUpward(dir: string, name: string) {
 
 interface PathInfo {
   /** filename */
-  fileName: string;
+  basename: string;
   /** relativePath to root dir */
   relativePath: string;
   depth: number;
@@ -79,7 +79,7 @@ export function goThroughDir<T = any>(
   pathInfo?: PathInfo
 ) {
   pathInfo = pathInfo || {
-    fileName: '',
+    basename: '',
     relativePath: '.',
     depth: 0,
   };
@@ -106,7 +106,7 @@ export function goThroughDir<T = any>(
         .map(name => {
           const nextDepth = depth + 1;
           const child = goThroughDir(root, cb, options, {
-            fileName: name,
+            basename: name,
             relativePath: path.join(relativePath, name),
             depth: nextDepth,
           });

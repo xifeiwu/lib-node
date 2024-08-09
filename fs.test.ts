@@ -5,8 +5,8 @@ import {isString} from './external';
 
 export function testGetFileList() {
   const fileList = getFileList(__dirname, {
-    fileFilter({fileName: baseName}) {
-      return baseName.startsWith('fs');
+    fileFilter({basename}) {
+      return basename.startsWith('fs');
     },
   });
   assert.ok(Array.isArray(fileList));
@@ -52,8 +52,8 @@ export function testGetLineCountMap() {
 
 export function testGetFileInfoTree() {
   const fileInfoTree = getFileInfoTree(__dirname, {
-    fileFilter({fileName: baseName}) {
-      return baseName.startsWith('fs');
+    fileFilter({basename}) {
+      return basename.startsWith('fs');
     },
   });
   const {children, relativePath} = fileInfoTree;
