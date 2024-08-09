@@ -1,9 +1,8 @@
 import readline from 'readline';
 import {isFunction, isNumber, isObject, isString} from './external';
-import {coloringContent, inspect, logColorful} from './log';
-import {CanConvertToBuffer, FuncTestCase, LoggableContent} from './types';
+import {coloringContent, inspect} from './log';
+import {CanConvertToBuffer, LoggableContent} from './types';
 import {toBuffer} from './transform';
-import assert from 'assert';
 
 /**
  * Determine if a value is a Stream
@@ -130,20 +129,4 @@ export function getBufferMatcher(target: CanConvertToBuffer) {
     }
     return matched;
   };
-}
-
-export async function runFuncTestCases<FuncType extends (...param: any) => any>(
-  func: FuncType,
-  allCases: Array<FuncTestCase<FuncType>>,
-  dryRun?: boolean
-) {
-  for (const oneCase of allCases) {
-    const {params, expected} = oneCase;
-    const results = await func(...params);
-    if (dryRun) {
-      logColorful({}, results);
-    } else {
-      assert.deepEqual(expected, results);
-    }
-  }
 }

@@ -12,3 +12,4 @@ export * from './crypto';
 export * from './mime';
 export * from './types';
 export * from './external';
+export * from './test';

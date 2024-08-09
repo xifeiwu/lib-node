@@ -9,3 +9,13 @@ export interface FuncTestCase<FuncType extends (...param: any) => any> {
   expected: ReturnType<FuncType>;
   description?: string[];
 }
+
+export interface InstanceTestCase<
+  Cls extends  {[key: string]: Function | any},
+  Key extends keyof Cls = any
+> {
+  instance: Cls;
+  params: Parameters<Cls[Key]>;
+  expected: ReturnType<Cls[Key]>;
+  description?: string[];
+}
