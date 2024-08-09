@@ -19,7 +19,6 @@ export function convertObjectToCjsContent<T extends MockFileContent>(info: T) {
     }`;
     return line;
   });
-
   return lines.join('\n');
 }
 
