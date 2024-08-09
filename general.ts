@@ -1,7 +1,7 @@
 import readline from 'readline';
 import {isFunction, isNumber, isObject, isString} from './external';
 import {coloringContent, inspect} from './log';
-import {CanConvertToBuffer, LoggableContent} from './types';
+import {CanConvertToBuffer, ColorStyle, LoggableContent} from './types';
 import {toBuffer} from './transform';
 
 /**
@@ -73,26 +73,36 @@ const noCondition = Object.entries(answerToValue)
   .filter(([, value]) => value === false)
   .map(it => it[0])
   .join('/');
-/**
- * Go on or not?
- * Not by default
- */
-export async function goOnOrNot(config?: {tips?: Array<LoggableContent>; defaultValue?: boolean}) {
-  const {tips = [], defaultValue} = config ?? {};
+
+interface TipItem {
+  content: LoggableContent;
+  style: ColorStyle;
+}
+export async function goOnOrNot(config?: {
+  tips?: Array<LoggableContent | TipItem>;
+  style?: ColorStyle;
+  defaultValue?: boolean;
+}) {
+  const {tips = [], defaultValue, style = {}} = config ?? {};
+  const defaultStyle: ColorStyle = {
+    color: 'yellow',
+    ...style,
+  };
+  const optionStr = [...tips, `Go on or Not?[${defaultValue ? yesCondition : noCondition}]?`]
+    .map(it => {
+      const tipItem: TipItem = isObject(it)
+        ? (it as TipItem)
+        : {
+            content: it,
+            style: defaultStyle,
+          };
+      return coloringContent(tipItem.style, tipItem.content);
+    })
+    .join('\n');
   const interact = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
   });
-  const optionStr = [...tips, `Go on or Not?[${defaultValue ? yesCondition : noCondition}]?`]
-    .map(it =>
-      coloringContent(
-        {
-          color: 'yellow',
-        },
-        it
-      )
-    )
-    .join('\n');
   return new Promise<boolean>(res => {
     interact.question(optionStr, answer => {
       if (answer.trim() === '' && defaultValue !== undefined) {
