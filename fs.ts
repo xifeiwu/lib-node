@@ -347,7 +347,7 @@ export async function selectFileOfDir(
   return {relativePath, fullPath};
 }
 
-export function deleteFile(path: string) {
+export function recursiveDeleteFile(path: string) {
   if (fs.existsSync(path)) {
     if (fs.statSync(path).isFile()) {
       fs.unlinkSync(path);
@@ -356,7 +356,7 @@ export function deleteFile(path: string) {
         const curPath = path + '/' + file;
         if (fs.statSync(curPath).isDirectory()) {
           // recurse
-          deleteFile(curPath);
+          recursiveDeleteFile(curPath);
         } else {
           // delete file
           fs.unlinkSync(curPath);
