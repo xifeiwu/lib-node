@@ -3,6 +3,7 @@ import path from 'path';
 import childProcess from 'child_process';
 import {selectOption} from './general';
 import {isNumber} from './external';
+import {getFilePathInfo} from './path';
 
 const HOME_PATH = process.env.HOME;
 
@@ -390,6 +391,18 @@ export function getModulePath(moduleName: string, currentPath: string) {
   }
   const fullPath = pathList.map(it => path.resolve(it, moduleName)).find(it => fs.existsSync(it));
   return fullPath;
+}
+
+export function makeSureDirExist(dirPath: string) {
+  const fileExist = fs.existsSync(dirPath);
+  if (!fileExist) {
+    const res = fs.mkdirSync(dirPath, {recursive: true});
+    return res;
+  }
+}
+export function makeSureDirExistForFile(filePath: string) {
+  const {dirname} = getFilePathInfo(filePath);
+  return makeSureDirExist(dirname);
 }
 
 export function writeFileSync(fullPath: string, data: string | NodeJS.ArrayBufferView) {

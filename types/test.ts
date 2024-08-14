@@ -4,9 +4,10 @@
 //   description?: string[];
 // }
 
+export type ExpectedAsFunc<FuncType extends (...param: any) => any> = (result: ReturnType<FuncType>) => boolean;
 export interface FuncTestCase<FuncType extends (...param: any) => any> {
   params: Parameters<FuncType>;
-  expected: ReturnType<FuncType>;
+  expected: ReturnType<FuncType> | ExpectedAsFunc<FuncType>;
   description?: string[];
 }
 

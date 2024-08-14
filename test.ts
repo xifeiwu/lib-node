@@ -1,5 +1,5 @@
 import assert from 'assert';
-import {FuncTestCase, InstanceTestCase} from './types';
+import {ExpectedAsFunc, FuncTestCase, InstanceTestCase} from './types';
 import {logColorful} from './log';
 import {isFunction} from './external';
 
@@ -16,11 +16,15 @@ export async function runFuncTestCases<FuncType extends (...param: any) => any>(
 ) {
   for (const oneCase of allCases) {
     const {params, expected} = oneCase;
-    const results = await func(...params);
+    const result = await func(...params);
     if (dryRun) {
-      logColorful({}, results);
+      logColorful({}, result);
     } else {
-      assert.deepEqual(expected, results);
+      if (isFunction(expected)) {
+        assert((expected as ExpectedAsFunc<FuncType>)(result));
+      } else {
+        assert.deepEqual(expected, result);
+      }
     }
   }
 }

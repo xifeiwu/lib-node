@@ -1,7 +1,18 @@
+import fs from 'fs';
 import path from 'path';
 import assert from 'assert';
-import {FileInfoTreeItem, flatChildren, getFileInfoTree, getFileList, getLineCountMap} from './fs';
+import {
+  FileInfoTreeItem,
+  flatChildren,
+  getFileInfoTree,
+  getFileList,
+  getLineCountMap,
+  makeSureDirExist,
+  recursiveDeleteFile,
+} from './fs';
 import {isString} from './external';
+import {runFuncTestCases} from './test';
+import {FuncTestCase} from './types';
 
 export function testGetFileList() {
   const fileList = getFileList(__dirname, {
@@ -89,4 +100,19 @@ export function testGetFileSizeTree() {
   }
   const fileSizeInfo = getFileSize(fileInfoTree);
   console.log(fileSizeInfo);
+}
+
+export async function testMakeSureDirExist() {
+  const relativePath = 'a/b/c';
+  fs.existsSync(relativePath) && fs.rmdirSync(path.resolve(process.cwd(), relativePath), {recursive: true});
+  await runFuncTestCases(makeSureDirExist, [
+    {
+      params: [relativePath],
+      expected(res: string) {
+        assert.equal(res, relativePath);
+        return fs.existsSync(path.join(process.cwd(), relativePath));
+      },
+    },
+  ]);
+  fs.existsSync(relativePath) && fs.rmdirSync(path.resolve(process.cwd(), relativePath), {recursive: true});
 }
