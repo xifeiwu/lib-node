@@ -15,7 +15,10 @@ export async function runFuncTestCases<FuncType extends (...param: any) => any>(
   dryRun?: boolean
 ) {
   for (const oneCase of allCases) {
-    const {params, expected} = oneCase;
+    const {description, params, expected} = oneCase;
+    if (description && description.length > 0) {
+      logColorful({color: 'yellow'}, 'Run the case', ...description);
+    }
     const result = await func(...params);
     if (dryRun) {
       logColorful({}, result);
