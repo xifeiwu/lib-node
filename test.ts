@@ -19,6 +19,7 @@ export async function runFuncTestCases<FuncType extends (...param: any) => any>(
     if (description && description.length > 0) {
       logColorful({color: 'yellow'}, 'Run the case', ...description);
     }
+    // @ts-ignore
     const result = await func(...params);
     if (dryRun) {
       logColorful({}, result);
