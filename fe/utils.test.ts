@@ -1,26 +1,31 @@
 import assert from 'assert';
-import {runFuncTestCases} from '../test';
-import {set} from './utils';
+import {get, set} from './utils';
 
 export function testSet() {
-  const obj: {
-    a?: {
-      b?: {
-        c?: number;
+  {
+    const obj1: {
+      a?: {
+        b?: {
+          c?: number;
+        };
       };
-    };
-  } = {};
-  set(obj, ['a', 'b', 'c'], 5);
-  assert.deepEqual(
-    {
-      a: {
-        b: {
-          c: 5,
+    } = {};
+    set(obj1, ['a', 'b', 'c'], 5);
+    assert.deepEqual(
+      {
+        a: {
+          b: {
+            c: 5,
+          },
         },
       },
-    },
-    obj
-  );
+      obj1
+    );
+    const value1 = get(obj1, ['a', 'b'], 3);
+    assert.deepEqual(value1, {c: 5});
+    const value2 = get(obj1, ['a', 'b', 'c', 'd'], 3);
+    assert.deepEqual(value2, 3);
+  }
   const obj2: {
     a?: {b: number}[];
   } = {};

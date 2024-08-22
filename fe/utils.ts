@@ -1,1 +1,1 @@
-export {set} from '../../fe/utils';
+export {set, get} from '../../fe/utils';
