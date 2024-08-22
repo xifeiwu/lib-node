@@ -24,10 +24,10 @@ export async function parseHttpFirstLine(reader: Readable): Promise<ParseFirstLi
 }
 
 interface ParseHttpHeaderResults {
-  headerPartProps: HttpHeaderPartProps;
+  headerPartProps?: HttpHeaderPartProps;
   dataConsumed: Buffer;
 }
-export async function parseHttpHeaderPart<T extends Readable>(
+export async function tryParseHttpHeaderPart<T extends Readable>(
   reader: T,
   firstLineInfo?: HttpFirstLineProps
 ): Promise<ParseHttpHeaderResults> {
@@ -38,7 +38,10 @@ export async function parseHttpHeaderPart<T extends Readable>(
   if (!firstLineInfo) {
     const parseResult = await parseHttpFirstLine(reader);
     if (!parseResult.firstLineInfo) {
-      throw new Error(`Parse http first line fail`);
+      // throw new Error(`Parse http first line fail`);
+      return {
+        dataConsumed: parseResult.dataConsumed,
+      };
     }
     headerPartProps = {...parseResult.firstLineInfo};
     dataConsumed = Buffer.concat([dataConsumed, parseResult.dataConsumed]);
@@ -158,7 +161,7 @@ export class HttpIncomingMessage extends Readable {
     this.push(chunk.subarray(0, size));
   }
   async parseHeaderPart() {
-    const {headerPartProps} = await parseHttpHeaderPart(this.socket);
+    const {headerPartProps} = await tryParseHttpHeaderPart(this.socket);
     this.headerPartProps = headerPartProps;
   }
   parseRemainingData() {

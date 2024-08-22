@@ -1,6 +1,6 @@
 import assert from 'assert';
 import {Readable} from 'stream';
-import {parseHttpFirstLine, parseHttpHeaderPart} from './server';
+import {parseHttpFirstLine, tryParseHttpHeaderPart} from './server';
 import {tcpRequestPropsToBuffer} from './client';
 import {getDataFromReadable} from '../../stream';
 import {TcpRequestProps} from '../../types';
@@ -23,7 +23,7 @@ export async function testParseHttpHeaderPart() {
       this.push(null);
     },
   });
-  const {headerPartProps: requestInfo, dataConsumed} = await parseHttpHeaderPart(reader);
+  const {headerPartProps: requestInfo, dataConsumed} = await tryParseHttpHeaderPart(reader);
   assert.deepEqual(requestInfo, {
     method: 'POST',
     url: '/api/debug/echo',
@@ -54,7 +54,7 @@ export async function testParseHttpFirstLine() {
       httpVersion: 'HTTP/1.1',
     });
     assert.equal(dataConsumed4FirstLine.toString(), `POST /api/debug/echo HTTP/1.1\r\n`);
-    const {headerPartProps: requestInfo, dataConsumed} = await parseHttpHeaderPart(reader, firstLineInfo);
+    const {headerPartProps: requestInfo, dataConsumed} = await tryParseHttpHeaderPart(reader, firstLineInfo);
 
     assert.deepEqual(requestInfo, {
       method: 'POST',
