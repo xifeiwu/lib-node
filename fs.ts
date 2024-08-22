@@ -63,6 +63,8 @@ export interface GoThroughDirOptions {
   fileFilter?: FileFilter;
   /** max depth for dir. root dir is level 0 */
   maxDepth?: number;
+  /** throw Error or not */
+  ignoreError?: boolean;
 }
 /**
  * @returns go through dir, and return value returned from cb function
@@ -91,6 +93,7 @@ export function goThroughDir<T = any>(
     dirFilter = () => true,
     fileFilter = () => true,
     maxDepth,
+    ignoreError,
   } = (options ? options : {}) as GoThroughDirOptions;
   const largerThanMaxDepth = (d: number) => isNumber(maxDepth) && d > maxDepth;
   if (largerThanMaxDepth(depth)) {
@@ -102,7 +105,15 @@ export function goThroughDir<T = any>(
   // }
   if (fs.statSync(fullpath).isDirectory()) {
     if (dirFilter(pathInfo)) {
-      const fileListOfCurDir = fs.readdirSync(fullpath);
+      let error = null;
+      let fileListOfCurDir = [];
+      try {
+        /** Catch the error: EPERM: operation not permitted */
+        fileListOfCurDir = fs.readdirSync(fullpath);
+      } catch (err) {
+        error = err;
+      }
+
       const children = fileListOfCurDir
         .map(name => {
           const nextDepth = depth + 1;
@@ -114,7 +125,7 @@ export function goThroughDir<T = any>(
           return child;
         })
         .filter(it => it !== null && it !== undefined);
-      return cb(null, {pathInfo, children});
+      return cb(ignoreError ? null : error, {pathInfo, children});
     }
   } else {
     if (fileFilter(pathInfo)) {

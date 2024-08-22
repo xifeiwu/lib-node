@@ -62,10 +62,28 @@ export function testGetLineCountMap() {
 // }
 
 export function testGetFileInfoTree() {
-  const fileInfoTree = getFileInfoTree(__dirname, {
-    fileFilter({basename}) {
-      return basename.startsWith('fs');
+  runFuncTestCases(getFileInfoTree, [
+    {
+      params: [
+        __dirname,
+        {
+          fileFilter({basename}) {
+            return basename.startsWith('fs');
+          },
+        },
+      ],
+      expected(fileInfoTree) {
+        const {children, relativePath} = fileInfoTree;
+        assert.equal(relativePath, '');
+        assert.equal(children.length, 2);
+        return true;
+      },
     },
+  ]);
+}
+export function readPermission() {
+  const fileInfoTree = getFileInfoTree(process.env.HOME, {
+    maxDepth: 1,
   });
   const {children, relativePath} = fileInfoTree;
   assert.equal(relativePath, '');
