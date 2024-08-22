@@ -1,6 +1,6 @@
 import net from 'net';
 import {AfterReceiveDataStatus, saveCommandInfoToRecord, tryConsumeData} from './convert';
-import {toBuffer, toInt} from './external';
+import {toBuffer, toNumber} from './external';
 import {
   SaveCommandName,
   StoreApi,
@@ -110,8 +110,8 @@ const saveHandler: Handler<SaveCommandInfo, ReturnType<SaveFunc>> = {
         command: command as SaveCommandName,
         key,
         flags,
-        expireTimeInSeconds: toInt(exptime),
-        bytes: toInt(bytes),
+        expireTimeInSeconds: toNumber(exptime),
+        bytes: toNumber(bytes),
         casId,
         value: Buffer.alloc(0),
       };
@@ -122,7 +122,7 @@ const saveHandler: Handler<SaveCommandInfo, ReturnType<SaveFunc>> = {
     commandInfoToBuffer(params) {
       const {command, key, flags, expireTimeInSeconds: exptime, bytes, casId, value} = params;
       return toBuffer([
-        [command, key, flags, toInt(exptime), toInt(bytes), casId].filter(it => it !== undefined).join(' '),
+        [command, key, flags, toNumber(exptime), toNumber(bytes), casId].filter(it => it !== undefined).join(' '),
         BufferCRLF,
         value,
         BufferCRLF,
@@ -190,7 +190,7 @@ const getHandler: Handler<GetCommandInfo, GetResponseInfo[]> = {
               command: command as GetResponseInfo['command'],
               key,
               flags: flags as Flag,
-              bytes: toInt(bytes),
+              bytes: toNumber(bytes),
               casId,
             };
             const {remainingBuffer, onReceiveData} = tryConsumeData(commandInfo, restBuffer);

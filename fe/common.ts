@@ -2,7 +2,7 @@ export {
   UrlProps,
   waitFor,
   isBoolean,
-  toInt,
+  toNumber,
   toString,
   deepEqual,
   getUrlPropsFromConfig,
