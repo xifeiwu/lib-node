@@ -15,6 +15,8 @@ import {
   watchSocketState,
   responseInfoToBuffer,
   HttpServerConfig,
+  ColorStyle,
+  LogColors,
 } from '..';
 import {Socket} from 'net';
 import {deepEqual, toUrlProps, isNumber, waitFor} from '../external';
@@ -59,7 +61,7 @@ export async function startHttpServer(
 /**
  * responsee/echo requestInfo
  */
-export async function responseRequestInfo(request: http.IncomingMessage, response: http.ServerResponse) {
+export async function responseRequestEvent(request: http.IncomingMessage, response: http.ServerResponse) {
   const requestInfo = await getRequestInfo(request);
   const resData = toBuffer(requestInfo);
   response.setHeader['content-length'] = resData.byteLength;
@@ -91,7 +93,10 @@ export function handleUpgrade(
   return {requestHeaderPartInfo, responseInfo};
 }
 
-export function handleConnect(
+/**
+ * Default way of handle connect event
+ */
+export function handleConnectEvent(
   req: IncomingMessage,
   socket?: Duplex,
   head?: Buffer
@@ -150,17 +155,25 @@ export async function handleIncomingMessage(
   return false;
 }
 
-/** Just echo reuqst, mainly for debug */
-export async function startHttpDebugServer(config?: HttpServerConfig) {
+/**
+ * It is a raw node http debug server, not depend on any third-party(like Koa).
+ * Just echo reuqst, mainly for debug
+ */
+export async function startHttpDebugServer(
+  config?: HttpServerConfig,
+  options?: {logRequestHeaderInfo?: LogColors; logSocketState?: LogColors}
+) {
+  const {logRequestHeaderInfo, logSocketState} = options ?? {};
   const {host, port, origin, server} = await startHttpServer(
     {
       request(request, response) {
-        logColorful({color: 'yellow'}, 'headerPart Info:', getRequestHeaderInfo(request));
-        watchSocketState(request.socket, {color: 'yellow'});
-        responseRequestInfo(request, response);
+        logRequestHeaderInfo &&
+          logColorful({color: logRequestHeaderInfo}, 'headerPart Info:', getRequestHeaderInfo(request));
+        logSocketState && watchSocketState(request.socket, {color: 'yellow'});
+        responseRequestEvent(request, response);
       },
       connect(req, socket, head) {
-        const {responseInfo} = handleConnect(req);
+        const {responseInfo} = handleConnectEvent(req);
         socket.write(responseInfoToBuffer(responseInfo));
         // handleSocketEvents(socket, {isServer: true, color: 'red'});
         socket.on('end', () => {
@@ -170,12 +183,12 @@ export async function startHttpDebugServer(config?: HttpServerConfig) {
     },
     config
   );
-  server.on('connection', socket => {
-    socket.on('data', chunk => {
-      console.log(`chunk.toString()`);
-      console.log(chunk.toString());
-    });
-  });
+  // server.on('connection', socket => {
+  //   socket.on('data', chunk => {
+  //     console.log(`chunk.toString()`);
+  //     console.log(chunk.toString());
+  //   });
+  // });
   console.log(`start http server: ${origin}`);
   return {host, port, origin, server};
 }

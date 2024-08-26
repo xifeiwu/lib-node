@@ -3,7 +3,7 @@ import {handleSocketEvents, writeDataByInterval} from '../net';
 import {toBuffer} from '../transform';
 import {requestAndGetConnectInfo, requestAndGetResponseInfo, requestAndGetUpgradeInfo} from './client';
 import {getRequestInfo, getResponseInfo, responseInfoToBuffer} from './common';
-import {handleConnect, handleUpgrade, startHttpServer} from './server';
+import {handleConnectEvent, handleUpgrade, startHttpServer} from './server';
 
 export async function testRequestAndGetResponseInfo() {
   const {statusCode, data, headers} = await requestAndGetResponseInfo({
@@ -32,7 +32,7 @@ export async function getSocketByConnect() {
       throw new Error('should no go here');
     },
     connect(req, socket, head) {
-      const {responseInfo} = handleConnect(req);
+      const {responseInfo} = handleConnectEvent(req);
       socket.write(responseInfoToBuffer(responseInfo));
       handleSocketEvents(socket, {isServer: true, color: 'red'});
       socket.on('end', () => {

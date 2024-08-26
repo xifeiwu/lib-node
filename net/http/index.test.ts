@@ -13,7 +13,7 @@ import {
 import {
   getRequestHeaderInfo,
   responseInfoToBuffer,
-  responseRequestInfo,
+  responseRequestEvent,
   sendHttpRequest,
   startHttpServer,
 } from '../../http';
@@ -46,7 +46,7 @@ export async function httpServer() {
     request(request, response) {
       logColorful({color: 'yellow'}, 'headerPart Info:', getRequestHeaderInfo(request));
       watchSocketState(request.socket, {color: 'yellow'});
-      responseRequestInfo(request, response);
+      responseRequestEvent(request, response);
     },
   });
   console.log(`start http server: ${origin}`);
