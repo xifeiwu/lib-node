@@ -98,7 +98,7 @@ export class HttpIncomingMessage extends Readable {
   /** Should take care of parse sequence */
   async parse() {
     await this.parseHeaderPart();
-    this.parseRemainingData();
+    this.parseBody();
   }
   _read() {}
   get headers() {
@@ -163,7 +163,7 @@ export class HttpIncomingMessage extends Readable {
     const {headerPartProps} = await tryParseHttpHeaderPart(this.socket);
     this.headerPartProps = headerPartProps;
   }
-  parseRemainingData() {
+  parseBody() {
     /** These getter value should accessed after parseHttpHeaderPart success  */
     const {socket, headerPartProps, contentLength, chunkedTransfer} = this;
     this.headerPartProps = headerPartProps;
