@@ -1,4 +1,5 @@
 import {startHttpDebugServer} from '../../../../http';
+import { logColorful } from '../../../../log';
 import {connectToSocksServer} from '../../client';
 import {handleConnection} from '../../server';
 import {getInfoFromStateTracer, getInfosFromStateTracer} from '../../service';
@@ -10,7 +11,7 @@ import {eorBuffer, getCipher} from '../../v6/service';
 // import {handleConnection} from '../../v5/server';
 
 export async function generalProcess() {
-  const {origin: httpOrigin, server} = await startHttpDebugServer();
+  const {origin: httpOrigin, server} = await startHttpDebugServer({port: PORT.fullFeatureHttpServer.port,});
   const {host, port} = await startSocketServer(socket => {
     handleConnection(socket, {socksVersion: 'v5', methodList: [{method: EMethod.NoAuth}]});
   });
@@ -20,15 +21,22 @@ export async function generalProcess() {
     clientRequestInfo: httpOrigin,
   });
   const {socket} = status;
-  socket.write(
-    tcpRequestPropsToBuffer({
-      method: 'post',
-      data: {a: 1},
-    })
-  );
+
   socket.on('data', chunk => {
-    console.log(chunk.toString());
+    logColorful({color: 'blue'}, chunk.toString());
   });
+  let cnt = 0;
+  while (cnt++ < 3) {
+    socket.write(
+      tcpRequestPropsToBuffer({
+        method: 'post',
+        data: {a: cnt},
+        headers: {
+          connection: 'keep-alive',
+        },
+      })
+    );
+  }
 }
 
 /**

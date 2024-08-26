@@ -11,7 +11,7 @@ interface ParseFirstLineResults {
   firstLineInfo?: HttpFirstLineProps;
   dataConsumed: Buffer;
 }
-export async function parseHttpFirstLine(reader: Readable): Promise<ParseFirstLineResults | null> {
+export async function tryParseHttpFirstLine(reader: Readable): Promise<ParseFirstLineResults | null> {
   const buffer = await getOneLineFromReader(reader);
   const line = buffer.toString('utf-8').trim().replace(/\r\n$/, '');
   const execResult = httpFirstLineReg.exec(line);
@@ -24,19 +24,19 @@ export async function parseHttpFirstLine(reader: Readable): Promise<ParseFirstLi
 }
 
 interface ParseHttpHeaderResults {
-  headerPartProps?: HttpHeaderPartProps;
+  headerPartProps?: HttpHeaderPartProps<'Server'>;
   dataConsumed: Buffer;
 }
 export async function tryParseHttpHeaderPart<T extends Readable>(
   reader: T,
   firstLineInfo?: HttpFirstLineProps
 ): Promise<ParseHttpHeaderResults> {
-  let headerPartProps: HttpHeaderPartProps;
+  let headerPartProps: HttpHeaderPartProps<'Server'>;
   // let resolve: (v: ParseHttpHeaderResults) => void;
   // let reject: (err: Error) => void;
   let dataConsumed: Buffer = Buffer.alloc(0);
   if (!firstLineInfo) {
-    const parseResult = await parseHttpFirstLine(reader);
+    const parseResult = await tryParseHttpFirstLine(reader);
     if (!parseResult.firstLineInfo) {
       // throw new Error(`Parse http first line fail`);
       return {
@@ -65,18 +65,17 @@ export async function tryParseHttpHeaderPart<T extends Readable>(
     const {headers} = headerPartProps;
     const [part1, part2] = execResult.slice(1);
     const field = part1.toLowerCase();
-    let value: string | number = part2;
-    if (['content-length'].includes(field)) {
-      value = parseInt(part2);
-    }
-
+    const value: string = part2;
+    // if (['content-length'].includes(field)) {
+    //   value = parseInt(part2);
+    // }
     if (!Object.prototype.hasOwnProperty.call(headers, field)) {
       headers[field] = value;
     } else {
       if (!Array.isArray(headers[field])) {
-        headers[field] = [headers[field] as string];
+        headers[field] = [headers[field]];
       }
-      (headers[field] as string[]).push(value as string);
+      (headers[field] as string[]).push(value);
     }
   }
   return {headerPartProps, dataConsumed};
@@ -84,7 +83,7 @@ export async function tryParseHttpHeaderPart<T extends Readable>(
 
 export class HttpIncomingMessage extends Readable {
   socket: Socket;
-  headerPartProps: HttpHeaderPartProps;
+  headerPartProps: HttpHeaderPartProps<'Server'>;
   receivedDataLength: number;
   handleDataByContentLength: (chunk: Buffer) => void;
   handleChunkedData: (chunk: Buffer) => void;
@@ -107,9 +106,9 @@ export class HttpIncomingMessage extends Readable {
     return headers;
   }
   get contentLength() {
-    const contentLength = this.headers['content-length'];
+    const contentLength = parseInt(this.headers['content-length']);
     if (isNumber(contentLength)) {
-      return contentLength as number;
+      return contentLength;
     }
   }
   get chunkedTransfer() {
@@ -168,14 +167,16 @@ export class HttpIncomingMessage extends Readable {
     /** These getter value should accessed after parseHttpHeaderPart success  */
     const {socket, headerPartProps, contentLength, chunkedTransfer} = this;
     this.headerPartProps = headerPartProps;
-    if (isNumber(contentLength)) {
+    if (chunkedTransfer) {
+      socket.on('data', this.handleChunkedData);
+    } else if (isNumber(contentLength)) {
       if (contentLength === 0) {
         this.push(null);
       } else {
         socket.on('data', this.handleDataByContentLength);
       }
-    } else if (chunkedTransfer) {
-      socket.on('data', this.handleChunkedData);
+    } else {
+      this.push(null);
     }
   }
 }
