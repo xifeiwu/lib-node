@@ -73,7 +73,7 @@ export async function tryParseHttpHeaderPart<T extends Readable>(
       headers[field] = value;
     } else {
       if (!Array.isArray(headers[field])) {
-        headers[field] = [headers[field]];
+        headers[field] = [headers[field]] as string[];
       }
       (headers[field] as string[]).push(value);
     }

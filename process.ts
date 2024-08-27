@@ -16,7 +16,7 @@ interface Options {
   filter?: (info: Partial<ProcessInfo>) => boolean;
   printCommand?: boolean;
 }
-export function getAllProcessInfo(options?: Options) {
+export async function getAllProcessInfo(options?: Options) {
   const {filter, printCommand} = options ? options : ({} as Options);
   let processLister;
   // const props = ['pid', 'ppid', 'pgid', 'sess', 'rss', 'vsz', 'pcpu', 'args', 'user', 'time'];
@@ -78,7 +78,7 @@ export function getAllProcessInfo(options?: Options) {
   });
 }
 
-export function getProcessInfoByPort(port: number | string): ProcessInfo[] {
+export async function getProcessInfoByPort(port: number | string): Promise<ProcessInfo[]> {
   /**
    * > lsof -i:3005
    * COMMAND   PID    USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME
@@ -109,7 +109,7 @@ export function getProcessInfoByPort(port: number | string): ProcessInfo[] {
     if (pidList.length === 0) {
       return [];
     }
-    const processInfoList = getAllProcessInfo({
+    const processInfoList = await getAllProcessInfo({
       filter: it => {
         return pidList.includes(it.pid);
       },
@@ -176,7 +176,7 @@ export async function selectProcessToKill(
 export async function closePortIfInUse(port: number) {
   const isPortOpen = await checkPort(port);
   if (isPortOpen) {
-    const processInfoList = getProcessInfoByPort(port);
+    const processInfoList = await getProcessInfoByPort(port);
 
     return selectProcessToKill(processInfoList, {
       printProcessInfo: true,
