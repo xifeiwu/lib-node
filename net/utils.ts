@@ -1,7 +1,5 @@
 import os from 'os';
 import {Writable} from 'stream';
-import readline from 'readline';
-import childProcess from 'child_process';
 import net, {ServerOpts, Socket, TcpNetConnectOpts} from 'net';
 import {isString, isNumber, formatDate} from '../external';
 import {httpFirstLineReg} from '../constants';
@@ -50,48 +48,6 @@ export async function checkPort(port: number, host: string = '127.0.0.1') {
       resolve(false);
     }
   });
-}
-
-export async function closePortIfInUse(port: number) {
-  const isPortOpen = await checkPort(port);
-  if (isPortOpen) {
-    const interact = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    });
-    const closePort = await new Promise((res, rej) => {
-      interact.question(`port ${port} is in use, do you want to close it?`, answer => {
-        res(['y', 'yes', ''].includes(answer.toLocaleLowerCase()));
-      });
-    });
-    if (closePort) {
-      /**
-       * format of output:
-       * COMMAND     PID    USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME
-       * node      23316 wuxifei   24u  IPv6 0x94ee8d339b682a3f      0t0  TCP *:8101 (LISTEN)
-       * node      23316 wuxifei   25u  IPv6 0x94ee8d339c2fc63f      0t0  TCP localhost:8101->localhost:50433 (ESTABLISHED)
-       * Google    38901 wuxifei   30u  IPv6 0x94ee8d339b689c3f      0t0  TCP localhost:50433->localhost:8101 (ESTABLISHED)
-       */
-      const output = childProcess.execSync(`lsof -i:${port}`).toString();
-      const lines: string[][] = output.split('\n').map(line => {
-        return line.split(/ +/);
-      });
-      const [, pid] = lines.find(it => {
-        if (!Array.isArray(it)) {
-          return false;
-        }
-        if (it[0] !== 'node') {
-          return false;
-        }
-        return it;
-      });
-      if (pid) {
-        process.kill(parseInt(pid), 'SIGTERM');
-        console.log(`process.kill(parseInt(${pid}), 'SIGTERM');`);
-        console.log(`kill pid ${pid} success!`);
-      }
-    }
-  }
 }
 
 // scan port list and show the port opened

@@ -4,6 +4,8 @@ import {spawn, execSync, SpawnOptionsWithoutStdio} from 'child_process';
 import {findClosestFile} from './fs';
 import {selectOption} from './general';
 import {isBoolean, isString} from './external';
+import {checkPort} from './net';
+import readline from 'readline';
 
 type Prop = 'pid' | 'ppid' | 'pgid' | 'sess' | 'rss' | 'args';
 type ProcessInfo = {
@@ -14,7 +16,7 @@ interface Options {
   filter?: (info: Partial<ProcessInfo>) => boolean;
   printCommand?: boolean;
 }
-export async function getAllProcessInfo(options?: Options) {
+export function getAllProcessInfo(options?: Options) {
   const {filter, printCommand} = options ? options : ({} as Options);
   let processLister;
   // const props = ['pid', 'ppid', 'pgid', 'sess', 'rss', 'vsz', 'pcpu', 'args', 'user', 'time'];
@@ -76,7 +78,7 @@ export async function getAllProcessInfo(options?: Options) {
   });
 }
 
-export async function getProcessInfoByPort(port: number | string): Promise<ProcessInfo[]> {
+export function getProcessInfoByPort(port: number | string): ProcessInfo[] {
   /**
    * > lsof -i:3005
    * COMMAND   PID    USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME
@@ -107,7 +109,7 @@ export async function getProcessInfoByPort(port: number | string): Promise<Proce
     if (pidList.length === 0) {
       return [];
     }
-    const processInfoList = await getAllProcessInfo({
+    const processInfoList = getAllProcessInfo({
       filter: it => {
         return pidList.includes(it.pid);
       },
@@ -169,6 +171,19 @@ export async function selectProcessToKill(
 
   pidToKill.forEach(pid => process.kill(Number(pid)));
   return pidToKill.map(pid => processInfoList.find(it => it.pid === pid));
+}
+
+export async function closePortIfInUse(port: number) {
+  const isPortOpen = await checkPort(port);
+  if (isPortOpen) {
+    const processInfoList = getProcessInfoByPort(port);
+
+    return selectProcessToKill(processInfoList, {
+      printProcessInfo: true,
+      selectProcessToKill: true,
+    });
+  }
+  return [];
 }
 
 /** Existing key with a null value means should give a default value by program */
