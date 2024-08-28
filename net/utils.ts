@@ -3,7 +3,7 @@ import {Writable} from 'stream';
 import net, {ServerOpts, Socket, TcpNetConnectOpts} from 'net';
 import {isString, isNumber, formatDate} from '../external';
 import {httpFirstLineReg} from '../constants';
-import {ColorStyle, GetSocketOptions, HttpFirstLineProps, SocketInfo} from '../types';
+import {ColorStyle, GetSocketOptions, HttpFirstLineProps, SocketInfo, TcpServerConfig} from '../types';
 import {logColorful} from '../log';
 
 export function getLocalIpAddress() {
@@ -161,11 +161,7 @@ export async function getClientSocket(options: GetSocketOptions) {
 
 export async function startSocketServer(
   handleConnection: (socket: Socket) => void,
-  config?: {
-    host?: string;
-    port?: number;
-    options?: ServerOpts;
-  }
+  config?: TcpServerConfig
 ) {
   const {host = '0.0.0.0', port = await getAFreePort(), options} = config ?? {};
   return new Promise<{host: string; port: number; server: net.Server}>((res, rej) => {

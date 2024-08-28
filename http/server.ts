@@ -172,7 +172,7 @@ export async function startHttpDebugServer(
       request(request, response) {
         logRequestHeaderInfo &&
           logColorful({color: logRequestHeaderInfo}, 'headerPart Info:', getRequestHeaderInfo(request));
-        logSocketState && watchSocketState(request.socket, {color: 'yellow'});
+        logSocketState && watchSocketState(request.socket, {colorStyle: {color: 'yellow'}});
         responseRequestEvent(request, response);
       },
       connect(req, socket, head) {

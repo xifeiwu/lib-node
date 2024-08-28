@@ -1,5 +1,11 @@
 import {IncomingHttpHeaders, OutgoingHttpHeaders} from 'http';
+import {ServerOpts} from 'net';
 
+export interface TcpServerConfig {
+  host?: string;
+  port?: number;
+  options?: ServerOpts;
+}
 // GET /api/test/echo HTTP/1.1
 export interface HttpFirstLineProps {
   method: string;

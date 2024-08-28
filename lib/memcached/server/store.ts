@@ -158,7 +158,7 @@ export class Store implements StoreApi {
   }
   toJSON() {
     const items = this.toArray();
-    return items.reduce<{[key: string]: RecordItem}>((sum, [key, value]) => {
+    return items.reduce<{[key: string]: Record<string, string | number>}>((sum, [key, value]) => {
       return {
         ...sum,
         [key]: stringifyRecordItem(value),
