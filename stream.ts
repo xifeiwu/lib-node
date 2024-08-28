@@ -89,7 +89,13 @@ export function getDataByTransform(
   });
 }
 
-export function getOneLineFromReader(reader: Readable) {
+export function getOneLineFromReader(
+  reader: Readable,
+  options?: {
+    firstChunkOnly?: boolean;
+  }
+): Promise<Buffer> {
+  const {firstChunkOnly} = options ?? {};
   let resolve: (data: Buffer) => void;
   let reject: (err: Error) => void;
   const promise = new Promise<Buffer>((res, rej) => {
@@ -119,18 +125,24 @@ export function getOneLineFromReader(reader: Readable) {
       }
     }
     if (!resolved) {
-      if (reader.closed) {
-        reject(new Error(`data end without suffix \r\n`));
+      if (firstChunkOnly) {
+        resolve(Buffer.from(bytes));
       } else {
-        /** If unresolve, wait for next chunk */
-        reader.once('readable', parse);
+        if (reader.closed) {
+          reject(new Error(`data end without suffix \r\n`));
+        } else {
+          /** If unresolve, wait for next chunk */
+          reader.once('readable', parse);
+        }
       }
     }
   };
   if (reader.readableLength > 0) {
     parse();
   } else {
-    reader.once('readable', parse);
+    if (reader.readableFlowing === null) {
+      reader.once('readable', parse);
+    }
   }
   return promise;
 }
