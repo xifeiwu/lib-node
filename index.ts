@@ -14,3 +14,4 @@ export * from './mime';
 export * from './types';
 export * from './external';
 export * from './test';
+export * from './lib/parse-body';

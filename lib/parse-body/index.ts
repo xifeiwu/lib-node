@@ -4,7 +4,7 @@ import {Transform} from 'stream';
 import {pipeline} from 'stream/promises';
 import {IncomingMessage} from 'http';
 import {ParserOptions} from './service/types';
-import {getRequestHeaderInfo} from '../common';
+import {getRequestHeaderInfo} from '../../http/common';
 import {getMultpartParser} from './parser';
 import {getJsonParser} from './parser/json';
 import {defaultParseOptions, getCacheWriter} from './service/utils';

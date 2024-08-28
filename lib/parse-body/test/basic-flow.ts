@@ -1,11 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 import {parseBody} from '..';
-import {startHttpServer} from '../../server';
+import {startHttpServer} from '../../../http/server';
 import {toBuffer} from '../service/external';
 import {FormFile, NodeFormData} from '../../../types';
-import {formDataToBuffer} from '../../form-data';
-import {requestAndGetResponseInfo} from '../../client';
+import {formDataToBuffer} from '../../../http/form-data';
+import {requestAndGetResponseInfo} from '../../../http/client';
 import {logColorful} from '../../../log';
 import {ParserOptions} from '../service/types';
 

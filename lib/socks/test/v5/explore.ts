@@ -1,4 +1,4 @@
-import {startHttpDebugServer} from '../../../../http';
+import {startHttpDebugServer} from '../../..';
 import { logColorful } from '../../../../log';
 import {connectToSocksServer} from '../../client';
 import {handleConnection} from '../../server';
