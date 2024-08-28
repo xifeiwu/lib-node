@@ -304,8 +304,9 @@ export function getSocketInfo(socket: Socket): Partial<SocketInfo> {
   };
 }
 
-export function watchSocketState(socket: Socket, colorStyle?: ColorStyle) {
-  const {color = 'black'} = colorStyle ?? {};
+export function watchSocketState(socket: Socket, options?: {colorStyle?: ColorStyle; bytesToPrint?: number}) {
+  const {colorStyle = {}, bytesToPrint = 50} = options ?? {};
+  const {color} = colorStyle;
   const printState = () => {
     logColorful({color}, getSocketInfo(socket));
   };
@@ -318,7 +319,6 @@ export function watchSocketState(socket: Socket, colorStyle?: ColorStyle) {
       `[${formatDate(new Date(), 'yyyy-MM-dd hh:mm:ss.SSS')}] on data [size: ${byteLength}]`
     );
     // console.log(chunk.toString());
-    const bytesToPrint = 50;
     logColorful(
       {color},
       byteLength > bytesToPrint ? chunk.subarray(0, bytesToPrint).toString() + '...' : chunk.toString()
