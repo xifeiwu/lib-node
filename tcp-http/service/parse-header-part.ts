@@ -61,6 +61,7 @@ export async function tryParseHttpHeaderPart<T extends Readable>(
     }
     const {headers} = headerPartProps;
     const [part1, part2] = execResult.slice(1);
+    /** For easy use, key of all fields will convert to lower case. */
     const field = part1.toLowerCase();
     const value: string = part2;
     // if (['content-length'].includes(field)) {
