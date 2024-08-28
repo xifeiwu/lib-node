@@ -15,7 +15,7 @@ export async function startProxyableTcpServer(
     httpHandler?: (socket: Socket) => void;
     tcpHandler?: (socket: Socket, firstChunk: Buffer) => void;
   },
-  tcpOptions?: TcpServerConfig
+  tcpServerConfig?: TcpServerConfig
 ) {
   const {onConnection, httpHandler, tcpHandler} = config;
 
@@ -37,6 +37,6 @@ export async function startProxyableTcpServer(
       foundHandler = Boolean(tcpHandler);
       tcpHandler(socket, bufferOfFirstLine);
     }
-  });
+  }, tcpServerConfig);
   return {host, port, server};
 }
