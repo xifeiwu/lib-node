@@ -20,6 +20,7 @@ import {
 } from '..';
 import {Socket} from 'net';
 import {deepEqual, toUrlProps, isNumber, waitFor} from '../external';
+import {Action4IncomingMessage} from '../types';
 
 export async function startHttpServer(
   handler: {
@@ -110,10 +111,6 @@ export function handleConnectEvent(
   return {requestHeaderPartInfo, responseInfo};
 }
 
-interface Action4IncomingMessage {
-  waitInMs?: number;
-}
-
 export interface HttpConditionAndAction {
   requestConfig: Pick<HttpRequestOptions, 'method' | 'pathname' | 'query'>;
   action: Action4IncomingMessage;
@@ -146,15 +143,21 @@ export async function handleIncomingMessage(
   if (!matchedConfig) {
     return false;
   }
-  const {
-    action: {waitInMs},
-  } = matchedConfig;
-  if (isNumber(waitInMs)) {
-    await waitFor(waitInMs);
-  }
+  await handleIncomingMessageByConfig(httpStream, matchedConfig.action);
   return false;
 }
 
+export async function handleIncomingMessageByConfig(
+  httpStream: {request: http.IncomingMessage; response?: http.ServerResponse},
+  config?: Action4IncomingMessage
+) {
+  const {delay} = config ?? {};
+  if (delay) {
+    const delayInMs = parseInt(delay as string);
+    isNumber(delayInMs) && (await waitFor(delayInMs));
+  }
+  return;
+}
 /**
  * It is a raw node http debug server, not depend on any third-party(like Koa).
  * Just echo reuqst, mainly for debug

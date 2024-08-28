@@ -43,3 +43,10 @@ export interface HttpServerConfig {
   port?: number;
   options?: ServerOptions;
 }
+
+/**
+ * How to handle IncomingMessage
+ */
+export interface Action4IncomingMessage {
+  delay?: number | string;
+}

@@ -3,7 +3,7 @@
  */
 
 import {
-  getHttpIncomingMessage,
+  HttpIncomingMessage,
   httpOptionsToTcpConfig,
   startSocketClient,
   startSocketServer,
@@ -15,12 +15,18 @@ import {
   responseInfoToBuffer,
   responseRequestEvent,
   sendHttpRequest,
-  startHttpServer,
-} from '../../http';
-import {HttpRequestOptions} from '../../types';
-import {getDataFromReadable} from '../../stream';
-import {logColorful} from '../../log';
+  startHttpDebugServer,
+} from '../http';
+import {HttpRequestOptions} from '../types';
+import {getDataFromReadable} from '../stream';
+import {logColorful} from '../log';
+import {Socket} from 'net';
 
+export async function getHttpIncomingMessage(socket: Socket, options?: {}) {
+  const incomingMessage = new HttpIncomingMessage(socket);
+  await incomingMessage.parse();
+  return incomingMessage;
+}
 export async function tcpServer() {
   const {host, port, server} = await startSocketServer(async socket => {
     /** Should not consume data before parsing header part finished */
@@ -42,13 +48,7 @@ export async function tcpServer() {
 }
 
 export async function httpServer() {
-  const {origin, server} = await startHttpServer({
-    request(request, response) {
-      logColorful({color: 'yellow'}, 'headerPart Info:', getRequestHeaderInfo(request));
-      watchSocketState(request.socket, {color: 'yellow'});
-      responseRequestEvent(request, response);
-    },
-  });
+  const {origin, server} = await startHttpDebugServer();
   console.log(`start http server: ${origin}`);
   return {origin, server};
 }
@@ -61,7 +61,7 @@ function getRequestOptions(options: Required<Pick<HttpRequestOptions, 'origin'>>
     headers: {
       TRACE_id: '123',
     },
-    data: 'abc',
+    data: {key: 'abc'},
   };
   return {
     ...defaultOptions,
@@ -69,38 +69,41 @@ function getRequestOptions(options: Required<Pick<HttpRequestOptions, 'origin'>>
   };
 }
 
-function httpClient(origin: string) {
+function httpClient(config: {origin: string; watchSocketState?: boolean}) {
+  const {origin} = config;
   const client = sendHttpRequest(getRequestOptions({origin}));
   client.on('socket', socket => {
-    watchSocketState(socket, {color: 'cyan'});
+    config.watchSocketState && watchSocketState(socket, {color: 'cyan'});
     socket.on('data', chunk => {
+      logColorful({color: 'blue'}, 'server response:');
       console.log(chunk.toString());
     });
   });
 }
 
-async function tcpClient(origin: string) {
+async function tcpClient(config: {origin: string; watchSocketState?: boolean}) {
+  const {origin} = config;
   const {props, connectionOptions} = httpOptionsToTcpConfig(
     getRequestOptions({
       origin,
     })
   );
   const client = await startSocketClient(connectionOptions);
-  watchSocketState(client, {color: 'cyan'});
+  config.watchSocketState && watchSocketState(client, {color: 'cyan'});
   client.end(tcpRequestPropsToBuffer(props));
   client.on('data', chunk => {
-    console.log(`chunk.toString()`);
+    logColorful({color: 'blue'}, 'onData:');
     console.log(chunk.toString());
   });
 }
 export async function httpServerhttpClient() {
   const {origin} = await httpServer();
-  httpClient(origin);
+  httpClient({origin});
 }
 
 export async function httpServerTcpClient() {
   const {origin} = await httpServer();
-  tcpClient(origin);
+  tcpClient({origin});
 }
 
 export async function tcpServerhttpClient() {
@@ -109,10 +112,10 @@ export async function tcpServerhttpClient() {
   //   host: '127.0.0.1',
   //   port: 3001,
   // };
-  httpClient(`http://${host}:${port}`);
+  httpClient({origin: `http://${host}:${port}`});
 }
 
 export async function tcpServertcpClient() {
   const {host, port} = await tcpServer();
-  tcpClient(`http://${host}:${port}`);
+  tcpClient({origin: `http://${host}:${port}`});
 }
