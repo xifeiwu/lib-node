@@ -1,4 +1,5 @@
 import {syntax} from '../service';
+import {fromBuffer, isNumber} from '../service/external';
 import {ErrorMessage, ErrorStatus, RecordItem} from '../service/types';
 
 export function getError(errorType: ErrorStatus, message: string = ''): ErrorMessage {
@@ -22,10 +23,21 @@ export function parseCommandLine(line: string) {
   };
 }
 
+export function isOutdate(expiration: number) {
+  if (!isNumber(expiration)) {
+    return true;
+  }
+  if (expiration > 0 && expiration < Date.now()) {
+    return true;
+  }
+  return false;
+}
 export function stringifyRecordItem(item: RecordItem) {
-  const {value, ...rest} = item;
+  const {value, expiration, ...rest} = item;
   return {
     ...rest,
-    value: Buffer.isBuffer(value) ? value.toString() : value,
+    outdate: isOutdate(expiration),
+    expiration,
+    value: fromBuffer(value, 'json') as object,
   };
 }

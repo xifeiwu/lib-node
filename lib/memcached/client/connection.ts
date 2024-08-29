@@ -1,4 +1,4 @@
-import net, {TcpNetConnectOpts} from 'net';
+import {TcpNetConnectOpts} from 'net';
 import {startSocketClient} from '../../../net';
 import {getConnectionKey} from '../service/client';
 import {ConnectionInfo, DataHandler} from '../service';

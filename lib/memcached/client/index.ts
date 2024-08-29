@@ -1,5 +1,6 @@
 import {TcpNetConnectOpts} from 'net';
-import {syntax, toBuffer} from '../service';
+import {syntax} from '../service';
+import {toBuffer} from '../service/external';
 import {
   ClientApi,
   ClientSaveCommandInfo,

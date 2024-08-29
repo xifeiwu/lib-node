@@ -7,57 +7,53 @@ import {
   SaveResponseStatus,
   StoreApi,
 } from '../service/types';
-import {getError, stringifyRecordItem} from './service';
+import {getError, isOutdate, stringifyRecordItem} from './service';
 import {RecordItem} from '../service/types';
 
 export class Store implements StoreApi {
   record: Map<string, RecordItem>;
-  currentSize: number;
+  /** include both outdate and no-outdate */
+  totalSize: number;
   maxSizeMb: number;
   maxCount: number;
   constructor() {
     this.record = new Map();
-    this.currentSize = 0;
-    this.maxSizeMb = 100;
+    this.totalSize = 0;
+    this.maxSizeMb = 100 << 20;
     this.maxCount = 100;
   }
-  isOutdate(expiration: number) {
-    if (!isNumber(expiration)) {
-      return true;
-    }
-    if (expiration > 0 && expiration < Date.now()) {
-      return true;
-    }
-    return false;
-  }
-  contains(key: string) {
+  contains(key: string, includeOutdate?: boolean) {
     if (!this.record.has(key)) {
       return false;
     }
     const {expiration} = this.record.get(key);
-    return !this.isOutdate(expiration);
+    return includeOutdate || !isOutdate(expiration);
   }
   store(action: SaveCommandName, key: string, item: RecordItem): SaveResponseStatus | ErrorMessage {
-    const exist = this.contains(key);
-    const record = exist ? this.record.get(key) : null;
+    const recordByKey = this.get(key);
+    /** Not consider outdate */
+    const valueOfKey = this.get(key, true);
     process.nextTick(() => this.purge());
     switch (action) {
       case 'set':
         {
           this.record.set(key, item);
+          this.totalSize -= valueOfKey ? valueOfKey.bytes : 0;
+          this.totalSize += item.bytes;
         }
         break;
       case 'add':
         {
-          if (exist) {
+          if (recordByKey) {
             return SaveResponseStatus.NOT_STORED;
           }
           this.record.set(key, item);
+          this.totalSize += item.bytes;
         }
         break;
       case 'replace':
         {
-          if (!exist) {
+          if (!recordByKey) {
             return SaveResponseStatus.NOT_STORED;
           }
         }
@@ -65,12 +61,13 @@ export class Store implements StoreApi {
       case 'append':
       case 'prepend':
         {
-          if (!record) {
+          if (!recordByKey) {
             return SaveResponseStatus.NOT_STORED;
           }
-          const {value} = record;
-          record.value =
+          const {value} = recordByKey;
+          recordByKey.value =
             action === 'append' ? Buffer.concat([item.value, value]) : Buffer.concat([value, item.value]);
+          this.totalSize += item.bytes;
         }
         break;
       case 'cas': {
@@ -78,10 +75,12 @@ export class Store implements StoreApi {
         if (casId === undefined) {
           return getError(ErrorStatus.CLIENT_ERROR, 'cas id is not set');
         }
-        if (!record || record.casId === undefined || record.casId !== casId) {
+        if (!recordByKey || recordByKey.casId === undefined || recordByKey.casId !== casId) {
           return SaveResponseStatus.NOT_FOUND;
         }
         this.record.set(key, item);
+        this.totalSize -= valueOfKey ? valueOfKey.bytes : 0;
+        this.totalSize += item.bytes;
         return SaveResponseStatus.EXISTS;
       }
       default: {
@@ -112,9 +111,9 @@ export class Store implements StoreApi {
    * VALUE <key> <flags> <bytes> [<cas unique>]\r\n
    * <data block>\r\n
    */
-  gets(keys: string[]): {[key: string]: RecordItem} {
+  gets(keys: string[], includeOutdate?: boolean): {[key: string]: RecordItem} {
     return keys.reduce<{[key: string]: RecordItem}>((sum, key) => {
-      if (!this.contains(key)) {
+      if (!this.contains(key, includeOutdate)) {
         return sum;
       }
       return {
@@ -123,8 +122,8 @@ export class Store implements StoreApi {
       };
     }, {});
   }
-  get(key): RecordItem {
-    const obj = this.gets([key]);
+  get(key: string, includeOutdate?: boolean): RecordItem {
+    const obj = this.gets([key], includeOutdate);
     return obj[key];
   }
 
@@ -134,19 +133,19 @@ export class Store implements StoreApi {
     }
     const byteLength = this.record.get(key).bytes;
     this.record.delete(key);
-    this.currentSize == byteLength;
+    this.totalSize -= byteLength;
     return DeleteResponseStatus.DELETED;
   }
   purge() {
     if (this.record.size > this.maxCount) {
       for (const [key, value] of Object.entries(this.record)) {
-        if (this.isOutdate(value.expiration)) {
+        if (isOutdate(value.expiration)) {
           this.delete(key);
         }
       }
     }
     for (const [key] of Object.entries(this.record)) {
-      if (this.record.size > this.maxCount || this.currentSize > this.maxSizeMb) {
+      if (this.record.size > this.maxCount || this.totalSize > this.maxSizeMb) {
         this.delete(key);
       } else {
         break;
@@ -158,7 +157,7 @@ export class Store implements StoreApi {
   }
   toJSON() {
     const items = this.toArray();
-    return items.reduce<{[key: string]: Record<string, string | number>}>((sum, [key, value]) => {
+    return items.reduce<{[key: string]: Record<string, any>}>((sum, [key, value]) => {
       return {
         ...sum,
         [key]: stringifyRecordItem(value),
