@@ -46,7 +46,9 @@ export interface HttpServerConfig {
 
 /**
  * How to handle IncomingMessage
+ * There is no object values to make sure params can be passed by querystring
  */
 export interface Action4IncomingMessage {
   delay?: number | string;
+  responseCode?: number | string;
 }

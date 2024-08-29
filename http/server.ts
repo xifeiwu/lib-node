@@ -21,6 +21,7 @@ import {
 import {Socket} from 'net';
 import {deepEqual, toUrlProps, isNumber, waitFor} from '../external';
 import {Action4IncomingMessage} from '../types';
+import {toInteger} from '../../fe/utils';
 
 export async function startHttpServer(
   handler: {
@@ -151,10 +152,17 @@ export async function handleIncomingMessageByConfig(
   httpStream: {request: http.IncomingMessage; response?: http.ServerResponse},
   config?: Action4IncomingMessage
 ) {
-  const {delay} = config ?? {};
+  const {response} = httpStream;
+  const {delay, responseCode} = config ?? {};
   if (delay) {
     const delayInMs = parseInt(delay as string);
     isNumber(delayInMs) && (await waitFor(delayInMs));
+  }
+  if (responseCode) {
+    const code = toInteger(responseCode);
+    if (isNumber(code)) {
+      response.statusCode = code;
+    }
   }
   return;
 }
