@@ -21,8 +21,12 @@ export const getJsonParser: GetParserFunc = (
     },
     final(cb) {
       try {
-        const obj = JSON.parse(Buffer.concat(bufferList).toString(encoding));
-        this.push(obj);
+        const buf = Buffer.concat(bufferList);
+        /** For case method is get, but set content-type: application/json on header part */
+        if (buf.byteLength > 0) {
+          const obj = JSON.parse(buf.toString(encoding));
+          this.push(obj);
+        }
         cb();
       } catch (err) {
         cb(err);

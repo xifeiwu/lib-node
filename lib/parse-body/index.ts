@@ -10,6 +10,12 @@ import {getJsonParser} from './parser/json';
 import {defaultParseOptions, getCacheWriter} from './service/utils';
 import {getOctetParser} from './parser/octet-stream';
 
+/**
+ * Parse http body by params provided on http header part
+ * @param request 
+ * @param parserOptions 
+ * @returns undefined/null when there is no data part
+ */
 export async function parseBody(request: IncomingMessage, parserOptions?: ParserOptions) {
   const mregedParserOptions: Required<ParserOptions> = {
     ...defaultParseOptions,
@@ -41,7 +47,12 @@ export async function parseBody(request: IncomingMessage, parserOptions?: Parser
     }
   }
   if (!parserTransforms) {
-    throw new Error(`Parser is not found for content-type: ${reqHeaders['content-type']}`);
+    /**
+     * For request with method get, there will be not content-type on header part,
+     * just return undefined other than throw Error
+     */
+    // throw new Error(`Parser is not found for content-type: ${reqHeaders['content-type']}`);
+    return;
   }
   const {writer, waitCacheData} = getCacheWriter(mregedParserOptions);
   await pipeline([request, ...parserTransforms, writer]);
