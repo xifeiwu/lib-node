@@ -78,9 +78,7 @@ export async function getAllProcessInfo(options?: Options) {
   });
 }
 
-export async function getProcessInfo() {
-  
-}
+export async function getProcessInfo() {}
 export async function getProcessInfoByPort(port: number | string): Promise<ProcessInfo[]> {
   /**
    * > lsof -i:3005
@@ -267,7 +265,7 @@ export function spawnTsFile(execPath: string, options?: SpawnTsFileOptions) {
     ...spawnOptions,
   });
   if (printCommand) {
-    console.log(`spawn command: ts-node ${allParams.join(' ')}`);
+    console.log(`[${process.pid}]spawn command[${childProcess.pid}]: ts-node ${allParams.join(' ')}`);
   }
   return childProcess;
 }
