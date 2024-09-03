@@ -1,16 +1,11 @@
 import fs from 'fs';
 import path from 'path';
-import {spawn, execSync, SpawnOptionsWithoutStdio} from 'child_process';
+import {spawn, execSync} from 'child_process';
 import {findClosestFile} from './fs';
 import {selectOption} from './general';
 import {isBoolean, isString} from './external';
 import {checkPort} from './net';
-import readline from 'readline';
-
-type Prop = 'pid' | 'ppid' | 'pgid' | 'sess' | 'rss' | 'command';
-type ProcessInfo = {
-  [key in Prop]: string;
-};
+import {ProcessInfo, ProcessInfoWithChildren, ProcessProps} from './types';
 
 interface Options {
   filter?: (info: Partial<ProcessInfo>) => boolean;
@@ -20,7 +15,7 @@ export async function getAllProcessInfo(options?: Options) {
   const {filter, printCommand} = options ? options : ({} as Options);
   let processLister;
   // const props = ['pid', 'ppid', 'pgid', 'sess', 'rss', 'vsz', 'pcpu', 'args', 'user', 'time'];
-  const props: Prop[] = ['pid', 'ppid', 'pgid', 'sess', 'rss', 'command'];
+  const props: ProcessProps[] = ['pid', 'ppid', 'pgid', 'sess', 'rss', 'command'];
   if (process.platform === 'win32') {
     // win32 is not supported
     return [];
@@ -78,7 +73,33 @@ export async function getAllProcessInfo(options?: Options) {
   });
 }
 
-export async function getProcessInfo() {}
+export async function getProcessTree(pid: string = '1') {
+  const infoList = await getAllProcessInfo();
+  const infoMap = infoList.reduce<{
+    [pid: string]: ProcessInfoWithChildren;
+  }>((sum, it) => {
+    const {pid} = it;
+    return {
+      ...sum,
+      [pid]: it,
+    };
+  }, {});
+  for (const info of infoList) {
+    const {pid, ppid} = info;
+    const pInfo = infoMap[ppid];
+    if (!pInfo) {
+      // parent id 0 not found
+      // throw new Error(`parent id ${ppid} not found`);
+      continue;
+    }
+    if (!Array.isArray(pInfo.children)) {
+      pInfo.children = [];
+    }
+    pInfo.children.push(info);
+  }
+  return infoMap[pid];
+}
+
 export async function getProcessInfoByPort(port: number | string): Promise<ProcessInfo[]> {
   /**
    * > lsof -i:3005
