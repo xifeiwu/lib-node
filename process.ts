@@ -7,7 +7,7 @@ import {isBoolean, isString} from './external';
 import {checkPort} from './net';
 import readline from 'readline';
 
-type Prop = 'pid' | 'ppid' | 'pgid' | 'sess' | 'rss' | 'args';
+type Prop = 'pid' | 'ppid' | 'pgid' | 'sess' | 'rss' | 'command';
 type ProcessInfo = {
   [key in Prop]: string;
 };
@@ -20,7 +20,7 @@ export async function getAllProcessInfo(options?: Options) {
   const {filter, printCommand} = options ? options : ({} as Options);
   let processLister;
   // const props = ['pid', 'ppid', 'pgid', 'sess', 'rss', 'vsz', 'pcpu', 'args', 'user', 'time'];
-  const props: Prop[] = ['pid', 'ppid', 'pgid', 'sess', 'rss', 'args'];
+  const props: Prop[] = ['pid', 'ppid', 'pgid', 'sess', 'rss', 'command'];
   if (process.platform === 'win32') {
     // win32 is not supported
     return [];
@@ -78,6 +78,9 @@ export async function getAllProcessInfo(options?: Options) {
   });
 }
 
+export async function getProcessInfo() {
+  
+}
 export async function getProcessInfoByPort(port: number | string): Promise<ProcessInfo[]> {
   /**
    * > lsof -i:3005
@@ -144,12 +147,12 @@ export async function selectProcessToKill(
             pid: '-1',
           },
           ...processInfoList.map(it => {
-            const {pid, ppid, args} = it;
+            const {pid, ppid, command} = it;
             return {
               pid,
               ppid,
-              args,
-              label: `${pid}.${ppid} - ${args}`,
+              command,
+              label: `${pid}.${ppid} - ${command}`,
             };
           }),
         ],
