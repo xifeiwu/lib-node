@@ -93,7 +93,7 @@ const colorMap: {
 };
 
 export function coloringContent(colorStyle: ColorStyle, content: LoggableContent): string {
-  const {color = 'black'} = colorStyle;
+  const {color = 'black'} = colorStyle ?? {};
   let finalStr = '';
   if (isPlainObject(content) || Array.isArray(content)) {
     finalStr = util.inspect(content, {depth: 10, colors: false});
