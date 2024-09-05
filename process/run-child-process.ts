@@ -32,7 +32,8 @@ export async function getScriptFullpath(basename: ScriptFileName) {
   if (!basename.endsWith('.ts')) {
     basename += '.ts';
   }
-  const fileList = getFileList(__dirname, {
+  const scriptDir = path.join(__dirname, 'script-cp');
+  const fileList = getFileList(scriptDir, {
     fileFilter({basename}) {
       return basename !== 'index.ts';
     },
@@ -40,7 +41,7 @@ export async function getScriptFullpath(basename: ScriptFileName) {
   if (!fileList.includes(basename)) {
     throw new Error(`file ${basename} not in fileList: [${fileList.join(', ')}]`);
   }
-  return path.resolve(__dirname, basename);
+  return path.resolve(scriptDir, basename);
 }
 
 type ProcessInfo<T> = ChildProcessInfo & {

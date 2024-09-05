@@ -1,12 +1,10 @@
-import http from 'http';
-import path from 'path';
 import assert from 'assert';
-import {getProcessInfo, getProcessInfoMap, killProcessByPid} from './info';
-import {runTsScriptInChildProcess} from './script';
+import {getProcessInfo, killProcessByPid} from './info';
+import {runTsScriptInChildProcess} from './run-child-process';
 import {logColorful} from '../log';
 
 export async function testFilterProcessInfo() {
-  const {command, params, spawnOptions, childProcess, pid} = await runTsScriptInChildProcess('debug-server', {
+  const {command, params, spawnOptions, pid} = await runTsScriptInChildProcess('debug-server', {
     args: ['testFilterProcessInfo'],
   });
   logColorful({}, {command, params, spawnOptions});
