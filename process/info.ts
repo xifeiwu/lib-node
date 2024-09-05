@@ -2,10 +2,14 @@ import {spawn, execSync} from 'child_process';
 import {selectOption} from '../general';
 import {isFunction} from '../external';
 import {checkPort} from '../net';
-import {ProcessInfo, ProcessInfoWithChildren, ProcessProps} from '../types';
+import {
+  ProcessInfo,
+  ProcessInfoWithChildren,
+  ProcessProps,
+  ProcessFilter,
+  ProcessInfoFilterFunc,
+} from '../types';
 
-type ProcessInfoFilterFunc = (info: Partial<ProcessInfo>) => boolean;
-type ProcessFilter = ProcessInfoFilterFunc | Partial<ProcessInfo>;
 interface Options {
   filter?: ProcessFilter;
   printCommand?: boolean;
@@ -20,6 +24,9 @@ function getFilterFunc(filter?: ProcessFilter): ProcessInfoFilterFunc | null {
   }
   const filterFunc: ProcessInfoFilterFunc = (current: ProcessInfo) => {
     return Object.entries(filter).every(([key, value]) => {
+      if (value === undefined) {
+        return true;
+      }
       if ('command' === key) {
         return current[key].includes(value as string);
       }
@@ -29,7 +36,7 @@ function getFilterFunc(filter?: ProcessFilter): ProcessInfoFilterFunc | null {
   return filterFunc;
 }
 
-export async function getAllProcessInfo(options?: Options) {
+export async function getProcessInfoList(options?: Options) {
   const {printCommand, filter} = options ?? {};
   const filterFunc = getFilterFunc(filter);
   let processLister;
@@ -94,8 +101,7 @@ export async function getAllProcessInfo(options?: Options) {
   });
 }
 
-export async function getProcessTree(pid: string | number = 1) {
-  const infoList = await getAllProcessInfo();
+function infoListToInfoTree(infoList: ProcessInfo[]) {
   const infoMap = infoList.reduce<{
     [pid: string]: ProcessInfoWithChildren;
   }>((sum, it) => {
@@ -106,7 +112,7 @@ export async function getProcessTree(pid: string | number = 1) {
     };
   }, {});
   for (const info of infoList) {
-    const {pid, ppid} = info;
+    const {ppid} = info;
     const pInfo = infoMap[ppid];
     if (!pInfo) {
       // parent id 0 not found
@@ -118,9 +124,24 @@ export async function getProcessTree(pid: string | number = 1) {
     }
     pInfo.children.push(info);
   }
-  return infoMap[pid];
+  return infoMap;
 }
 
+export async function getProcessInfoTree(options?: Options) {
+  const {filter} = options ?? {};
+  const filterFunc = getFilterFunc(filter);
+  const infoList = await getProcessInfoList();
+  const filteredInfoList = filterFunc ? infoList.filter(filterFunc) : infoList;
+  const infoTree = infoListToInfoTree(infoList);
+  const filteredInfoTree = filteredInfoList.map(info => {
+    return infoTree[info.pid];
+  });
+  return filteredInfoTree;
+}
+
+export async function killProcess(options?: Options) {
+  const {filter} = options ?? {};
+}
 export async function getProcessInfoByPort(port: number | string): Promise<ProcessInfo[]> {
   /**
    * > lsof -i:3005
@@ -152,7 +173,7 @@ export async function getProcessInfoByPort(port: number | string): Promise<Proce
     if (pidList.length === 0) {
       return [];
     }
-    const processInfoList = await getAllProcessInfo({
+    const processInfoList = await getProcessInfoList({
       filter: it => {
         return pidList.includes(String(it.pid));
       },
