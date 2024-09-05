@@ -1,7 +1,12 @@
-export type ProcessProps = 'pid' | 'ppid' | 'pgid' | 'sess' | 'rss' | 'command';
 export type ProcessInfo = {
-  [key in ProcessProps]: string;
+  pid: number;
+  ppid: number;
+  pgid: number;
+  sess: number;
+  rss: number;
+  command: string;
 };
+export type ProcessProps = keyof ProcessInfo;
 
 export interface ProcessInfoWithChildren extends ProcessInfo {
   children?: ProcessInfoWithChildren[];
