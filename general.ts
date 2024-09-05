@@ -82,7 +82,7 @@ export async function goOnOrNot(config?: {
   tips?: Array<LoggableContent | TipItem>;
   style?: ColorStyle;
   defaultValue?: boolean;
-}) {
+}): Promise<boolean> {
   const {tips = [], defaultValue, style = {}} = config ?? {};
   const defaultStyle: ColorStyle = {
     color: 'yellow',

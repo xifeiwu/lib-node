@@ -1,21 +1,17 @@
 import {spawn, execSync} from 'child_process';
-import {selectOption} from '../general';
-import {isFunction} from '../external';
+import {goOnOrNot, selectOption} from '../general';
+import {isFunction, isNumber} from '../external';
 import {checkPort} from '../net';
 import {
   ProcessInfo,
-  ProcessInfoWithChildren,
   ProcessProps,
   ProcessFilter,
   ProcessInfoFilterFunc,
+  GetProcessInfoOptions,
+  PidToProcessInfo,
 } from '../types';
 
-interface Options {
-  filter?: ProcessFilter;
-  printCommand?: boolean;
-}
-
-function getFilterFunc(filter?: ProcessFilter): ProcessInfoFilterFunc | null {
+export function getFilterFunc(filter?: ProcessFilter): ProcessInfoFilterFunc | null {
   if (!filter) {
     return null;
   }
@@ -29,6 +25,9 @@ function getFilterFunc(filter?: ProcessFilter): ProcessInfoFilterFunc | null {
       }
       if ('command' === key) {
         return current[key].includes(value as string);
+      } else if (isNumber(current[key])) {
+        /** If type current value is number, convert target value to number */
+        return Number(value) === Number(current[key]);
       }
       return value === current[key];
     });
@@ -36,8 +35,47 @@ function getFilterFunc(filter?: ProcessFilter): ProcessInfoFilterFunc | null {
   return filterFunc;
 }
 
-export async function getProcessInfoList(options?: Options) {
-  const {printCommand, filter} = options ?? {};
+function treeInfoList(infoList: ProcessInfo[]) {
+  return infoList.reduce<PidToProcessInfo>((sum, it) => {
+    const {pid} = it;
+    return {
+      ...sum,
+      [pid]: it,
+    };
+  }, {});
+}
+/**
+ * Will change on origin object, should run only once
+ * @param infoList
+ * @returns
+ */
+function toAppendChildInfo(infoList: ProcessInfo[]) {
+  const pidToInfo = treeInfoList(infoList);
+  for (const info of infoList) {
+    const {ppid} = info;
+    const pInfo = pidToInfo[ppid];
+    if (!pInfo) {
+      // parent id 0 not found
+      // throw new Error(`parent id ${ppid} not found`);
+      continue;
+    }
+    if (!Array.isArray(pInfo.children)) {
+      pInfo.children = [];
+    }
+    if (pInfo.children.every(it => it.pid !== info.pid)) {
+      pInfo.children.push(info);
+    }
+  }
+  return {pidToInfo};
+}
+
+interface ProcessRelatedInfo {
+  infoList: ProcessInfo[];
+  pidToInfo?: PidToProcessInfo;
+  allInfoList: ProcessInfo[];
+}
+export async function getProcessInfo(options?: GetProcessInfoOptions): Promise<ProcessRelatedInfo> {
+  const {printCommand, filter, appendChildInfo = true} = options ?? {};
   const filterFunc = getFilterFunc(filter);
   let processLister;
   // const props = ['pid', 'ppid', 'pgid', 'sess', 'rss', 'vsz', 'pcpu', 'args', 'user', 'time'];
@@ -46,7 +84,7 @@ export async function getProcessInfoList(options?: Options) {
   const props: ProcessProps[] = [...propsWithNumberType, ...propsWithStringtype];
   if (process.platform === 'win32') {
     // win32 is not supported
-    return [];
+    return null;
     // See also: https://github.com/nodejs/node-v0.x-archive/issues/2318
     // processLister = spawn('wmic.exe', ['PROCESS', 'GET', 'Name,ProcessId,ParentProcessId,Status']);
   } else {
@@ -69,7 +107,7 @@ export async function getProcessInfoList(options?: Options) {
       info[key] = value;
     }
   }
-  return new Promise<ProcessInfo[]>((resolve, reject) => {
+  return new Promise<ProcessRelatedInfo>((resolve, reject) => {
     const bufList = [];
     processLister.stdout.on('data', data => {
       bufList.push(data);
@@ -96,51 +134,136 @@ export async function getProcessInfoList(options?: Options) {
         }, {} as ProcessInfo);
       });
 
-      resolve(filterFunc ? processList.filter(filterFunc) : processList);
+      let pidToProcessInfo: PidToProcessInfo;
+      if (appendChildInfo) {
+        const {pidToInfo} = toAppendChildInfo(processList);
+        pidToProcessInfo = pidToInfo;
+      }
+      const result: ProcessRelatedInfo = {
+        allInfoList: processList,
+        infoList: filterFunc ? processList.filter(filterFunc) : processList,
+        pidToInfo: pidToProcessInfo,
+      };
+      resolve(result);
     });
   });
 }
 
-function infoListToInfoTree(infoList: ProcessInfo[]) {
-  const infoMap = infoList.reduce<{
-    [pid: string]: ProcessInfoWithChildren;
-  }>((sum, it) => {
+export async function getProcessInfoMap(options?: GetProcessInfoOptions) {
+  const {infoList: processList} = await getProcessInfo(options);
+  return treeInfoList(processList);
+}
+
+function getChildPidList(info: ProcessInfo): number[] {
+  const list: number[] = [];
+  const {children} = info;
+  // list.push(pid);
+  if (Array.isArray(children)) {
+    for (const child of children) {
+      list.push(child.pid);
+      list.push(...getChildPidList(child));
+    }
+  }
+  return list;
+}
+// function isChildProcess(ppid, pid) {
+//   if ([ppid, pid].includes(undefined) || ppid === pid) {
+//     return false;
+//   }
+//   const pInfo = infoTree[ppid];
+//   if (!pInfo) {
+//     return false;
+//   }
+//   const {children} = pInfo;
+//   if (!Array.isArray(children)) {
+//     return false;
+//   }
+//   return children.some(child => {
+//     if (child.pid === pid) {
+//       return true;
+//     }
+//     return isChildProcess(child.pid, pid);
+//   });
+// }
+/**
+ * Remove pid in pidList when it is child process of another pid in pidList
+ * @param pidList
+ * @param infoList
+ */
+async function getProcessListToKill(pidList: Array<string | number>, infoMap?: PidToProcessInfo) {
+  infoMap = infoMap ? infoMap : await getProcessInfoMap({appendChildInfo: true});
+  const pInfoList = pidList
+    .map(pid => {
+      const info = infoMap[pid];
+      if (!info) {
+        return null;
+      }
+      return info;
+    })
+    .filter(it => it !== null);
+  const pidToChildPidList = pInfoList.reduce<{[key: string]: number[]}>((sum, it) => {
     const {pid} = it;
     return {
       ...sum,
-      [pid]: it,
+      [pid]: getChildPidList(it),
     };
   }, {});
-  for (const info of infoList) {
-    const {ppid} = info;
-    const pInfo = infoMap[ppid];
-    if (!pInfo) {
-      // parent id 0 not found
-      // throw new Error(`parent id ${ppid} not found`);
-      continue;
-    }
-    if (!Array.isArray(pInfo.children)) {
-      pInfo.children = [];
-    }
-    pInfo.children.push(info);
+  const allChildPid = Object.values(pidToChildPidList).reduce<number[]>((sum, list) => {
+    return [...sum, ...list];
+  }, []);
+  const pidToKill = pidList.filter(pid => !allChildPid.includes(Number(pid)));
+  return pidToKill.map(pid => infoMap[pid]);
+}
+
+function killProcess(
+  info: ProcessInfo,
+  options?: {
+    killChildren?: boolean;
   }
-  return infoMap;
+) {
+  const {killChildren = true} = options ?? {};
+  const {pid, children} = info;
+  try {
+    process.kill(pid);
+  } catch (err) {
+    console.log(err);
+  }
+  if (!killChildren || !Array.isArray(children)) {
+    return;
+  }
+  children.forEach(child => killProcess(child));
 }
-
-export async function getProcessInfoTree(options?: Options) {
-  const {filter} = options ?? {};
-  const filterFunc = getFilterFunc(filter);
-  const infoList = await getProcessInfoList();
-  const filteredInfoList = filterFunc ? infoList.filter(filterFunc) : infoList;
-  const infoTree = infoListToInfoTree(infoList);
-  const filteredInfoTree = filteredInfoList.map(info => {
-    return infoTree[info.pid];
-  });
-  return filteredInfoTree;
-}
-
-export async function killProcess(options?: Options) {
-  const {filter} = options ?? {};
+export async function killProcessByPid(
+  pidList: Array<number | string>,
+  options?: {pidToInfo?: PidToProcessInfo; doubleConfirm?: boolean}
+) {
+  const {pidToInfo, doubleConfirm} = options ?? {};
+  const processToKill = await getProcessListToKill(pidList, pidToInfo);
+  if (processToKill.length === 0) {
+    return false;
+  }
+  if (doubleConfirm) {
+    const goOn = await goOnOrNot({
+      tips: [
+        {
+          content: processToKill,
+          style: {color: 'black'},
+        },
+        {
+          content: 'Will kill the above process',
+        },
+      ],
+      defaultValue: true,
+    });
+    if (!goOn) {
+      return;
+    }
+  }
+  for (const info of processToKill) {
+    killProcess(info, {
+      killChildren: true,
+    });
+  }
 }
 export async function getProcessInfoByPort(port: number | string): Promise<ProcessInfo[]> {
   /**
@@ -173,12 +296,12 @@ export async function getProcessInfoByPort(port: number | string): Promise<Proce
     if (pidList.length === 0) {
       return [];
     }
-    const processInfoList = await getProcessInfoList({
+    const {infoList} = await getProcessInfo({
       filter: it => {
         return pidList.includes(String(it.pid));
       },
     });
-    return processInfoList;
+    return infoList;
   } catch {
     return [];
   }
