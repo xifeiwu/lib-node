@@ -4,7 +4,7 @@ import {Readable} from 'stream';
 import {GoThroughDirOptions, getFileInfoTree} from '../fs';
 import {filesize} from '../external';
 
-export function toUl(items: Array<{href: string; content: string; style?: object}>) {
+export function toUl(items: Array<{href?: string; content: string; style?: object}>) {
   return [
     '<ul>',
     ...items.map(item => {
@@ -14,7 +14,13 @@ export function toUl(items: Array<{href: string; content: string; style?: object
           return key + ': ' + value;
         })
         .join(';');
-      return `<li${styleStr.length > 0 ? ' ' + styleStr : ''} href=${href}>${content}</li>`;
+      return [
+        '<li',
+        styleStr.length > 0 ? ' ' + styleStr : '',
+        '>',
+        href ? `<a href=${href}>${content}</a>` : content,
+        '</li>',
+      ].join('');
     }),
     '</ul>',
   ].join('');
