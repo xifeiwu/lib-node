@@ -6,7 +6,7 @@ import {
   toBuffer,
   toHtml,
   toUl,
-} from '../../index';
+} from '../../../index';
 import {getScriptFullpath, runTsScriptInChildProcess} from './service';
 import {spawn, SpawnOptions} from 'child_process';
 import {out} from './service';
@@ -59,7 +59,8 @@ export interface MainDebugServerInfo extends DebugServerResponse {
 }
 export async function start() {
   let ipcMessage: MessageToCp<DebugServerClusterConfig> = {};
-  if (process.send) {
+  const supportIpc = Boolean(process.send);
+  if (supportIpc) {
     ipcMessage = await new Promise<MessageToCp>(res => {
       process.on('message', (chunk: MessageToCp) => {
         // process.send(toBuffer(['ipc channel:', chunk]).toString());
@@ -74,10 +75,28 @@ export async function start() {
   const {slaveCount = 3, port} = config;
   try {
     const slaves: ChildProcessInfo<DebugServerResponse>[] = [];
-    /** Start one by one to avoid port confliction */
-    let cnt = 0;
-    while (cnt++ < slaveCount) {
-      slaves.push(await runTsScriptInChildProcess<DebugServerResponse>('debug-server', cpConfig));
+    {
+      const {args, spawnOptions = {}} = cpConfig;
+      let stdio: SpawnOptions['stdio'] = spawnOptions.stdio;
+      if (!Array.isArray(stdio)) {
+        stdio = ['pipe', 'pipe', 'pipe', 'ipc']
+      } else if (!stdio.includes('ipc')) {
+        stdio.push('ipc');
+      }
+      /** Start one by one to avoid port confliction */
+      let cnt = 0;
+      while (cnt++ < slaveCount) {
+        slaves.push(
+          await runTsScriptInChildProcess<DebugServerResponse>('debug-server', {
+            args,
+            spawnOptions: {
+              ...spawnOptions,
+              /** Make sure ipc channel exist for communication */
+              stdio,
+            },
+          })
+        );
+      }
     }
 
     const originToSalve = slaves.reduce((sum, slave) => {
@@ -132,7 +151,7 @@ export async function start() {
     };
     out(info);
   } catch (err) {
-    out(err);
+    out(err.stack);
   }
 }
 

@@ -1,5 +1,5 @@
 import readline from 'readline';
-import {toBuffer, logColorful} from '../../index';
+import {toBuffer, logColorful} from '../../../index';
 
 /**
  * Echo content from ipc channel

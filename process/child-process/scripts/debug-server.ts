@@ -1,4 +1,4 @@
-import {startHttpDebugServer} from '../../index';
+import {startHttpDebugServer} from '../../../index';
 import {out} from './service';
 import {DebugServerConfig, DebugServerResponse, MessageToCp} from './types';
 

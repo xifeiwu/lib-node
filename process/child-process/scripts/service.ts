@@ -1,8 +1,8 @@
 import path from 'path';
-import {getFileList, isObject, toConsole} from '../../index';
+import {getFileList, isObject, toConsole} from '../../../index';
 import {ChildProcessInfo, MessageToCp, RunTsScriptConfig, ScriptFileName} from './types';
 import {ChildProcess, spawn, SpawnOptions} from 'child_process';
-import {getTsParams} from '../index';
+import {getTsParams} from '../../index';
 
 /** For child process */
 export function out(value: any) {
@@ -26,9 +26,9 @@ export async function getScriptFullpath(basename: ScriptFileName) {
   return path.resolve(scriptDir, basename);
 }
 
-export async function runTsScriptInChildProcess<T extends any = any>(
+export async function runTsScriptInChildProcess<CpConfig = any, CpResponse = any>(
   basename: ScriptFileName,
-  config?: RunTsScriptConfig
+  config?: RunTsScriptConfig<CpConfig>
 ) {
   const {spawnOptions, args, infoToCp} = config;
   const scriptPath = await getScriptFullpath(basename);
@@ -52,23 +52,24 @@ export async function runTsScriptInChildProcess<T extends any = any>(
     childProcess.send(infoToCp);
   }
 
-  const info: ChildProcessInfo<T> = {
+  const info: ChildProcessInfo<CpResponse> = {
     command,
     params,
     spawnOptions: mergedSpawnOptions,
     pid: childProcess.pid,
     childProcess,
   };
-  return new Promise<ChildProcessInfo<T>>((res, rej) => {
+  return new Promise<ChildProcessInfo<CpResponse>>((res, rej) => {
     const messageLisnter = chunk => {
       /** error message */
       if (!isObject(chunk)) {
         rej(chunk);
         return;
       }
-      info.childProcessResponse = chunk as T;
+      info.childProcessResponse = chunk as CpResponse;
       res(info);
     };
+    /** Child process must send process info when run successful, or process will hang here. */
     if (supportIpc) {
       childProcess.on('message', chunk => {
         messageLisnter(chunk);
