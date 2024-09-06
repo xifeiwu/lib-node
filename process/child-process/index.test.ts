@@ -41,6 +41,7 @@ export async function testRunTsScriptInChildProcess() {
 
 export async function runDebugServerCluster() {
   const port = await getAFreePort(4000);
+  const args = ['runTDebugServerCluster'];
   const {command, params, spawnOptions, childProcessResponse, pid} = await runTsScriptInChildProcess<
     DebugServerClusterConfig,
     DebugServerClusterResponse
@@ -53,6 +54,12 @@ export async function runDebugServerCluster() {
       config: {
         port,
         slaveCount: 5,
+      },
+      cpConfig: {
+        args,
+        spawnOptions: {
+          stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
+        },
       },
     },
   });

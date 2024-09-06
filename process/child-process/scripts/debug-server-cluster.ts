@@ -78,13 +78,18 @@ export async function start() {
     /** Start one by one to avoid port confliction */
     let cnt = 0;
     while (cnt++ < slaveCount) {
-      slaves.push(await runTsScriptInChildProcess<DebugServerResponse>('debug-server', cpConfig));
+      const response = await runTsScriptInChildProcess<DebugServerResponse>('debug-server', cpConfig);
+      delete response.childProcess;
+      slaves.push(response);
     }
 
     const originToSalve = slaves.reduce((sum, slave) => {
-      const {
-        childProcessResponse: {host, port},
-      } = slave;
+      const {childProcessResponse} = slave;
+      /** For the case ipc channel not open */
+      if (!childProcessResponse) {
+        return sum;
+      }
+      const {host, port} = childProcessResponse;
       return {
         ...sum,
         [port]: slave,
