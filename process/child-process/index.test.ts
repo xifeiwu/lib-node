@@ -42,31 +42,28 @@ export async function testRunTsScriptInChildProcess() {
 export async function runDebugServerCluster() {
   const port = await getAFreePort(4000);
   const args = ['runTDebugServerCluster'];
-  const {command, params, spawnOptions, childProcessResponse, pid} = await runTsScriptInChildProcess<
-    DebugServerClusterConfig,
-    DebugServerClusterResponse
-  >('debug-server-cluster', {
-    args: ['runTDebugServerCluster'],
-    spawnOptions: {
-      stdio: ['ipc', 'ignore', 'ignore'],
-    },
-    infoToCp: {
-      config: {
-        port,
-        slaveCount: 5,
-      },
-      cpConfig: {
-        args,
+  const {command, params, spawnOptions, childProcessResponse, pid, childProcess} =
+    await runTsScriptInChildProcess<DebugServerClusterConfig, DebugServerClusterResponse>(
+      'debug-server-cluster',
+      {
+        args: ['runTDebugServerCluster'],
         spawnOptions: {
-          stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
+          stdio: ['ipc', 'ignore', 'ignore'],
         },
-      },
-    },
-  });
+        infoToCp: {
+          config: {
+            port,
+            slaveCount: 2,
+          },
+          cpConfig: {
+            args,
+            spawnOptions: {
+              stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
+            },
+          },
+        },
+      }
+    );
+  // childProcess.stdout.pipe(process.stdout);
   logColorful({}, {pid, command, params, spawnOptions, childProcessResponse});
-  // assert.equal(childProcessResponse.port, port);
-  // const {infoList, pidToInfo} = await getProcessInfo({filter: {pid}});
-  // assert.equal(infoList.length, 1);
-  // assert.equal(infoList[0].pid, pid);
-  // assert(killProcessByPid([pid], {pidToInfo, killChildren: false}));
 }

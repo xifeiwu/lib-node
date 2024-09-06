@@ -99,9 +99,9 @@ export async function start() {
       {
         request(req, res) {
           const {url} = getRequestHeaderInfo(req);
-          const port = parseInt(url.substring(1));
+          const port = url.substring(1);
           const ports = Object.keys(originToSalve);
-          if (ports.includes(url)) {
+          if (ports.includes(port)) {
             res.setHeader('content-type', 'application/json');
             res.end(toBuffer(JSON.stringify(originToSalve[port])));
           } else {
