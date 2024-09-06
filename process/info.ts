@@ -215,23 +215,27 @@ async function getProcessListToKill(pidList: Array<string | number>, infoMap?: P
   return pidToKill.map(pid => infoMap[pid]);
 }
 
+/**
+ *
+ * @returns boolean, kill process success or not
+ */
 function killProcess(
   info: ProcessInfo,
   options?: {
     killChildren?: boolean;
   }
-) {
+): boolean {
   const {killChildren = true} = options ?? {};
   const {pid, children} = info;
   try {
     process.kill(pid);
   } catch (err) {
-    console.log(err);
+    return false;
   }
   if (!killChildren || !Array.isArray(children)) {
     return;
   }
-  children.forEach(child => killProcess(child));
+  return children.every(child => killProcess(child));
 }
 export async function killProcessByPid(
   pidList: Array<number | string>,

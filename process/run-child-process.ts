@@ -59,8 +59,6 @@ export async function runTsScriptInChildProcess<T extends any = any>(
     params.push(...args);
   }
   const mergedSpawnOptions: SpawnOptions = {
-    /** Must enbale ipc channel to get info of child process */
-    // stdio: ['ipc'],
     ...(spawnOptions ?? {}),
   };
   const command = 'ts-node';
