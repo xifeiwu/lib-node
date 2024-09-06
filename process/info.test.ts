@@ -1,6 +1,6 @@
 import assert from 'assert';
 import {getProcessInfo, getProcessInfoByPort, killProcessByPid} from './info';
-import {DebugServerResponse, runTsScriptInChildProcess} from './run-child-process';
+import {DebugServerResponse, runTsScriptInChildProcess} from './child-process';
 import {logColorful} from '../log';
 import {isNumber} from '../fe';
 
