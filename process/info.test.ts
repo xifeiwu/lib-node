@@ -1,6 +1,6 @@
 import assert from 'assert';
 import {getProcessInfo, getProcessInfoByPort, killProcessByPid} from './info';
-import {CpServerInfo, runTsScriptInChildProcess} from './run-child-process';
+import {DebugServerResponse, runTsScriptInChildProcess} from './run-child-process';
 import {logColorful} from '../log';
 import {isNumber} from '../fe';
 
@@ -42,7 +42,7 @@ export async function testKillProcess() {
 }
 
 export async function testKillProcessByPort() {
-  const {pid, childProcessResponse} = await runTsScriptInChildProcess<CpServerInfo>('debug-server', {
+  const {pid, childProcessResponse} = await runTsScriptInChildProcess<DebugServerResponse>('debug-server', {
     spawnOptions: {
       stdio: ['ipc', 'ignore', 'ignore'],
     },
