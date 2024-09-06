@@ -1,6 +1,6 @@
 import {startHttpDebugServer} from '../../index';
 import {out} from './service';
-import {ServerInfo} from './types';
+import {CpServerInfo} from './types';
 
 interface CustomizeProps {
   port?: number;
@@ -21,7 +21,7 @@ export async function start() {
   const {port: port2} = config ?? {};
   try {
     const {origin, host, port} = await startHttpDebugServer({port: port2});
-    const info: ServerInfo = {origin, host, port};
+    const info: CpServerInfo = {origin, host, port};
     out(info);
   } catch (err) {
     out(err.message);

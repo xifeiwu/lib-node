@@ -2,10 +2,10 @@ import {getTsParams, isObject, startHttpServer, toBuffer} from '@modules/lib/nod
 import {getScriptFullpath} from '.';
 import {spawn, SpawnOptions} from 'child_process';
 import {out} from './service';
-import {ChildProcessInfo, IpcConfig, ServerInfo} from './types';
+import {ChildProcessInfo, IpcConfig, CpServerInfo} from './types';
 import {rejectError} from '@src/1-js/error/case/throw-catch';
 
-export interface DebugServerInfo extends ChildProcessInfo, ServerInfo {}
+export interface DebugServerInfo extends ChildProcessInfo, CpServerInfo {}
 async function spawnDebugServer(config?: IpcConfig) {
   const {spawnOptions, args} = config;
   const scriptPath = await getScriptFullpath('debug-server.ts');
@@ -40,7 +40,7 @@ async function spawnDebugServer(config?: IpcConfig) {
   });
 }
 
-export interface MainDebugServerInfo extends ServerInfo {
+export interface MainDebugServerInfo extends CpServerInfo {
   pid: number;
   childServerInfo: DebugServerInfo[];
 }

@@ -1,6 +1,7 @@
 import path from 'path';
 import {ChildProcess, spawn, SpawnOptions} from 'child_process';
 import {getFileList, getTsParams, isObject} from '../index';
+export * from './script-cp/types';
 
 export type ScriptFileName = 'debug-server' | 'debug-server-cluster' | 'customizable' | 'echo-input';
 /** The config will send to child process recurrsively */

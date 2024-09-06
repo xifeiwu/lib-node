@@ -1,7 +1,8 @@
 import assert from 'assert';
-import {getProcessInfo, killProcessByPid} from './info';
-import {runTsScriptInChildProcess} from './run-child-process';
+import {getProcessInfo, getProcessInfoByPort, killProcessByPid} from './info';
+import {CpServerInfo, runTsScriptInChildProcess} from './run-child-process';
 import {logColorful} from '../log';
+import {isNumber} from '../fe';
 
 export async function testFilterProcessInfo() {
   const {command, params, spawnOptions, pid} = await runTsScriptInChildProcess('debug-server', {
@@ -15,72 +16,47 @@ export async function testFilterProcessInfo() {
   assert.deepEqual(infoListByPid[0].pid, infoListByCmd[0].pid);
 }
 
-export async function testGetProcessInfoList() {
+export async function testGetProcessInfo() {
   const processList = await getProcessInfo();
   console.log(processList);
 }
 
-export async function testFilterByPid() {
+export async function testGetProcessInfoWithFilter() {
   const pid = '40302';
   const infoListByPid = await getProcessInfo({filter: {pid: pid as unknown as number}});
   logColorful({}, infoListByPid);
 }
 
-export async function testKillProcessByPid() {
+export async function testKillProcess() {
   const {pidToInfo, infoList: processList} = await getProcessInfo({
     filter: {
-      command: 'testFilterProcessInfo',
+      // command: 'testFilterProcessInfo',
+      pid: 35966,
     },
   });
-  await killProcessByPid(
+  const success = await killProcessByPid(
     processList.map(it => it.pid),
     {pidToInfo, doubleConfirm: true}
   );
+  logColorful({color: 'red'}, success ? 'Success' : 'Fail');
 }
-// export async function testKillProcessByPort() {
-//   const childProcess = spawnTsFile(path.resolve(__dirname, './start-server.ts'), {
-//     printCommand: true,
-//     spawnOptions: {
-//       stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
-//     },
-//   });
-//   const {port} = await new Promise<{port: number}>(res => {
-//     childProcess.on('spawn', () => {
-//       console.log('onSpawn');
-//       childProcess.once('message', message => {
-//         console.log('onMessage');
-//         console.log(message);
-//         res(message as {port: number});
-//       });
-//     });
-//   });
-//   console.log(`port: ${port}`);
-//   {
-//     const {statusCode, data} = await requestAndGetResponseInfo(
-//       {
-//         url: `http://127.0.0.1:${port}`,
-//       },
-//       {
-//         dataType: 'string',
-//       }
-//     );
-//     assert(statusCode === 200);
-//     assert(data === 'hello');
-//   }
-//   const processInfoList = await getProcessInfoByPort(port);
-//   await selectProcessToKill(processInfoList, {selectProcessToKill: true});
-//   try {
-//     const {statusCode} = await requestAndGetResponseInfo(
-//       {
-//         url: `http://127.0.0.1:${port}`,
-//       },
-//       {
-//         dataType: 'string',
-//       }
-//     );
-//     console.log(statusCode);
-//     assert.fail(`the server should be closed`);
-//   } catch (err) {
-//     assert.ok(`should arrive here`);
-//   }
-// }
+
+export async function testKillProcessByPort() {
+  const {pid, childProcessResponse} = await runTsScriptInChildProcess<CpServerInfo>('debug-server', {
+    spawnOptions: {
+      stdio: ['ipc', 'ignore', 'ignore'],
+    },
+  });
+  if (!childProcessResponse) {
+    throw new Error(`childProcessResponse is null`);
+  }
+  const {port} = childProcessResponse;
+  assert(isNumber(port));
+  const processInfoList = await getProcessInfoByPort(port);
+  const success = await killProcessByPid(
+    processInfoList.map(it => it.pid),
+    {doubleConfirm: true, killChildren: false}
+  );
+  assert.equal(success, true);
+  assert.equal((await getProcessInfo({filter: {pid}})).infoList.length, 0);
+}

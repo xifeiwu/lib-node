@@ -149,7 +149,7 @@ export async function getProcessInfo(options?: GetProcessInfoOptions): Promise<P
   });
 }
 
-export async function getProcessInfoMap(options?: GetProcessInfoOptions) {
+async function getProcessInfoMap(options?: GetProcessInfoOptions) {
   const {infoList: processList} = await getProcessInfo(options);
   return treeInfoList(processList);
 }
@@ -190,11 +190,36 @@ function getChildPidList(info: ProcessInfo): number[] {
  * @param pidList
  * @param infoList
  */
-async function getProcessListToKill(pidList: Array<string | number>, infoMap?: PidToProcessInfo) {
-  infoMap = infoMap ? infoMap : await getProcessInfoMap({appendChildInfo: true});
+
+interface KillProcessOptions {
+  killChildren?: boolean;
+}
+/**
+ *
+ * @returns boolean, kill process success or not
+ */
+function killProcessAndItsCp(info: ProcessInfo, options?: KillProcessOptions): boolean {
+  const {killChildren = true} = options ?? {};
+  const {pid, children} = info;
+  try {
+    process.kill(pid);
+  } catch (err) {
+    console.log(err);
+    return false;
+  }
+  if (!killChildren || !Array.isArray(children)) {
+    return true;
+  }
+  return children.every(child => killProcessAndItsCp(child));
+}
+
+async function filterOutChildProcessOfPidList(
+  pidList: Array<string | number>,
+  pidToInfo: PidToProcessInfo
+): Promise<Array<string | number>> {
   const pInfoList = pidList
     .map(pid => {
-      const info = infoMap[pid];
+      const info = pidToInfo[pid];
       if (!info) {
         return null;
       }
@@ -212,45 +237,32 @@ async function getProcessListToKill(pidList: Array<string | number>, infoMap?: P
     return [...sum, ...list];
   }, []);
   const pidToKill = pidList.filter(pid => !allChildPid.includes(Number(pid)));
-  return pidToKill.map(pid => infoMap[pid]);
+  return pidToKill;
 }
 
-/**
- *
- * @returns boolean, kill process success or not
- */
-function killProcess(
-  info: ProcessInfo,
-  options?: {
-    killChildren?: boolean;
-  }
-): boolean {
-  const {killChildren = true} = options ?? {};
-  const {pid, children} = info;
-  try {
-    process.kill(pid);
-  } catch (err) {
-    return false;
-  }
-  if (!killChildren || !Array.isArray(children)) {
-    return;
-  }
-  return children.every(child => killProcess(child));
+interface KillProcessByPidOptions extends KillProcessOptions {
+  pidToInfo?: PidToProcessInfo;
+  doubleConfirm?: boolean;
 }
+
 export async function killProcessByPid(
   pidList: Array<number | string>,
-  options?: {pidToInfo?: PidToProcessInfo; doubleConfirm?: boolean}
-) {
-  const {pidToInfo, doubleConfirm} = options ?? {};
-  const processToKill = await getProcessListToKill(pidList, pidToInfo);
-  if (processToKill.length === 0) {
+  options?: KillProcessByPidOptions
+): Promise<boolean> {
+  const {doubleConfirm, killChildren = true} = options ?? {};
+  const pidToInfo = options.pidToInfo
+    ? options.pidToInfo
+    : await getProcessInfoMap({appendChildInfo: killChildren});
+  pidList = killChildren ? await filterOutChildProcessOfPidList(pidList, pidToInfo) : pidList;
+  const infoListToKill = pidList.map(pid => pidToInfo[pid]).filter(Boolean);
+  if (infoListToKill.length === 0) {
     return false;
   }
   if (doubleConfirm) {
     const goOn = await goOnOrNot({
       tips: [
         {
-          content: processToKill,
+          content: infoListToKill,
           style: {color: 'black'},
         },
         {
@@ -260,15 +272,36 @@ export async function killProcessByPid(
       defaultValue: true,
     });
     if (!goOn) {
-      return;
+      return false;
     }
   }
-  for (const info of processToKill) {
-    killProcess(info, {
-      killChildren: true,
-    });
-  }
+  return infoListToKill.every(
+    info => {
+      return killProcessAndItsCp(info, {
+        killChildren,
+      });
+    },
+    {killChildren}
+  );
 }
+
+interface KillProcessOptions extends GetProcessInfoOptions {
+  doubleConfirm?: boolean;
+}
+export async function killProcess(options: KillProcessOptions): Promise<ProcessInfo[]> {
+  const {doubleConfirm, ...getProcessOptions} = options ?? {};
+  const {infoList, pidToInfo} = await getProcessInfo(getProcessOptions);
+  if (
+    killProcessByPid(
+      infoList.map(it => it.pid),
+      {pidToInfo, doubleConfirm}
+    )
+  ) {
+    return infoList;
+  }
+  return null;
+}
+
 export async function getProcessInfoByPort(port: number | string): Promise<ProcessInfo[]> {
   /**
    * > lsof -i:3005
@@ -316,63 +349,62 @@ export async function getProcessInfoByPort(port: number | string): Promise<Proce
  * @param options
  * @returns The info of process killed
  */
-export async function selectProcessToKill(
-  processInfoList: ProcessInfo[],
-  options?: {
-    printProcessInfo?: boolean;
-    selectProcessToKill?: boolean;
-  }
-) {
-  const {printProcessInfo, selectProcessToKill} = options ?? {};
-  printProcessInfo && console.log(processInfoList);
-  const pidToKill: number[] = [];
-  if (processInfoList.length > 1) {
-    if (selectProcessToKill) {
-      const selected = await selectOption(
-        [
-          {
-            label: 'kill all',
-            pid: -1,
-          },
-          ...processInfoList.map(it => {
-            const {pid, ppid, command} = it;
-            return {
-              pid,
-              ppid,
-              command,
-              label: `${pid}.${ppid} - ${command}`,
-            };
-          }),
-        ],
-        {
-          defaultIndex: 0,
-        }
-      );
-      if (selected.pid === -1) {
-        pidToKill.push(...processInfoList.map(it => it.pid));
-      } else {
-        pidToKill.push(selected.pid);
-      }
-    } else {
-      pidToKill.push(...processInfoList.map(it => it.pid));
-    }
-  } else if (processInfoList.length > 0) {
-    pidToKill.push(processInfoList[0].pid);
-  }
+// export async function selectProcessToKill(
+//   processInfoList: ProcessInfo[],
+//   options?: {
+//     printProcessInfo?: boolean;
+//     selectProcessToKill?: boolean;
+//   }
+// ) {
+//   const {printProcessInfo, selectProcessToKill} = options ?? {};
+//   printProcessInfo && console.log(processInfoList);
+//   const pidToKill: number[] = [];
+//   if (processInfoList.length > 1) {
+//     if (selectProcessToKill) {
+//       const selected = await selectOption(
+//         [
+//           {
+//             label: 'kill all',
+//             pid: -1,
+//           },
+//           ...processInfoList.map(it => {
+//             const {pid, ppid, command} = it;
+//             return {
+//               pid,
+//               ppid,
+//               command,
+//               label: `${pid}.${ppid} - ${command}`,
+//             };
+//           }),
+//         ],
+//         {
+//           defaultIndex: 0,
+//         }
+//       );
+//       if (selected.pid === -1) {
+//         pidToKill.push(...processInfoList.map(it => it.pid));
+//       } else {
+//         pidToKill.push(selected.pid);
+//       }
+//     } else {
+//       pidToKill.push(...processInfoList.map(it => it.pid));
+//     }
+//   } else if (processInfoList.length > 0) {
+//     pidToKill.push(processInfoList[0].pid);
+//   }
 
-  pidToKill.forEach(pid => process.kill(Number(pid)));
-  return pidToKill.map(pid => processInfoList.find(it => it.pid === pid));
-}
+//   pidToKill.forEach(pid => process.kill(Number(pid)));
+//   return pidToKill.map(pid => processInfoList.find(it => it.pid === pid));
+// }
 
 export async function closePortIfInUse(port: number) {
   const isPortOpen = await checkPort(port);
   if (isPortOpen) {
     const processInfoList = await getProcessInfoByPort(port);
-
-    return selectProcessToKill(processInfoList, {
-      printProcessInfo: true,
-      selectProcessToKill: true,
-    });
+    return killProcessByPid(
+      processInfoList.map(it => it.pid),
+      {doubleConfirm: true}
+    );
   }
   return [];
 }
