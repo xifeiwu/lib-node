@@ -4,6 +4,42 @@ import {Readable} from 'stream';
 import {GoThroughDirOptions, getFileInfoTree} from '../fs';
 import {filesize} from '../external';
 
+export function toUl(items: Array<{href: string; content: string; style?: object}>) {
+  return [
+    '<ul>',
+    ...items.map(item => {
+      const {href, content, style = {}} = item;
+      const styleStr = Object.entries(style)
+        .map(([key, value]) => {
+          return key + ': ' + value;
+        })
+        .join(';');
+      return `<li${styleStr.length > 0 ? ' ' + styleStr : ''} href=${href}>${content}</li>`;
+    }),
+    '</ul>',
+  ].join('');
+}
+
+export function toHtml(htmlTxt: string) {
+  return `<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="initial-scale=1, width=device-width, maximum-scale=1, user-scalable=no" />
+    <link rel="stylesheet" href="">
+    <title>文件列表</title>
+    <script>
+    window.addEventListener('load', function() {
+    });
+    </script>
+    <style>
+    </style>
+  </head>
+  <body>
+    ${htmlTxt}
+  </body>
+</html>`;
+}
+
 // return file list in the form of <ul><li></li></ul>
 export function htmlFileList(dir: string, options?: GoThroughDirOptions) {
   options = {
