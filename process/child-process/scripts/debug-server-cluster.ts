@@ -75,28 +75,10 @@ export async function start() {
   const {slaveCount = 3, port} = config;
   try {
     const slaves: ChildProcessInfo<DebugServerResponse>[] = [];
-    {
-      const {args, spawnOptions = {}} = cpConfig;
-      let stdio: SpawnOptions['stdio'] = spawnOptions.stdio;
-      if (!Array.isArray(stdio)) {
-        stdio = ['pipe', 'pipe', 'pipe', 'ipc']
-      } else if (!stdio.includes('ipc')) {
-        stdio.push('ipc');
-      }
-      /** Start one by one to avoid port confliction */
-      let cnt = 0;
-      while (cnt++ < slaveCount) {
-        slaves.push(
-          await runTsScriptInChildProcess<DebugServerResponse>('debug-server', {
-            args,
-            spawnOptions: {
-              ...spawnOptions,
-              /** Make sure ipc channel exist for communication */
-              stdio,
-            },
-          })
-        );
-      }
+    /** Start one by one to avoid port confliction */
+    let cnt = 0;
+    while (cnt++ < slaveCount) {
+      slaves.push(await runTsScriptInChildProcess<DebugServerResponse>('debug-server', cpConfig));
     }
 
     const originToSalve = slaves.reduce((sum, slave) => {
