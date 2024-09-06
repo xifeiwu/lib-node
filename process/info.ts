@@ -191,14 +191,11 @@ function getChildPidList(info: ProcessInfo): number[] {
  * @param infoList
  */
 
-interface KillProcessOptions {
-  killChildren?: boolean;
-}
 /**
  *
  * @returns boolean, kill process success or not
  */
-function killProcessAndItsCp(info: ProcessInfo, options?: KillProcessOptions): boolean {
+function killProcessAndItsCp(info: ProcessInfo, options?: {killChildren: boolean}): boolean {
   const {killChildren = true} = options ?? {};
   const {pid, children} = info;
   try {
@@ -287,14 +284,15 @@ export async function killProcessByPid(
 
 interface KillProcessOptions extends GetProcessInfoOptions {
   doubleConfirm?: boolean;
+  killChildren?: boolean;
 }
 export async function killProcess(options: KillProcessOptions): Promise<ProcessInfo[]> {
-  const {doubleConfirm, ...getProcessOptions} = options ?? {};
+  const {doubleConfirm, killChildren, ...getProcessOptions} = options ?? {};
   const {infoList, pidToInfo} = await getProcessInfo(getProcessOptions);
   if (
     killProcessByPid(
       infoList.map(it => it.pid),
-      {pidToInfo, doubleConfirm}
+      {pidToInfo, doubleConfirm, killChildren}
     )
   ) {
     return infoList;
