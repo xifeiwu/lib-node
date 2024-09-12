@@ -1,8 +1,9 @@
 import fs from 'fs';
 import path from 'path';
-import {spawn} from 'child_process';
+import {Serializable, spawn} from 'child_process';
 import {findClosestFile} from '../fs';
-import {isBoolean, isString} from '../external';
+import {isBoolean, isObject, isString} from '../external';
+import {SpawnAndTryIpcConfig, SpawnAndTryIpcResponse, SpawnRelatedInfo} from '../types';
 
 /** Existing key with a null value means should give a default value by program */
 interface TsNodeOptions {
@@ -85,4 +86,58 @@ export function spawnTsFile(execPath: string, options?: SpawnTsFileOptions) {
     console.log(`[${process.pid}]spawn command[${childProcess.pid}]: ts-node ${allParams.join(' ')}`);
   }
   return childProcess;
+}
+
+// interface SpawnConfig
+export async function spawnAndTryIpc<InfoToCp = any, ResponseFromCp = any>(
+  config: SpawnAndTryIpcConfig<InfoToCp>
+): Promise<SpawnAndTryIpcResponse<ResponseFromCp>> {
+  const {command, args, spawnOptions, waitFirstIpc, infoToCp} = config;
+  const childProcess = spawn(command, args, spawnOptions);
+  const supportIpc = Boolean(childProcess.send);
+  /**
+   * Notice of supportIpc
+   * For Main process, **must** send config to child process, and wait for response from child process
+   * For child process, receive ipc message, and **must** send response to Main process.
+   */
+  if (supportIpc && infoToCp) {
+    childProcess.send(infoToCp);
+  }
+  const info: SpawnAndTryIpcResponse<ResponseFromCp> = {
+    ...config,
+    childProcess,
+  };
+  if (!waitFirstIpc) {
+    return info;
+  }
+  return new Promise<SpawnAndTryIpcResponse<ResponseFromCp>>((res, rej) => {
+    const messageLisnter = chunk => {
+      /** error message */
+      if (!isObject(chunk)) {
+        rej(chunk);
+        return;
+      }
+      info.responseFromCp = chunk as ResponseFromCp;
+      res(info);
+    };
+    /** Child process must send process info when run successful, or process will hang here. */
+    if (supportIpc) {
+      childProcess.on('message', chunk => {
+        messageLisnter(chunk);
+        childProcess.off('message', messageLisnter);
+      });
+    } else {
+      res(info);
+    }
+  });
+}
+
+export function toSpawnRelatedInfo<ResponseFromCp = any>(
+  response: SpawnAndTryIpcResponse<ResponseFromCp>
+): SpawnRelatedInfo {
+  const {childProcess, ...rest} = response;
+  return {
+    pid: childProcess.pid,
+    ...rest,
+  };
 }

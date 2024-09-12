@@ -4,34 +4,35 @@ import {
   DebugServerClusterResponse,
   DebugServerConfig,
   DebugServerResponse,
-  spawnTsScript,
+  getSpawnConfigByScriptName,
+  spawnScript,
 } from './index';
-import {logColorful, getAFreePort, getProcessInfo, killProcessByPid} from '../../index';
+import {logColorful, getAFreePort, getProcessInfo, killProcessByPid, spawnAndTryIpc} from '../../index';
 
-export async function testRunTsScriptInChildProcess() {
-  const tag = 'testRunTsScriptInChildProcess';
+export async function testSpawnTsScript() {
+  const tag = 'testSpawnTsScript';
   const port = await getAFreePort(4000);
-  const {command, params, spawnOptions, childProcessResponse, pid} = await spawnTsScript<
+  const {command, args, spawnOptions, responseFromCp, childProcess} = await spawnScript<
     DebugServerConfig,
     DebugServerResponse
-  >('debug-server', {
+  >('debug-server.ts', {
     args: [tag],
     spawnOptions: {
       stdio: ['ipc', 'ignore', 'ignore'],
     },
-    waitFirstResponse: true,
+    waitFirstIpc: true,
     infoToCp: {
       config: {
         port,
       },
     },
   });
-  logColorful({}, {pid, command, params, spawnOptions});
-  assert.equal(childProcessResponse.port, port);
-  const {infoList, pidToInfo} = await getProcessInfo({filter: {pid}});
+  logColorful({}, {pid: childProcess.pid, command, args, spawnOptions});
+  assert.equal(responseFromCp.port, port);
+  const {infoList, pidToInfo} = await getProcessInfo({filter: {pid: childProcess.pid}});
   assert.equal(infoList.length, 1);
-  assert.equal(infoList[0].pid, pid);
-  assert(killProcessByPid([pid], {pidToInfo, killChildren: false}));
+  assert.equal(infoList[0].pid, childProcess.pid);
+  assert(killProcessByPid([childProcess.pid], {pidToInfo, killChildren: false}));
   {
     const {infoList} = await getProcessInfo({filter: {command: tag}});
     assert.equal(infoList.length, 0);
@@ -40,31 +41,31 @@ export async function testRunTsScriptInChildProcess() {
 
 export async function runDebugServerCluster() {
   const port = await getAFreePort(4000);
-  const args = ['runTDebugServerCluster'];
-  const {command, params, spawnOptions, childProcessResponse, pid, childProcess} =
-    await spawnTsScript<DebugServerClusterConfig, DebugServerClusterResponse>(
-      'debug-server-cluster',
-      {
-        args: ['runTDebugServerCluster'],
+  const moreArgs = ['runTDebugServerCluster'];
+  const spawnConfig = getSpawnConfigByScriptName('debug-server-cluster.ts', {
+    args: moreArgs,
+    spawnOptions: {
+      stdio: ['ipc', 'ignore', 'ignore'],
+    },
+    waitFirstIpc: true,
+    infoToCp: {
+      config: {
+        port,
+        slaveCount: 2,
+      },
+      spawnConfig: {
+        args: moreArgs,
         spawnOptions: {
-          stdio: ['ipc', 'ignore', 'ignore'],
+          stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
         },
-        waitFirstResponse: true,
-        infoToCp: {
-          config: {
-            port,
-            slaveCount: 2,
-          },
-          cpConfig: {
-            args,
-            spawnOptions: {
-              stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
-            },
-            waitFirstResponse: true,
-          },
-        },
-      }
-    );
+        waitFirstIpc: true,
+      },
+    },
+  });
+  const {responseFromCp, childProcess} = await spawnAndTryIpc<
+    DebugServerClusterConfig,
+    DebugServerClusterResponse
+  >(spawnConfig);
   // childProcess.stdout.pipe(process.stdout);
-  logColorful({}, {pid, command, params, spawnOptions, childProcessResponse});
+  logColorful({}, {spawnConfig, responseFromCp});
 }

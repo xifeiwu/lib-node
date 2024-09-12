@@ -1,13 +1,12 @@
-import {startHttpDebugServer} from '../../index';
+import {startHttpServer, responseRequestEvent, InfoToCp} from '../../index';
 import {out, runCpCustomization} from './service';
-import {DebugServerConfig, DebugServerResponse, MessageToCp} from './types';
+import {DebugServerConfig, DebugServerResponse} from './types';
 
 export async function start() {
-  let ipcMessage: MessageToCp<DebugServerConfig> = {};
+  let ipcMessage: InfoToCp<DebugServerConfig> = {};
   if (process.send) {
-    ipcMessage = await new Promise<MessageToCp<DebugServerConfig>>(res => {
-      process.on('message', (chunk: MessageToCp<DebugServerConfig>) => {
-        // process.send(toBuffer(['ipc channel:', chunk]).toString());
+    ipcMessage = await new Promise<InfoToCp<DebugServerConfig>>(res => {
+      process.once('message', (chunk: InfoToCp<DebugServerConfig>) => {
         res(chunk);
       });
       setTimeout(() => {
@@ -18,7 +17,15 @@ export async function start() {
   const {config: {port: port2, customization} = {} as DebugServerConfig} = ipcMessage;
   await runCpCustomization(customization);
   try {
-    const {origin, host, port} = await startHttpDebugServer({port: port2});
+    const {origin, host, port} = await startHttpServer(
+      {
+        request(request, response) {
+          console.log(request.url);
+          responseRequestEvent(request, response);
+        },
+      },
+      {port: port2}
+    );
     const info: DebugServerResponse = {origin, host, port};
     out(info);
   } catch (err) {

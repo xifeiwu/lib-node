@@ -1,8 +1,17 @@
 import path from 'path';
-import {getFileList, isNumber, isObject, toConsole, waitFor} from '../../index';
-import {ChildProcessInfo, CpCustomization, SpawnTsScriptConfig, ScriptFileName} from './types';
+import {
+  getFileList,
+  isNumber,
+  isObject,
+  spawnAndTryIpc,
+  SpawnAndTryIpcConfig,
+  SpawnConfig,
+  toConsole,
+  waitFor,
+} from '../../index';
+import {CpCustomization, SpawnTsScriptConfig, ScriptFileName} from './types';
 import {spawn, SpawnOptions} from 'child_process';
-import {getTsParams} from '../../index';
+import {getTsParams, SpawnAndTryIpcResponse} from '../../index';
 
 /** For child process */
 export function out(value: any) {
@@ -10,7 +19,7 @@ export function out(value: any) {
   process.send && process.send(value);
 }
 
-export async function getScriptFullpath(basename: ScriptFileName) {
+export function getScriptFullpath(basename: ScriptFileName) {
   const scriptDir = path.join(__dirname);
   const fileList = getFileList(scriptDir, {
     fileFilter({basename}) {
@@ -43,63 +52,41 @@ export async function runCpCustomization(config?: CpCustomization) {
   }
 }
 
-export async function spawnTsScript<CpConfig = any, CpResponse = any>(
+export function getSpawnConfigByScriptName<CpConfig = any>(
   basename: ScriptFileName,
   config?: SpawnTsScriptConfig<CpConfig>
-) {
-  const {args, spawnOptions, waitFirstResponse, infoToCp} = config;
-  const scriptPath = await getScriptFullpath(basename);
-  const params = getTsParams(scriptPath);
-  if (args) {
-    params.push(...args);
-  }
-  const mergedSpawnOptions: SpawnOptions = {
-    ...(spawnOptions ?? {}),
-  };
-  let command = 'ts-node';
-  if (scriptPath.endsWith('.js')) {
+): SpawnAndTryIpcConfig<CpConfig> {
+  const {args, spawnOptions, waitFirstIpc, infoToCp} = config ?? {};
+  const scriptPath = getScriptFullpath(basename);
+  const suffix = basename.split('.').pop().toLowerCase();
+  let command = '';
+  let params: string[] = [];
+  if (suffix === 'ts') {
+    command = 'ts-node';
+    params = [...params, ...getTsParams(scriptPath), ...(Array.isArray(args) ? args : [])];
+  } else if (suffix === 'js') {
     command = 'node';
+    params = [...args];
   }
-  const childProcess = spawn(command, params, mergedSpawnOptions);
-  const supportIpc = Boolean(childProcess.send);
-
-  /**
-   * Notice of supportIpc
-   * For Main process, **must** send config to child process, and wait for response from child process
-   * For child process, receive ipc message, and **must** send response to Main process.
-   */
-  if (supportIpc && infoToCp) {
-    childProcess.send(infoToCp);
-  }
-
-  const info: ChildProcessInfo<CpResponse> = {
+  return {
     command,
-    params,
-    spawnOptions: mergedSpawnOptions,
-    pid: childProcess.pid,
-    childProcess,
+    args: params,
+    spawnOptions,
+    infoToCp,
+    waitFirstIpc,
   };
-  if (!waitFirstResponse) {
-    return info;
-  }
-  return new Promise<ChildProcessInfo<CpResponse>>((res, rej) => {
-    const messageLisnter = chunk => {
-      /** error message */
-      if (!isObject(chunk)) {
-        rej(chunk);
-        return;
-      }
-      info.childProcessResponse = chunk as CpResponse;
-      res(info);
-    };
-    /** Child process must send process info when run successful, or process will hang here. */
-    if (supportIpc) {
-      childProcess.on('message', chunk => {
-        messageLisnter(chunk);
-        childProcess.off('message', messageLisnter);
-      });
-    } else {
-      res(info);
-    }
-  });
+}
+
+export async function spawnScript<CpConfig = any, ResponseFromCp = any>(
+  basename: ScriptFileName,
+  config?: SpawnTsScriptConfig<CpConfig>
+): Promise<SpawnAndTryIpcResponse<ResponseFromCp> & SpawnConfig> {
+  const spawnConfig = getSpawnConfigByScriptName(basename, config);
+  const {childProcess, responseFromCp} = await spawnAndTryIpc(spawnConfig);
+  const info = {
+    ...spawnConfig,
+    childProcess,
+    responseFromCp,
+  };
+  return info;
 }

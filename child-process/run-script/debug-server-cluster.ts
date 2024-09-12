@@ -1,26 +1,30 @@
-import {getRequestHeaderInfo, startHttpServer, toBuffer, toHtml, toUl} from '../../index';
-import {spawnTsScript} from './service';
-import {out} from './service';
 import {
-  ChildProcessInfo,
-  MessageToCp,
-  DebugServerResponse,
-  DebugServerClusterConfig,
-  DebugServerClusterResponse,
-} from './types';
+  getRequestHeaderInfo,
+  spawnAndTryIpc,
+  startHttpServer,
+  toBuffer,
+  toHtml,
+  toUl,
+  InfoToCp,
+  toSpawnRelatedInfo,
+  SpawnRelatedInfo,
+} from '../../index';
+import {spawnScript} from './service';
+import {out} from './service';
+import {DebugServerResponse, DebugServerClusterConfig, DebugServerClusterResponse} from './types';
 
-export interface DebugServerInfo extends ChildProcessInfo, DebugServerResponse {}
+// export interface DebugServerInfo extends ChildProcessInfo, DebugServerResponse {}
 
 export interface MainDebugServerInfo extends DebugServerResponse {
   pid: number;
   childServerInfo: DebugServerResponse[];
 }
 export async function start() {
-  let ipcMessage: MessageToCp<DebugServerClusterConfig> = {};
+  let ipcMessage: InfoToCp<DebugServerClusterConfig> = {};
   const supportIpc = Boolean(process.send);
   if (supportIpc) {
-    ipcMessage = await new Promise<MessageToCp>(res => {
-      process.on('message', (chunk: MessageToCp) => {
+    ipcMessage = await new Promise<InfoToCp>(res => {
+      process.on('message', (chunk: InfoToCp) => {
         // process.send(toBuffer(['ipc channel:', chunk]).toString());
         res(chunk);
       });
@@ -29,25 +33,24 @@ export async function start() {
       }, 1000);
     });
   }
-  const {config = {}, cpConfig = {}} = ipcMessage;
+  const {config = {}, spawnConfig} = ipcMessage;
   const {slaveCount = 3, port} = config;
   try {
-    const slaves: ChildProcessInfo<DebugServerResponse>[] = [];
+    const slaves: SpawnRelatedInfo<DebugServerResponse>[] = [];
     /** Start one by one to avoid port confliction */
     let cnt = 0;
     while (cnt++ < slaveCount) {
-      const response = await spawnTsScript<DebugServerResponse>('debug-server', cpConfig);
-      delete response.childProcess;
-      slaves.push(response);
+      const response = await spawnScript<DebugServerResponse>('debug-server.ts', spawnConfig);
+      slaves.push(toSpawnRelatedInfo(response));
     }
 
     const originToSalve = slaves.reduce((sum, slave) => {
-      const {childProcessResponse} = slave;
+      const {responseFromCp} = slave;
       /** For the case ipc channel not open */
-      if (!childProcessResponse) {
+      if (!responseFromCp) {
         return sum;
       }
-      const {host, port} = childProcessResponse;
+      const {host, port} = responseFromCp;
       return {
         ...sum,
         [port]: slave,
