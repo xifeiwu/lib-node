@@ -5,10 +5,8 @@ import {
   DebugServerConfig,
   DebugServerResponse,
   runTsScriptInChildProcess,
-} from '.';
-import {logColorful} from '../log';
-import {getAFreePort} from '../net';
-import {getProcessInfo, killProcessByPid} from '../index';
+} from './index';
+import {logColorful, getAFreePort, getProcessInfo, killProcessByPid} from '../../index';
 
 export async function testRunTsScriptInChildProcess() {
   const tag = 'testRunTsScriptInChildProcess';
