@@ -4,14 +4,14 @@ import {
   DebugServerClusterResponse,
   DebugServerConfig,
   DebugServerResponse,
-  runTsScriptInChildProcess,
+  spawnTsScript,
 } from './index';
 import {logColorful, getAFreePort, getProcessInfo, killProcessByPid} from '../../index';
 
 export async function testRunTsScriptInChildProcess() {
   const tag = 'testRunTsScriptInChildProcess';
   const port = await getAFreePort(4000);
-  const {command, params, spawnOptions, childProcessResponse, pid} = await runTsScriptInChildProcess<
+  const {command, params, spawnOptions, childProcessResponse, pid} = await spawnTsScript<
     DebugServerConfig,
     DebugServerResponse
   >('debug-server', {
@@ -42,7 +42,7 @@ export async function runDebugServerCluster() {
   const port = await getAFreePort(4000);
   const args = ['runTDebugServerCluster'];
   const {command, params, spawnOptions, childProcessResponse, pid, childProcess} =
-    await runTsScriptInChildProcess<DebugServerClusterConfig, DebugServerClusterResponse>(
+    await spawnTsScript<DebugServerClusterConfig, DebugServerClusterResponse>(
       'debug-server-cluster',
       {
         args: ['runTDebugServerCluster'],

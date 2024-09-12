@@ -1,5 +1,5 @@
 import {getRequestHeaderInfo, startHttpServer, toBuffer, toHtml, toUl} from '../../index';
-import {runTsScriptInChildProcess} from './service';
+import {spawnTsScript} from './service';
 import {out} from './service';
 import {
   ChildProcessInfo,
@@ -36,7 +36,7 @@ export async function start() {
     /** Start one by one to avoid port confliction */
     let cnt = 0;
     while (cnt++ < slaveCount) {
-      const response = await runTsScriptInChildProcess<DebugServerResponse>('debug-server', cpConfig);
+      const response = await spawnTsScript<DebugServerResponse>('debug-server', cpConfig);
       delete response.childProcess;
       slaves.push(response);
     }

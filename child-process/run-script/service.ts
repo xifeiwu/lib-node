@@ -1,6 +1,6 @@
 import path from 'path';
 import {getFileList, isNumber, isObject, toConsole, waitFor} from '../../index';
-import {ChildProcessInfo, CpCustomization, RunTsScriptConfig, ScriptFileName} from './types';
+import {ChildProcessInfo, CpCustomization, SpawnTsScriptConfig, ScriptFileName} from './types';
 import {spawn, SpawnOptions} from 'child_process';
 import {getTsParams} from '../../index';
 
@@ -11,9 +11,6 @@ export function out(value: any) {
 }
 
 export async function getScriptFullpath(basename: ScriptFileName) {
-  if (!basename.endsWith('.ts')) {
-    basename += '.ts';
-  }
   const scriptDir = path.join(__dirname);
   const fileList = getFileList(scriptDir, {
     fileFilter({basename}) {
@@ -46,9 +43,9 @@ export async function runCpCustomization(config?: CpCustomization) {
   }
 }
 
-export async function runTsScriptInChildProcess<CpConfig = any, CpResponse = any>(
+export async function spawnTsScript<CpConfig = any, CpResponse = any>(
   basename: ScriptFileName,
-  config?: RunTsScriptConfig<CpConfig>
+  config?: SpawnTsScriptConfig<CpConfig>
 ) {
   const {args, spawnOptions, waitFirstResponse, infoToCp} = config;
   const scriptPath = await getScriptFullpath(basename);
@@ -59,7 +56,10 @@ export async function runTsScriptInChildProcess<CpConfig = any, CpResponse = any
   const mergedSpawnOptions: SpawnOptions = {
     ...(spawnOptions ?? {}),
   };
-  const command = 'ts-node';
+  let command = 'ts-node';
+  if (scriptPath.endsWith('.js')) {
+    command = 'node';
+  }
   const childProcess = spawn(command, params, mergedSpawnOptions);
   const supportIpc = Boolean(childProcess.send);
 

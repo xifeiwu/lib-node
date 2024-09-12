@@ -1,7 +1,7 @@
 import {ChildProcess, SpawnOptions} from 'child_process';
 
 /** The config will send to child process recurrsively */
-export interface RunTsScriptConfig<CpConfig = any> {
+export interface SpawnTsScriptConfig<CpConfig = any> {
   /** args of running child process */
   args?: string[];
   /** config for how to spawn child process */
@@ -19,7 +19,7 @@ export interface MessageToCp<ConfigToCp = any> {
   /** config send to child process by ipc channel */
   config?: ConfigToCp;
   /** config to run child process in child process */
-  cpConfig?: RunTsScriptConfig;
+  cpConfig?: SpawnTsScriptConfig;
 }
 
 export interface ChildProcessInfo<CpResponse = any> {
@@ -31,7 +31,7 @@ export interface ChildProcessInfo<CpResponse = any> {
   childProcessResponse?: CpResponse;
 }
 
-export type ScriptFileName = 'debug-server' | 'debug-server-cluster' | 'customizable' | 'echo-input';
+export type ScriptFileName = 'debug-server.ts' | 'debug-server-cluster.ts' | 'customizable.ts' | 'echo-input.ts';
 
 /**
  * Customization for child process
