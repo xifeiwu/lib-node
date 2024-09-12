@@ -19,6 +19,7 @@ export async function testRunTsScriptInChildProcess() {
     spawnOptions: {
       stdio: ['ipc', 'ignore', 'ignore'],
     },
+    waitFirstResponse: true,
     infoToCp: {
       config: {
         port,

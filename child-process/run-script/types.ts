@@ -6,6 +6,9 @@ export interface RunTsScriptConfig<CpConfig = any> {
   args?: string[];
   /** config for how to spawn child process */
   spawnOptions?: SpawnOptions;
+  /** wait first response from child process or not, usually first response contains some info of cp */
+  waitFirstResponse?: boolean;
+  /** info that will send to child process */
   infoToCp?: MessageToCp<CpConfig>;
 }
 

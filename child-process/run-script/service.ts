@@ -50,7 +50,7 @@ export async function runTsScriptInChildProcess<CpConfig = any, CpResponse = any
   basename: ScriptFileName,
   config?: RunTsScriptConfig<CpConfig>
 ) {
-  const {spawnOptions, args, infoToCp} = config;
+  const {args, spawnOptions, waitFirstResponse, infoToCp} = config;
   const scriptPath = await getScriptFullpath(basename);
   const params = getTsParams(scriptPath);
   if (args) {
@@ -79,6 +79,9 @@ export async function runTsScriptInChildProcess<CpConfig = any, CpResponse = any
     pid: childProcess.pid,
     childProcess,
   };
+  if (!waitFirstResponse) {
+    return info;
+  }
   return new Promise<ChildProcessInfo<CpResponse>>((res, rej) => {
     const messageLisnter = chunk => {
       /** error message */
