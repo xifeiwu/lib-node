@@ -30,8 +30,23 @@ export interface ChildProcessInfo<CpResponse = any> {
 
 export type ScriptFileName = 'debug-server' | 'debug-server-cluster' | 'customizable' | 'echo-input';
 
+/**
+ * Customization for child process
+ * Notice: Please take care of the key order as they will be executed one by one in sequence
+ */
+export interface CpCustomization {
+  /** delay progress of child process in ms */
+  delay?: number;
+  /** terminate child prcess by throw uncatch Error */
+  errorMessage?: string;
+  /** child process exit with exitCode after this time */
+  maxLifeCycle?: number;
+  exitCode?: number;
+}
+
 /** Config and Info for script debug-server.ts */
 export interface DebugServerConfig {
+  customization?: CpCustomization;
   port?: number;
 }
 export interface DebugServerResponse {

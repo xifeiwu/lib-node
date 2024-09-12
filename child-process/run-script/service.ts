@@ -1,7 +1,7 @@
 import path from 'path';
-import {getFileList, isObject, toConsole} from '../../index';
-import {ChildProcessInfo, MessageToCp, RunTsScriptConfig, ScriptFileName} from './types';
-import {ChildProcess, spawn, SpawnOptions} from 'child_process';
+import {getFileList, isNumber, isObject, toConsole, waitFor} from '../../index';
+import {ChildProcessInfo, CpCustomization, RunTsScriptConfig, ScriptFileName} from './types';
+import {spawn, SpawnOptions} from 'child_process';
 import {getTsParams} from '../../index';
 
 /** For child process */
@@ -24,6 +24,26 @@ export async function getScriptFullpath(basename: ScriptFileName) {
     throw new Error(`file ${basename} not in fileList: [${fileList.join(', ')}]`);
   }
   return path.resolve(scriptDir, basename);
+}
+
+export async function runCpCustomization(config?: CpCustomization) {
+  config = config ?? {};
+  const keys = Object.keys(config) as Array<keyof CpCustomization>;
+  for (const key of keys) {
+    const value = config[key];
+    if (key === 'delay' && isNumber(value)) {
+      await waitFor(value as number);
+    } else if (key === 'errorMessage' && value !== undefined) {
+      throw new Error(value as string);
+    } else if (key === 'maxLifeCycle' && isNumber(value)) {
+      const {exitCode} = config;
+      setTimeout(() => {
+        process.exit(exitCode ?? 0);
+      }, value as number);
+    } else if (key === 'exitCode') {
+      continue;
+    }
+  }
 }
 
 export async function runTsScriptInChildProcess<CpConfig = any, CpResponse = any>(

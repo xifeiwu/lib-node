@@ -1,5 +1,5 @@
 import {startHttpDebugServer} from '../../index';
-import {out} from './service';
+import {out, runCpCustomization} from './service';
 import {DebugServerConfig, DebugServerResponse, MessageToCp} from './types';
 
 export async function start() {
@@ -15,7 +15,8 @@ export async function start() {
       }, 1000);
     });
   }
-  const {config: {port: port2} = {} as DebugServerConfig} = ipcMessage;
+  const {config: {port: port2, customization} = {} as DebugServerConfig} = ipcMessage;
+  await runCpCustomization(customization);
   try {
     const {origin, host, port} = await startHttpDebugServer({port: port2});
     const info: DebugServerResponse = {origin, host, port};
