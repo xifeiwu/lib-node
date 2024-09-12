@@ -9,6 +9,7 @@ export * from './fs';
 export * from './path';
 export * from './log';
 export * from './process';
+export * from './child-process';
 export * from './crypto';
 export * from './mime';
 export * from './types';

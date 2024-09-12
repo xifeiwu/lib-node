@@ -1,5 +1,5 @@
 import path from 'path';
-import {getFileList, isObject, toConsole} from '../../../index';
+import {getFileList, isObject, toConsole} from '../../index';
 import {ChildProcessInfo, MessageToCp, RunTsScriptConfig, ScriptFileName} from './types';
 import {ChildProcess, spawn, SpawnOptions} from 'child_process';
 import {getTsParams} from '../../index';

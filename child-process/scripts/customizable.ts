@@ -1,5 +1,4 @@
-import {isNumber, waitFor} from '@modules/lib/fe';
-import {startHttpDebugServer} from '@modules/lib/node';
+import {isNumber, startHttpDebugServer, waitFor} from '../../index';
 import {out} from './service';
 
 interface CustomizeProps {

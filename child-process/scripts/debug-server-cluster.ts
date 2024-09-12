@@ -6,7 +6,7 @@ import {
   toBuffer,
   toHtml,
   toUl,
-} from '../../../index';
+} from '../../index';
 import {getScriptFullpath, runTsScriptInChildProcess} from './service';
 import {spawn, SpawnOptions} from 'child_process';
 import {out} from './service';
