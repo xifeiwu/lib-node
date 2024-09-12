@@ -32,23 +32,29 @@ export function getScriptFullpath(basename: ScriptFileName) {
   return path.resolve(scriptDir, basename);
 }
 
-export async function runCpCustomization(config?: CpCustomization) {
+export async function runAllCpCustomization(config?: CpCustomization) {
   config = config ?? {};
   const keys = Object.keys(config) as Array<keyof CpCustomization>;
   for (const key of keys) {
-    const value = config[key];
-    if (key === 'delay' && isNumber(value)) {
-      await waitFor(value as number);
-    } else if (key === 'errorMessage' && value !== undefined) {
-      throw new Error(value as string);
-    } else if (key === 'maxLifeCycle' && isNumber(value)) {
-      const {exitCode} = config;
-      setTimeout(() => {
-        process.exit(exitCode ?? 0);
-      }, value as number);
-    } else if (key === 'exitCode') {
-      continue;
-    }
+    await handleCpCustomization(config, key);
+  }
+}
+export async function handleCpCustomization(config?: CpCustomization, key?: string) {
+  if (!config || !key) {
+    return;
+  }
+  const value = config[key];
+  if (key === 'delay' && isNumber(value)) {
+    await waitFor(value as number);
+  } else if (key === 'errorMessage' && value !== undefined) {
+    throw new Error(value as string);
+  } else if (key === 'maxLifeCycle' && isNumber(value)) {
+    const {exitCode} = config;
+    setTimeout(() => {
+      process.exit(exitCode ?? 0);
+    }, value as number);
+  } else if (key === 'exitCode') {
+    return;
   }
 }
 

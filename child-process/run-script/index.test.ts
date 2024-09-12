@@ -7,15 +7,19 @@ import {
   getSpawnConfigByScriptName,
   spawnScript,
 } from './index';
-import {logColorful, getAFreePort, getProcessInfo, killProcessByPid, spawnAndTryIpc} from '../../index';
+import {
+  logColorful,
+  getAFreePort,
+  getProcessInfo,
+  killProcessByPid,
+  spawnAndTryIpc,
+  toSpawnRelatedInfo,
+} from '../../index';
 
 export async function testSpawnTsScript() {
   const tag = 'testSpawnTsScript';
   const port = await getAFreePort(4000);
-  const {command, args, spawnOptions, responseFromCp, childProcess} = await spawnScript<
-    DebugServerConfig,
-    DebugServerResponse
-  >('debug-server.ts', {
+  const spawnInfo = await spawnScript<DebugServerConfig, DebugServerResponse>('debug-server.ts', {
     args: [tag],
     spawnOptions: {
       stdio: ['ipc', 'ignore', 'ignore'],
@@ -27,7 +31,8 @@ export async function testSpawnTsScript() {
       },
     },
   });
-  logColorful({}, {pid: childProcess.pid, command, args, spawnOptions});
+  const {responseFromCp, childProcess} = spawnInfo;
+  logColorful({}, toSpawnRelatedInfo(spawnInfo));
   assert.equal(responseFromCp.port, port);
   const {infoList, pidToInfo} = await getProcessInfo({filter: {pid: childProcess.pid}});
   assert.equal(infoList.length, 1);

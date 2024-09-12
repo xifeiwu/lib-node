@@ -1,5 +1,5 @@
 import {startHttpServer, responseRequestEvent, InfoToCp} from '../../index';
-import {out, runCpCustomization} from './service';
+import {handleCpCustomization, out, runAllCpCustomization} from './service';
 import {DebugServerConfig, DebugServerResponse} from './types';
 
 export async function start() {
@@ -15,22 +15,27 @@ export async function start() {
       }, 1000);
     });
   }
-  const {config: {port: port2, customization} = {} as DebugServerConfig} = ipcMessage;
-  await runCpCustomization(customization);
-  try {
-    const {origin, host, port} = await startHttpServer(
-      {
-        request(request, response) {
-          console.log(request.url);
-          responseRequestEvent(request, response);
-        },
-      },
-      {port: port2}
-    );
-    const info: DebugServerResponse = {origin, host, port};
-    out(info);
-  } catch (err) {
-    out(err.message);
+  const {config = {}} = ipcMessage;
+  for (const key of Object.keys(config)) {
+    if (key === 'port') {
+      try {
+        const {origin, host, port} = await startHttpServer(
+          {
+            request(request, response) {
+              console.log(request.url);
+              responseRequestEvent(request, response);
+            },
+          },
+          {port: config[key]}
+        );
+        const info: DebugServerResponse = {origin, host, port};
+        out(info);
+      } catch (err) {
+        out(err.message);
+      }
+    } else {
+      await handleCpCustomization(config, key);
+    }
   }
 }
 

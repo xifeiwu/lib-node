@@ -43,8 +43,7 @@ export interface CpCustomization {
 }
 
 /** Config and Info for script debug-server.ts */
-export interface DebugServerConfig {
-  customization?: CpCustomization;
+export interface DebugServerConfig extends CpCustomization {
   port?: number;
 }
 export interface DebugServerResponse {
