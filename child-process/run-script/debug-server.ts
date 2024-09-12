@@ -9,6 +9,7 @@ export async function start() {
       process.once('message', (chunk: InfoToCp<DebugServerConfig>) => {
         res(chunk);
       });
+      /** Wait message for one second at most */
       setTimeout(() => {
         res({});
       }, 1000);

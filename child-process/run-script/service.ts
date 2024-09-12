@@ -56,17 +56,17 @@ export function getSpawnConfigByScriptName<CpConfig = any>(
   basename: ScriptFileName,
   config?: SpawnTsScriptConfig<CpConfig>
 ): SpawnAndTryIpcConfig<CpConfig> {
-  const {args, spawnOptions, waitFirstIpc, infoToCp} = config ?? {};
+  const {args = [], spawnOptions, waitFirstIpc, infoToCp} = config ?? {};
   const scriptPath = getScriptFullpath(basename);
   const suffix = basename.split('.').pop().toLowerCase();
   let command = '';
   let params: string[] = [];
   if (suffix === 'ts') {
     command = 'ts-node';
-    params = [...params, ...getTsParams(scriptPath), ...(Array.isArray(args) ? args : [])];
+    params = [...params, ...getTsParams(scriptPath), ...args];
   } else if (suffix === 'js') {
     command = 'node';
-    params = [...args];
+    params = [scriptPath, ...args];
   }
   return {
     command,

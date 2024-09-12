@@ -60,16 +60,15 @@ function out(value) {
 async function start() {
   let ipcMessage = {};
   if (process.send) {
-    ipcMessage =
-      (await new Promise()) >
-      (res => {
-        process.on('message', chunk => {
-          res(chunk);
-        });
-        setTimeout(() => {
-          res({});
-        }, 1000);
+    ipcMessage = await new Promise(res => {
+      process.once('message', chunk => {
+        res(chunk);
       });
+      /** Wait message for one second at most */
+      setTimeout(() => {
+        res({});
+      }, 1000);
+    });
   }
   const {config: {port: port2, customization} = {}} = ipcMessage;
 
