@@ -25,8 +25,8 @@ export type ScriptFileName =
   | 'debug-server.ts'
   | 'debug-server.js'
   | 'debug-server-cluster.ts'
-  | 'customizable.ts'
-  | 'echo-input.ts';
+  | 'echo-input.ts'
+  | 'daemon.ts';
 
 /**
  * Customization for child process
@@ -60,4 +60,12 @@ export interface DebugServerClusterResponse {
   pid: number;
   master: DebugServerResponse;
   slaves: Array<SpawnRelatedInfo<DebugServerResponse>>;
+}
+
+export interface DaemonConfig {
+  socketPath?: string;
+}
+export interface DaemonResponse {
+  socketPath?: string;
+  pid?: number;
 }

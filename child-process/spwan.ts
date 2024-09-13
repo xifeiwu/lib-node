@@ -3,7 +3,7 @@ import path from 'path';
 import {Serializable, spawn} from 'child_process';
 import {findClosestFile} from '../fs';
 import {isBoolean, isObject, isString} from '../external';
-import {SpawnAndTryIpcConfig, SpawnAndTryIpcResponse, SpawnRelatedInfo} from '../types';
+import {InfoToCp, SpawnAndTryIpcConfig, SpawnAndTryIpcResponse, SpawnRelatedInfo} from '../types';
 
 /** Existing key with a null value means should give a default value by program */
 interface TsNodeOptions {
@@ -88,7 +88,27 @@ export function spawnTsFile(execPath: string, options?: SpawnTsFileOptions) {
   return childProcess;
 }
 
-// interface SpawnConfig
+export async function waitParentMessageFromIPC<CpConfig>(config?: {maxWait?: number}) {
+  const {maxWait = 1000} = config ?? {};
+  let ipcMessage: InfoToCp<CpConfig> = {};
+  if (process.send) {
+    ipcMessage = await new Promise<InfoToCp<CpConfig>>(res => {
+      process.once('message', (chunk: InfoToCp<CpConfig>) => {
+        res(chunk);
+      });
+      /** Wait message for one second at most */
+      setTimeout(() => {
+        res({});
+      }, maxWait);
+    });
+  }
+  return ipcMessage;
+}
+/**
+ * If make use of first IPC, ipc channel should be support in stdio of spwanOptions
+ * @param config
+ * @returns
+ */
 export async function spawnAndTryIpc<InfoToCp = any, ResponseFromCp = any>(
   config: SpawnAndTryIpcConfig<InfoToCp>
 ): Promise<SpawnAndTryIpcResponse<ResponseFromCp>> {
@@ -110,6 +130,9 @@ export async function spawnAndTryIpc<InfoToCp = any, ResponseFromCp = any>(
   if (!waitFirstIpc) {
     return info;
   }
+  /**
+   * Take care: child process **must** send response to IPC channel, or main process will hang here.
+   */
   return new Promise<SpawnAndTryIpcResponse<ResponseFromCp>>((res, rej) => {
     const messageLisnter = chunk => {
       /** error message */
