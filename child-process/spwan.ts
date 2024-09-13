@@ -105,7 +105,9 @@ export async function waitParentMessageFromIPC<CpConfig>(config?: {maxWait?: num
   return ipcMessage;
 }
 /**
- * If make use of first IPC, ipc channel should be support in stdio of spwanOptions
+ * Notice: If make use of first IPC
+ * 1. ipc channel should be support in stdio of spwanOptions
+ * 2. waitFirstIpc should set to true
  * @param config
  * @returns
  */

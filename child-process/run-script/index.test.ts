@@ -80,27 +80,3 @@ export async function runDebugServerCluster() {
   // childProcess.stdout.pipe(process.stdout);
   logColorful({}, {spawnConfig, responseFromCp});
 }
-
-export async function runDaemon() {
-  // await spawnAndTryIpc({})
-  const {childProcess, responseFromCp} = await spawnScript<DaemonConfig, DaemonResponse>('daemon.ts', {
-    waitFirstIpc: true,
-    spawnOptions: {
-      stdio: ['ipc'],
-    },
-  });
-  logColorful({}, responseFromCp);
-  const {socketPath} = responseFromCp;
-  const {pid} = await new Promise<DaemonResponse>((res, rej) => {
-    const client = net.createConnection(socketPath);
-    client.on('data', chunk => {
-      res(fromBuffer(chunk, 'json') as DaemonResponse);
-    });
-    client.on('error', err => {
-      rej(err);
-    });
-  });
-  assert.equal(pid, childProcess.pid);
-  childProcess.kill();
-  fs.unlinkSync(socketPath);
-}

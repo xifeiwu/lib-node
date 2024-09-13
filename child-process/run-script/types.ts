@@ -63,7 +63,13 @@ export interface DebugServerClusterResponse {
 }
 
 export interface DaemonConfig {
-  socketPath?: string;
+  /** fullname or object of path info */
+  socketPath?:
+    | {
+        dirname: string;
+        basename?: string;
+      }
+    | string;
 }
 export interface DaemonResponse {
   socketPath?: string;

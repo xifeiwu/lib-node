@@ -15,6 +15,16 @@ export function testGetFilePathInfo() {
         },
       },
       {
+        description: ['param is dir'],
+        params: ['/zMovie/modules/lib/node/'],
+        expected: {
+          dirname: '/zMovie/modules/lib',
+          basename: 'node',
+          bareBasename: 'node',
+          extname: '',
+        },
+      },
+      {
         description: ['folder can also be basename'],
         params: ['zMovie/modules/lib/node/'],
         expected: {

@@ -1,6 +1,6 @@
 import os from 'os';
 import {Writable} from 'stream';
-import net, {ServerOpts, Socket, TcpNetConnectOpts} from 'net';
+import net, {NetConnectOpts, ServerOpts, Socket, TcpNetConnectOpts} from 'net';
 import {isString, isNumber, formatDate} from '../external';
 import {httpFirstLineReg} from '../constants';
 import {ColorStyle, GetSocketOptions, HttpFirstLineProps, SocketInfo, TcpServerConfig} from '../types';
@@ -137,9 +137,17 @@ export function handleSocketEvents(
   });
 }
 
-export async function startSocketClient(options: TcpNetConnectOpts) {
+export function startSocketClient(options: NetConnectOpts, connectionListener?: () => void): Promise<Socket>;
+export function startSocketClient(
+  port: number,
+  host?: string,
+  connectionListener?: () => void
+): Promise<Socket>;
+export function startSocketClient(path: string, connectionListener?: () => void): Promise<Socket>;
+export async function startSocketClient(...args) {
   return new Promise<Socket>((res, rej) => {
-    const client = net.createConnection(options);
+    // @ts-ignore
+    const client = net.createConnection(...args);
     client.on('ready', () => {
       res(client);
     });
