@@ -6,9 +6,10 @@ import {logColorful, fromBuffer} from '../../index';
 
 export async function runDaemon() {
   const {childProcess, responseFromCp} = await spawnScript<DaemonConfig, DaemonResponse>('daemon.ts', {
+    args: ['fdaf'],
     waitFirstIpc: true,
     spawnOptions: {
-      stdio: ['ipc'],
+      stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
     },
   });
   logColorful({}, responseFromCp);

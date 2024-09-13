@@ -22,11 +22,16 @@ function checkPermissionBeforeCreateDir(dirname: string) {
     throw new Error(`Don't have permission to create dir: ${dirname}`);
   }
 }
-export async function start() {
+export async function start(args: any[]) {
+  args = args.slice(2);
   const ipcMessage: InfoToCp<DaemonConfig> = await waitParentMessageFromIPC<DaemonConfig>();
   const {config = {}} = ipcMessage;
   const pid = process.pid;
   let socketPath = config.socketPath;
+  /** use argument if ipcMessage is not passed */
+  if (socketPath === undefined && args.length > 0) {
+    socketPath = args[0];
+  }
   let dirname: string;
   let basename: string;
   if (isString(socketPath)) {
@@ -66,4 +71,4 @@ export async function start() {
   });
 }
 
-start();
+start(process.argv);
