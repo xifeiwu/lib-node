@@ -31,4 +31,5 @@ export interface SpawnRelatedInfo<ResponseFromCp = any>
   extends SpawnConfig,
     Omit<SpawnAndTryIpcResponse<ResponseFromCp>, 'childProcess'> {
   pid: number;
+  fullCommand: string;
 }

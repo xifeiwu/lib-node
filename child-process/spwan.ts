@@ -104,6 +104,8 @@ export async function waitParentMessageFromIPC<CpConfig>(config?: {maxWait?: num
   }
   return ipcMessage;
 }
+
+const maxWaitMessageDuration = 8000;
 /**
  * Notice: If make use of first IPC
  * 1. ipc channel should be support in stdio of spwanOptions
@@ -132,6 +134,10 @@ export async function spawnAndTryIpc<InfoToCp = any, ResponseFromCp = any>(
   if (!waitFirstIpc) {
     return info;
   }
+  await new Promise<void>((res, rej) => {
+    childProcess.once('spawn', res);
+    childProcess.once('error', err => rej(err));
+  });
   /**
    * Take care: child process **must** send response to IPC channel, or main process will hang here.
    */
@@ -147,9 +153,14 @@ export async function spawnAndTryIpc<InfoToCp = any, ResponseFromCp = any>(
     };
     /** Child process must send process info when run successful, or process will hang here. */
     if (supportIpc) {
+      const timeOutTag = setTimeout(
+        () => rej(new Error(`No message received from child process within ${maxWaitMessageDuration}ms`)),
+        maxWaitMessageDuration
+      );
       childProcess.on('message', chunk => {
         messageLisnter(chunk);
         childProcess.off('message', messageLisnter);
+        clearTimeout(timeOutTag);
       });
     } else {
       res(info);
@@ -160,9 +171,13 @@ export async function spawnAndTryIpc<InfoToCp = any, ResponseFromCp = any>(
 export function toSpawnRelatedInfo<ResponseFromCp = any>(
   response: SpawnAndTryIpcResponse<ResponseFromCp>
 ): SpawnRelatedInfo {
-  const {childProcess, ...rest} = response;
+  const {childProcess, command, args, ...rest} = response;
+  const fullCommand = [command, ...args].join(' ');
   return {
     pid: childProcess.pid,
+    command,
+    args,
+    fullCommand,
     ...rest,
   };
 }

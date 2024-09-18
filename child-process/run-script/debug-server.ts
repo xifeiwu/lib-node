@@ -1,4 +1,4 @@
-import {startHttpServer, responseRequestEvent, InfoToCp} from '../../index';
+import {startHttpServer, responseRequestEvent, InfoToCp, getAFreePort} from '../../index';
 import {handleCpCustomization, out, runAllCpCustomization} from './service';
 import {DebugServerConfig, DebugServerResponse} from './types';
 
@@ -16,6 +16,10 @@ export async function start() {
     });
   }
   const {config = {}} = ipcMessage;
+  /** Make sure port property exist */
+  if (config['port'] === undefined) {
+    config['port'] = await getAFreePort();
+  }
   for (const key of Object.keys(config)) {
     if (key === 'port') {
       try {
