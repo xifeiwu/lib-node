@@ -1,16 +1,7 @@
 import fs from 'fs';
 import net from 'net';
 import assert from 'assert';
-import {
-  DaemonConfig,
-  DaemonResponse,
-  DebugServerClusterConfig,
-  DebugServerClusterResponse,
-  DebugServerConfig,
-  DebugServerResponse,
-  getSpawnConfigByScriptName,
-  spawnScript,
-} from './index';
+import {getSpawnConfigByScriptName, spawnScript} from './index';
 import {
   logColorful,
   getAFreePort,
@@ -18,14 +9,14 @@ import {
   killProcessByPid,
   spawnAndTryIpc,
   toSpawnRelatedInfo,
-  getClientSocket,
   fromBuffer,
 } from '../../index';
+import {CP} from './types';
 
 export async function testDebugServer() {
   const tag = 'testSpawnTsScript';
   const port = await getAFreePort(4000);
-  const spawnInfo = await spawnScript<DebugServerConfig, DebugServerResponse>('debug-server.ts', {
+  const spawnInfo = await spawnScript<CP.DebugServerConfig, CP.DebugServerResponse>('debug-server.ts', {
     args: [tag],
     spawnOptions: {
       stdio: ['ipc', 'ignore', 'ignore'],
@@ -74,9 +65,36 @@ export async function runDebugServerCluster() {
     },
   });
   const {responseFromCp, childProcess} = await spawnAndTryIpc<
-    DebugServerClusterConfig,
-    DebugServerClusterResponse
+    CP.DebugServerClusterConfig,
+    CP.DebugServerClusterResponse
   >(spawnConfig);
   // childProcess.stdout.pipe(process.stdout);
   logColorful({}, {spawnConfig, responseFromCp});
+}
+
+export async function testSocketServer() {
+  const {childProcess, responseFromCp} = await spawnScript<CP.SocketServerConfig, CP.SocketServerResponse>(
+    'socket-server.ts',
+    {
+      args: ['testSocketServer'],
+      waitFirstIpc: true,
+      spawnOptions: {
+        stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
+      },
+    }
+  );
+  logColorful({}, responseFromCp);
+  const {socketPath} = responseFromCp;
+  const {pid} = await new Promise<CP.SocketServerResponse>((res, rej) => {
+    const client = net.createConnection(socketPath);
+    client.on('data', chunk => {
+      res(fromBuffer(chunk, 'json') as CP.SocketServerResponse);
+    });
+    client.on('error', err => {
+      rej(err);
+    });
+  });
+  assert.equal(pid, childProcess.pid);
+  childProcess.kill();
+  fs.unlinkSync(socketPath);
 }

@@ -9,8 +9,7 @@ import {
   toConsole,
   waitFor,
 } from '../../index';
-import {CpCustomization, SpawnTsScriptConfig, ScriptFileName} from './types';
-import {spawn, SpawnOptions} from 'child_process';
+import {CP} from './types';
 import {getTsParams, SpawnAndTryIpcResponse} from '../../index';
 
 /** For child process */
@@ -19,7 +18,7 @@ export function out(value: any) {
   process.send && process.send(value);
 }
 
-export function getScriptFullpath(basename: ScriptFileName) {
+export function getScriptFullpath(basename: CP.ScriptFileName) {
   const scriptDir = path.join(__dirname);
   const fileList = getFileList(scriptDir, {
     fileFilter({basename}) {
@@ -32,14 +31,14 @@ export function getScriptFullpath(basename: ScriptFileName) {
   return path.resolve(scriptDir, basename);
 }
 
-export async function runAllCpCustomization(config?: CpCustomization) {
+export async function runAllCpCustomization(config?: CP.CpCustomization) {
   config = config ?? {};
-  const keys = Object.keys(config) as Array<keyof CpCustomization>;
+  const keys = Object.keys(config) as Array<keyof CP.CpCustomization>;
   for (const key of keys) {
     await handleCpCustomization(config, key);
   }
 }
-export async function handleCpCustomization(config?: CpCustomization, key?: string) {
+export async function handleCpCustomization(config?: CP.CpCustomization, key?: string) {
   if (!config || !key) {
     return;
   }
@@ -58,9 +57,15 @@ export async function handleCpCustomization(config?: CpCustomization, key?: stri
   }
 }
 
+/**
+ * Get SpawnConfig by basename of script, and merged with param config.
+ * @param basename
+ * @param config
+ * @returns
+ */
 export function getSpawnConfigByScriptName<CpConfig = any>(
-  basename: ScriptFileName,
-  config?: SpawnTsScriptConfig<CpConfig>
+  basename: CP.ScriptFileName,
+  config?: CP.SpawnTsScriptConfig<CpConfig>
 ): SpawnAndTryIpcConfig<CpConfig> {
   const {args = [], spawnOptions, waitFirstIpc, infoToCp} = config ?? {};
   const scriptPath = getScriptFullpath(basename);
@@ -84,8 +89,8 @@ export function getSpawnConfigByScriptName<CpConfig = any>(
 }
 
 export async function spawnScript<CpConfig = any, ResponseFromCp = any>(
-  basename: ScriptFileName,
-  config?: SpawnTsScriptConfig<CpConfig>
+  basename: CP.ScriptFileName,
+  config?: CP.SpawnTsScriptConfig<CpConfig>
 ): Promise<SpawnAndTryIpcResponse<ResponseFromCp> & SpawnConfig> {
   const spawnConfig = getSpawnConfigByScriptName(basename, config);
   const {childProcess, responseFromCp} = await spawnAndTryIpc(spawnConfig);

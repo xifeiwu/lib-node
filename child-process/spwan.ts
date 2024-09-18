@@ -105,7 +105,7 @@ export async function waitParentMessageFromIPC<CpConfig>(config?: {maxWait?: num
   return ipcMessage;
 }
 
-const maxWaitMessageDuration = 8000;
+const maxWaitMessageDuration = 60000;
 /**
  * Notice: If make use of first IPC
  * 1. ipc channel should be support in stdio of spwanOptions

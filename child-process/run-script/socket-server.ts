@@ -3,7 +3,7 @@ import net from 'net';
 import path from 'path';
 import {InfoToCp} from '../../types';
 import {out} from './service';
-import {DaemonConfig} from './types';
+import {CP} from './types';
 import {
   fromBuffer,
   getFilePathInfo,
@@ -22,15 +22,21 @@ function checkPermissionBeforeCreateDir(dirname: string) {
     throw new Error(`Don't have permission to create dir: ${dirname}`);
   }
 }
+
+/**
+ * Start a socket server listening to a local file, and response server info on request.
+ * @param args
+ */
 export async function start(args: any[]) {
   args = args.slice(2);
-  const ipcMessage: InfoToCp<DaemonConfig> = await waitParentMessageFromIPC<DaemonConfig>();
+  const ipcMessage: InfoToCp<CP.SocketServerConfig> = await waitParentMessageFromIPC<CP.SocketServerConfig>();
   const {config = {}} = ipcMessage;
   const pid = process.pid;
   let socketPath = config.socketPath;
   /** use argument if ipcMessage is not passed */
   if (socketPath === undefined && args.length > 0) {
-    socketPath = args[0];
+    /** find the param starts with '/' as full path of socket file */
+    socketPath = args.find(it => it.startsWith('/'));
   }
   let dirname: string;
   let basename: string;
