@@ -47,8 +47,11 @@ export async function start(args: any[]) {
   } else if (isObject(socketPath)) {
     dirname = socketPath.dirname;
     basename = socketPath.basename;
-  } else {
+  }
+  if (dirname === undefined) {
     dirname = socketDir;
+  }
+  if (basename === undefined) {
     basename = pid + '.socket';
   }
   socketPath = path.join(dirname, basename);
@@ -73,8 +76,18 @@ export async function start(args: any[]) {
       out(response);
       res();
     });
-    server.on('error', err => rej(err));
+    server.on('error', err => {
+      out(err.message);
+      rej(err);
+    });
   });
 }
 
-start(process.argv);
+async function run() {
+  try {
+    start(process.argv);
+  } catch (err) {
+    out(err.message);
+  }
+}
+run();

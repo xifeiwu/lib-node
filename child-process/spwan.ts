@@ -89,7 +89,7 @@ export function spawnTsFile(execPath: string, options?: SpawnTsFileOptions) {
 }
 
 export async function waitParentMessageFromIPC<CpConfig>(config?: {maxWait?: number}) {
-  const {maxWait = 1000} = config ?? {};
+  const {maxWait = 6000} = config ?? {};
   let ipcMessage: InfoToCp<CpConfig> = {};
   if (process.send) {
     ipcMessage = await new Promise<InfoToCp<CpConfig>>(res => {
