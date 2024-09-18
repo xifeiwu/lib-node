@@ -66,7 +66,7 @@ export async function start(args: any[]) {
     socket.write(toBuffer(response));
     socket.on('data', chunk => {
       const data = fromBuffer(chunk, 'json') as {action: 'ping'};
-      if (data.action === 'ping') {
+      if (data?.action === 'ping') {
         socket.write(toBuffer('pong'));
       }
     });
