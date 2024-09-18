@@ -7,6 +7,7 @@ import {CP} from './types';
 import {
   fromBuffer,
   getFilePathInfo,
+  getSocketInfo,
   isObject,
   makeSureDirExist,
   toBuffer,
@@ -63,11 +64,12 @@ export async function start(args: any[]) {
   const server = net.createServer();
   server.listen(socketPath);
   server.on('connection', socket => {
-    socket.write(toBuffer(response));
+    // out(getSocketInfo(socket));
+    socket.writable && socket.write(toBuffer(response));
     socket.on('data', chunk => {
       const data = fromBuffer(chunk, 'json') as {action: 'ping'};
       if (data?.action === 'ping') {
-        socket.write(toBuffer('pong'));
+        socket.writable && socket.write(toBuffer('pong'));
       }
     });
   });

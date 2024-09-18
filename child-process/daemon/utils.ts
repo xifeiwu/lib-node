@@ -4,8 +4,15 @@ import {socketDir, socketFileSuffix} from './service';
 import {getFileList, startSocketClient} from '../../index';
 import {Socket} from 'net';
 
-export async function checkSocketActivity(dirname?: string) {
+export async function checkSocketActivity(
+  dirname?: string,
+  config?: {
+    closeActive?: boolean;
+    closeInActive?: boolean;
+  }
+) {
   dirname = dirname ?? socketDir;
+  const {closeInActive = true, closeActive = false} = config ?? {};
   if (!fs.existsSync(dirname)) {
     throw new Error(`dir ${dirname} not exist`);
   }
@@ -22,10 +29,10 @@ export async function checkSocketActivity(dirname?: string) {
       client = await startSocketClient(socketPath);
       active.push(socketPath);
     } catch (err) {
-      fs.unlinkSync(socketPath);
+      closeInActive && fs.unlinkSync(socketPath);
       deactive.push(socketPath);
     } finally {
-      client && client.destroy();
+      client && client.end();
     }
   }
   return {active, deactive};
