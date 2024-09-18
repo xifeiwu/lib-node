@@ -1,12 +1,12 @@
 import {startHttpServer, responseRequestEvent, InfoToCp, getAFreePort} from '../../index';
 import {handleCpCustomization, out, runAllCpCustomization} from './service';
-import {DebugServerConfig, DebugServerResponse} from './types';
+import {CP} from './types';
 
 export async function start() {
-  let ipcMessage: InfoToCp<DebugServerConfig> = {};
+  let ipcMessage: InfoToCp<CP.DebugServerConfig> = {};
   if (process.send) {
-    ipcMessage = await new Promise<InfoToCp<DebugServerConfig>>(res => {
-      process.once('message', (chunk: InfoToCp<DebugServerConfig>) => {
+    ipcMessage = await new Promise<InfoToCp<CP.DebugServerConfig>>(res => {
+      process.once('message', (chunk: InfoToCp<CP.DebugServerConfig>) => {
         res(chunk);
       });
       /** Wait message for one second at most */
@@ -32,7 +32,7 @@ export async function start() {
           },
           {port: config[key]}
         );
-        const info: DebugServerResponse = {origin, host, port};
+        const info: CP.DebugServerResponse = {origin, host, port};
         out(info);
       } catch (err) {
         out(err.message);

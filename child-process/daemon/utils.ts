@@ -8,20 +8,20 @@ export async function cleanUpZombieSocketPath(dirname?: string) {
   if (!fs.existsSync(dirname)) {
     throw new Error(`dir ${dirname} not exist`);
   }
-  const socketFileList = getFileList(dirname, {
+  const socketFullPathList = getFileList(dirname, {
     fileFilter({basename}) {
       return basename.endsWith(socketFileSuffix);
     },
-  });
+  }).map(relativePath => path.join(dirname, relativePath));
   const active: string[] = [];
   const deactive: string[] = [];
-  for (const socketFile of socketFileList) {
+  for (const socketPath of socketFullPathList) {
     try {
-      await startSocketClient(socketFile);
-      active.push(socketFile);
+      await startSocketClient(socketPath);
+      active.push(socketPath);
     } catch (err) {
-      fs.unlinkSync(path.join(dirname, socketFile));
-      deactive.push(socketFile);
+      fs.unlinkSync(socketPath);
+      deactive.push(socketPath);
     }
   }
   return {active, deactive};
