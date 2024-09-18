@@ -29,7 +29,7 @@ function checkPermissionBeforeCreateDir(dirname: string) {
  * @param args
  */
 export async function start(args: any[]) {
-  args = args.slice(2);
+  args = Array.isArray(args) ? args.slice(2) : [];
   const ipcMessage: InfoToCp<CP.SocketServerConfig> = await waitParentMessageFromIPC<CP.SocketServerConfig>();
   const {config = {}} = ipcMessage;
   const pid = process.pid;
@@ -72,6 +72,10 @@ export async function start(args: any[]) {
         socket.writable && socket.write(toBuffer('pong'));
       }
     });
+  });
+  process.on('beforeExit', () => {
+    console.log('beforeExit cp')
+    server.close();
   });
   await new Promise<void>((res, rej) => {
     server.on('listening', () => {
