@@ -1,2 +1,2 @@
 export * from './spwan';
-export * from './run-script';
+export * from './run-on-cp';
