@@ -88,6 +88,11 @@ export function spawnTsFile(execPath: string, options?: SpawnTsFileOptions) {
   return childProcess;
 }
 
+/**
+ * Child Process wait ipc message frm Parent Process.
+ * @param config
+ * @returns
+ */
 export async function waitParentMessageFromIPC<CpConfig>(config?: {maxWait?: number}) {
   const {maxWait = 6000} = config ?? {};
   let ipcMessage: InfoToCp<CpConfig> = {};
@@ -105,7 +110,6 @@ export async function waitParentMessageFromIPC<CpConfig>(config?: {maxWait?: num
   return ipcMessage;
 }
 
-const maxWaitMessageDuration = 60000;
 /**
  * Notice: If make use of first IPC
  * 1. ipc channel should be support in stdio of spwanOptions
@@ -116,7 +120,7 @@ const maxWaitMessageDuration = 60000;
 export async function spawnAndTryIpc<InfoToCp = any, ResponseFromCp = any>(
   config: SpawnAndTryIpcConfig<InfoToCp>
 ): Promise<SpawnAndTryIpcResponse<ResponseFromCp>> {
-  const {command, args, spawnOptions, waitFirstIpc, infoToCp} = config;
+  const {command, args, spawnOptions, waitFirstIpc, maxWaitTime = 60000, infoToCp} = config;
   const childProcess = spawn(command, args, spawnOptions);
   const supportIpc = Boolean(childProcess.send);
   /**
@@ -154,8 +158,8 @@ export async function spawnAndTryIpc<InfoToCp = any, ResponseFromCp = any>(
     /** Child process must send process info when run successful, or process will hang here. */
     if (supportIpc) {
       const timeOutTag = setTimeout(
-        () => rej(new Error(`No message received from child process within ${maxWaitMessageDuration}ms`)),
-        maxWaitMessageDuration
+        () => rej(new Error(`No message received from child process within ${maxWaitTime}ms`)),
+        maxWaitTime
       );
       childProcess.on('message', chunk => {
         messageLisnter(chunk);

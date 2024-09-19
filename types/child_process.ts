@@ -17,6 +17,8 @@ export interface InfoToCp<CpConfig = any> {
 }
 export interface SpawnAndTryIpcConfig<CpConfig = any> extends SpawnConfig {
   waitFirstIpc?: boolean;
+  /** Max wait time for ipc message from Child Process */
+  maxWaitTime?: number;
   infoToCp?: InfoToCp<CpConfig>;
 }
 export interface SpawnAndTryIpcResponse<ResponseFromCp = any> extends SpawnConfig {
