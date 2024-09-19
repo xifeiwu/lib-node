@@ -93,11 +93,5 @@ export async function spawnScript<CpConfig = any, ResponseFromCp = any>(
   config?: CP.SpawnTsScriptConfig<CpConfig>
 ): Promise<SpawnAndTryIpcResponse<ResponseFromCp> & SpawnConfig> {
   const spawnConfig = getSpawnConfigByScriptName(basename, config);
-  const {childProcess, responseFromCp} = await spawnAndTryIpc(spawnConfig);
-  const info = {
-    ...spawnConfig,
-    childProcess,
-    responseFromCp,
-  };
-  return info;
+  return await spawnAndTryIpc(spawnConfig);
 }
