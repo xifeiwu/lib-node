@@ -3,7 +3,7 @@ import net from 'net';
 import path from 'path';
 import {InfoToCp} from '../../types';
 import {out} from './service';
-import {CP} from './types';
+import {CP} from '../../types';
 import {
   fromBuffer,
   getFilePathInfo,

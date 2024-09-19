@@ -9,7 +9,7 @@ import {
   toConsole,
   waitFor,
 } from '../../index';
-import {CP} from './types';
+import {CP} from '../../types';
 import {getTsParams, SpawnAndTryIpcResponse} from '../../index';
 
 /** For child process */

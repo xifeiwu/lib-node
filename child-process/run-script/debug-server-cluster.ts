@@ -11,16 +11,16 @@ import {
 } from '../../index';
 import {spawnScript} from './service';
 import {out} from './service';
-import {DebugServerResponse, DebugServerClusterConfig, DebugServerClusterResponse} from './types';
+import {CP} from '../../types';
 
-// export interface DebugServerInfo extends ChildProcessInfo, DebugServerResponse {}
+// export interface DebugServerInfo extends ChildProcessInfo, CP.DebugServerResponse {}
 
-export interface MainDebugServerInfo extends DebugServerResponse {
+export interface MainDebugServerInfo extends CP.DebugServerResponse {
   pid: number;
-  childServerInfo: DebugServerResponse[];
+  childServerInfo: CP.DebugServerResponse[];
 }
 export async function start() {
-  let ipcMessage: InfoToCp<DebugServerClusterConfig> = {};
+  let ipcMessage: InfoToCp<CP.DebugServerClusterConfig> = {};
   const supportIpc = Boolean(process.send);
   if (supportIpc) {
     ipcMessage = await new Promise<InfoToCp>(res => {
@@ -36,11 +36,11 @@ export async function start() {
   const {config = {}, spawnConfig} = ipcMessage;
   const {slaveCount = 3, port} = config;
   try {
-    const slaves: SpawnRelatedInfo<DebugServerResponse>[] = [];
+    const slaves: SpawnRelatedInfo<CP.DebugServerResponse>[] = [];
     /** Start one by one to avoid port confliction */
     let cnt = 0;
     while (cnt++ < slaveCount) {
-      const response = await spawnScript<DebugServerResponse>('debug-server.ts', spawnConfig);
+      const response = await spawnScript<CP.DebugServerResponse>('debug-server.ts', spawnConfig);
       slaves.push(toSpawnRelatedInfo(response));
     }
 
@@ -88,7 +88,7 @@ export async function start() {
         port: config.port,
       }
     );
-    const info: DebugServerClusterResponse = {
+    const info: CP.DebugServerClusterResponse = {
       pid: process.pid,
       master: {
         origin,

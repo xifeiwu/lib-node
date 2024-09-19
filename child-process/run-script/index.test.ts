@@ -11,7 +11,7 @@ import {
   toSpawnRelatedInfo,
   fromBuffer,
 } from '../../index';
-import {CP} from './types';
+import {CP} from '../../types';
 
 export async function testDebugServer() {
   const tag = 'testSpawnTsScript';

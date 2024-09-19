@@ -1,6 +1,6 @@
 import {startHttpServer, responseRequestEvent, InfoToCp, getAFreePort} from '../../index';
 import {handleCpCustomization, out, runAllCpCustomization} from './service';
-import {CP} from './types';
+import {CP} from '../../types';
 
 export async function start() {
   let ipcMessage: InfoToCp<CP.DebugServerConfig> = {};
