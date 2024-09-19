@@ -4,6 +4,8 @@ export interface SpawnConfig {
   command: string;
   args?: ReadonlyArray<string>;
   spawnOptions?: SpawnOptions;
+  /** process name */
+  name?: string;
 }
 
 export interface InfoToCp<CpConfig = any> {
@@ -13,7 +15,8 @@ export interface InfoToCp<CpConfig = any> {
    * Config for how to run child process in child process
    * Set it as Partial value as some config may be provided on child process
    */
-  spawnConfig?: Partial<SpawnAndTryIpcConfig>;
+  // spawnConfig?: Partial<SpawnAndTryIpcConfig>;
+  spawnConfig?: SpawnAndTryIpcConfig;
 }
 export interface SpawnAndTryIpcConfig<CpConfig = any> extends SpawnConfig {
   waitFirstIpc?: boolean;
@@ -23,6 +26,8 @@ export interface SpawnAndTryIpcConfig<CpConfig = any> extends SpawnConfig {
 }
 export interface SpawnAndTryIpcResponse<ResponseFromCp = any> extends SpawnConfig {
   childProcess: ChildProcess;
+  /** The time spawn event is triggered */
+  spawnTime: string;
   responseFromCp?: ResponseFromCp;
 }
 
@@ -74,7 +79,7 @@ export namespace CP {
     slaves: Array<SpawnRelatedInfo<DebugServerResponse>>;
   }
 
-  export interface SocketServerConfig {
+  export interface DaemonConfig {
     /** fullname or object of path info */
     socketPath?:
       | {
@@ -82,10 +87,24 @@ export namespace CP {
           basename?: string;
         }
       | string;
+    /** Restart child process when it's exited */
+    retry?: {
+      /** max count of retry */
+      maxCount?: number;
+      /** Minimum time a child process has to be up. */
+      minUptime?: number;
+    };
   }
-  export interface SocketServerResponse {
+  export interface DaemonStatus {
     socketPath?: string;
+    /** process id of daemon process */
     pid?: number;
+    config?: DaemonConfig;
+  }
+  export interface DaemonResponse extends Pick<DaemonStatus, 'socketPath' | 'pid'> {
+    // socketPath?: string;
+    // pid?: number;
+    // cpInfo?: SpawnRelatedInfo;
   }
 
   export type ScriptFileName =

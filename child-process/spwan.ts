@@ -133,13 +133,17 @@ export async function spawnAndTryIpc<InfoToCp = any, ResponseFromCp = any>(
   }
   const info: SpawnAndTryIpcResponse<ResponseFromCp> = {
     ...config,
+    spawnTime: '',
     childProcess,
   };
   if (!waitFirstIpc) {
     return info;
   }
   await new Promise<void>((res, rej) => {
-    childProcess.once('spawn', res);
+    childProcess.once('spawn', () => {
+      info.spawnTime = new Date().toString();
+      res();
+    });
     childProcess.once('error', err => rej(err));
   });
   /**

@@ -73,7 +73,7 @@ export async function runDebugServerCluster() {
 }
 
 export async function testSocketServer() {
-  const {childProcess, responseFromCp} = await spawnScript<CP.SocketServerConfig, CP.SocketServerResponse>(
+  const {childProcess, responseFromCp} = await spawnScript<CP.DaemonConfig, CP.DaemonResponse>(
     'socket-server.ts',
     {
       args: ['testSocketServer'],
@@ -85,10 +85,10 @@ export async function testSocketServer() {
   );
   logColorful({}, responseFromCp);
   const {socketPath} = responseFromCp;
-  const {pid} = await new Promise<CP.SocketServerResponse>((res, rej) => {
+  const {pid} = await new Promise<CP.DaemonResponse>((res, rej) => {
     const client = net.createConnection(socketPath);
     client.on('data', chunk => {
-      res(fromBuffer(chunk, 'json') as CP.SocketServerResponse);
+      res(fromBuffer(chunk, 'json') as CP.DaemonResponse);
     });
     client.on('error', err => {
       rej(err);

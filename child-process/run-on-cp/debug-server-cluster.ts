@@ -1,6 +1,5 @@
 import {
   getRequestHeaderInfo,
-  spawnAndTryIpc,
   startHttpServer,
   toBuffer,
   toHtml,
