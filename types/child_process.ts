@@ -92,7 +92,7 @@ export namespace CP {
       /** max count of retry */
       maxCount?: number;
       /** Minimum time a child process has to be up. */
-      minUptime?: number;
+      minInterval?: number;
     };
   }
   export interface DaemonStatus {

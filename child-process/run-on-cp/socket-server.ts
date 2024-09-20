@@ -21,9 +21,14 @@ import {isString} from 'markdown-it/lib/common/utils';
 
 let spawnConfig: SpawnAndTryIpcConfig;
 let cpInfo: SpawnAndTryIpcResponse;
-let cpStatus: 'idle' | 'start' | 'running' | 'stop' | 'onExit' | 'restarting' | 'die' = 'idle';
-let actionOnExit: 'none' | 'restart' | 'stop' = 'none';
+let cpStatus: 'none' | 'start' | 'running' | 'stop' | 'exit' = 'none';
+let currentAction: 'none' | 'start' | 'stop' | 'restart' = 'none';
 let retryCount = 0;
+// let exitSignal: Promise<boolean>;
+let exitSignal: {
+  resolve?: () => void;
+  reject?: (err: Error) => void;
+} = {};
 
 // cpInfoHistory: SpawnAndTryIpcResponse[];
 // cpInfoHistory: [],
@@ -31,47 +36,58 @@ let retryCount = 0;
 const daemonStatus: CP.DaemonStatus = {};
 
 async function onExit() {
-  if (cpStatus === 'onExit') {
-    throw new Error(`Already in status: ${cpStatus}`);
-  }
-  cpStatus = 'onExit';
+  // if (cpStatus === 'onExit') {
+  //   throw new Error(`Already in status: ${cpStatus}`);
+  // }
+  cpStatus = 'exit';
   const {config: {retry = {}} = {}} = daemonStatus;
   const {spawnTime} = cpInfo ?? {};
   // const {status, nextAction} = cpStatus;
-  const {minUptime, maxCount} = retry;
+  const {minInterval, maxCount} = retry;
   let delay = 0;
-  if (isNumber(minUptime)) {
-    delay = minUptime - (Date.now() - new Date(spawnTime).getTime());
+  if (isNumber(minInterval)) {
+    delay = minInterval - (Date.now() - new Date(spawnTime).getTime());
   }
   function letChildDie() {
-    cpInfo = null;
-    cpStatus = 'die';
-    actionOnExit = 'none';
+    cpStatus = 'none';
+    if (exitSignal.resolve) {
+      exitSignal.resolve();
+    }
   }
   async function restartChild() {
-    cpStatus = 'idle';
-    actionOnExit = 'none';
     await new Promise(res => {
       process.nextTick(res);
     });
-    await start();
+    await trySpawn();
     retryCount++;
   }
-  if (actionOnExit === 'restart' || (isNumber(maxCount) && retryCount < maxCount)) {
-    if (delay > 0) {
-      setTimeout(restartChild, delay);
+  if (currentAction === 'stop' || currentAction === 'restart') {
+    letChildDie();
+  } else if (currentAction === 'start') {
+    if (isNumber(maxCount) && retryCount < maxCount) {
+      if (delay > 0) {
+        setTimeout(restartChild, delay);
+      } else {
+        restartChild();
+      }
     } else {
-      restartChild();
+      letChildDie();
     }
   } else {
     letChildDie();
   }
 }
-async function start() {
-  if (cpInfo) {
-    throw new Error(`Already running on process: ${cpInfo?.childProcess?.pid}`);
-  }
-  if (cpStatus !== 'idle') {
+
+async function waitExitComplete() {
+  return new Promise<void>((res, rej) => {
+    exitSignal.resolve = res;
+    exitSignal.reject = rej;
+  });
+}
+
+async function trySpawn() {
+  // Only can start new cp when cp status is not equal 'none'
+  if (cpStatus !== 'none') {
     throw new Error(`We can't start child process in this status: ${cpStatus}`);
   }
   if (!spawnConfig) {
@@ -84,12 +100,18 @@ async function start() {
     onExit();
   });
   return cpInfo;
-  // daemonStatus.running = true;
-  // daemonStatus.cpInfoList.push(cpInfo);
 }
+
+async function start() {
+  const cpInfo = await trySpawn();
+  currentAction = 'start';
+  retryCount = 0;
+  return cpInfo;
+}
+
 async function stop() {
-  if (cpStatus === 'stop') {
-    throw new Error(`Already in status: ${cpStatus}`);
+  if (cpStatus !== 'running') {
+    throw new Error(`Can only stop child process when it's in status: running`);
   }
   if (!cpInfo) {
     throw new Error(`cpInfo is null`);
@@ -99,16 +121,19 @@ async function stop() {
     throw new Error(`childProcess is null`);
   }
   cpStatus = 'stop';
-  actionOnExit = 'stop';
+  currentAction = 'stop';
   await killProcessByPid([childProcess.pid]);
+  await waitExitComplete();
 }
 
 async function restart() {
+  currentAction = 'restart';
   if (cpStatus === 'running') {
     await stop();
   }
-  retryCount = 0;
+  return await start();
 }
+
 function checkPermissionBeforeCreateDir(dirname: string) {
   if (dirname.startsWith(process.env.HOME)) {
     makeSureDirExist(dirname);
@@ -149,13 +174,17 @@ async function startSocketServer(socketPath: CP.DaemonConfig['socketPath']) {
   const server = net.createServer();
   server.listen(socketPath);
   server.on('connection', socket => {
-    socket.writable && socket.write(toBuffer(response));
-    socket.on('data', chunk => {
-      const data = fromBuffer(chunk, 'json') as {action: 'ping'};
-      if (data?.action === 'ping') {
-        socket.writable && socket.write(toBuffer('pong'));
-      }
-    });
+    try {
+      // socket.writable && socket.write(toBuffer(response));
+      socket.on('data', chunk => {
+        const data = fromBuffer(chunk, 'json') as {action: 'ping'};
+        if (data?.action === 'ping') {
+          socket.writable && socket.write(toBuffer('pong'));
+        }
+      });
+    } catch (err) {
+      socket.write(err.message);
+    }
   });
   // process.on('beforeExit', () => {
   //   console.log('beforeExit cp')
