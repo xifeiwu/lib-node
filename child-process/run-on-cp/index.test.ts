@@ -21,7 +21,6 @@ export async function testDebugServer() {
     spawnOptions: {
       stdio: ['ipc', 'ignore', 'ignore'],
     },
-    waitFirstIpc: true,
     infoToCp: {
       config: {
         port,
@@ -49,7 +48,6 @@ export async function runDebugServerCluster() {
     spawnOptions: {
       stdio: ['ipc', 'ignore', 'ignore'],
     },
-    waitFirstIpc: true,
     infoToCp: {
       config: {
         port,
@@ -61,7 +59,7 @@ export async function runDebugServerCluster() {
         spawnOptions: {
           stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
         },
-        waitFirstIpc: true,
+        infoToCp: {},
       },
     },
   });

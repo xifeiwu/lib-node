@@ -7,7 +7,7 @@ import {fromBuffer, getSpawnConfigByScriptName, logColorful, spawnAndTryIpc} fro
 export async function runEmptyDaemon() {
   const spawnConfig4Daemon = getSpawnConfigByScriptName('daemon.ts', {
     args: ['runEmptyDaemon'],
-    waitFirstIpc: true,
+    infoToCp: {},
     spawnOptions: {stdio: ['ipc']},
   });
   const {childProcess, responseFromCp} = await spawnAndTryIpc<CP.DaemonConfig, CP.DaemonInfo>(

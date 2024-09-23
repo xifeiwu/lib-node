@@ -120,9 +120,12 @@ export async function waitParentMessageFromIPC<CpConfig>(config?: {maxWait?: num
 export async function spawnAndTryIpc<InfoToCp = any, ResponseFromCp = any>(
   config: SpawnAndTryIpcConfig<InfoToCp>
 ): Promise<SpawnAndTryIpcResponse<ResponseFromCp>> {
-  const {command, args, spawnOptions, waitFirstIpc, maxWaitTime = 60000, infoToCp} = config;
+  const {command, args, spawnOptions, maxWaitTime4Ipc = 60000, infoToCp} = config;
   const childProcess = spawn(command, args, spawnOptions);
   const supportIpc = Boolean(childProcess.send);
+  if (infoToCp && !supportIpc) {
+    throw new Error(`Please set ipc channel in spawnOption.stdio, or set infoToCp to false.`);
+  }
   /**
    * Notice of supportIpc
    * For Main process, **must** send config to child process, and wait for response from child process
@@ -135,9 +138,6 @@ export async function spawnAndTryIpc<InfoToCp = any, ResponseFromCp = any>(
     spawnTime: '',
     childProcess,
   };
-  if (!waitFirstIpc) {
-    return info;
-  }
   await new Promise<void>((res, rej) => {
     childProcess.once('spawn', () => {
       info.spawnTime = new Date().toString();
@@ -150,7 +150,7 @@ export async function spawnAndTryIpc<InfoToCp = any, ResponseFromCp = any>(
    */
   return new Promise<SpawnAndTryIpcResponse<ResponseFromCp>>((res, rej) => {
     const messageLisnter = chunk => {
-      /** error message */
+      /** type string recognized as error message */
       if (!isObject(chunk)) {
         rej(chunk);
         return;
@@ -161,8 +161,8 @@ export async function spawnAndTryIpc<InfoToCp = any, ResponseFromCp = any>(
     /** Child process must send process info when run successful, or process will hang here. */
     if (supportIpc) {
       const timeOutTag = setTimeout(
-        () => rej(new Error(`No message received from child process within ${maxWaitTime}ms`)),
-        maxWaitTime
+        () => rej(new Error(`No message received from child process within ${maxWaitTime4Ipc}ms`)),
+        maxWaitTime4Ipc
       );
       childProcess.on('message', chunk => {
         messageLisnter(chunk);

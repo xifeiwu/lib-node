@@ -20,11 +20,10 @@ export interface InfoToCp<CpConfig = any> {
   spawnConfig?: SpawnAndTryIpcConfig;
 }
 export interface SpawnAndTryIpcConfig<CpConfig = any> extends SpawnConfig {
-  /** @deprecated use maxWaitTime4FirstIpc is enough */
-  waitFirstIpc?: boolean;
-  /** Max wait time for ipc message from Child Process */
-  maxWaitTime?: number;
+  /** Info send to child process if process.send is enabled */
   infoToCp?: InfoToCp<CpConfig>;
+  /** Max wait time for ipc message from Child Process */
+  maxWaitTime4Ipc?: number;
 }
 export interface SpawnAndTryIpcResponse<ResponseFromCp = any> {
   /** original config passed */

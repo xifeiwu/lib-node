@@ -67,7 +67,7 @@ export function getSpawnConfigByScriptName<CpConfig = any>(
   basename: CP.ScriptFileName,
   config?: CP.SpawnTsScriptConfig<CpConfig>
 ): SpawnAndTryIpcConfig<CpConfig> {
-  const {args = [], spawnOptions, waitFirstIpc, infoToCp} = config ?? {};
+  const {args = [], spawnOptions,  infoToCp} = config ?? {};
   const scriptPath = getScriptFullpath(basename);
   const suffix = basename.split('.').pop().toLowerCase();
   let command = '';
@@ -84,7 +84,6 @@ export function getSpawnConfigByScriptName<CpConfig = any>(
     args: params,
     spawnOptions,
     infoToCp,
-    waitFirstIpc,
   };
 }
 
