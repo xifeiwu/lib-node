@@ -28,14 +28,14 @@ export function toBuffer(data: CanConvertToBuffer | Array<CanConvertToBuffer>): 
 }
 
 export type TargetDataTypeFromBuffer = 'json' | 'string' | 'buffer';
-export type DataTypeFromBuffer = Buffer | string | object | null;
+export type DataTypeFromBuffer = string | number | object | Uint8Array; //Buffer | string | object | null;
 
-export function fromBuffer(buffer: Buffer, dataType: TargetDataTypeFromBuffer): DataTypeFromBuffer {
-  if (!dataType || dataType === 'buffer') {
-    return buffer;
-  }
-  if (!buffer || !Buffer.isBuffer(buffer) || buffer.byteLength === 0) {
-    return null;
+export function fromBuffer(
+  buffer: CanConvertToBuffer,
+  dataType: TargetDataTypeFromBuffer
+): DataTypeFromBuffer {
+  if (!Buffer.isBuffer(buffer)) {
+    buffer = toBuffer(buffer);
   }
   let finalData: DataTypeFromBuffer = buffer;
   if (dataType === 'json') {

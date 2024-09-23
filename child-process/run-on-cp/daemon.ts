@@ -102,13 +102,15 @@ async function waitExitComplete() {
 }
 
 async function trySpawn() {
+  const {spawnConfig} = daemonConfig;
+  /** Not throw erro when spawn child process and spawnConfig is null */
+  if (!spawnConfig) {
+    // throw new Error(`Please provide spawnConfig`);
+    return null;
+  }
   // Only can start new cp when cp status is not equal 'none'
   if (cpStatus.status !== 'none') {
     throw new Error(`We can't start child process in this status: ${cpStatus.status}`);
-  }
-  const {spawnConfig} = daemonConfig;
-  if (!spawnConfig) {
-    throw new Error(`Please provide spawnConfig`);
   }
   const cpInfo = await spawnAndTryIpc(spawnConfig);
   const {childProcess} = cpInfo;
@@ -120,10 +122,12 @@ async function trySpawn() {
 
 async function start() {
   const cpInfo = await trySpawn();
-  cpStatus.status = 'running';
-  cpStatus.response = cpInfo;
-  cpStatus.currentAction = 'start';
-  cpStatus.retryCount = 0;
+  if (cpInfo) {
+    cpStatus.status = 'running';
+    cpStatus.response = cpInfo;
+    cpStatus.currentAction = 'start';
+    cpStatus.retryCount = 0;
+  }
 }
 
 async function stop() {
@@ -160,33 +164,39 @@ function checkPermissionBeforeCreateDir(dirname: string) {
   }
 }
 
-type Action = {
-  action: 'start' | 'stop' | 'restart' | 'ping';
-  // daemonConfig: CP.DaemonConfig;
-  infoToCp: InfoToCp<CP.DaemonConfig>;
-};
-async function handleSocketData(chunk: Buffer, socket: Socket) {
+async function handleSocketData(chunk: Buffer): Promise<CP.DaemonResponseOnAction> {
   const obj = fromBuffer(chunk, 'json');
   if (isObject(obj)) {
-    const {action, infoToCp} = obj as Action;
+    const {action, info: infoToCp} = obj as CP.DaemonAction;
     switch (action) {
       case 'stop':
         await stop();
-        break;
+        return {
+          type: 'restart',
+          data: getDaemonInfo(),
+        };
       case 'start':
         await onInfo(infoToCp);
         await start();
-        break;
+        return {
+          type: 'start',
+          data: getDaemonInfo(),
+        };
       case 'restart':
         await onInfo(infoToCp);
         await restart();
-        break;
+        return {
+          type: 'restart',
+          data: getDaemonInfo(),
+        };
       case 'ping':
-        socket.write('pong');
-        break;
+        // socket.write('pong');
+        return {
+          type: 'pong',
+        };
     }
   } else {
-    socket.write(toBuffer(getDaemonInfo()));
+    return {type: 'unknown', data: getDaemonInfo()};
   }
 }
 function getSocketPath(socketPath?: CP.DaemonConfig['socketPath']) {
@@ -220,6 +230,15 @@ function getSocketPath(socketPath?: CP.DaemonConfig['socketPath']) {
   }
   return socketPath;
 }
+
+function getErrorResponse(message: string): CP.DaemonResponseError {
+  const errorResponse: CP.DaemonResponseError = {
+    type: 'error',
+    message,
+  };
+  return errorResponse;
+}
+
 async function startSocketServer(pathConfig?: CP.DaemonConfig['socketPath']) {
   const socketPath = getSocketPath(pathConfig);
   const server = net.createServer();
@@ -233,8 +252,10 @@ async function startSocketServer(pathConfig?: CP.DaemonConfig['socketPath']) {
     }
     socket.on('data', async chunk => {
       try {
-        await handleSocketData(chunk, socket);
+        const response = await handleSocketData(chunk);
+        socket.write(toBuffer(response));
       } catch (err) {
+        socket.write(toBuffer(getErrorResponse(err.message)));
         out(err.message);
       }
     });
@@ -285,15 +306,17 @@ async function onInfo(info?: InfoToCp<CP.DaemonConfig>) {
 export async function main(args: any[]) {
   const ipcMessage: InfoToCp<CP.DaemonConfig> = await waitParentMessageFromIPC<CP.DaemonConfig>();
   socketInfo = await startSocketServer(ipcMessage?.config?.socketPath);
-  await onInfo(ipcMessage);
-  out(getDaemonInfo());
+  const actionStart: CP.DaemonAction = {action: 'start', info: ipcMessage};
+  const response = await handleSocketData(toBuffer(actionStart));
+  return response;
 }
 
 async function run() {
   try {
-    main(process.argv);
+    const response = await main(process.argv);
+    out(response);
   } catch (err) {
-    out(err.message);
+    out(getErrorResponse(err.message));
   }
 }
 run();

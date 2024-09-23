@@ -116,22 +116,23 @@ export namespace CP {
     };
   }
 
-  /**
-   * @deprecated
-   * Status of Daemon running
-   */
-  // export interface DaemonStatus {
-  //   config?: DaemonConfig;
-  //   socketPath?: string;
-  //   socketServer?: Server;
-  //   /** process id of daemon process */
-  //   pid?: number;
-  // }
-  // export interface DaemonResponse extends Pick<DaemonStatus, 'socketPath' | 'pid'> {
-  // socketPath?: string;
-  // pid?: number;
-  // cpInfo?: SpawnRelatedInfo;
-  // }
+  type Action = 'start' | 'stop' | 'restart';
+  export type DaemonAction = {
+    action: Action | 'ping';
+    info?: InfoToCp<CP.DaemonConfig>;
+  };
+  export interface DaemonResponseInfo {
+    type: Action | 'unknown' | string;
+    data?: DaemonInfo;
+  }
+  export interface DaemonResponsePong {
+    type: 'pong';
+  }
+  export interface DaemonResponseError {
+    type: 'error';
+    message: string;
+  }
+  export type DaemonResponseOnAction = DaemonResponseInfo | DaemonResponsePong | DaemonResponseError;
 
   export type ScriptFileName =
     | 'debug-server.ts'
