@@ -179,6 +179,9 @@ export async function spawnAndTryIpc<InfoToCp = any, ResponseFromCp = any>(
 export function toSpawnRelatedInfo<ResponseFromCp = any>(
   response: SpawnAndTryIpcResponse<ResponseFromCp>
 ): SpawnRelatedInfo {
+  if (!response) {
+    return null;
+  }
   const {childProcess, command, args, ...rest} = response;
   const fullCommand = [command, ...args].join(' ');
   return {

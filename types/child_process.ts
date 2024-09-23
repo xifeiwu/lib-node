@@ -1,4 +1,5 @@
 import {ChildProcess, SpawnOptions} from 'child_process';
+import {Server} from 'net';
 
 export interface SpawnConfig {
   command: string;
@@ -95,11 +96,16 @@ export namespace CP {
       minInterval?: number;
     };
   }
+  
+  /**
+   * Status of Daemon running
+   */
   export interface DaemonStatus {
+    config?: DaemonConfig;
     socketPath?: string;
+    socketServer?: Server;
     /** process id of daemon process */
     pid?: number;
-    config?: DaemonConfig;
   }
   export interface DaemonResponse extends Pick<DaemonStatus, 'socketPath' | 'pid'> {
     // socketPath?: string;

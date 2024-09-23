@@ -14,10 +14,12 @@ import {
   makeSureDirExist,
   spawnAndTryIpc,
   toBuffer,
+  toSpawnRelatedInfo,
   waitParentMessageFromIPC,
 } from '../../index';
 import {socketDir} from '../daemon/service';
 import {isString} from 'markdown-it/lib/common/utils';
+import {Socket} from 'net';
 
 let spawnConfig: SpawnAndTryIpcConfig;
 let cpInfo: SpawnAndTryIpcResponse;
@@ -34,6 +36,10 @@ let exitSignal: {
 // cpInfoHistory: [],
 
 const daemonStatus: CP.DaemonStatus = {};
+
+function getDaemonInfo() {
+  
+}
 
 async function onExit() {
   // if (cpStatus === 'onExit') {
@@ -142,6 +148,35 @@ function checkPermissionBeforeCreateDir(dirname: string) {
   }
 }
 
+type Action = {
+  action: 'start' | 'stop' | 'restart' | 'ping';
+  // daemonConfig: CP.DaemonConfig;
+  infoToCp: InfoToCp<CP.DaemonConfig>;
+};
+async function handleSocketData(chunk: Buffer, socket: Socket) {
+  const obj = fromBuffer(chunk, 'json');
+  if (isObject(obj)) {
+    const {action, infoToCp} = obj as Action;
+    switch (action) {
+      case 'stop':
+        await stop();
+        break;
+      case 'start':
+        await onInfo(infoToCp);
+        await start();
+        break;
+      case 'restart':
+        await onInfo(infoToCp);
+        await restart();
+        break;
+      case 'ping':
+        socket.write('pong');
+        break;
+    }
+  } else {
+    socket.write(toBuffer({daemonStatus, cpInfo: toSpawnRelatedInfo(cpInfo)}));
+  }
+}
 async function startSocketServer(socketPath: CP.DaemonConfig['socketPath']) {
   /** use argument if ipcMessage is not passed */
   if (socketPath === undefined && Array.isArray(process.argv)) {
@@ -183,17 +218,13 @@ async function startSocketServer(socketPath: CP.DaemonConfig['socketPath']) {
         }
       });
     } catch (err) {
-      socket.write(err.message);
+      socket.end(err.message);
     }
   });
-  // process.on('beforeExit', () => {
-  //   console.log('beforeExit cp')
-  //   server.close();
-  // });
-  return new Promise<{socketPath: string}>((res, rej) => {
+  return new Promise<Pick<CP.DaemonStatus, 'socketPath' | 'socketServer'>>((res, rej) => {
     server.on('listening', () => {
       // out(response);
-      res({socketPath});
+      res({socketPath, socketServer: server});
     });
     server.on('error', err => {
       out(err.message);
@@ -201,18 +232,37 @@ async function startSocketServer(socketPath: CP.DaemonConfig['socketPath']) {
     });
   });
 }
+
+async function onInfo(info?: InfoToCp<CP.DaemonConfig>) {
+  const {config = {}} = info;
+  daemonStatus.pid = process.pid;
+  daemonStatus.config = config;
+  spawnConfig = info.spawnConfig;
+  if (daemonStatus.socketPath !== config.socketPath) {
+    if (daemonStatus.socketServer) {
+      try {
+        daemonStatus.socketServer.close();
+      } catch (err) {
+        /** handle Error */
+      }
+    }
+    const {socketPath} = await startSocketServer(config.socketPath);
+    daemonStatus.socketPath = socketPath;
+  }
+}
 /**
  * Start a socket server listening to a local file, and response server info on request.
  * @param args
  */
 export async function main(args: any[]) {
   const ipcMessage: InfoToCp<CP.DaemonConfig> = await waitParentMessageFromIPC<CP.DaemonConfig>();
-  const {config = {}} = ipcMessage;
-  daemonStatus.pid = process.pid;
-  daemonStatus.config = config;
-  spawnConfig = ipcMessage.spawnConfig;
-  const {socketPath} = await startSocketServer(config.socketPath);
-  daemonStatus.socketPath = socketPath;
+  await onInfo(ipcMessage);
+  // const {config = {}} = ipcMessage;
+  // daemonStatus.pid = process.pid;
+  // daemonStatus.config = config;
+  // spawnConfig = ipcMessage.spawnConfig;
+  // const {socketPath} = await startSocketServer(config.socketPath);
+  // daemonStatus.socketPath = socketPath;
 }
 
 async function run() {
