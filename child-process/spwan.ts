@@ -150,11 +150,6 @@ export async function spawnAndTryIpc<InfoToCp = any, ResponseFromCp = any>(
    */
   return new Promise<SpawnAndTryIpcResponse<ResponseFromCp>>((res, rej) => {
     const messageLisnter = chunk => {
-      /** type string recognized as error message */
-      if (!isObject(chunk)) {
-        rej(chunk);
-        return;
-      }
       info.responseFromCp = chunk as ResponseFromCp;
       res(info);
     };
