@@ -116,13 +116,13 @@ export namespace CP {
     };
   }
 
-  type Action = 'start' | 'stop' | 'restart';
+  type Action = 'start' | 'stop' | 'restart' | 'info';
   export type DaemonAction = {
     action: Action | 'ping';
     info?: InfoToCp<CP.DaemonConfig>;
   };
   export interface DaemonResponseInfo {
-    type: Action | 'unknown' | string;
+    type: Action | 'unknown';
     data?: DaemonInfo;
   }
   export interface DaemonResponsePong {

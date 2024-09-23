@@ -189,6 +189,11 @@ async function handleIncomingMessage(chunk: Buffer): Promise<CP.DaemonResponseOn
           type: 'restart',
           data: getDaemonInfo(),
         };
+      case 'info':
+        return {
+          type: 'restart',
+          data: getDaemonInfo(),
+        };
       case 'ping':
         // socket.write('pong');
         return {
