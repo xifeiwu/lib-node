@@ -164,7 +164,7 @@ function checkPermissionBeforeCreateDir(dirname: string) {
   }
 }
 
-async function handleSocketData(chunk: Buffer): Promise<CP.DaemonResponseOnAction> {
+async function handleIncomingMessage(chunk: Buffer): Promise<CP.DaemonResponseOnAction> {
   const obj = fromBuffer(chunk, 'json');
   if (isObject(obj)) {
     const {action, info: infoToCp} = obj as CP.DaemonAction;
@@ -252,7 +252,7 @@ async function startSocketServer(pathConfig?: CP.DaemonConfig['socketPath']) {
     }
     socket.on('data', async chunk => {
       try {
-        const response = await handleSocketData(chunk);
+        const response = await handleIncomingMessage(chunk);
         socket.write(toBuffer(response));
       } catch (err) {
         socket.write(toBuffer(getErrorResponse(err.message)));
@@ -307,7 +307,7 @@ export async function main(args: any[]) {
   const ipcMessage: InfoToCp<CP.DaemonConfig> = await waitParentMessageFromIPC<CP.DaemonConfig>();
   socketInfo = await startSocketServer(ipcMessage?.config?.socketPath);
   const actionStart: CP.DaemonAction = {action: 'start', info: ipcMessage};
-  const response = await handleSocketData(toBuffer(actionStart));
+  const response = await handleIncomingMessage(toBuffer(actionStart));
   return response;
 }
 
