@@ -91,7 +91,11 @@ export function getSpawnConfigByScriptName<CpConfig = any>(
 export async function spawnScript<CpConfig = any, ResponseFromCp = any>(
   basename: CP.ScriptFileName,
   config?: CP.SpawnTsScriptConfig<CpConfig>
-): Promise<SpawnAndTryIpcResponse<ResponseFromCp> & SpawnConfig> {
+): Promise<SpawnAndTryIpcResponse<ResponseFromCp> & {config: SpawnConfig}> {
   const spawnConfig = getSpawnConfigByScriptName(basename, config);
-  return await spawnAndTryIpc(spawnConfig);
+  const cpInfo = await spawnAndTryIpc(spawnConfig);
+  return {
+    config: spawnConfig,
+    ...cpInfo,
+  };
 }

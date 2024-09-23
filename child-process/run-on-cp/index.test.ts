@@ -56,6 +56,7 @@ export async function runDebugServerCluster() {
         slaveCount: 2,
       },
       spawnConfig: {
+        command: 'ts-node',
         args: moreArgs,
         spawnOptions: {
           stdio: ['pipe', 'pipe', 'pipe', 'ipc'],

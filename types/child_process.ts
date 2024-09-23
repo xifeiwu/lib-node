@@ -119,5 +119,5 @@ export namespace CP {
     | 'debug-server.js'
     | 'debug-server-cluster.ts'
     | 'echo-input.ts'
-    | 'socket-server.ts';
+    | 'daemon.ts';
 }
