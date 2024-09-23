@@ -1,7 +1,7 @@
 import fs from 'fs';
 import net from 'net';
 import path from 'path';
-import {InfoToCp, SpawnAndTryIpcResponse} from '../../types';
+import {InfoToCp, SerializableSpawnInfo, SpawnAndTryIpcResponse} from '../../types';
 import {out} from './service';
 import {CP} from '../../types';
 import {
@@ -21,19 +21,9 @@ import {socketDir} from '../daemon/service';
 import {isString} from 'markdown-it/lib/common/utils';
 import {Socket} from 'net';
 
-interface SocketInfo {
-  path?: string;
-  server?: net.Server;
-}
-interface CPStatus {
-  status: 'none' | 'start' | 'running' | 'stop' | 'exit';
-  currentAction: 'none' | 'start' | 'stop' | 'restart';
-  retryCount: number;
-  response?: SpawnAndTryIpcResponse;
-}
 const daemonConfig: InfoToCp<CP.DaemonConfig> = {config: {}};
-let socketInfo: SocketInfo;
-const cpStatus: CPStatus = {
+let socketInfo: CP.DaemonSocketInfo;
+const cpStatus: CP.DaemonCPStatus = {
   status: 'none',
   currentAction: 'none',
   retryCount: 0,
@@ -47,12 +37,11 @@ let exitSignal: {
 // cpInfoHistory: SpawnAndTryIpcResponse[];
 // cpInfoHistory: [],
 
-// const daemonStatus: CP.DaemonStatus = {};
-
-function getDaemonInfo() {
+function getDaemonInfo(): CP.DaemonInfo {
   const {response, ...rest} = cpStatus;
   return {
-    daemonConfig,
+    pid: process.pid,
+    config: daemonConfig,
     socketPath: socketInfo.path,
     cpStatus: {
       ...rest,
@@ -250,7 +239,7 @@ async function startSocketServer(pathConfig?: CP.DaemonConfig['socketPath']) {
       }
     });
   });
-  return new Promise<SocketInfo>((res, rej) => {
+  return new Promise<CP.DaemonSocketInfo>((res, rej) => {
     server.on('listening', () => {
       // out(response);
       res({path: socketPath, server});

@@ -1,5 +1,5 @@
-import {ChildProcess, SpawnOptions} from 'child_process';
 import {Server} from 'net';
+import {ChildProcess, SpawnOptions} from 'child_process';
 
 export interface SpawnConfig {
   command: string;
@@ -20,6 +20,7 @@ export interface InfoToCp<CpConfig = any> {
   spawnConfig?: SpawnAndTryIpcConfig;
 }
 export interface SpawnAndTryIpcConfig<CpConfig = any> extends SpawnConfig {
+  /** @deprecated use maxWaitTime4FirstIpc is enough */
   waitFirstIpc?: boolean;
   /** Max wait time for ipc message from Child Process */
   maxWaitTime?: number;
@@ -37,7 +38,7 @@ export interface SpawnAndTryIpcResponse<ResponseFromCp = any> {
 /**
  * An json object to describe child process related info, also remove node instance of ChildProcess as it's not Serielizeable
  */
-export interface SpawnRelatedInfo<ResponseFromCp = any>
+export interface SerializableSpawnInfo<ResponseFromCp = any>
   extends Omit<SpawnAndTryIpcResponse<ResponseFromCp>, 'childProcess'> {
   pid: number;
 }
@@ -77,7 +78,7 @@ export namespace CP {
   export interface DebugServerClusterResponse {
     pid: number;
     master: DebugServerResponse;
-    slaves: Array<SpawnRelatedInfo<DebugServerResponse>>;
+    slaves: Array<SerializableSpawnInfo<DebugServerResponse>>;
   }
 
   export interface DaemonConfig {
@@ -97,22 +98,41 @@ export namespace CP {
     };
   }
 
+  export interface DaemonSocketInfo {
+    path?: string;
+    server?: Server;
+  }
+  export interface DaemonCPStatus {
+    status: 'none' | 'start' | 'running' | 'stop' | 'exit';
+    currentAction: 'none' | 'start' | 'stop' | 'restart';
+    retryCount: number;
+    response?: SpawnAndTryIpcResponse;
+  }
+  export interface DaemonInfo<ResponseFromCp = any> {
+    pid: number;
+    config: InfoToCp<CP.DaemonConfig>;
+    socketPath: string;
+    cpStatus: Omit<DaemonCPStatus, 'response'> & {
+      response: SerializableSpawnInfo<ResponseFromCp>;
+    };
+  }
+
   /**
    * @deprecated
    * Status of Daemon running
    */
-  export interface DaemonStatus {
-    config?: DaemonConfig;
-    socketPath?: string;
-    socketServer?: Server;
-    /** process id of daemon process */
-    pid?: number;
-  }
-  export interface DaemonResponse extends Pick<DaemonStatus, 'socketPath' | 'pid'> {
-    // socketPath?: string;
-    // pid?: number;
-    // cpInfo?: SpawnRelatedInfo;
-  }
+  // export interface DaemonStatus {
+  //   config?: DaemonConfig;
+  //   socketPath?: string;
+  //   socketServer?: Server;
+  //   /** process id of daemon process */
+  //   pid?: number;
+  // }
+  // export interface DaemonResponse extends Pick<DaemonStatus, 'socketPath' | 'pid'> {
+  // socketPath?: string;
+  // pid?: number;
+  // cpInfo?: SpawnRelatedInfo;
+  // }
 
   export type ScriptFileName =
     | 'debug-server.ts'

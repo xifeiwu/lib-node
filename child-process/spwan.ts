@@ -3,7 +3,7 @@ import path from 'path';
 import {Serializable, spawn} from 'child_process';
 import {findClosestFile} from '../fs';
 import {isBoolean, isObject, isString} from '../external';
-import {InfoToCp, SpawnAndTryIpcConfig, SpawnAndTryIpcResponse, SpawnRelatedInfo} from '../types';
+import {InfoToCp, SpawnAndTryIpcConfig, SpawnAndTryIpcResponse, SerializableSpawnInfo} from '../types';
 
 /** Existing key with a null value means should give a default value by program */
 interface TsNodeOptions {
@@ -177,7 +177,7 @@ export async function spawnAndTryIpc<InfoToCp = any, ResponseFromCp = any>(
 
 export function serializeSpawnResponse<ResponseFromCp = any>(
   response: SpawnAndTryIpcResponse<ResponseFromCp>
-): SpawnRelatedInfo {
+): SerializableSpawnInfo {
   if (!response) {
     return null;
   }

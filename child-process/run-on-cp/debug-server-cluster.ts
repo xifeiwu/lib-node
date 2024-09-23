@@ -6,7 +6,7 @@ import {
   toUl,
   InfoToCp,
   serializeSpawnResponse,
-  SpawnRelatedInfo,
+  SerializableSpawnInfo,
 } from '../../index';
 import {spawnScript} from './service';
 import {out} from './service';
@@ -35,7 +35,7 @@ export async function start() {
   const {config = {}, spawnConfig} = ipcMessage;
   const {slaveCount = 3, port} = config;
   try {
-    const slaves: SpawnRelatedInfo<CP.DebugServerResponse>[] = [];
+    const slaves: SerializableSpawnInfo<CP.DebugServerResponse>[] = [];
     /** Start one by one to avoid port confliction */
     let cnt = 0;
     while (cnt++ < slaveCount) {
