@@ -8,7 +8,7 @@ import {
   getProcessInfo,
   killProcessByPid,
   spawnAndTryIpc,
-  toSpawnRelatedInfo,
+  serializeSpawnResponse,
   fromBuffer,
 } from '../../index';
 import {CP} from '../../types';
@@ -29,7 +29,7 @@ export async function testDebugServer() {
     },
   });
   const {responseFromCp, childProcess} = spawnInfo;
-  logColorful({}, toSpawnRelatedInfo(spawnInfo));
+  logColorful({}, serializeSpawnResponse(spawnInfo));
   assert.equal(responseFromCp.port, port);
   const {infoList, pidToInfo} = await getProcessInfo({filter: {pid: childProcess.pid}});
   assert.equal(infoList.length, 1);

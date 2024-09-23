@@ -25,7 +25,9 @@ export interface SpawnAndTryIpcConfig<CpConfig = any> extends SpawnConfig {
   maxWaitTime?: number;
   infoToCp?: InfoToCp<CpConfig>;
 }
-export interface SpawnAndTryIpcResponse<ResponseFromCp = any> extends SpawnConfig {
+export interface SpawnAndTryIpcResponse<ResponseFromCp = any> {
+  /** original config passed */
+  // config: SpawnAndTryIpcConfig;
   childProcess: ChildProcess;
   /** The time spawn event is triggered */
   spawnTime: string;
@@ -36,10 +38,8 @@ export interface SpawnAndTryIpcResponse<ResponseFromCp = any> extends SpawnConfi
  * An json object to describe child process related info, also remove node instance of ChildProcess as it's not Serielizeable
  */
 export interface SpawnRelatedInfo<ResponseFromCp = any>
-  extends SpawnConfig,
-    Omit<SpawnAndTryIpcResponse<ResponseFromCp>, 'childProcess'> {
+  extends Omit<SpawnAndTryIpcResponse<ResponseFromCp>, 'childProcess'> {
   pid: number;
-  fullCommand: string;
 }
 
 export namespace CP {
@@ -81,14 +81,14 @@ export namespace CP {
   }
 
   export interface DaemonConfig {
-    /** fullname or object of path info */
+    /** For socket server: fullname or object of path info */
     socketPath?:
       | {
           dirname: string;
           basename?: string;
         }
       | string;
-    /** Restart child process when it's exited */
+    /** For spwan child process: restart child process when it's exited */
     retry?: {
       /** max count of retry */
       maxCount?: number;
@@ -96,8 +96,9 @@ export namespace CP {
       minInterval?: number;
     };
   }
-  
+
   /**
+   * @deprecated
    * Status of Daemon running
    */
   export interface DaemonStatus {

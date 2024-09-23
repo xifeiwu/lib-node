@@ -1,7 +1,7 @@
 import fs from 'fs';
 import net from 'net';
 import path from 'path';
-import {InfoToCp, SpawnAndTryIpcConfig, SpawnAndTryIpcResponse} from '../../types';
+import {InfoToCp, SpawnAndTryIpcResponse} from '../../types';
 import {out} from './service';
 import {CP} from '../../types';
 import {
@@ -14,18 +14,30 @@ import {
   makeSureDirExist,
   spawnAndTryIpc,
   toBuffer,
-  toSpawnRelatedInfo,
+  serializeSpawnResponse,
   waitParentMessageFromIPC,
 } from '../../index';
 import {socketDir} from '../daemon/service';
 import {isString} from 'markdown-it/lib/common/utils';
 import {Socket} from 'net';
 
-let spawnConfig: SpawnAndTryIpcConfig;
-let cpInfo: SpawnAndTryIpcResponse;
-let cpStatus: 'none' | 'start' | 'running' | 'stop' | 'exit' = 'none';
-let currentAction: 'none' | 'start' | 'stop' | 'restart' = 'none';
-let retryCount = 0;
+interface SocketInfo {
+  path?: string;
+  server?: net.Server;
+}
+interface CPStatus {
+  status: 'none' | 'start' | 'running' | 'stop' | 'exit';
+  currentAction: 'none' | 'start' | 'stop' | 'restart';
+  retryCount: number;
+  response?: SpawnAndTryIpcResponse;
+}
+const daemonConfig: InfoToCp<CP.DaemonConfig> = {config: {}};
+let socketInfo: SocketInfo;
+const cpStatus: CPStatus = {
+  status: 'none',
+  currentAction: 'none',
+  retryCount: 0,
+};
 // let exitSignal: Promise<boolean>;
 let exitSignal: {
   resolve?: () => void;
@@ -35,27 +47,36 @@ let exitSignal: {
 // cpInfoHistory: SpawnAndTryIpcResponse[];
 // cpInfoHistory: [],
 
-const daemonStatus: CP.DaemonStatus = {};
+// const daemonStatus: CP.DaemonStatus = {};
 
 function getDaemonInfo() {
-  
+  const {response, ...rest} = cpStatus;
+  return {
+    daemonConfig,
+    socketPath: socketInfo.path,
+    cpStatus: {
+      ...rest,
+      response: serializeSpawnResponse(response),
+    },
+  };
 }
 
 async function onExit() {
-  // if (cpStatus === 'onExit') {
-  //   throw new Error(`Already in status: ${cpStatus}`);
+  // if (cpInfo.status === 'onExit') {
+  //   throw new Error(`Already in status: ${cpInfo.status}`);
   // }
-  cpStatus = 'exit';
-  const {config: {retry = {}} = {}} = daemonStatus;
-  const {spawnTime} = cpInfo ?? {};
-  // const {status, nextAction} = cpStatus;
+  const {response, currentAction} = cpStatus;
+  cpStatus.status = 'exit';
+  const {config: {retry = {}} = {}} = daemonConfig;
+  const {spawnTime} = response ?? {};
+  // const {status, nextAction} = cpInfo.status;
   const {minInterval, maxCount} = retry;
   let delay = 0;
   if (isNumber(minInterval)) {
     delay = minInterval - (Date.now() - new Date(spawnTime).getTime());
   }
   function letChildDie() {
-    cpStatus = 'none';
+    cpStatus.status = 'none';
     if (exitSignal.resolve) {
       exitSignal.resolve();
     }
@@ -65,12 +86,12 @@ async function onExit() {
       process.nextTick(res);
     });
     await trySpawn();
-    retryCount++;
+    cpStatus.retryCount++;
   }
   if (currentAction === 'stop' || currentAction === 'restart') {
     letChildDie();
   } else if (currentAction === 'start') {
-    if (isNumber(maxCount) && retryCount < maxCount) {
+    if (isNumber(maxCount) && cpStatus.retryCount < maxCount) {
       if (delay > 0) {
         setTimeout(restartChild, delay);
       } else {
@@ -93,14 +114,14 @@ async function waitExitComplete() {
 
 async function trySpawn() {
   // Only can start new cp when cp status is not equal 'none'
-  if (cpStatus !== 'none') {
-    throw new Error(`We can't start child process in this status: ${cpStatus}`);
+  if (cpStatus.status !== 'none') {
+    throw new Error(`We can't start child process in this status: ${cpStatus.status}`);
   }
+  const {spawnConfig} = daemonConfig;
   if (!spawnConfig) {
     throw new Error(`Please provide spawnConfig`);
   }
-  cpInfo = await spawnAndTryIpc(spawnConfig);
-  cpStatus = 'running';
+  const cpInfo = await spawnAndTryIpc(spawnConfig);
   const {childProcess} = cpInfo;
   childProcess.once('exit', code => {
     onExit();
@@ -110,34 +131,36 @@ async function trySpawn() {
 
 async function start() {
   const cpInfo = await trySpawn();
-  currentAction = 'start';
-  retryCount = 0;
-  return cpInfo;
+  cpStatus.status = 'running';
+  cpStatus.response = cpInfo;
+  cpStatus.currentAction = 'start';
+  cpStatus.retryCount = 0;
 }
 
 async function stop() {
-  if (cpStatus !== 'running') {
+  if (cpStatus.status !== 'running') {
     throw new Error(`Can only stop child process when it's in status: running`);
   }
-  if (!cpInfo) {
+  const {response} = cpStatus;
+  if (!response) {
     throw new Error(`cpInfo is null`);
   }
-  const {childProcess} = cpInfo;
+  const {childProcess} = response;
   if (!childProcess) {
     throw new Error(`childProcess is null`);
   }
-  cpStatus = 'stop';
-  currentAction = 'stop';
+  cpStatus.status = 'stop';
+  cpStatus.currentAction = 'stop';
   await killProcessByPid([childProcess.pid]);
   await waitExitComplete();
 }
 
 async function restart() {
-  currentAction = 'restart';
-  if (cpStatus === 'running') {
+  cpStatus.currentAction = 'restart';
+  if (cpStatus.status === 'running') {
     await stop();
   }
-  return await start();
+  await start();
 }
 
 function checkPermissionBeforeCreateDir(dirname: string) {
@@ -174,10 +197,10 @@ async function handleSocketData(chunk: Buffer, socket: Socket) {
         break;
     }
   } else {
-    socket.write(toBuffer({daemonStatus, cpInfo: toSpawnRelatedInfo(cpInfo)}));
+    socket.write(toBuffer(getDaemonInfo()));
   }
 }
-async function startSocketServer(socketPath: CP.DaemonConfig['socketPath']) {
+function getSocketPath(socketPath?: CP.DaemonConfig['socketPath']) {
   /** use argument if ipcMessage is not passed */
   if (socketPath === undefined && Array.isArray(process.argv)) {
     const args = process.argv.slice(2);
@@ -206,25 +229,31 @@ async function startSocketServer(socketPath: CP.DaemonConfig['socketPath']) {
   if (fs.existsSync(socketPath)) {
     throw new Error(`socketPath already exist, can not reuse an exsiting file`);
   }
+  return socketPath;
+}
+async function startSocketServer(pathConfig?: CP.DaemonConfig['socketPath']) {
+  const socketPath = getSocketPath(pathConfig);
   const server = net.createServer();
   server.listen(socketPath);
   server.on('connection', socket => {
     try {
-      // socket.writable && socket.write(toBuffer(response));
-      socket.on('data', chunk => {
-        const data = fromBuffer(chunk, 'json') as {action: 'ping'};
-        if (data?.action === 'ping') {
-          socket.writable && socket.write(toBuffer('pong'));
-        }
-      });
+      /** return daemon info on connection */
+      socket.write(toBuffer(getDaemonInfo()));
     } catch (err) {
       socket.end(err.message);
     }
+    socket.on('data', async chunk => {
+      try {
+        await handleSocketData(chunk, socket);
+      } catch (err) {
+        out(err.message);
+      }
+    });
   });
-  return new Promise<Pick<CP.DaemonStatus, 'socketPath' | 'socketServer'>>((res, rej) => {
+  return new Promise<SocketInfo>((res, rej) => {
     server.on('listening', () => {
       // out(response);
-      res({socketPath, socketServer: server});
+      res({path: socketPath, server});
     });
     server.on('error', err => {
       out(err.message);
@@ -234,20 +263,30 @@ async function startSocketServer(socketPath: CP.DaemonConfig['socketPath']) {
 }
 
 async function onInfo(info?: InfoToCp<CP.DaemonConfig>) {
-  const {config = {}} = info;
-  daemonStatus.pid = process.pid;
-  daemonStatus.config = config;
-  spawnConfig = info.spawnConfig;
-  if (daemonStatus.socketPath !== config.socketPath) {
-    if (daemonStatus.socketServer) {
-      try {
-        daemonStatus.socketServer.close();
-      } catch (err) {
-        /** handle Error */
+  if (info === undefined) {
+    return;
+  }
+  const {config = {}, spawnConfig} = info;
+  if (spawnConfig !== undefined) {
+    daemonConfig.spawnConfig = spawnConfig;
+  }
+  for (const key of Object.keys(config) as Array<keyof CP.DaemonConfig>) {
+    if (key === 'socketPath') {
+      const newSocketPath = getSocketPath(config.socketPath);
+      /** restart a new socket server is socketPath is changed */
+      if (socketInfo.path !== newSocketPath) {
+        if (socketInfo.server) {
+          try {
+            socketInfo.server.close();
+          } catch (err) {
+            /** handle Error */
+          }
+        }
+        socketInfo = await startSocketServer(config.socketPath);
       }
+    } else {
+      daemonConfig.config[key] = config[key];
     }
-    const {socketPath} = await startSocketServer(config.socketPath);
-    daemonStatus.socketPath = socketPath;
   }
 }
 /**
@@ -256,13 +295,9 @@ async function onInfo(info?: InfoToCp<CP.DaemonConfig>) {
  */
 export async function main(args: any[]) {
   const ipcMessage: InfoToCp<CP.DaemonConfig> = await waitParentMessageFromIPC<CP.DaemonConfig>();
+  socketInfo = await startSocketServer(ipcMessage?.config?.socketPath);
   await onInfo(ipcMessage);
-  // const {config = {}} = ipcMessage;
-  // daemonStatus.pid = process.pid;
-  // daemonStatus.config = config;
-  // spawnConfig = ipcMessage.spawnConfig;
-  // const {socketPath} = await startSocketServer(config.socketPath);
-  // daemonStatus.socketPath = socketPath;
+  out(getDaemonInfo());
 }
 
 async function run() {

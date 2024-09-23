@@ -132,7 +132,6 @@ export async function spawnAndTryIpc<InfoToCp = any, ResponseFromCp = any>(
     childProcess.send(infoToCp);
   }
   const info: SpawnAndTryIpcResponse<ResponseFromCp> = {
-    ...config,
     spawnTime: '',
     childProcess,
   };
@@ -176,19 +175,15 @@ export async function spawnAndTryIpc<InfoToCp = any, ResponseFromCp = any>(
   });
 }
 
-export function toSpawnRelatedInfo<ResponseFromCp = any>(
+export function serializeSpawnResponse<ResponseFromCp = any>(
   response: SpawnAndTryIpcResponse<ResponseFromCp>
 ): SpawnRelatedInfo {
   if (!response) {
     return null;
   }
-  const {childProcess, command, args, ...rest} = response;
-  const fullCommand = [command, ...args].join(' ');
+  const {childProcess, ...rest} = response;
   return {
     pid: childProcess.pid,
-    command,
-    args,
-    fullCommand,
     ...rest,
   };
 }

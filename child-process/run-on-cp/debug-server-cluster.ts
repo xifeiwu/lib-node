@@ -5,7 +5,7 @@ import {
   toHtml,
   toUl,
   InfoToCp,
-  toSpawnRelatedInfo,
+  serializeSpawnResponse,
   SpawnRelatedInfo,
 } from '../../index';
 import {spawnScript} from './service';
@@ -40,7 +40,7 @@ export async function start() {
     let cnt = 0;
     while (cnt++ < slaveCount) {
       const response = await spawnScript<CP.DebugServerResponse>('debug-server.ts', spawnConfig);
-      slaves.push(toSpawnRelatedInfo(response));
+      slaves.push(serializeSpawnResponse(response));
     }
 
     const originToSalve = slaves.reduce((sum, slave) => {
