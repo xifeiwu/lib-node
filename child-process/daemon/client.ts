@@ -28,6 +28,30 @@ export async function ping(
   }
 }
 
+
+export async function checkDaemonSocket(
+  socketPath: string,
+  config?: {
+    closeActive?: boolean;
+    closeInActive?: boolean;
+  }
+): Promise<boolean | null> {
+  const {closeInActive = true, closeActive = false} = config ?? {};
+  if (!fs.existsSync(socketPath)) {
+    return null;
+  }
+  let client: Socket;
+  try {
+    client = await startSocketClient(socketPath);
+    return true;
+  } catch (err) {
+    closeInActive && fs.unlinkSync(socketPath);
+    return false;
+  } finally {
+    client && client.end();
+  }
+}
+
 export async function checkSocketActivity(
   dirname?: string,
   config?: {
@@ -48,15 +72,11 @@ export async function checkSocketActivity(
   const active: string[] = [];
   const deactive: string[] = [];
   for (const socketPath of socketFullPathList) {
-    let client: Socket;
-    try {
-      client = await startSocketClient(socketPath);
+    const result = await checkDaemonSocket(socketPath, config);
+    if (result) {
       active.push(socketPath);
-    } catch (err) {
-      closeInActive && fs.unlinkSync(socketPath);
+    } else {
       deactive.push(socketPath);
-    } finally {
-      client && client.end();
     }
   }
   return {active, deactive};
