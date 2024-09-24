@@ -22,7 +22,11 @@ export interface InfoToCp<CpConfig = any> {
 export interface SpawnAndTryIpcConfig<CpConfig = any> extends SpawnConfig {
   /** Info send to child process if process.send is enabled */
   infoToCp?: InfoToCp<CpConfig>;
-  /** Max wait time for ipc message from Child Process */
+  /**
+   * Max wait time for ipc message from Child Process
+   * If maxWaitTime4Ipc is not equal undefined, main process will wait response from child process
+   * until maxWaitTime4Ipc second is passed
+   */
   maxWaitTime4Ipc?: number;
 }
 export interface SpawnAndTryIpcResponse<ResponseFromCp = any> {
@@ -96,7 +100,6 @@ export namespace CP {
       minInterval?: number;
     };
   }
-
   export interface DaemonSocketInfo {
     path?: string;
     server?: Server;
@@ -115,7 +118,6 @@ export namespace CP {
       response: SerializableSpawnInfo<ResponseFromCp>;
     };
   }
-
   type Action = 'start' | 'stop' | 'restart' | 'info';
   export type DaemonAction = {
     action: Action | 'ping';

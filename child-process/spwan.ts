@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import {Serializable, spawn} from 'child_process';
 import {findClosestFile} from '../fs';
-import {isBoolean, isObject, isString} from '../external';
+import {isBoolean, isNumber, isObject, isString} from '../external';
 import {InfoToCp, SpawnAndTryIpcConfig, SpawnAndTryIpcResponse, SerializableSpawnInfo} from '../types';
 
 /** Existing key with a null value means should give a default value by program */
@@ -120,17 +120,13 @@ export async function waitParentMessageFromIPC<CpConfig>(config?: {maxWait?: num
 export async function spawnAndTryIpc<InfoToCp = any, ResponseFromCp = any>(
   config: SpawnAndTryIpcConfig<InfoToCp>
 ): Promise<SpawnAndTryIpcResponse<ResponseFromCp>> {
-  const {command, args, spawnOptions, maxWaitTime4Ipc = 60000, infoToCp} = config;
+  const {command, args, spawnOptions, maxWaitTime4Ipc, infoToCp} = config;
   const childProcess = spawn(command, args, spawnOptions);
   const supportIpc = Boolean(childProcess.send);
   if (infoToCp && !supportIpc) {
     throw new Error(`Please set ipc channel in spawnOption.stdio, or set infoToCp to false.`);
   }
-  /**
-   * Notice of supportIpc
-   * For Main process, **must** send config to child process, and wait for response from child process
-   * For child process, receive ipc message, and **must** send response to Main process.
-   */
+  /** Send message to child process when supportIpc and infoToCp exist */
   if (supportIpc && infoToCp) {
     childProcess.send(infoToCp);
   }
@@ -153,11 +149,17 @@ export async function spawnAndTryIpc<InfoToCp = any, ResponseFromCp = any>(
       info.responseFromCp = chunk as ResponseFromCp;
       res(info);
     };
-    /** Child process must send process info when run successful, or process will hang here. */
-    if (supportIpc) {
+    /** Wait message of child process from IPC channel when supportIpc and maxWaitTime4Ipc is not undefined */
+    if (supportIpc && isNumber(maxWaitTime4Ipc)) {
       const timeOutTag = setTimeout(
-        () => rej(new Error(`No message received from child process within ${maxWaitTime4Ipc}ms`)),
-        maxWaitTime4Ipc
+        () =>
+          res({
+            ...info,
+            responseFromCp: new Error(
+              `No message received from child process within ${maxWaitTime4Ipc}s`
+            ) as ResponseFromCp,
+          }),
+        Math.abs(maxWaitTime4Ipc) * 1000
       );
       childProcess.on('message', chunk => {
         messageLisnter(chunk);
