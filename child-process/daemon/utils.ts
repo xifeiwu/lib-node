@@ -10,9 +10,17 @@ export interface DetachedDaemonConfig extends Omit<CP.DaemonConfig, 'socketPath'
 
 export async function startDetachedDaemon(
   daemonConfig: DetachedDaemonConfig,
-  cpSpawnConfig: SpawnAndTryIpcConfig
+  cpSpawnConfig: SpawnAndTryIpcConfig,
+  featureConfig?: {debug?: boolean}
 ) {
   const {daemonKey, ...restDaemonConfig} = daemonConfig;
+  const {debug = false} = featureConfig ?? {};
+  if (debug) {
+    if (!cpSpawnConfig.spawnOptions) {
+      cpSpawnConfig.spawnOptions = {};
+    }
+    cpSpawnConfig.spawnOptions.stdio = [0, 1, 2, 'ipc'];
+  }
   const spawnConfig4Daemon = getSpawnConfigByScriptName<CP.DaemonConfig>('daemon.ts', {
     /** args key is used for killing Zombie Daemon Process */
     args: ['startDetachedDaemon'],
@@ -26,15 +34,16 @@ export async function startDetachedDaemon(
       },
       spawnConfig: cpSpawnConfig,
     },
-    maxWaitTime4Ipc: 20,
-    spawnOptions: {stdio: ['ignore', 'ignore', 'ignore', 'ipc']},
+    maxWaitTime4Ipc: debug ? 120 : 20,
+    spawnOptions: {stdio: debug ? [0, 1, 2, 'ipc'] : ['ignore', 'ignore', 'ignore', 'ipc']},
   });
   const spawnResponse = await spawnAndTryIpc<CP.DaemonConfig, CP.DaemonResponseOnAction>(spawnConfig4Daemon);
   const {childProcess, responseFromCp} = spawnResponse;
   if (responseFromCp.type === 'error') {
     console.log(responseFromCp.message);
-  } else {
-    childProcess.disconnect();
+  }
+  if (childProcess && !debug) {
+    childProcess.disconnect && childProcess.disconnect();
     childProcess.unref();
   }
   // console.log(`typeof responseFromCp`);
