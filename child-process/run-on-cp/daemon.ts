@@ -16,6 +16,7 @@ import {
   toBuffer,
   serializeSpawnResponse,
   waitParentMessageFromIPC,
+  startSocketClient,
 } from '../../index';
 import {socketDir} from '../daemon/service';
 import {isString} from 'markdown-it/lib/common/utils';
@@ -204,6 +205,23 @@ async function handleIncomingMessage(chunk: Buffer): Promise<CP.DaemonResponseOn
     return {type: 'unknown', data: getDaemonInfo()};
   }
 }
+
+export async function checkDaemonSocketActivity(socketPath: string): Promise<boolean | null> {
+  const closeInActive = true;
+  if (!fs.existsSync(socketPath)) {
+    return null;
+  }
+  let client: Socket;
+  try {
+    client = await startSocketClient(socketPath);
+    return true;
+  } catch (err) {
+    closeInActive && fs.unlinkSync(socketPath);
+    return false;
+  } finally {
+    client && client.end();
+  }
+}
 function getSocketPath(socketPath?: CP.DaemonConfig['socketPath']) {
   /** use argument if ipcMessage is not passed */
   if (socketPath === undefined && Array.isArray(process.argv)) {
@@ -230,9 +248,6 @@ function getSocketPath(socketPath?: CP.DaemonConfig['socketPath']) {
   }
   checkPermissionBeforeCreateDir(dirname);
   socketPath = path.join(dirname, basename);
-  if (fs.existsSync(socketPath)) {
-    throw new Error(`socketPath already exist, can not reuse an exsiting file`);
-  }
   return socketPath;
 }
 
@@ -246,15 +261,21 @@ function getErrorResponse(message: string): CP.DaemonResponseError {
 
 async function startSocketServer(pathConfig?: CP.DaemonConfig['socketPath']) {
   const socketPath = getSocketPath(pathConfig);
+  if (fs.existsSync(socketPath)) {
+    const isActive = await checkDaemonSocketActivity(socketPath);
+    if (isActive) {
+      throw new Error(`socketPath is listened by an active socket server`);
+    }
+  }
   const server = net.createServer();
   server.listen(socketPath);
   server.on('connection', socket => {
-    try {
-      /** return daemon info on connection */
-      socket.write(toBuffer(getDaemonInfo()));
-    } catch (err) {
-      socket.end(err.message);
-    }
+    // try {
+    //   /** return daemon info on connection */
+    //   socket.write(toBuffer(getDaemonInfo()));
+    // } catch (err) {
+    //   socket.end(err.message);
+    // }
     socket.on('data', async chunk => {
       try {
         const response = await handleIncomingMessage(chunk);
