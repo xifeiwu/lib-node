@@ -133,7 +133,7 @@ async function start() {
 
 async function stop() {
   if (cpStatus.status !== 'running') {
-    throw new Error(`Can only stop child process when it's in status: running`);
+    throw new Error(`Child process is not running, it's in status is: ${cpStatus.status}`);
   }
   const {response} = cpStatus;
   if (!response) {
@@ -143,9 +143,10 @@ async function stop() {
   if (!childProcess) {
     throw new Error(`childProcess is null`);
   }
+  await killProcessByPid([childProcess.pid]);
+  /** change status after killProcessByPid success */
   cpStatus.status = 'stop';
   cpStatus.currentAction = 'stop';
-  await killProcessByPid([childProcess.pid]);
   await waitExitComplete();
 }
 
@@ -173,7 +174,7 @@ async function handleIncomingMessage(chunk: Buffer): Promise<CP.DaemonResponseOn
       case 'stop':
         await stop();
         return {
-          type: 'restart',
+          type: 'stop',
           data: getDaemonInfo(),
         };
       case 'start':
@@ -279,7 +280,9 @@ async function startSocketServer(pathConfig?: CP.DaemonConfig['socketPath']) {
     socket.on('data', async chunk => {
       try {
         const response = await handleIncomingMessage(chunk);
-        socket.write(toBuffer(response));
+        if (response) {
+          socket.write(toBuffer(response));
+        }
       } catch (err) {
         socket.write(toBuffer(getErrorResponse(err.message)));
         out(err.message);
