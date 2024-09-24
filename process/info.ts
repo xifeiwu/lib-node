@@ -246,9 +246,9 @@ export async function killProcessByPid(
   pidList: Array<number | string>,
   options?: KillProcessByPidOptions
 ): Promise<boolean> {
-  const {doubleConfirm, killChildren = true} = options ?? {};
-  const pidToInfo = options.pidToInfo
-    ? options.pidToInfo
+  const {doubleConfirm, killChildren = true, pidToInfo: pidToInfoInOptions} = options ?? {};
+  const pidToInfo = pidToInfoInOptions
+    ? pidToInfoInOptions
     : await getProcessInfoMap({appendChildInfo: killChildren});
   pidList = killChildren ? await filterOutChildProcessOfPidList(pidList, pidToInfo) : pidList;
   const infoListToKill = pidList.map(pid => pidToInfo[pid]).filter(Boolean);
