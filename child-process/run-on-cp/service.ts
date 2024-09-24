@@ -15,7 +15,13 @@ import {getTsParams, SpawnAndTryIpcResponse} from '../../index';
 /** For child process */
 export function out(value: any) {
   toConsole(value);
-  process.send && process.send(value);
+  if (process.connected && process.send) {
+    /** Child process will exit by the error EPipe if the error is not catched here */
+    process.send(value, err => {
+      console.log(`err`);
+      console.log(err);
+    });
+  }
 }
 
 export function getScriptFullpath(basename: CP.ScriptFileName) {
@@ -67,7 +73,7 @@ export function getSpawnConfigByScriptName<CpConfig = any>(
   basename: CP.ScriptFileName,
   config?: CP.SpawnTsScriptConfig<CpConfig>
 ): SpawnAndTryIpcConfig<CpConfig> {
-  const {args = [], spawnOptions,  infoToCp} = config ?? {};
+  const {args = [], ...restConfig} = config ?? {};
   const scriptPath = getScriptFullpath(basename);
   const suffix = basename.split('.').pop().toLowerCase();
   let command = '';
@@ -82,8 +88,7 @@ export function getSpawnConfigByScriptName<CpConfig = any>(
   return {
     command,
     args: params,
-    spawnOptions,
-    infoToCp,
+    ...restConfig,
   };
 }
 

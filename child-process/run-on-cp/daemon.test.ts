@@ -28,3 +28,27 @@ export async function runEmptyDaemon() {
   childProcess.kill();
   fs.unlinkSync(socketPath);
 }
+
+export async function daemonDebugServer() {
+  const spawnConfigDebugServer = getSpawnConfigByScriptName('debug-server.ts', {
+    infoToCp: {},
+    args: ['daemonDebugServer'],
+    spawnOptions: {stdio: ['pipe', 'pipe', 'pipe', 'ipc']},
+  });
+  const spawnConfig4Daemon = getSpawnConfigByScriptName<CP.DaemonConfig>('daemon.ts', {
+    args: ['daemonDebugServer'],
+    infoToCp: {
+      config: {
+        retry: {
+          maxCount: 10,
+        },
+      },
+      spawnConfig: spawnConfigDebugServer,
+    },
+    spawnOptions: {stdio: ['ipc']},
+  });
+  const {childProcess, responseFromCp} = await spawnAndTryIpc<CP.DaemonConfig, CP.DaemonInfo>(
+    spawnConfig4Daemon
+  );
+  logColorful({}, responseFromCp);
+}
