@@ -161,9 +161,8 @@ export async function spawnAndTryIpc<InfoToCp = any, ResponseFromCp = any>(
           }),
         Math.abs(maxWaitTime4Ipc) * 1000
       );
-      childProcess.on('message', chunk => {
+      childProcess.once('message', chunk => {
         messageLisnter(chunk);
-        childProcess.off('message', messageLisnter);
         clearTimeout(timeOutTag);
       });
     } else {
