@@ -1,2 +1,2 @@
-export * from './spwan';
+export * from './spawn';
 export * from './run-on-cp';

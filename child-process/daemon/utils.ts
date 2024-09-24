@@ -2,7 +2,7 @@ import path from 'path';
 import {CP, InfoToCp, SpawnAndTryIpcConfig} from '../../types';
 import {getSpawnConfigByScriptName} from '../run-on-cp';
 import {socketDir, socketFileSuffix} from './service';
-import {spawnAndTryIpc} from '../spwan';
+import {spawnAndTryIpc} from '../spawn';
 
 export interface DetachedDaemonConfig extends Omit<CP.DaemonConfig, 'socketPath'> {
   /** For socket server: fullname or object of path info */
