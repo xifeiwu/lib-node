@@ -1,5 +1,5 @@
 import {logColorful} from '../../log';
-import {checkDaemonSocketActivityByDir, ping, info, stop} from './client';
+import {checkDaemonSocketActivityByDir, ping, info, stop, start} from './client';
 import {socketDir} from './service';
 
 const targetSocketPath = '/Users/wuxifei/.daemon/sockets/debug-server.socket';
@@ -14,6 +14,11 @@ export async function testInfo() {
 }
 export async function testStop() {
   const response = await stop(targetSocketPath);
+  logColorful({}, response);
+}
+
+export async function testStart() {
+  const response = await start(targetSocketPath);
   logColorful({}, response);
 }
 export async function testCheckSocketActivity() {

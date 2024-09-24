@@ -16,7 +16,8 @@ export async function testStartDetachedDaemon() {
     {
       daemonKey: 'debug-server',
     },
-    spawnConfigDebugServer
+    spawnConfigDebugServer,
+    {debug: true}
   );
   logColorful({}, spawnResponse);
 }

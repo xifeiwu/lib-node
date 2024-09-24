@@ -80,7 +80,7 @@ export async function info(socketPath: string, config?: CheckSocketActivityConfi
 }
 export async function start(
   socketPath: string,
-  infoToCp: InfoToCp<CP.DaemonConfig>,
+  infoToCp?: InfoToCp<CP.DaemonConfig>,
   config?: CheckSocketActivityConfig
 ) {
   return await chatWithDaemon({action: 'start', info: infoToCp}, socketPath, config);
