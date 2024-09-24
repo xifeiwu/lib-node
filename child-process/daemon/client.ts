@@ -3,38 +3,15 @@ import path from 'path';
 import {socketDir, socketFileSuffix} from './service';
 import {getFileList, startSocketClient, fromBuffer, toBuffer} from '../../index';
 import {Socket} from 'net';
-import {CP} from '../../types';
+import {CP, InfoToCp} from '../../types';
 
-export async function ping(
-  socketPath: string,
-  config?: {
-    closeOnInActive?: boolean;
-  }
-) {
-  const {closeOnInActive = true} = config ?? {};
-  try {
-    const action: CP.DaemonAction = {action: 'ping'};
-    const client = await startSocketClient(socketPath);
-    client.end(toBuffer(action));
-    return await new Promise<CP.DaemonInfo>((res, rej) => {
-      client.once('data', chunk => {
-        res(fromBuffer(chunk, 'json') as CP.DaemonInfo);
-      });
-    });
-  } catch (err) {
-    if (closeOnInActive) {
-      fs.unlinkSync(socketPath);
-    }
-  }
+interface CheckSocketActivityConfig {
+  closeActive?: boolean;
+  closeInActive?: boolean;
 }
-
-
-export async function checkDaemonSocket(
+export async function checkDaemonSocketActivity(
   socketPath: string,
-  config?: {
-    closeActive?: boolean;
-    closeInActive?: boolean;
-  }
+  config?: CheckSocketActivityConfig
 ): Promise<boolean | null> {
   const {closeInActive = true, closeActive = false} = config ?? {};
   if (!fs.existsSync(socketPath)) {
@@ -52,13 +29,7 @@ export async function checkDaemonSocket(
   }
 }
 
-export async function checkSocketActivity(
-  dirname?: string,
-  config?: {
-    closeActive?: boolean;
-    closeInActive?: boolean;
-  }
-) {
+export async function checkDaemonSocketActivityByDir(dirname?: string, config?: CheckSocketActivityConfig) {
   dirname = dirname ?? socketDir;
   const {closeInActive = true, closeActive = false} = config ?? {};
   if (!fs.existsSync(dirname)) {
@@ -72,7 +43,7 @@ export async function checkSocketActivity(
   const active: string[] = [];
   const deactive: string[] = [];
   for (const socketPath of socketFullPathList) {
-    const result = await checkDaemonSocket(socketPath, config);
+    const result = await checkDaemonSocketActivity(socketPath, config);
     if (result) {
       active.push(socketPath);
     } else {
@@ -80,4 +51,47 @@ export async function checkSocketActivity(
     }
   }
   return {active, deactive};
+}
+
+export async function chatWithDaemon(
+  info: CP.DaemonAction,
+  socketPath: string,
+  config?: CheckSocketActivityConfig
+) {
+  const isActive = await checkDaemonSocketActivity(socketPath, config);
+  if (!isActive) {
+    return null;
+  }
+  const client = await startSocketClient(socketPath);
+  client.end(toBuffer(info));
+  const response = await new Promise<CP.DaemonInfo>((res, rej) => {
+    client.once('data', chunk => {
+      res(fromBuffer(chunk, 'json') as CP.DaemonInfo);
+    });
+  });
+  return response;
+}
+
+export async function ping(socketPath: string, config?: CheckSocketActivityConfig) {
+  return await chatWithDaemon({action: 'ping'}, socketPath, config);
+}
+export async function start(
+  socketPath: string,
+  infoToCp: InfoToCp<CP.DaemonConfig>,
+  config?: CheckSocketActivityConfig
+) {
+  return await chatWithDaemon({action: 'start', info: infoToCp}, socketPath, config);
+}
+export async function stop(socketPath: string, config?: CheckSocketActivityConfig) {
+  return await chatWithDaemon({action: 'stop'}, socketPath, config);
+}
+export async function restart(
+  socketPath: string,
+  infoToCp?: InfoToCp<CP.DaemonConfig>,
+  config?: CheckSocketActivityConfig
+) {
+  return await chatWithDaemon({action: 'restart', info: infoToCp}, socketPath, config);
+}
+export async function info(socketPath: string, config?: CheckSocketActivityConfig) {
+  return await chatWithDaemon({action: 'info'}, socketPath, config);
 }
