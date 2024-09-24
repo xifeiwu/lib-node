@@ -75,6 +75,9 @@ export async function chatWithDaemon(
 export async function ping(socketPath: string, config?: CheckSocketActivityConfig) {
   return await chatWithDaemon({action: 'ping'}, socketPath, config);
 }
+export async function info(socketPath: string, config?: CheckSocketActivityConfig) {
+  return await chatWithDaemon({action: 'info'}, socketPath, config);
+}
 export async function start(
   socketPath: string,
   infoToCp: InfoToCp<CP.DaemonConfig>,
@@ -91,7 +94,4 @@ export async function restart(
   config?: CheckSocketActivityConfig
 ) {
   return await chatWithDaemon({action: 'restart', info: infoToCp}, socketPath, config);
-}
-export async function info(socketPath: string, config?: CheckSocketActivityConfig) {
-  return await chatWithDaemon({action: 'info'}, socketPath, config);
 }

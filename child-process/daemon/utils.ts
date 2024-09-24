@@ -1,8 +1,7 @@
-import path from 'path';
-import {CP, InfoToCp, SpawnAndTryIpcConfig} from '../../types';
+import {CP, SpawnAndTryIpcConfig} from '../../types';
 import {getSpawnConfigByScriptName} from '../run-on-cp';
 import {socketDir, socketFileSuffix} from './service';
-import {spawnAndTryIpc} from '../spawn';
+import {serializeSpawnResponse, spawnAndTryIpc} from '../spawn';
 
 export interface DetachedDaemonConfig extends Omit<CP.DaemonConfig, 'socketPath'> {
   /** For socket server: fullname or object of path info */
@@ -11,7 +10,7 @@ export interface DetachedDaemonConfig extends Omit<CP.DaemonConfig, 'socketPath'
 
 export async function startDetachedDaemon(
   daemonConfig: DetachedDaemonConfig,
-  spawnCpConfig: SpawnAndTryIpcConfig
+  cpSpawnConfig: SpawnAndTryIpcConfig
 ) {
   const {daemonKey, ...restDaemonConfig} = daemonConfig;
   const spawnConfig4Daemon = getSpawnConfigByScriptName<CP.DaemonConfig>('daemon.ts', {
@@ -25,13 +24,21 @@ export async function startDetachedDaemon(
         },
         ...restDaemonConfig,
       },
-      spawnConfig: spawnCpConfig,
+      spawnConfig: cpSpawnConfig,
     },
-    spawnOptions: {stdio: ['ipc']},
+    maxWaitTime4Ipc: 20,
+    spawnOptions: {stdio: ['ignore', 'ignore', 'ignore', 'ipc']},
   });
-  const spawnResponse = await spawnAndTryIpc(spawnConfig4Daemon);
+  const spawnResponse = await spawnAndTryIpc<CP.DaemonConfig, CP.DaemonResponseOnAction>(spawnConfig4Daemon);
   const {childProcess, responseFromCp} = spawnResponse;
-  childProcess.disconnect();
-  childProcess.unref();
-  return spawnResponse;
+  if (responseFromCp.type === 'error') {
+    console.log(responseFromCp.message);
+  } else {
+    childProcess.disconnect();
+    childProcess.unref();
+  }
+  // console.log(`typeof responseFromCp`);
+  // console.log(typeof responseFromCp);
+  // console.log(responseFromCp instanceof Error);
+  return serializeSpawnResponse(spawnResponse);
 }
