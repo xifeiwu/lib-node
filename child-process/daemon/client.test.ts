@@ -1,4 +1,5 @@
 import {logColorful} from '../../log';
+import {getSpawnConfigByScriptName} from '../run-on-cp';
 import {checkDaemonSocketActivityByDir, ping, info, stop, start} from './client';
 import {socketDir} from './service';
 
@@ -19,6 +20,20 @@ export async function testStop() {
 
 export async function testStart() {
   const response = await start(targetSocketPath);
+  logColorful({}, response);
+}
+
+export async function testStartWithSpawnInfo() {
+  const spawnConfigDebugServer = getSpawnConfigByScriptName('debug-server.ts', {
+    args: [],
+    spawnOptions: {stdio: ['pipe', 'pipe', 'pipe', 'ipc']},
+    infoToCp: {},
+    maxWaitTime4Ipc: 10,
+  });
+  const response = await start(targetSocketPath, {
+    config: {socketPath: {basename: 'debug-server.socket'}},
+    spawnConfig: spawnConfigDebugServer,
+  });
   logColorful({}, response);
 }
 export async function testCheckSocketActivity() {

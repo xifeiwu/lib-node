@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import {socketDir, socketFileSuffix} from './service';
-import {getFileList, startSocketClient, fromBuffer, toBuffer} from '../../index';
+import {getFileList, startSocketClient, fromBuffer, toBuffer, getSocketInfo} from '../../index';
 import {Socket} from 'net';
 import {CP, InfoToCp} from '../../types';
 
@@ -25,7 +25,7 @@ export async function checkDaemonSocketActivity(
     closeInActive && fs.unlinkSync(socketPath);
     return false;
   } finally {
-    client && client.end();
+    client && client.destroy();
   }
 }
 
@@ -63,12 +63,13 @@ export async function chatWithDaemon(
     return null;
   }
   const client = await startSocketClient(socketPath);
-  client.end(toBuffer(info));
+  client.write(toBuffer(info));
   const response = await new Promise<CP.DaemonInfo>((res, rej) => {
     client.once('data', chunk => {
       res(fromBuffer(chunk, 'json') as CP.DaemonInfo);
     });
   });
+  client.destroy();
   return response;
 }
 
