@@ -1,6 +1,6 @@
 import {CP, SpawnAndTryIpcConfig} from '../../types';
 import {getSpawnConfigByScriptName} from '../run-on-cp';
-import {socketDir, socketFileSuffix} from './service';
+import {DaemonSocketDir, SocketFileSuffix} from './service';
 import {serializeSpawnResponse, spawnAndTryIpc} from '../spawn';
 
 export interface DetachedDaemonConfig extends Omit<CP.DaemonConfig, 'socketPath'> {
@@ -27,8 +27,8 @@ export async function startDetachedDaemon(
     infoToCp: {
       config: {
         socketPath: {
-          dirname: socketDir,
-          basename: daemonKey + socketFileSuffix,
+          dirname: DaemonSocketDir,
+          basename: daemonKey + SocketFileSuffix,
         },
         ...restDaemonConfig,
       },

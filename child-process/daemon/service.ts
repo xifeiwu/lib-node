@@ -1,5 +1,5 @@
 
 import path from 'path';
-export const daemonRootDir  = path.join(process.env.HOME, '.daemon');
-export const socketDir = path.join(daemonRootDir, 'sockets');
-export const socketFileSuffix = '.socket';
+export const DaemonRootDir  = path.join(process.env.HOME, '.daemon');
+export const DaemonSocketDir = path.join(DaemonRootDir, 'sockets');
+export const SocketFileSuffix = '.socket';

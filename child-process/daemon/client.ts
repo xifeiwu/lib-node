@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import {socketDir, socketFileSuffix} from './service';
+import {DaemonSocketDir, SocketFileSuffix} from './service';
 import {getFileList, startSocketClient, fromBuffer, toBuffer, getSocketInfo} from '../../index';
 import {Socket} from 'net';
 import {CP, InfoToCp} from '../../types';
@@ -30,14 +30,14 @@ export async function checkDaemonSocketActivity(
 }
 
 export async function checkDaemonSocketActivityByDir(dirname?: string, config?: CheckSocketActivityConfig) {
-  dirname = dirname ?? socketDir;
+  dirname = dirname ?? DaemonSocketDir;
   const {closeInActive = true, closeActive = false} = config ?? {};
   if (!fs.existsSync(dirname)) {
     throw new Error(`dir ${dirname} not exist`);
   }
   const socketFullPathList = getFileList(dirname, {
     fileFilter({basename}) {
-      return basename.endsWith(socketFileSuffix);
+      return basename.endsWith(SocketFileSuffix);
     },
   }).map(relativePath => path.join(dirname, relativePath));
   const active: string[] = [];
