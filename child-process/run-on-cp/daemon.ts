@@ -234,9 +234,17 @@ function getSocketPath(socketPath?: CP.DaemonConfig['socketPath']) {
   let dirname: string;
   let basename: string;
   if (isString(socketPath)) {
-    const pathInfo = getFilePathInfo(socketPath);
-    dirname = pathInfo.dirname;
-    basename = pathInfo.basename;
+    if (socketPath.startsWith('/')) {
+      const pathInfo = getFilePathInfo(socketPath);
+      dirname = pathInfo.dirname;
+      basename = pathInfo.basename;
+    } else if (!socketPath.includes('/')) {
+      basename = socketPath;
+    } else {
+      throw new Error(
+        `socketPath in format of string can only be fullpath or basename only, basename should not contain character /`
+      );
+    }
   } else if (isObject(socketPath)) {
     dirname = socketPath.dirname;
     basename = socketPath.basename;
@@ -280,8 +288,8 @@ async function startSocketServer(pathConfig?: CP.DaemonConfig['socketPath']) {
     socket.on('data', async chunk => {
       try {
         const response = await handleIncomingMessage(chunk);
-        if (response) {
-          socket.write(toBuffer(response));
+        if (response && socket.writable) {
+          socket.end(toBuffer(response));
         }
       } catch (err) {
         socket.write(toBuffer(getErrorResponse(err.message)));

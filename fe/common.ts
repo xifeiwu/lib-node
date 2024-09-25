@@ -31,4 +31,5 @@ export {
   concatOriginWithPathname,
   filesize,
   normalizeUrlProps,
+  uuid,
 } from '../../fe/common';

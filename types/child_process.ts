@@ -88,9 +88,10 @@ export namespace CP {
     /** For socket server: fullname or object of path info */
     socketPath?:
       | {
-          dirname: string;
+          dirname?: string;
           basename?: string;
         }
+      /** fullpath or basename */
       | string;
     /** For spwan child process: restart child process when it's exited */
     retry?: {

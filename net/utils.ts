@@ -94,7 +94,7 @@ export function handleSocketEvents(
   if (!socket) {
     return;
   }
-  const {isServer = false, color = 'black', maxPrintDataLength, onData} = options ?? {};
+  const {isServer = false, color = 'black', maxPrintDataLength, onData = null} = options ?? {};
   if (!socket) {
     logColorful({color}, `socket is undefined`);
     return;
@@ -104,7 +104,7 @@ export function handleSocketEvents(
   const remote = `${remoteAddress}:${remotePort}`;
   const tag = [local, '<-', remote].join('');
   logColorful({color}, `start listen events on socket: ${tag}`);
-  if (onData !== null) {
+  if (onData) {
     socket.on('data', chunk => {
       if (onData) {
         return onData(chunk);
