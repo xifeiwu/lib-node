@@ -7,7 +7,7 @@
 import {NetConnectOpts, Socket} from 'net';
 import {startSocketClient, startSocketServer} from './utils';
 import {toBuffer} from '../transform';
-import {CanConvertToBuffer, TcpServerConfig} from '../types';
+import {CanConvertToBuffer, OneChatHandler, TcpServerConfig} from '../types';
 
 // @ts-ignore
 export function oneChatFromSocketClient<Payload extends CanConvertToBuffer = any>(
@@ -44,7 +44,7 @@ export async function oneChatFromSocketClient<Payload extends CanConvertToBuffer
 }
 
 export async function startOneChatSocketServer(
-  handlePayload: (data: Buffer) => Promise<CanConvertToBuffer>,
+  handlePayload: OneChatHandler,
   config?: TcpServerConfig
 ) {
   const serverInfo = await startSocketServer(socket => {
