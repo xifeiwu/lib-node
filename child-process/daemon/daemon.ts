@@ -1,36 +1,14 @@
 import fs from 'fs';
 import net from 'net';
 import path from 'path';
-import {
-  Action2Process,
-  ConnectInfo,
-  DaemonConfig,
-  DaemonCpConfig,
-  DaemonCpInfo,
-  DaemonCPStatus,
-  DaemonInfo,
-  DaemonPayload,
-  DaemonResponseOnAction,
-  InfoToCp,
-  Payload2Process,
-  SerializableSpawnInfo,
-  SocketServerInfo,
-  SpawnAndTryIpcResponse,
-} from '../../types';
-import {CP} from '../../types';
+import {Daemon, SocketServerInfo} from '../../types';
 import {
   fromBuffer,
-  getFilePathInfo,
-  getSocketInfo,
   isNumber,
   isObject,
   killProcessByPid,
-  makeSureDirExist,
   spawnAndTryIpc,
-  toBuffer,
   serializeSpawnResponse,
-  waitParentMessageFromIPC,
-  startSocketClient,
   startOneChatSocketServer,
 } from '../../index';
 import {DAEMON_SOCKET_DIR} from '../daemon/service';
@@ -38,13 +16,13 @@ import {isString} from 'markdown-it/lib/common/utils';
 import {Socket} from 'net';
 
 class CpManager {
-  cpConfig: DaemonCpConfig;
-  cpStatus: DaemonCPStatus;
+  cpConfig: Daemon.CpConfig;
+  cpStatus: Daemon.CpStatus;
   exitSignal: {
     resolve?: () => void;
     reject?: (err: Error) => void;
   } = {};
-  constructor(cpConfig: DaemonCpConfig) {
+  constructor(cpConfig: Daemon.CpConfig) {
     this.cpStatus = this.getDefaultCpStatus();
     this.cpConfig = cpConfig;
   }
@@ -54,7 +32,7 @@ class CpManager {
   //     await this.restart();
   //   }
   // }
-  getDefaultCpStatus(): DaemonCPStatus {
+  getDefaultCpStatus(): Daemon.CpStatus {
     return {
       status: 'none',
       currentAction: 'none',
@@ -70,7 +48,7 @@ class CpManager {
   getStatus() {
     return this.cpStatus;
   }
-  getInfo(): DaemonCpInfo {
+  getInfo(): Daemon.CpInfo {
     const {
       cpConfig,
       cpStatus: {spawnInfo, ...restStatus},
@@ -155,7 +133,7 @@ class CpManager {
     return cpInfo;
   }
 
-  async start(cpConfig?: DaemonCpConfig) {
+  async start(cpConfig?: Daemon.CpConfig) {
     const {trySpawn, cpStatus} = this;
     if (cpStatus.status === 'running') {
       throw new Error(`Can't start child process when it's running`);
@@ -192,7 +170,7 @@ class CpManager {
     await waitExitComplete();
   }
 
-  async restart(cpConfig?: DaemonCpConfig) {
+  async restart(cpConfig?: Daemon.CpConfig) {
     const {start, cpStatus} = this;
     cpStatus.currentAction = 'restart';
     if (cpStatus.status === 'running') {
@@ -202,10 +180,10 @@ class CpManager {
   }
 }
 
-function getErrorResponse(message: string): CP.DaemonResponseError {
-  const errorResponse: CP.DaemonResponseError = {
+function getErrorResponse(message: string): Daemon.ResponseError {
+  const errorResponse: Daemon.ResponseError = {
     type: 'error',
-    message,
+    data: message,
   };
   return errorResponse;
 }
@@ -217,20 +195,20 @@ function serializeSocketServerInfo(info: SocketServerInfo) {
     return {host, port};
   }
 }
-export class Daemon {
-  connectConfig: DaemonConfig['connectConfig'];
-  connectInfo: ConnectInfo = {};
+export class CpDaemon {
+  connectConfig: Daemon.DaemonConfig['connectConfig'];
+  connectInfo: Daemon.ConnectInfo = {};
   cpManagerMap: {
     [id: string]: CpManager;
   } = {};
-  constructor(config: DaemonConfig) {
+  constructor(config: Daemon.DaemonConfig) {
     const {connectConfig, cpConfig} = config;
     this.connectConfig = connectConfig;
     if (connectConfig) {
       this.startServer();
     }
     if (cpConfig) {
-      const actionStart: Payload2Process = {action: 'start', data: cpConfig};
+      const actionStart: Daemon.Command2Process = {action: 'start', data: cpConfig};
       this.handleCommand(actionStart);
     }
   }
@@ -239,7 +217,7 @@ export class Daemon {
     if (socketConfig) {
       const serverInfo = await startOneChatSocketServer(async chunk => {
         try {
-          const command = fromBuffer(chunk, 'json') as DaemonPayload;
+          const command = fromBuffer(chunk, 'json') as Daemon.Command;
           if (!isObject(command)) {
             throw new Error(`payload is not an object`);
           }
@@ -253,7 +231,7 @@ export class Daemon {
   }
   getInfo() {
     const {connectConfig, connectInfo, cpManagerMap} = this;
-    const info: DaemonInfo = {
+    const info: Daemon.DaemonInfo = {
       pid: process.pid,
       config: {connectConfig},
       status: {connect: {}},
@@ -267,14 +245,14 @@ export class Daemon {
     }
     return info;
   }
-  getCpManager(cpConfigOrId: Payload2Process['data']) {
+  getCpManager(cpConfigOrId: Daemon.Command2Process['data']) {
     const {cpManagerMap} = this;
     /** return first cpManager in cpManagerMap by default */
     let cpManager = Object.values(cpManagerMap)[0];
     if (isString(cpConfigOrId)) {
       cpManager = cpManagerMap[cpConfigOrId];
     } else {
-      const {id} = cpConfigOrId as DaemonCpConfig;
+      const {id} = cpConfigOrId as Daemon.CpConfig;
       if (id === undefined) {
         throw new Error(`id is undefined in cpConfig`);
       }
@@ -287,7 +265,7 @@ export class Daemon {
     }
     return cpManager;
   }
-  async handleCommand(command: DaemonPayload): Promise<DaemonResponseOnAction> {
+  async handleCommand(command: Daemon.Command): Promise<Daemon.DaemonResponse> {
     const {cpManagerMap: cpMap, getCpManager, getInfo} = this;
     const {action, data: cpConfigOrId} = command;
     const cpManager = getCpManager(cpConfigOrId);
@@ -325,7 +303,7 @@ export class Daemon {
       }
       // if (action === 'info' && cpManager)
       return {
-        type: action as Action2Process,
+        type: action as Daemon.Action2Cp,
         data: cpManager.getInfo(),
       };
     }
