@@ -1,7 +1,7 @@
-import {logColorful} from '../../log';
-import {getSpawnConfigByScriptName} from '../run-on-cp';
-import {checkDaemonSocketActivityByDir, ping, info, stop, start} from './client';
-import {DAEMON_SOCKET_DIR} from './service';
+import {logColorful} from '../../../log';
+import {getSpawnConfigByScriptName} from '../../run-on-cp';
+import {checkDaemonSocketActivityByDir, ping, info, stop, start} from './socket';
+import {DAEMON_SOCKET_DIR} from '../service';
 
 const targetSocketPath = '/Users/wuxifei/.daemon/sockets/debug-server.socket';
 export async function testPing() {
