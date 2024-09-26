@@ -4,6 +4,7 @@ import {ServerOpts} from 'net';
 export interface TcpServerConfig {
   host?: string;
   port?: number;
+  path?: string;
   options?: ServerOpts;
 }
 // GET /api/test/echo HTTP/1.1

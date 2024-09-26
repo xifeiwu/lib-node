@@ -171,7 +171,7 @@ export async function startSocketServer(
   handleConnection: (socket: Socket) => void,
   config?: TcpServerConfig
 ) {
-  const {host = '0.0.0.0', port = await getAFreePort(), options} = config ?? {};
+  const {host = '0.0.0.0', port = await getAFreePort(), path, options} = config ?? {};
   return new Promise<{host: string; port: number; server: net.Server}>((res, rej) => {
     const server = net.createServer(options, handleConnection);
     server.on('listening', () => {
@@ -180,7 +180,11 @@ export async function startSocketServer(
     server.on('error', err => {
       rej(err);
     });
-    server.listen(port, host);
+    if (path) {
+      server.listen(path);
+    } else {
+      server.listen(port, host);
+    }
   });
 }
 

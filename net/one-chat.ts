@@ -7,7 +7,7 @@
 import {NetConnectOpts, Socket} from 'net';
 import {startSocketClient, startSocketServer} from './utils';
 import {toBuffer} from '../transform';
-import {CanConvertToBuffer} from '../types';
+import {CanConvertToBuffer, TcpServerConfig} from '../types';
 
 // @ts-ignore
 export function oneChatFromSocketClient<Payload extends CanConvertToBuffer = any>(
@@ -43,7 +43,10 @@ export async function oneChatFromSocketClient<Payload extends CanConvertToBuffer
   return response;
 }
 
-export async function startOneChatSocketServer(handlePayload: (data: Buffer) => Promise<CanConvertToBuffer>) {
+export async function startOneChatSocketServer(
+  handlePayload: (data: Buffer) => Promise<CanConvertToBuffer>,
+  config?: TcpServerConfig
+) {
   const serverInfo = await startSocketServer(socket => {
     socket.on('data', async chunk => {
       const response = await handlePayload(chunk);
@@ -51,6 +54,6 @@ export async function startOneChatSocketServer(handlePayload: (data: Buffer) => 
         socket.end(toBuffer(response));
       }
     });
-  });
+  }, config);
   return serverInfo;
 }
