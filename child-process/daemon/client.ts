@@ -2,8 +2,9 @@ import fs from 'fs';
 import path from 'path';
 import {DAEMON_SOCKET_DIR, SOCKET_FILE_SUFFIX} from './service';
 import {getFileList, startSocketClient, fromBuffer, toBuffer, getSocketInfo} from '../../index';
-import {Socket} from 'net';
+import {NetConnectOpts, Socket} from 'net';
 import {CP, InfoToCp} from '../../types';
+import {isString} from 'markdown-it/lib/common/utils';
 
 interface CheckSocketActivityConfig {
   closeActive?: boolean;
@@ -55,14 +56,18 @@ export async function checkDaemonSocketActivityByDir(dirname?: string, config?: 
 
 export async function chatWithDaemon(
   info: CP.DaemonAction,
-  socketPath: string,
+  connectOpts: NetConnectOpts | string,
   config?: CheckSocketActivityConfig
 ) {
-  const isActive = await checkDaemonSocketActivity(socketPath, config);
-  if (!isActive) {
-    return null;
+  let client: Socket;
+  try {
+    client = await startSocketClient(connectOpts as NetConnectOpts);
+  } catch (err) {
+    if (isString(connectOpts)) {
+      /** Remove useless socket path */
+      fs.unlinkSync(connectOpts);
+    }
   }
-  const client = await startSocketClient(socketPath);
   client.write(toBuffer(info));
   const response = await new Promise<CP.DaemonInfo>((res, rej) => {
     client.once('data', chunk => {

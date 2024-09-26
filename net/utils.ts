@@ -146,8 +146,7 @@ export function startSocketClient(
 export function startSocketClient(path: string, connectionListener?: () => void): Promise<Socket>;
 export async function startSocketClient(...args) {
   return new Promise<Socket>((res, rej) => {
-    // @ts-ignore
-    const client = net.createConnection(...args);
+    const client = net.createConnection(...args as [number, string]);
     client.on('ready', () => {
       res(client);
     });
