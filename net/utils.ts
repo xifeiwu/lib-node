@@ -1,10 +1,14 @@
 import os from 'os';
+import path from 'path';
 import {Writable} from 'stream';
 import net, {NetConnectOpts, ServerOpts, Socket, TcpNetConnectOpts} from 'net';
 import {isString, isNumber, formatDate} from '../external';
 import {httpFirstLineReg} from '../constants';
 import {ColorStyle, GetSocketOptions, HttpFirstLineProps, SocketInfo, TcpServerConfig} from '../types';
 import {logColorful} from '../log';
+import {makeSureDirExist} from '../fs';
+import {getFilePathInfo} from '../path';
+import {DEFAULT_SOCKET_DIR} from './service';
 
 export function getLocalIpAddress() {
   let localIP = null;
@@ -146,7 +150,7 @@ export function startSocketClient(
 export function startSocketClient(path: string, connectionListener?: () => void): Promise<Socket>;
 export async function startSocketClient(...args) {
   return new Promise<Socket>((res, rej) => {
-    const client = net.createConnection(...args as [number, string]);
+    const client = net.createConnection(...(args as [number, string]));
     client.on('ready', () => {
       res(client);
     });
@@ -166,21 +170,65 @@ export async function getClientSocket(options: GetSocketOptions) {
   return await startSocketClient(options);
 }
 
+function checkPermissionBeforeCreateDir(dirname: string) {
+  if (dirname.startsWith(process.env.HOME)) {
+    makeSureDirExist(dirname);
+  } else {
+    throw new Error(`Don't have permission to create dir: ${dirname}`);
+  }
+}
+/**
+ * 1. socketPath can be fullPath, or basename(will use dir DEFAULT_SOCKET_DIR)
+ * 2. make sure dir of socket exist.
+ * @param socketPath
+ * @returns
+ */
+export function getSocketPath(socketPath: string) {
+  let dirname: string;
+  let basename: string;
+  if (isString(socketPath)) {
+    if (socketPath.startsWith('/')) {
+      const pathInfo = getFilePathInfo(socketPath);
+      dirname = pathInfo.dirname;
+      basename = pathInfo.basename;
+    } else if (!socketPath.includes('/')) {
+      basename = socketPath;
+    } else {
+      throw new Error(
+        `socketPath in format of string can only be fullpath or basename only, basename should not contain character /`
+      );
+    }
+  }
+  if (dirname === undefined) {
+    dirname = DEFAULT_SOCKET_DIR;
+  }
+  if (basename === undefined) {
+    basename = process.pid + '.socket';
+  }
+  checkPermissionBeforeCreateDir(dirname);
+  socketPath = path.join(dirname, basename);
+  return socketPath;
+}
+
 export async function startSocketServer(
   handleConnection: (socket: Socket) => void,
   config?: TcpServerConfig
 ) {
   const {host = '0.0.0.0', port = await getAFreePort(), path, options} = config ?? {};
-  return new Promise<{host: string; port: number; server: net.Server}>((res, rej) => {
+  let socketPath = path;
+  if (path !== undefined) {
+    socketPath = getSocketPath(path);
+  }
+  return new Promise<{host: string; port: number; path: string; server: net.Server}>((res, rej) => {
     const server = net.createServer(options, handleConnection);
     server.on('listening', () => {
-      res({host, port, server});
+      res({host, port, path: socketPath, server});
     });
     server.on('error', err => {
       rej(err);
     });
-    if (path) {
-      server.listen(path);
+    if (socketPath) {
+      server.listen(socketPath);
     } else {
       server.listen(port, host);
     }
