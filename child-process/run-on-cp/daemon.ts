@@ -18,7 +18,7 @@ import {
   waitParentMessageFromIPC,
   startSocketClient,
 } from '../../index';
-import {DaemonSocketDir} from '../daemon/service';
+import {DAEMON_SOCKET_DIR} from '../daemon/service';
 import {isString} from 'markdown-it/lib/common/utils';
 import {Socket} from 'net';
 
@@ -250,7 +250,7 @@ function getSocketPath(socketPath?: CP.DaemonConfig['socketPath']) {
     basename = socketPath.basename;
   }
   if (dirname === undefined) {
-    dirname = DaemonSocketDir;
+    dirname = DAEMON_SOCKET_DIR;
   }
   if (basename === undefined) {
     basename = process.pid + '.socket';
