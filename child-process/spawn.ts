@@ -111,9 +111,9 @@ export async function waitParentMessageFromIPC<CpConfig>(config?: {maxWait?: num
 }
 
 /**
- * Notice: If make use of first IPC
- * 1. ipc channel should be support in stdio of spwanOptions
- * 2. waitFirstIpc should set to true
+ * Focus on first conversation between Main and Child process:
+ * Pass param from Main to Child process if supportIpc and infoToCp is not undefined
+ * Return status from Child to Main process if supportIpc and maxWaitTime4Ipc is not undefined
  * @param config
  * @returns
  */

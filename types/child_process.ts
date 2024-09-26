@@ -116,7 +116,7 @@ export namespace CP {
     config: InfoToCp<CP.DaemonConfig>;
     socketPath: string;
     cpStatus: Omit<DaemonCPStatus, 'response'> & {
-      response: SerializableSpawnInfo<ResponseFromCp>;
+      spawnInfo: SerializableSpawnInfo<ResponseFromCp>;
     };
   }
   type Action = 'start' | 'stop' | 'restart' | 'info';

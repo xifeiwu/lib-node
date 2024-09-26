@@ -46,7 +46,7 @@ function getDaemonInfo(): CP.DaemonInfo {
     socketPath: socketInfo.path,
     cpStatus: {
       ...rest,
-      response: serializeSpawnResponse(response),
+      spawnInfo: serializeSpawnResponse(response),
     },
   };
 }
