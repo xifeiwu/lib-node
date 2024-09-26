@@ -4,7 +4,14 @@ import {Writable} from 'stream';
 import net, {NetConnectOpts, ServerOpts, Socket, TcpNetConnectOpts} from 'net';
 import {isString, isNumber, formatDate} from '../external';
 import {httpFirstLineReg} from '../constants';
-import {ColorStyle, GetSocketOptions, HttpFirstLineProps, SocketInfo, TcpServerConfig} from '../types';
+import {
+  ColorStyle,
+  GetSocketOptions,
+  HttpFirstLineProps,
+  SocketInfo,
+  SocketServerInfo,
+  TcpServerConfig,
+} from '../types';
 import {logColorful} from '../log';
 import {makeSureDirExist} from '../fs';
 import {getFilePathInfo} from '../path';
@@ -219,7 +226,7 @@ export async function startSocketServer(
   if (path !== undefined) {
     socketPath = getSocketPath(path);
   }
-  return new Promise<{host: string; port: number; path: string; server: net.Server}>((res, rej) => {
+  return new Promise<SocketServerInfo>((res, rej) => {
     const server = net.createServer(options, handleConnection);
     server.on('listening', () => {
       res({host, port, path: socketPath, server});

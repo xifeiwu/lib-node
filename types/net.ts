@@ -1,4 +1,4 @@
-import {Socket, TcpNetConnectOpts, SocketReadyState} from 'net';
+import {Socket, TcpNetConnectOpts, SocketReadyState, Server} from 'net';
 import {CanConvertToBuffer} from './transform';
 
 export type GetSocketOptions = TcpNetConnectOpts | Socket;
@@ -17,6 +17,13 @@ export interface SocketInfo {
   localPort: number;
   remoteAddress: string;
   remotePort: number;
+}
+
+export interface SocketServerInfo {
+  host: string;
+  port: number;
+  path: string;
+  server: Server;
 }
 
 export type OneChatHandler = (data: Buffer) => Promise<CanConvertToBuffer>;
