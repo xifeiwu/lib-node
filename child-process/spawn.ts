@@ -28,11 +28,11 @@ const defaultTsNodeOptions: TsNodeOptions = {
   '--project': null,
 };
 export function getTsParams(
-  execPath: string,
+  tsFilePath: string,
   options?: Pick<SpawnTsFileOptions, 'tsNodeOptions' | 'params'>
 ) {
   const {tsNodeOptions = {}, params = []} = options ?? {};
-  const fullExecPath = execPath.startsWith('/') ? execPath : path.resolve(process.cwd(), execPath);
+  const fullExecPath = tsFilePath.startsWith('/') ? tsFilePath : path.resolve(process.cwd(), tsFilePath);
   if (!fs.existsSync(fullExecPath)) {
     throw new Error(`path not exist: ${fullExecPath}`);
   }
@@ -75,9 +75,9 @@ export function getTsParams(
   return allParams;
 }
 
-export function spawnTsFile(execPath: string, options?: SpawnTsFileOptions) {
+export function spawnTsFile(tsFilePath: string, options?: SpawnTsFileOptions) {
   const {printCommand, spawnOptions = {}, tsNodeOptions, params} = options ?? {};
-  const allParams = getTsParams(execPath, {tsNodeOptions, params});
+  const allParams = getTsParams(tsFilePath, {tsNodeOptions, params});
   const childProcess = spawn('ts-node', allParams, {
     stdio: ['pipe', 'pipe', 'pipe'],
     ...spawnOptions,
