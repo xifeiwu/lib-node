@@ -20,8 +20,11 @@ export namespace Daemon {
   }
 
   export interface DaemonConfig {
-    /** Dameon process should have a key for identification */
-    daemonKey: string;
+    /**
+     * If daemon run as a seperate child process, it must have at least one connection channel
+     * If connection.socket is not set, daemonKey will be used as socket path
+     */
+    daemonKey?: string;
     /** connectionConfig should be set, as Daemon process is can't be used without communiction way */
     connection?: ConnectionConfig;
     cp?: CpConfig;
