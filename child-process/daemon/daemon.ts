@@ -180,7 +180,7 @@ class CpManager {
   }
 }
 
-function getErrorResponse(message: string): Daemon.ResponseError {
+export function getErrorResponse(message: string): Daemon.ResponseError {
   const errorResponse: Daemon.ResponseError = {
     type: 'error',
     data: message,
@@ -196,51 +196,66 @@ function serializeSocketServerInfo(info: SocketServerInfo) {
   }
 }
 export class CpDaemon {
-  connectConfig: Daemon.DaemonConfig['connectConfig'];
+  config: Daemon.DaemonConfig;
   connectInfo: Daemon.ConnectInfo = {};
   cpManagerMap: {
     [id: string]: CpManager;
   } = {};
   constructor(config: Daemon.DaemonConfig) {
-    const {connectConfig, cpConfig} = config;
-    this.connectConfig = connectConfig;
-    if (connectConfig) {
-      this.startServer();
-    }
-    if (cpConfig) {
-      const actionStart: Daemon.Command2Process = {action: 'start', data: cpConfig};
-      this.handleCommand(actionStart);
-    }
+    this.config = config;
   }
-  async startServer() {
-    const {socketConfig} = this.connectConfig;
-    if (socketConfig) {
-      const serverInfo = await startOneChatSocketServer(async chunk => {
-        try {
-          const command = fromBuffer(chunk, 'json') as Daemon.Command;
-          if (!isObject(command)) {
-            throw new Error(`payload is not an object`);
-          }
-          return await this.handleCommand(command);
-        } catch (err) {
-          return getErrorResponse(err.message);
-        }
-      }, socketConfig);
-      this.connectInfo.socket = serverInfo;
+  /**
+   * Daemon must have at least one connection channel
+   */
+  async startConnectionServer() {
+    const {daemonKey, connection} = this.config;
+    const {socketConfig} = connection ?? {};
+    let finalSocketConfig = socketConfig;
+    if (!socketConfig) {
+      finalSocketConfig = {path: daemonKey};
     }
+    const serverInfo = await startOneChatSocketServer(async chunk => {
+      try {
+        const command = fromBuffer(chunk, 'json') as Daemon.Command;
+        if (!isObject(command)) {
+          throw new Error(`payload is not an object`);
+        }
+        return await this.handleCommand(command);
+      } catch (err) {
+        return getErrorResponse(err.message);
+      }
+    }, socketConfig);
+    this.connectInfo.socket = serverInfo;
+  }
+  async startCp(cpConfig: Daemon.CpConfig) {
+    const actionStart: Daemon.Command2Process = {action: 'start', data: cpConfig};
+    return await this.handleCommand(actionStart);
+  }
+  async start() {
+    const {daemonKey, cp: cpConfig} = this.config;
+    if (!isString(daemonKey)) {
+      throw new Error(`daemonKey is not passed`);
+    }
+    const {startConnectionServer: startServer, startCp, getInfo} = this;
+    const promiseList: Array<Promise<any>> = [startServer()];
+    if (cpConfig) {
+      promiseList.push(startCp(cpConfig));
+    }
+    await Promise.all(promiseList);
+    return getInfo();
   }
   getInfo() {
-    const {connectConfig, connectInfo, cpManagerMap} = this;
+    const {config, connectInfo, cpManagerMap} = this;
     const info: Daemon.DaemonInfo = {
       pid: process.pid,
-      config: {connectConfig},
-      status: {connect: {}},
-      cpInfoList: Object.values(cpManagerMap).map(it => it.getInfo()),
+      config: config,
+      status: {connection: {}},
+      cpList: Object.values(cpManagerMap).map(it => it.getInfo()),
     };
     if (connectInfo) {
       const {socket} = connectInfo;
       if (socket) {
-        info.status.connect.socket = serializeSocketServerInfo(socket);
+        info.status.connection.socket = serializeSocketServerInfo(socket);
       }
     }
     return info;
