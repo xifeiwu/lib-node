@@ -1,10 +1,10 @@
 import fs from 'fs';
 import path from 'path';
-import {DAEMON_SOCKET_DIR, SOCKET_FILE_SUFFIX} from '../service';
 import {getFileList, startSocketClient, fromBuffer, toBuffer, getSocketInfo} from '../../../index';
 import {NetConnectOpts, Socket} from 'net';
 import {CP, InfoToCp} from '../../../types';
 import {isString} from 'markdown-it/lib/common/utils';
+import { DAEMON_SOCKET_DIR, SOCKET_FILE_SUFFIX } from '../../../constants';
 
 interface CheckSocketActivityConfig {
   closeActive?: boolean;

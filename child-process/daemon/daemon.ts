@@ -11,7 +11,6 @@ import {
   serializeSpawnResponse,
   startOneChatSocketServer,
 } from '../../index';
-import {DAEMON_SOCKET_DIR} from '../daemon/service';
 import {isString} from 'markdown-it/lib/common/utils';
 import {Socket} from 'net';
 
