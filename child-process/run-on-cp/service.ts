@@ -1,6 +1,7 @@
 import path from 'path';
 import {
   getFileList,
+  getCpConfigByScriptPath,
   isNumber,
   isObject,
   spawnAndTryIpc,
@@ -69,34 +70,19 @@ export async function handleCpCustomization(config?: CP.CpCustomization, key?: s
  * @param config
  * @returns
  */
-export function getSpawnConfigByScriptName<CpConfig = any>(
+export function getCpConfigByScriptName<CpConfig = any>(
   basename: CP.ScriptFileName,
-  config?: CP.SpawnTsScriptConfig<CpConfig>
+  config?: Partial<SpawnAndTryIpcConfig<CpConfig>>
 ): SpawnAndTryIpcConfig<CpConfig> {
-  const {args = [], ...restConfig} = config ?? {};
   const scriptPath = getScriptFullpath(basename);
-  const suffix = basename.split('.').pop().toLowerCase();
-  let command = '';
-  let params: string[] = [];
-  if (suffix === 'ts') {
-    command = 'ts-node';
-    params = [...params, ...getTsParams(scriptPath), ...args];
-  } else if (suffix === 'js') {
-    command = 'node';
-    params = [scriptPath, ...args];
-  }
-  return {
-    command,
-    args: params,
-    ...restConfig,
-  };
+  return getCpConfigByScriptPath(scriptPath, config);
 }
 
 export async function spawnScript<CpConfig = any, ResponseFromCp = any>(
   basename: CP.ScriptFileName,
-  config?: CP.SpawnTsScriptConfig<CpConfig>
+  config?: Partial<SpawnAndTryIpcConfig<CpConfig>>
 ): Promise<SpawnAndTryIpcResponse<ResponseFromCp> & {config: SpawnConfig}> {
-  const spawnConfig = getSpawnConfigByScriptName(basename, config);
+  const spawnConfig = getCpConfigByScriptName(basename, config);
   const cpInfo = await spawnAndTryIpc(spawnConfig);
   return {
     config: spawnConfig,

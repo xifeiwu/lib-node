@@ -8,7 +8,8 @@ export namespace Daemon {
   export interface ConnectionConfig {
     socketConfig?: TcpServerConfig;
   }
-  export interface CpConfig extends SpawnAndTryIpcConfig {
+  /** Extral Cp config for running on daemon process */
+  export interface ExtralCpConfig {
     /** id used to identify the child process  */
     id: string | number;
     retry?: {
@@ -18,6 +19,7 @@ export namespace Daemon {
       minInterval?: number;
     };
   }
+  export interface CpConfig extends SpawnAndTryIpcConfig, ExtralCpConfig {}
 
   export interface DaemonConfig {
     /**

@@ -17,7 +17,7 @@ export interface InfoToCp<CpConfig = any> {
   // spawnConfig?: Partial<SpawnAndTryIpcConfig>;
   spawnConfig?: SpawnAndTryIpcConfig;
 }
-export interface SpawnAndTryIpcConfig<CpConfig = any> extends SpawnConfig {
+export interface IpcConfig<CpConfig = any> {
   /** Info send to child process if process.send is enabled */
   infoToCp?: InfoToCp<CpConfig>;
   /**
@@ -28,6 +28,8 @@ export interface SpawnAndTryIpcConfig<CpConfig = any> extends SpawnConfig {
    */
   maxWaitTime4Ipc?: number;
 }
+export interface SpawnAndTryIpcConfig<CpConfig = any> extends SpawnConfig, IpcConfig<CpConfig> {}
+
 export interface SpawnAndTryIpcResponse<ResponseFromCp = any> {
   /** original config passed */
   // config: SpawnAndTryIpcConfig;
@@ -41,6 +43,6 @@ export interface SpawnAndTryIpcResponse<ResponseFromCp = any> {
  * An json object to describe child process related info, also remove node instance of ChildProcess as it's not Serielizeable
  */
 export interface SerializableSpawnInfo<ResponseFromCp = any>
-extends Omit<SpawnAndTryIpcResponse<ResponseFromCp>, 'childProcess'> {
-pid: number;
+  extends Omit<SpawnAndTryIpcResponse<ResponseFromCp>, 'childProcess'> {
+  pid: number;
 }

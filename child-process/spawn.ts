@@ -1,9 +1,16 @@
 import fs from 'fs';
 import path from 'path';
-import {Serializable, spawn} from 'child_process';
+import {Serializable, spawn, SpawnOptions} from 'child_process';
 import {findClosestFile} from '../fs';
 import {isBoolean, isNumber, isObject, isString} from '../external';
-import {InfoToCp, SpawnAndTryIpcConfig, SpawnAndTryIpcResponse, SerializableSpawnInfo} from '../types';
+import {
+  InfoToCp,
+  SpawnAndTryIpcConfig,
+  SpawnAndTryIpcResponse,
+  SerializableSpawnInfo,
+  IpcConfig,
+} from '../types';
+import {getFilePathInfo} from '../path';
 
 /** Existing key with a null value means should give a default value by program */
 interface TsNodeOptions {
@@ -14,9 +21,10 @@ interface TsNodeOptions {
 
 export interface SpawnTsFileOptions {
   tsNodeOptions?: TsNodeOptions;
-  printCommand?: boolean;
   params?: string[];
-  spawnOptions?: Parameters<typeof spawn>[2];
+  // spawnOptions?: Parameters<typeof spawn>[2];
+  spawnOptions?: SpawnOptions;
+  printCommand?: boolean;
 }
 const defaultSpwanTsFileOptions: SpawnTsFileOptions = {
   printCommand: false,
@@ -75,15 +83,51 @@ export function getTsParams(
   return allParams;
 }
 
-export function spawnTsFile(tsFilePath: string, options?: SpawnTsFileOptions) {
-  const {printCommand, spawnOptions = {}, tsNodeOptions, params} = options ?? {};
-  const allParams = getTsParams(tsFilePath, {tsNodeOptions, params});
-  const childProcess = spawn('ts-node', allParams, {
+export function getSpawnConfigByScriptPath(fullPath: string, options?: SpawnTsFileOptions) {
+  if (!fs.existsSync(fullPath)) {
+    throw new Error(`file not exist: ${fullPath}`);
+  }
+  const suffix = path.basename(fullPath).split('.').pop().toLowerCase();
+  let command = '';
+  let args: string[] = [];
+  const {tsNodeOptions, params, spawnOptions} = options ?? {};
+  if (suffix === 'ts') {
+    command = 'ts-node';
+    args = getTsParams(fullPath, {tsNodeOptions, params});
+  } else if (suffix === 'js') {
+    command = 'node';
+    args = [fullPath, ...params];
+  }
+  return {
+    command,
+    args,
+    spawnOptions,
+  };
+}
+export function getCpConfigByScriptPath<CpConfig = any>(
+  fullPath: string,
+  options?: SpawnTsFileOptions & IpcConfig
+): SpawnAndTryIpcConfig<CpConfig> {
+  const {infoToCp, maxWaitTime4Ipc, ...spawnTsFileOptions} = options;
+  const spawnConfig = getSpawnConfigByScriptPath(fullPath, spawnTsFileOptions);
+  return {
+    ...spawnConfig,
+    infoToCp,
+    maxWaitTime4Ipc,
+  };
+}
+
+export function spawnTsFile(tsFilePath: string, options?: SpawnTsFileOptions & {printCommand: boolean}) {
+  // const {printCommand, spawnOptions = {}, tsNodeOptions, params} = options ?? {};
+  // const allParams = getTsParams(tsFilePath, {tsNodeOptions, params});
+  const {command, args, spawnOptions = {}} = getCpConfigByScriptPath(tsFilePath, options);
+  const childProcess = spawn(command, args, {
     stdio: ['pipe', 'pipe', 'pipe'],
     ...spawnOptions,
   });
+  const {printCommand} = options ?? {};
   if (printCommand) {
-    console.log(`[${process.pid}]spawn command[${childProcess.pid}]: ts-node ${allParams.join(' ')}`);
+    console.log(`[${process.pid}]spawn command[${childProcess.pid}]: ${command} ${args.join(' ')}`);
   }
   return childProcess;
 }

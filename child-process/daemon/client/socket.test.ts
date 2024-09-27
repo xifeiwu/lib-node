@@ -1,9 +1,9 @@
 import {DAEMON_SOCKET_DIR} from '../../../constants';
 import {logColorful} from '../../../log';
-import {getSpawnConfigByScriptName} from '../../run-on-cp';
+import {getCpConfigByScriptName} from '../../run-on-cp';
 import {checkDaemonSocketActivityByDir, ping, info, stop, start} from './socket';
 
-const targetSocketPath = '/Users/wuxifei/.daemon/sockets/debug-server.socket';
+const targetSocketPath = '/Users/wuxifei/.daemon/sockets/testStartDetachedDaemon.socket';
 export async function testPing() {
   const response = await ping(targetSocketPath);
   logColorful({}, response);
@@ -24,7 +24,7 @@ export async function testStart() {
 }
 
 export async function testStartWithSpawnInfo() {
-  const spawnConfigDebugServer = getSpawnConfigByScriptName('debug-server.ts', {
+  const spawnConfigDebugServer = getCpConfigByScriptName('debug-server.ts', {
     args: [],
     spawnOptions: {stdio: ['pipe', 'pipe', 'pipe', 'ipc']},
     infoToCp: {},

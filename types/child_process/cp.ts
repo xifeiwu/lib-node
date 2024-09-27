@@ -6,7 +6,7 @@ import {InfoToCp, SerializableSpawnInfo, SpawnAndTryIpcConfig, SpawnAndTryIpcRes
  */
 export namespace CP {
   /** The config will send to child process */
-  export type SpawnTsScriptConfig<CpConfig = any> = Omit<SpawnAndTryIpcConfig<CpConfig>, 'command'>;
+  // export type SpawnTsScriptConfig<CpConfig = any> = Omit<SpawnAndTryIpcConfig<CpConfig>, 'command'>;
 
   /**
    * Customization for child process

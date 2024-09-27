@@ -1,7 +1,8 @@
 import {Daemon} from '../../types';
-import {getSpawnConfigByScriptName} from '../run-on-cp';
-import {serializeSpawnResponse, spawnAndTryIpc} from '../spawn';
+import {getCpConfigByScriptName} from '../run-on-cp';
+import {getCpConfigByScriptPath, serializeSpawnResponse, spawnAndTryIpc} from '../spawn';
 
+const MAX_WAIT_TIME_DEBUG_MODE = 120;
 export async function startDetachedDaemon(
   daemonConfig: Daemon.DaemonConfig,
   featureConfig?: {debug?: boolean}
@@ -15,15 +16,16 @@ export async function startDetachedDaemon(
         cpConfig.spawnOptions = {};
       }
       cpConfig.spawnOptions.stdio = [0, 1, 2, 'ipc'];
+      cpConfig.maxWaitTime4Ipc;
     }
   }
-  const spawnConfig4Daemon = getSpawnConfigByScriptName<Daemon.DaemonConfig>('daemon.ts', {
+  const spawnConfig4Daemon = getCpConfigByScriptName<Daemon.DaemonConfig>('daemon.ts', {
     /** args key is used for killing Zombie Daemon Process */
     args: ['startDetachedDaemon'],
     infoToCp: {
       config: daemonConfig,
     },
-    maxWaitTime4Ipc: debug ? 120 : 20,
+    maxWaitTime4Ipc: debug ? MAX_WAIT_TIME_DEBUG_MODE : 20,
     spawnOptions: {stdio: debug ? [0, 1, 2, 'ipc'] : ['ignore', 'ignore', 'ignore', 'ipc']},
   });
   const spawnResponse = await spawnAndTryIpc<Daemon.DaemonConfig, Daemon.DaemonResponse>(spawnConfig4Daemon);
@@ -39,4 +41,17 @@ export async function startDetachedDaemon(
   // console.log(typeof responseFromCp);
   // console.log(responseFromCp instanceof Error);
   return serializeSpawnResponse(spawnResponse);
+}
+
+export function getDaemonCpConfigByScriptPath<CpConfig = any>(
+  fullPath: string,
+  options?: Partial<Daemon.CpConfig>
+): Daemon.CpConfig {
+  const {id, retry, ...restOptions} = options ?? {};
+  const spawnConfig = getCpConfigByScriptPath<CpConfig>(fullPath, restOptions);
+  return {
+    id,
+    retry,
+    ...spawnConfig,
+  };
 }
