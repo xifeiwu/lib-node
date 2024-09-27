@@ -174,7 +174,7 @@ class CpManager {
     const {cpStatus} = this;
     cpStatus.currentAction = 'restart';
     if (cpStatus.status === 'running') {
-      await stop();
+      await this.stop();
     }
     await this.start(cpConfig);
   }
@@ -317,10 +317,13 @@ export class CpDaemon {
       switch (action) {
         case 'stop':
           await cpManager.stop();
+          break;
         case 'start':
           await cpManager.start(isCpConfig ? cpConfigOrId : undefined);
+          break;
         case 'restart':
           await cpManager.restart(isCpConfig ? cpConfigOrId : undefined);
+          break;
       }
       // if (action === 'info' && cpManager)
       return {

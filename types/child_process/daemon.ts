@@ -11,7 +11,7 @@ export namespace Daemon {
   export interface CpConfig extends SpawnAndTryIpcConfig {
     /** id used to identify the child process  */
     id: string | number;
-    retry: {
+    retry?: {
       /** max count of retry */
       maxCount?: number;
       /** Minimum time a child process has to be up. */
