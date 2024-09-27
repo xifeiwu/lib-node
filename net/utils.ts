@@ -1,9 +1,10 @@
 import os from 'os';
+import fs from 'fs';
 import path from 'path';
 import {Writable} from 'stream';
 import net, {NetConnectOpts, ServerOpts, Socket, TcpNetConnectOpts} from 'net';
 import {isString, isNumber, formatDate} from '../external';
-import {httpFirstLineReg} from '../constants';
+import {DEFAULT_SOCKET_DIR, httpFirstLineReg, SOCKET_FILE_SUFFIX} from '../constants';
 import {
   ColorStyle,
   GetSocketOptions,
@@ -15,7 +16,6 @@ import {
 import {logColorful} from '../log';
 import {makeSureDirExist} from '../fs';
 import {getFilePathInfo} from '../path';
-import {DEFAULT_SOCKET_DIR} from './service';
 
 export function getLocalIpAddress() {
   let localIP = null;
@@ -210,7 +210,10 @@ export function getSocketPath(socketPath: string) {
     dirname = DEFAULT_SOCKET_DIR;
   }
   if (basename === undefined) {
-    basename = process.pid + '.socket';
+    basename = process.pid + '';
+  }
+  if (!basename.endsWith(SOCKET_FILE_SUFFIX)) {
+    basename += SOCKET_FILE_SUFFIX;
   }
   checkPermissionBeforeCreateDir(dirname);
   socketPath = path.join(dirname, basename);
@@ -221,21 +224,33 @@ export async function startSocketServer(
   handleConnection: (socket: Socket) => void,
   config?: TcpServerConfig
 ) {
-  const {host = '0.0.0.0', port = await getAFreePort(), path, options} = config ?? {};
-  let socketPath = path;
+  let {host, port, path, options} = config ?? {};
   if (path !== undefined) {
-    socketPath = getSocketPath(path);
+    path = getSocketPath(path);
+    /** Check whether file already used as socket file */
+    if (fs.existsSync(path) && path.endsWith(SOCKET_FILE_SUFFIX)) {
+      try {
+        await startSocketClient({path});
+        throw new Error(`The socket path ${path} is already in use by another socket server`);
+      } catch (err) {
+        /** Remove socket file if not in use */
+        fs.unlinkSync(path);
+      }
+    }
+  } else {
+    host = host ?? '';
+    port = port ?? (await getAFreePort());
   }
   return new Promise<SocketServerInfo>((res, rej) => {
     const server = net.createServer(options, handleConnection);
     server.on('listening', () => {
-      res({host, port, path: socketPath, server});
+      res({host, port, path, server});
     });
     server.on('error', err => {
       rej(err);
     });
-    if (socketPath) {
-      server.listen(socketPath);
+    if (path) {
+      server.listen(path);
     } else {
       server.listen(port, host);
     }
