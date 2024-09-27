@@ -21,9 +21,10 @@ export interface SpawnAndTryIpcConfig<CpConfig = any> extends SpawnConfig {
   /** Info send to child process if process.send is enabled */
   infoToCp?: InfoToCp<CpConfig>;
   /**
-   * Max wait time for ipc message from Child Process
+   * Max wait time for ipc message from Child Process with unit second
    * If maxWaitTime4Ipc is not equal undefined, main process will wait response from child process
    * until maxWaitTime4Ipc second is passed
+   * Else main process will not wait for response from child process.
    */
   maxWaitTime4Ipc?: number;
 }

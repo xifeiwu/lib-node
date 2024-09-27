@@ -5,7 +5,7 @@ import {InfoToCp, SerializableSpawnInfo, SpawnAndTryIpcConfig, SpawnAndTryIpcRes
  * Type for ts script run in child process
  */
 export namespace CP {
-  /** The config will send to child process recurrsively */
+  /** The config will send to child process */
   export type SpawnTsScriptConfig<CpConfig = any> = Omit<SpawnAndTryIpcConfig<CpConfig>, 'command'>;
 
   /**

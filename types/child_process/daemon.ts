@@ -4,11 +4,9 @@ import {TcpServerConfig} from '../tcp';
 import {SocketServerInfo} from '../net';
 
 export namespace Daemon {
-  interface ConnectConfig {
+  /** Config for connection way with daemon process */
+  export interface ConnectionConfig {
     socketConfig?: TcpServerConfig;
-  }
-  export interface ConnectInfo {
-    socket?: SocketServerInfo;
   }
   export interface CpConfig extends SpawnAndTryIpcConfig {
     /** id used to identify the child process  */
@@ -19,6 +17,18 @@ export namespace Daemon {
       /** Minimum time a child process has to be up. */
       minInterval?: number;
     };
+  }
+
+  export interface DaemonConfig {
+    /** Dameon process should have a key for identification */
+    daemonKey: string;
+    /** connectionConfig should be set, as Daemon process is can't be used without communiction way */
+    connection?: ConnectionConfig;
+    cp?: CpConfig;
+  }
+
+  export interface ConnectInfo {
+    socket?: SocketServerInfo;
   }
 
   export interface CpStatus {
@@ -35,17 +45,13 @@ export namespace Daemon {
     };
   }
 
-  export interface DaemonConfig {
-    connectConfig?: ConnectConfig;
-    cpConfig?: CpConfig;
-  }
   export interface DaemonInfo {
     pid: number;
-    config: Omit<DaemonConfig, 'cpConfig'>;
+    config: DaemonConfig;
     status: {
-      connect?: {socket?: Partial<Pick<SocketServerInfo, 'host' | 'port' | 'path'>>};
+      connection?: {socket?: Partial<Pick<SocketServerInfo, 'host' | 'port' | 'path'>>};
     };
-    cpInfoList: CpInfo[];
+    cpList: CpInfo[];
   }
 
   export type Action2Cp = 'start' | 'stop' | 'restart' | 'info';
