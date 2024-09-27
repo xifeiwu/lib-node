@@ -27,7 +27,7 @@ export namespace Daemon {
     daemonKey?: string;
     /** connectionConfig should be set, as Daemon process is can't be used without communiction way */
     connection?: ConnectionConfig;
-    cp?: CpConfig;
+    cpConfigList?: CpConfig[];
   }
 
   export interface ConnectInfo {

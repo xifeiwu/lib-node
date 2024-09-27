@@ -46,7 +46,7 @@ export async function daemonDebugServer() {
   });
   const cpConfig4DebugServer: Daemon.CpConfig = {
     ...spawnConfigDebugServer,
-    id: 'debug-server-1',
+    id: daemonKey,
   };
   const spawnConfig4Daemon = getSpawnConfigByScriptName<Daemon.DaemonConfig>('daemon.ts', {
     args: [daemonKey],
@@ -54,7 +54,7 @@ export async function daemonDebugServer() {
     infoToCp: {
       config: {
         daemonKey,
-        cp: cpConfig4DebugServer,
+        cpConfigList: [cpConfig4DebugServer],
       },
     },
     maxWaitTime4Ipc: 600,
@@ -74,29 +74,26 @@ export async function daemon2DebugServer() {
     maxWaitTime4Ipc: 600,
   });
   const spawnConfig2 = getSpawnConfigByScriptName<CP.DebugServerConfig>('debug-server.ts', {
-    infoToCp: {
-      config: {
-        port: await getAFreePort(),
-        delay: 5000,
-        errorMessage: 'trigger Error by demend',
-      },
-    },
-    args: ['daemonDebugServer'],
+    args: [daemonKey],
     spawnOptions: {stdio: ['pipe', 'pipe', 'pipe', 'ipc']},
+    infoToCp: {},
+    maxWaitTime4Ipc: 600,
   });
-  const spawnConfig4Daemon = getSpawnConfigByScriptName<CP.DaemonConfig>('daemon.ts', {
-    args: ['daemonDebugServer'],
+  const spawnConfig4Daemon = getSpawnConfigByScriptName<Daemon.DaemonConfig>('daemon.ts', {
+    args: [daemonKey],
+    spawnOptions: {stdio: [0, 1, 2, 'ipc']},
     infoToCp: {
       config: {
-        retry: {
-          maxCount: 10,
-        },
+        daemonKey,
+        cpConfigList: [
+          {...spawnConfig, id: 'debug-server-1'},
+          {...spawnConfig2, id: 'debug-server-2'},
+        ],
       },
-      spawnConfig: spawnConfig,
     },
-    spawnOptions: {stdio: ['ipc']},
+    maxWaitTime4Ipc: 600,
   });
-  const {childProcess, responseFromCp} = await spawnAndTryIpc<CP.DaemonConfig, CP.DaemonInfo>(
+  const {childProcess, responseFromCp} = await spawnAndTryIpc<Daemon.DaemonConfig, Daemon.DaemonInfo>(
     spawnConfig4Daemon
   );
   logColorful({}, responseFromCp);

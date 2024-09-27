@@ -237,15 +237,18 @@ export class CpDaemon {
   /** Start Daemon as child process */
   async startAsCp(config: Daemon.DaemonConfig) {
     this.config = config;
-    const {daemonKey, cp: cpConfig} = this.config;
+    const {daemonKey, cpConfigList} = this.config;
     if (!isString(daemonKey)) {
       throw new Error(`daemonKey is not passed`);
     }
     const promiseList: Array<Promise<any>> = [this.startConnectionServer()];
-    if (cpConfig) {
-      promiseList.push(this.startCp(cpConfig));
-    }
     await Promise.all(promiseList);
+    /** Child process should start one by one */
+    if (Array.isArray(cpConfigList)) {
+      for (const cpConfig of cpConfigList) {
+        await this.startCp(cpConfig);
+      }
+    }
     return this.getInfo();
   }
   getInfo() {
