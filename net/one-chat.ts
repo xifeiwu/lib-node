@@ -6,34 +6,18 @@
 
 import {NetConnectOpts, Socket} from 'net';
 import {startSocketClient, startSocketServer} from './utils';
-import {toBuffer} from '../transform';
+import {fromBuffer, toBuffer} from '../transform';
 import {CanConvertToBuffer, OneChatHandler, TcpServerConfig} from '../types';
 
-// @ts-ignore
-export function oneChatFromSocketClient<Payload extends CanConvertToBuffer = any>(
+export async function oneChatFromSocketClient<Response = any, Payload extends CanConvertToBuffer = any>(
   payload: Payload,
-  options: NetConnectOpts
-): Promise<Socket>;
-export function oneChatFromSocketClient<Payload extends CanConvertToBuffer = any>(
-  payload: Payload,
-  port: number,
-  host?: string,
-  connectionListener?: () => void
-): Promise<Socket>;
-export function oneChatFromSocketClient<Payload extends CanConvertToBuffer = any>(
-  payload: Payload,
-  path: string
-): Promise<Socket>;
-
-export async function oneChatFromSocketClient<Payload extends CanConvertToBuffer = any>(
-  payload: Payload,
-  ...args: [NetConnectOpts] | [number] | [number, string] | [string]
+  connectOpts: NetConnectOpts
 ) {
-  const client = await startSocketClient(...(args as [NetConnectOpts]));
+  const client = await startSocketClient(connectOpts);
   client.write(toBuffer(payload));
-  const response = await new Promise<Buffer>((res, rej) => {
+  const response = await new Promise<Response>((res, rej) => {
     client.once('data', chunk => {
-      res(chunk);
+      res(fromBuffer(chunk, 'json') as Response);
     });
     client.once('close', hadError => {
       res(null);
@@ -43,10 +27,7 @@ export async function oneChatFromSocketClient<Payload extends CanConvertToBuffer
   return response;
 }
 
-export async function startOneChatSocketServer(
-  handlePayload: OneChatHandler,
-  config?: TcpServerConfig
-) {
+export async function startOneChatSocketServer(handlePayload: OneChatHandler, config?: TcpServerConfig) {
   const serverInfo = await startSocketServer(socket => {
     socket.on('data', async chunk => {
       const response = await handlePayload(chunk);
