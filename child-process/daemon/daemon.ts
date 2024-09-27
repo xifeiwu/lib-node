@@ -115,7 +115,7 @@ class CpManager {
   }
 
   async trySpawn() {
-    const {cpConfig, cpStatus, onExit} = this;
+    const {cpConfig, cpStatus} = this;
     /** Not throw erro when spawn child process and spawnConfig is null */
     if (!cpConfig) {
       // throw new Error(`Please provide spawnConfig`);
@@ -128,20 +128,20 @@ class CpManager {
     const cpInfo = await spawnAndTryIpc(cpConfig);
     const {childProcess} = cpInfo;
     childProcess.once('exit', code => {
-      onExit();
+      this.onExit();
     });
     return cpInfo;
   }
 
   async start(cpConfig?: Daemon.CpConfig) {
-    const {trySpawn, cpStatus} = this;
+    const {cpStatus} = this;
     if (cpStatus.status === 'running') {
       throw new Error(`Can't start child process when it's running`);
     }
     if (cpConfig) {
       this.cpConfig === cpConfig;
     }
-    const cpInfo = await trySpawn();
+    const cpInfo = await this.trySpawn();
     if (cpInfo) {
       cpStatus.status = 'running';
       cpStatus.spawnInfo = cpInfo;
@@ -151,7 +151,7 @@ class CpManager {
   }
 
   async stop() {
-    const {waitExitComplete, cpStatus} = this;
+    const {cpStatus} = this;
     if (cpStatus.status !== 'running') {
       throw new Error(`Child process is not running, it's in status is: ${cpStatus.status}`);
     }
@@ -167,20 +167,24 @@ class CpManager {
     /** change status after killProcessByPid success */
     cpStatus.status = 'stop';
     cpStatus.currentAction = 'stop';
-    await waitExitComplete();
+    await this.waitExitComplete();
   }
 
   async restart(cpConfig?: Daemon.CpConfig) {
-    const {start, cpStatus} = this;
+    const {cpStatus} = this;
     cpStatus.currentAction = 'restart';
     if (cpStatus.status === 'running') {
       await stop();
     }
-    await start(cpConfig);
+    await this.start(cpConfig);
   }
 }
 
-export function getErrorResponse(message: string): Daemon.ResponseError {
+export function getErrorResponse(err: Error | string): Daemon.ResponseError {
+  let message = err as string;
+  if (err instanceof Error) {
+    message = err.stack ? err.stack : err.message;
+  }
   const errorResponse: Daemon.ResponseError = {
     type: 'error',
     data: message,
@@ -205,12 +209,13 @@ export class CpDaemon {
     this.config = config;
   }
   /**
-   * Daemon must have at least one connection channel
+   * If daemon run as a seperate child process, it must have at least one connection channel
    */
   async startConnectionServer() {
     const {daemonKey, connection} = this.config;
     const {socketConfig} = connection ?? {};
     let finalSocketConfig = socketConfig;
+    /** At least start on server */
     if (!socketConfig) {
       finalSocketConfig = {path: daemonKey};
     }
@@ -222,9 +227,9 @@ export class CpDaemon {
         }
         return await this.handleCommand(command);
       } catch (err) {
-        return getErrorResponse(err.message);
+        return getErrorResponse(err);
       }
-    }, socketConfig);
+    }, finalSocketConfig);
     this.connectInfo.socket = serverInfo;
   }
   async startCp(cpConfig: Daemon.CpConfig) {
@@ -236,13 +241,12 @@ export class CpDaemon {
     if (!isString(daemonKey)) {
       throw new Error(`daemonKey is not passed`);
     }
-    const {startConnectionServer: startServer, startCp, getInfo} = this;
-    const promiseList: Array<Promise<any>> = [startServer()];
+    const promiseList: Array<Promise<any>> = [this.startConnectionServer()];
     if (cpConfig) {
-      promiseList.push(startCp(cpConfig));
+      promiseList.push(this.startCp(cpConfig));
     }
     await Promise.all(promiseList);
-    return getInfo();
+    return this.getInfo();
   }
   getInfo() {
     const {config, connectInfo, cpManagerMap} = this;
@@ -260,7 +264,10 @@ export class CpDaemon {
     }
     return info;
   }
-  getCpManager(cpConfigOrId: Daemon.Command2Process['data']) {
+  getCpManager(cpConfigOrId?: Daemon.Command2Process['data']) {
+    if (cpConfigOrId === undefined) {
+      return undefined;
+    }
     const {cpManagerMap} = this;
     /** return first cpManager in cpManagerMap by default */
     let cpManager = Object.values(cpManagerMap)[0];
@@ -281,9 +288,8 @@ export class CpDaemon {
     return cpManager;
   }
   async handleCommand(command: Daemon.Command): Promise<Daemon.DaemonResponse> {
-    const {cpManagerMap: cpMap, getCpManager, getInfo} = this;
     const {action, data: cpConfigOrId} = command;
-    const cpManager = getCpManager(cpConfigOrId);
+    const cpManager = this.getCpManager(cpConfigOrId);
     if (['ping'].includes(action)) {
       switch (action) {
         case 'ping':
@@ -300,7 +306,7 @@ export class CpDaemon {
       } else {
         return {
           type: action,
-          data: getInfo(),
+          data: this.getInfo(),
         };
       }
     } else {
