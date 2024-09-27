@@ -205,9 +205,7 @@ export class CpDaemon {
   cpManagerMap: {
     [id: string]: CpManager;
   } = {};
-  constructor(config: Daemon.DaemonConfig) {
-    this.config = config;
-  }
+  constructor() {}
   /**
    * If daemon run as a seperate child process, it must have at least one connection channel
    */
@@ -236,7 +234,9 @@ export class CpDaemon {
     const actionStart: Daemon.Command2Process = {action: 'start', data: cpConfig};
     return await this.handleCommand(actionStart);
   }
-  async start() {
+  /** Start Daemon as child process */
+  async startAsCp(config: Daemon.DaemonConfig) {
+    this.config = config;
     const {daemonKey, cp: cpConfig} = this.config;
     if (!isString(daemonKey)) {
       throw new Error(`daemonKey is not passed`);
