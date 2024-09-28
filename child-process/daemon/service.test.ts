@@ -20,7 +20,7 @@ export async function testStartDetachedDaemon() {
   // });
   const spawnResponse = await startDetachedDaemon(
     {
-      daemonKey: 'testStartDetachedDaemon',
+      id: 'testStartDetachedDaemon',
       cpConfigList: [spawnDebugServer],
     },
     {debug: true}

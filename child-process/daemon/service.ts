@@ -7,7 +7,7 @@ export async function startDetachedDaemon(
   daemonConfig: Daemon.DaemonConfig,
   featureConfig?: {debug?: boolean}
 ) {
-  const {daemonKey, cpConfigList} = daemonConfig;
+  const {id: daemonKey, cpConfigList} = daemonConfig;
   const {debug = false} = featureConfig ?? {};
   if (debug) {
     for (const cpConfig of cpConfigList) {

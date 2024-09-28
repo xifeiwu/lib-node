@@ -4,7 +4,7 @@ import assert from 'assert';
 import {getCpConfigByScriptName, getScriptFullpath, spawnScript} from '../../run-on-cp';
 import {logColorful, fromBuffer, CP, getSocketPath} from '../../../index';
 import {getDaemonCpConfigByScriptPath, startDetachedDaemon} from '../service';
-import {SocketClient} from '../client/socket';
+import {SocketClient} from '../client';
 import {SpawnOptions} from 'child_process';
 
 const debugMode = true;
@@ -43,7 +43,7 @@ const socketClient = new SocketClient({path: socketPath});
 export async function runDetachedDaemon() {
   const spawnResponse = await startDetachedDaemon(
     {
-      daemonKey,
+      id: daemonKey,
       cpConfigList: [spawnDebugServer1],
     },
     {debug: true}

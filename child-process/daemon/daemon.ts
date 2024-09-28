@@ -210,7 +210,7 @@ export class CpDaemon {
    * If daemon run as a seperate child process, it must have at least one connection channel
    */
   async startConnectionServer() {
-    const {daemonKey, connection} = this.config;
+    const {id: daemonKey, connection} = this.config;
     const {socketConfig} = connection ?? {};
     let finalSocketConfig = socketConfig;
     /** At least start on server */
@@ -252,13 +252,13 @@ export class CpDaemon {
   /** Start Daemon as child process */
   async startAsCp(config: Daemon.DaemonConfig) {
     this.config = config;
-    const {daemonKey} = this.config;
+    const {id: daemonKey} = this.config;
     if (!isString(daemonKey)) {
       throw new Error(`daemonKey is not passed`);
     }
     await this.startConnectionServer();
     await this.startAllCp();
-    return this.getInfo(config.daemonKey);
+    return this.getInfo(config.id);
   }
   /**
    * Stop all child process and daemon process
@@ -290,7 +290,7 @@ export class CpDaemon {
     const cpManager = cpManagerMap[id];
     if (cpManager) {
       await cpManager.stop();
-    } else if (id === config.daemonKey) {
+    } else if (id === config.id) {
       await this.stopDaemon();
     } else {
       throw new Error(`No target found by id: ${id}`);
@@ -306,7 +306,7 @@ export class CpDaemon {
     const cpManager = cpManagerMap[id];
     if (cpManager) {
       return cpManager.getInfo();
-    } else if (id === config.daemonKey) {
+    } else if (id === config.id) {
       const daemonInfo: Daemon.DaemonInfo = {
         pid: process.pid,
         config: config,

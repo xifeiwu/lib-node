@@ -18,7 +18,7 @@ export async function runEmptyDaemon() {
     spawnOptions: {stdio: [0, 1, 2, 'ipc']},
     infoToCp: {
       config: {
-        daemonKey,
+        id: daemonKey,
       },
     },
     maxWaitTime4Ipc: 60,
@@ -53,7 +53,7 @@ export async function daemonDebugServer() {
     spawnOptions: {stdio: [0, 1, 2, 'ipc']},
     infoToCp: {
       config: {
-        daemonKey,
+        id: daemonKey,
         cpConfigList: [cpConfig4DebugServer],
       },
     },
@@ -84,7 +84,7 @@ export async function daemon2DebugServer() {
     spawnOptions: {stdio: [0, 1, 2, 'ipc']},
     infoToCp: {
       config: {
-        daemonKey,
+        id: daemonKey,
         cpConfigList: [
           {...spawnConfig, id: 'debug-server-1'},
           {...spawnConfig2, id: 'debug-server-2'},
