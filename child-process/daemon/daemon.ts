@@ -267,9 +267,6 @@ export class CpDaemon {
     return info;
   }
   getCpManager(cpConfigOrId?: Daemon.Command2Process['data']) {
-    if (cpConfigOrId === undefined) {
-      return undefined;
-    }
     const {cpManagerMap} = this;
     /** return first cpManager in cpManagerMap by default */
     let cpManager = Object.values(cpManagerMap)[0];

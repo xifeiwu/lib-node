@@ -9,7 +9,7 @@ import {startSocketClient, startSocketServer} from './utils';
 import {fromBuffer, toBuffer} from '../transform';
 import {CanConvertToBuffer, OneChatHandler, TcpServerConfig} from '../types';
 
-export async function oneChatFromSocketClient<Response = any, Payload extends CanConvertToBuffer = any>(
+export async function oneChatFromSocketClient<Payload extends CanConvertToBuffer = any, Response = any>(
   payload: Payload,
   connectOpts: NetConnectOpts
 ) {

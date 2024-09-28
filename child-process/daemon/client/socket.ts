@@ -1,6 +1,13 @@
 import fs from 'fs';
 import path from 'path';
-import {getFileList, startSocketClient, fromBuffer, toBuffer, getSocketInfo} from '../../../index';
+import {
+  getFileList,
+  startSocketClient,
+  fromBuffer,
+  toBuffer,
+  getSocketInfo,
+  oneChatFromSocketClient,
+} from '../../../index';
 import {NetConnectOpts, Socket} from 'net';
 import {CP, Daemon, InfoToCp} from '../../../types';
 import {isString} from 'markdown-it/lib/common/utils';
@@ -100,4 +107,30 @@ export async function restart(
   config?: CheckSocketActivityConfig
 ) {
   return await chatWithDaemon({action: 'restart', data: infoToCp}, socketPath, config);
+}
+
+export class SocketClient {
+  connectOpts: NetConnectOpts;
+  constructor(connectOpts: NetConnectOpts) {
+    this.connectOpts = connectOpts;
+  }
+  async ping() {
+    return await oneChatFromSocketClient<Daemon.Command2Daemon>({action: 'ping'}, this.connectOpts);
+  }
+  async info(data?: Daemon.Command2Process['data']) {
+    if (data) {
+      return await oneChatFromSocketClient<Daemon.Command2Process>({action: 'info', data}, this.connectOpts);
+    } else {
+      return await oneChatFromSocketClient<Daemon.Command2Daemon>({action: 'info'}, this.connectOpts);
+    }
+  }
+  async start(data?: Daemon.Command2Process['data']) {
+    return await oneChatFromSocketClient<Daemon.Command2Process>({action: 'start', data}, this.connectOpts);
+  }
+  async stop(data?: Daemon.Command2Process['data']) {
+    return await oneChatFromSocketClient<Daemon.Command2Process>({action: 'stop', data}, this.connectOpts);
+  }
+  async restart(data?: Daemon.Command2Process['data']) {
+    return await oneChatFromSocketClient<Daemon.Command2Process>({action: 'restart', data}, this.connectOpts);
+  }
 }
