@@ -67,15 +67,15 @@ export async function stopdebugServer1() {
   const response = await socketClient.stop(debugServer1Id);
   logColorful({}, response);
 }
-export async function stopDaemon() {
-  const response = await socketClient.stop(daemonKey);
-  logColorful({}, response);
-}
-export async function testStartDebugServer1() {
+export async function startDebugServer1() {
   const response = await socketClient.start(debugServer1Id);
   logColorful({}, response);
 }
-export async function testStartDebugServer2() {
+export async function startDebugServer2() {
   const response = await socketClient.start(spawnDebugServer2);
+  logColorful({}, response);
+}
+export async function stopDaemon() {
+  const response = await socketClient.stop(daemonKey);
   logColorful({}, response);
 }
