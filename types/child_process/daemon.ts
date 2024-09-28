@@ -59,8 +59,9 @@ export namespace Daemon {
     cpList: CpInfo[];
   }
 
-  export type Action2Cp = 'start' | 'stop' | 'restart' | 'info';
-  export type Action2Daemon = 'ping' | 'info';
+  export type Action2Cp = 'start' | 'restart';
+  export type Action2Daemon = 'ping';
+  export type ActionCommon = 'info' | 'stop';
 
   export interface Command2Process {
     action: Action2Cp;
@@ -70,15 +71,19 @@ export namespace Daemon {
     action: Action2Daemon;
     data?: any;
   }
-  export type Command = Command2Process | Command2Daemon;
+  export interface CommandCommon {
+    action: ActionCommon;
+    data?: string;
+  }
+  export type Command = Command2Process | Command2Daemon | CommandCommon;
 
   export interface ResponseCpInfo {
     type: Action2Cp;
     data?: CpInfo;
   }
-  export interface ResponseDaemonInfo {
-    type: 'info';
-    data?: DaemonInfo;
+  export interface ResponseInfo {
+    type: ActionCommon;
+    data?: DaemonInfo | CpInfo;
   }
   export interface ResponsePong {
     type: 'pong';
@@ -92,10 +97,5 @@ export namespace Daemon {
     type: 'unknown';
     data: string;
   }
-  export type DaemonResponse =
-    | ResponseDaemonInfo
-    | ResponsePong
-    | ResponseCpInfo
-    | ResponseError
-    | ResponseUnknown;
+  export type DaemonResponse = ResponseInfo | ResponsePong | ResponseCpInfo | ResponseError | ResponseUnknown;
 }

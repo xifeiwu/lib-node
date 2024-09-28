@@ -7,8 +7,7 @@ export async function startDetachedDaemon(
   daemonConfig: Daemon.DaemonConfig,
   featureConfig?: {debug?: boolean}
 ) {
-  // const {daemonKey, ...restDaemonConfig} = daemonConfig;
-  const {cpConfigList} = daemonConfig;
+  const {daemonKey, cpConfigList} = daemonConfig;
   const {debug = false} = featureConfig ?? {};
   if (debug) {
     for (const cpConfig of cpConfigList) {
@@ -21,7 +20,7 @@ export async function startDetachedDaemon(
   }
   const spawnConfig4Daemon = getCpConfigByScriptName<Daemon.DaemonConfig>('daemon.ts', {
     /** args key is used for killing Zombie Daemon Process */
-    args: ['startDetachedDaemon'],
+    params: [daemonKey],
     infoToCp: {
       config: daemonConfig,
     },

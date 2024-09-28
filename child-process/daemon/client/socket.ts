@@ -117,18 +117,14 @@ export class SocketClient {
   async ping() {
     return await oneChatFromSocketClient<Daemon.Command2Daemon>({action: 'ping'}, this.connectOpts);
   }
-  async info(data?: Daemon.Command2Process['data']) {
-    if (data) {
-      return await oneChatFromSocketClient<Daemon.Command2Process>({action: 'info', data}, this.connectOpts);
-    } else {
-      return await oneChatFromSocketClient<Daemon.Command2Daemon>({action: 'info'}, this.connectOpts);
-    }
+  async info(id: string) {
+    return await oneChatFromSocketClient<Daemon.CommandCommon>({action: 'info', data: id}, this.connectOpts);
   }
   async start(data?: Daemon.Command2Process['data']) {
     return await oneChatFromSocketClient<Daemon.Command2Process>({action: 'start', data}, this.connectOpts);
   }
-  async stop(data?: Daemon.Command2Process['data']) {
-    return await oneChatFromSocketClient<Daemon.Command2Process>({action: 'stop', data}, this.connectOpts);
+  async stop(id: string) {
+    return await oneChatFromSocketClient<Daemon.CommandCommon>({action: 'stop', data: id}, this.connectOpts);
   }
   async restart(data?: Daemon.Command2Process['data']) {
     return await oneChatFromSocketClient<Daemon.Command2Process>({action: 'restart', data}, this.connectOpts);
