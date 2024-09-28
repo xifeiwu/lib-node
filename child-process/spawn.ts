@@ -106,7 +106,7 @@ export function getSpawnConfigByScriptPath(fullPath: string, options?: SpawnTsFi
 }
 export function getCpConfigByScriptPath<CpConfig = any>(
   fullPath: string,
-  options?: SpawnTsFileOptions & IpcConfig
+  options?: SpawnTsFileOptions & IpcConfig<CpConfig>
 ): SpawnAndTryIpcConfig<CpConfig> {
   const {infoToCp, maxWaitTime4Ipc, ...spawnTsFileOptions} = options;
   const spawnConfig = getSpawnConfigByScriptPath(fullPath, spawnTsFileOptions);

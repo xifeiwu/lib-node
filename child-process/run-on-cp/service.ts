@@ -3,15 +3,15 @@ import {
   getFileList,
   getCpConfigByScriptPath,
   isNumber,
-  isObject,
   spawnAndTryIpc,
   SpawnAndTryIpcConfig,
   SpawnConfig,
   toConsole,
   waitFor,
+  SpawnTsFileOptions,
 } from '../../index';
-import {CP} from '../../types';
-import {getTsParams, SpawnAndTryIpcResponse} from '../../index';
+import {CP, IpcConfig} from '../../types';
+import {SpawnAndTryIpcResponse} from '../../index';
 
 /** For child process */
 export function out(value: any) {
@@ -72,12 +72,11 @@ export async function handleCpCustomization(config?: CP.CpCustomization, key?: s
  */
 export function getCpConfigByScriptName<CpConfig = any>(
   basename: CP.ScriptFileName,
-  config?: Partial<SpawnAndTryIpcConfig<CpConfig>>
+  config?: SpawnTsFileOptions & IpcConfig<CpConfig>
 ): SpawnAndTryIpcConfig<CpConfig> {
   const scriptPath = getScriptFullpath(basename);
   return getCpConfigByScriptPath(scriptPath, config);
 }
-
 export async function spawnScript<CpConfig = any, ResponseFromCp = any>(
   basename: CP.ScriptFileName,
   config?: Partial<SpawnAndTryIpcConfig<CpConfig>>
