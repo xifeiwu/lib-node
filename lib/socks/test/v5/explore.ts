@@ -1,14 +1,11 @@
-import {startHttpDebugServer} from '../../..';
 import { logColorful } from '../../../../log';
 import {connectToSocksServer} from '../../client';
 import {handleConnection} from '../../server';
 import {getInfoFromStateTracer, getInfosFromStateTracer} from '../../service';
-import {PORT, startSocketServer, tcpRequestPropsToBuffer, toReadable} from '../../service/external';
+import {PORT, startHttpDebugServer, startSocketServer, tcpRequestPropsToBuffer} from '../../service/external';
 import {SocksProxyConfig} from '../../service/types';
 import {EMethod, MethodUserPass} from '../../service/types/v5';
 import {eorBuffer, getCipher} from '../../v6/service';
-// import {connectToSocksServer} from '../../v5/client';
-// import {handleConnection} from '../../v5/server';
 
 export async function generalProcess() {
   const {origin: httpOrigin, server} = await startHttpDebugServer({port: PORT.fullFeatureHttpServer.port,});
@@ -18,7 +15,7 @@ export async function generalProcess() {
   const status = await connectToSocksServer({
     socksVersion: 'v5',
     targetSocksServer: {host, port},
-    clientRequestInfo: httpOrigin,
+    requestTarget: httpOrigin,
   });
   const {socket} = status;
 
@@ -59,7 +56,7 @@ export async function useAuthUserPass() {
     socksVersion: 'v5',
     methodList: [methodUsePass],
     targetSocksServer: {host, port},
-    clientRequestInfo: httpOrigin,
+    requestTarget: httpOrigin,
   });
   const {socket} = status;
   socket.write(
@@ -121,7 +118,7 @@ export async function proxyRequestOnServerSide() {
     const status = await connectToSocksServer({
       socksVersion: 'v5',
       targetSocksServer: {host: host1, port: port1},
-      clientRequestInfo: {
+      requestTarget: {
         address: '0.0.0.0',
         port: httpPort,
       },
@@ -141,7 +138,7 @@ export async function proxyRequestOnServerSide() {
     const status = await connectToSocksServer({
       socksVersion: 'v5',
       targetSocksServer: {host: host1, port: port1},
-      clientRequestInfo: {
+      requestTarget: {
         address: '127.0.0.1',
         port: httpPort,
       },

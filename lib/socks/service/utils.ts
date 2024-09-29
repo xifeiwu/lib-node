@@ -5,7 +5,7 @@ import {
   EMethod,
   MatchItem,
   SocksProxyConfig,
-  ClientRequestInfo,
+  RequestTarget,
   TargetSocket,
   EAddressType,
   SocksClientStatus,
@@ -132,7 +132,7 @@ function port2Buffer(port: number) {
   return toBuffer([high, low]);
 }
 
-export function targetServiceInfoToBuffer(targetServiceInfo: Omit<ClientRequestInfo, 'command'>): Buffer {
+export function targetServiceInfoToBuffer(targetServiceInfo: Omit<RequestTarget, 'command'>): Buffer {
   const {address, port} = targetServiceInfo;
   let addressType = targetServiceInfo.addressType;
   if (!addressType) {
@@ -141,7 +141,7 @@ export function targetServiceInfoToBuffer(targetServiceInfo: Omit<ClientRequestI
   return toBuffer([addressType, address2Buffer(address), port2Buffer(port)]);
 }
 
-export function bufferToTargeServiceInfo(buf: Buffer): Required<Omit<ClientRequestInfo, 'command'>> {
+export function bufferToTargeServiceInfo(buf: Buffer): Required<Omit<RequestTarget, 'command'>> {
   const [addressType] = buf;
   const remainBuffer = buf.subarray(1);
   if (!Object.values(EAddressType).includes(addressType)) {
@@ -198,7 +198,7 @@ export async function getInfoFromFirstChunk(reader: Socket) {
 }
 
 export function getMatchedProxyConfig(
-  target: ClientRequestInfo,
+  target: RequestTarget,
   config: AllSocksProxyConfig
 ): AllSocksProxyConfig | null {
   const {matches = []} = config;
@@ -283,20 +283,29 @@ export async function getSocket(target: TargetSocket) {
   return socket;
 }
 
-export function getTargetServiceInfo(origin: ClientRequestInfo | string): ClientRequestInfo {
-  if (isString(origin)) {
-    const url = toUrlInstance({origin: origin as string});
+export function getRequestTarget(
+  requestTarget: RequestTarget | string,
+  command?: RequestTarget['command']
+): RequestTarget {
+  let result: RequestTarget;
+  if (isString(requestTarget)) {
+    const url = toUrlInstance({origin: requestTarget});
     const {protocol, hostname} = url;
     let port = protocol === 'https:' ? 443 : protocol === 'http:' ? 80 : 0;
     if (url.port) {
       port = parseInt(url.port);
     }
-    return {
+    result = {
       address: hostname,
       port,
     };
+  } else {
+    result = requestTarget;
   }
-  return origin as ClientRequestInfo;
+  if (command) {
+    result.command = command;
+  }
+  return result;
 }
 
 const commonState = {

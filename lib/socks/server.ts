@@ -4,7 +4,7 @@ import {
   SocksServerConfig,
   SocksClientStatus,
   SocksServerNegotiationInfoV6,
-  GetClientRequestInfoFunc,
+  GetClientRequestTargetFunc,
   ECommand,
   ConnectToTargetServerFunc,
 } from './service/types';
@@ -13,19 +13,19 @@ import {pipeline} from 'stream';
 import {ERRORS, createError, getInfoFromStateTracer, globalServerState} from './service';
 import {getSocketInfo} from './service/external';
 import {
-  getClientRequestInfo as getClientRequestInfoV5,
+  getClientRequestTarget as getClientRequestTargetV5,
   connectToTargetServer as connectToTargetServerV5,
 } from './v5/server';
 import {
-  getClientRequestInfo as getClientRequestInfoV6,
+  getClientRequestTarget as getClientRequestTargetV6,
   connectToTargetServer as connectToTargetServerV6,
 } from './v6/server';
 
-const getClientRequestInfo: {
-  [version in SocksVersion]: GetClientRequestInfoFunc<SocksVersion>;
+const getClientRequestTarget: {
+  [version in SocksVersion]: GetClientRequestTargetFunc<SocksVersion>;
 } = {
-  v5: getClientRequestInfoV5,
-  v6: getClientRequestInfoV6,
+  v5: getClientRequestTargetV5,
+  v6: getClientRequestTargetV6,
 };
 const connectToTargetServer: {
   [version in SocksVersion]: ConnectToTargetServerFunc<SocksVersion>;
@@ -53,48 +53,12 @@ export async function handleConnection<Version extends SocksVersion>(
   const {stateTracer} = status;
   const {socksVersion, proxyConfigList} = config;
   try {
-    // if (socksVersion === 'v5') {
-    //   await getClientRequestInfoV5(
-    //     socket,
-    //     {
-    //       ...config,
-    //     },
-    //     status
-    //   );
-    // } else if (socksVersion === 'v6') {
-    //   await getClientRequestInfoV6(
-    //     socket,
-    //     {
-    //       ...config,
-    //     } as SocksServerNegotiationInfoV6,
-    //     status
-    //   );
-    // }
-    const {clientRequestInfo} = await getClientRequestInfo[socksVersion](socket, config, status);
+    const {requestTarget} = await getClientRequestTarget[socksVersion](socket, config, status);
     // const clientRequestInfo = getInfoFromStateTracer(stateTracer, 'clientRequestInfo');
-    if (!clientRequestInfo) {
-      throw createError(ERRORS.CLIENT_AUTH_FAIL);
+    if (!requestTarget) {
+      throw createError(`Fail to get requestTarget`);
     }
-
-    // const proxyStatus = proxyConfigList && (await proxySocksRequest(clientRequestInfo, proxyConfigList));
-    //   const {
-    //     stateTracer: tracer = [],
-    //     proxyClientInfo: {repliedServiceInfo, socket: proxySocket},
-    //   } = proxyStatus;
-    //   stateTracer.push(...tracer);
-    //   const replied = {
-    //     reply: ETargetServiceConnectState.succeeded,
-    //     ...(repliedServiceInfo ?? {address: '8.8.8.8', port: 88}),
-    //   };
-    //   await serverReplyTargetServiceInfo(socket, replied);
-    //   stateTracer.push(serverState.repliedTargetServiceInfo);
-    //   stateTracer.push({
-    //     key: 'repliedServiceInfo',
-    //     value: replied,
-    //   });
-    //   socket2Service = proxySocket;
-
-    const {command} = clientRequestInfo;
+    const {command} = requestTarget;
     if (command === ECommand.CONNECT) {
       stateTracer.push(globalServerState.gotClientRequest);
       const {socket: socket2Service, proxyClientStatus} = await connectToTargetServer[socksVersion](

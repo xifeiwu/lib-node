@@ -66,7 +66,7 @@ export async function requestToElif() {
         port: 3307,
       },
       // clientRequestInfo: 'https://www.google.com',
-      clientRequestInfo: httpOptions.origin,
+      requestTarget: httpOptions.origin,
     });
     const {socket, stateTracer} = status;
     const iv = getInfoFromStateTracer(stateTracer, 'iv');

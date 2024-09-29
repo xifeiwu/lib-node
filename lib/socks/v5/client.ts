@@ -2,11 +2,11 @@ import {
   clientWaitMethodReplied,
   clientWaitUserPassAuthResultReplied,
   clientSendMethod,
-  clientSendClientRequestInfo,
+  clientSendRequestTarget,
   clientSendUserPass,
-  clientWaitRequestRespond,
+  clientWaitRespondOfRequestTarget,
 } from './communication';
-import {getTargetServiceInfo} from '../service';
+import {getRequestTarget} from '../service';
 import {ECommand, EMethod, SocksClientStatus, UserPassInfo} from '../service/types';
 import {clientState} from './service';
 import {InfoNegotiationFunc, SocksClientNegotiationInfoV5} from '../service/types/cross';
@@ -19,7 +19,7 @@ export const infoNegotiation: InfoNegotiationFunc<'v5'> = async (
 ) => {
   const {stateTracer = []} = clientInfo ?? {};
   const {methodList = [{method: EMethod.NoAuth}]} = config;
-  const targetServiceInfo = getTargetServiceInfo(config.clientRequestInfo);
+  const requestTarget = getRequestTarget(config.requestTarget, ECommand.CONNECT);
   /** Use authorized method first */
   methodList.sort((pre, next) => next.method - pre.method);
 
@@ -44,19 +44,15 @@ export const infoNegotiation: InfoNegotiationFunc<'v5'> = async (
     stateTracer.push(clientState.authUserPassSuccess);
   }
   stateTracer.push(clientState.sendTargetSericeInfo);
-  const clientRequestInfo = {
-    command: ECommand.CONNECT,
-    ...targetServiceInfo,
-  };
   stateTracer.push({
-    key: 'clientRequestInfo',
-    value: clientRequestInfo,
+    key: 'requestTarget',
+    value: requestTarget,
   });
-  await clientSendClientRequestInfo(socket, clientRequestInfo);
-  const respondClientRequest = await clientWaitRequestRespond(socket);
+  await clientSendRequestTarget(socket, requestTarget);
+  const respondOfRequestTarget = await clientWaitRespondOfRequestTarget(socket);
   stateTracer.push(clientState.getRepliedTargetSericeInfo);
-  stateTracer.push({key: 'respondClientRequest', value: respondClientRequest});
+  stateTracer.push({key: 'respondOfRequestTarget', value: respondOfRequestTarget});
   return {
-    respondClientRequest,
+    respondOfRequestTarget,
   };
 };

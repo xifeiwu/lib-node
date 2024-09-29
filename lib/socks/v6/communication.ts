@@ -1,7 +1,7 @@
 import {Readable, Writable} from 'stream';
 import {ConnectionInfo} from '../service/types/v6';
 import {isNumber, toBuffer} from '../service/external';
-import {ECommand, EHandleClientRequestState, ClientRequestInfo, RespondClientRequest} from '../service/types';
+import {ECommand, EHandleRequestTargetState, RespondOfRequestTarget} from '../service/types';
 import {ERRORS, bufferToTargeServiceInfo, createError, targetServiceInfoToBuffer} from '../service';
 import {decript, encrypt, defaultIvBytes} from './service';
 import {BinaryLike} from 'crypto';
@@ -39,9 +39,9 @@ import {BinaryLike} from 'crypto';
  * +----+-----+------+----------+------+----------+-----+-------+------+----------+----------+
  */
 export async function clientSendConnectionInfo(writer: Writable, info: ConnectionInfo) {
-  const {iv, auth, clientRequestInfo} = info;
+  const {iv, auth, requestTarget} = info;
   const {username, password} = auth;
-  const {command = ECommand.CONNECT, address, port} = clientRequestInfo;
+  const {command = ECommand.CONNECT, address, port} = requestTarget;
   if (!address) {
     throw new Error(`address is blank`);
   }
@@ -57,7 +57,7 @@ export async function clientSendConnectionInfo(writer: Writable, info: Connectio
         password,
         command,
         0,
-        targetServiceInfoToBuffer(clientRequestInfo),
+        targetServiceInfoToBuffer(requestTarget),
       ]),
       iv
     );
@@ -109,7 +109,7 @@ export async function serverWaitConectionInfo(reader: Readable) {
           username: username.toString(),
           password: password.toString(),
         },
-        clientRequestInfo: {
+        requestTarget: {
           command,
           addressType,
           address,
@@ -142,10 +142,10 @@ export async function serverWaitConectionInfo(reader: Readable) {
  *     o  RSV    RESERVED
  * o  ATYP   address type of following address
  */
-export async function serverRespondClientRequest(
+export async function serverRespondRequestTarget(
   writer: Writable,
   state: {
-    reply: EHandleClientRequestState;
+    reply: EHandleRequestTargetState;
     address: string;
     port: number;
   },
@@ -200,9 +200,9 @@ export async function serverRespondClientRequest(
  *     o  RSV    RESERVED
  * o  ATYP   address type of following address
  */
-export async function clientWaitRequestRespond(reader: Readable, iv: BinaryLike) {
+export async function clientWaitRespondOfRequestTarget(reader: Readable, iv: BinaryLike) {
   reader.resume();
-  return new Promise<RespondClientRequest>((res, rej) => {
+  return new Promise<RespondOfRequestTarget>((res, rej) => {
     reader.once('data', (chunk: Buffer) => {
       reader.pause();
       const buffer = decript(chunk, iv);
@@ -210,8 +210,8 @@ export async function clientWaitRequestRespond(reader: Readable, iv: BinaryLike)
       if (version !== 0x05) {
         return rej(createError(ERRORS.InvalidSocksVersion));
       }
-      if (reply !== EHandleClientRequestState.succeeded) {
-        return rej(createError(EHandleClientRequestState[reply]));
+      if (reply !== EHandleRequestTargetState.succeeded) {
+        return rej(createError(EHandleRequestTargetState[reply]));
       }
       const {addressType, address, port} = bufferToTargeServiceInfo(buffer.subarray(3));
       res({

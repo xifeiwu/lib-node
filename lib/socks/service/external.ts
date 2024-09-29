@@ -24,4 +24,7 @@ export {
   HttpRequestOptions,
   requestAndGetResponseInfo,
   toReadable,
+  getRequestInfo,
+  startHttpServer,
+  watchSocketState,
 } from '../../../index';

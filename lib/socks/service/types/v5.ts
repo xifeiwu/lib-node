@@ -35,15 +35,15 @@ export enum EAddressType {
   IPV6 = 0x04,
 }
 
-export interface ClientRequestInfo {
+export interface RequestTarget {
   command?: ECommand;
   addressType?: EAddressType;
   address: string;
   port: number;
 }
 
-export interface RespondClientRequest {
-  reply: EHandleClientRequestState;
+export interface RespondOfRequestTarget {
+  reply: EHandleRequestTargetState;
   addressType?: EAddressType
   address: string;
   port: number;
@@ -70,7 +70,7 @@ export interface RespondClientRequest {
  *     o  RSV    RESERVED
  * o  ATYP   address type of following address
  */
-export enum EHandleClientRequestState {
+export enum EHandleRequestTargetState {
   succeeded = 0x00,
   general_SOCKS_server_failure = 0x01,
   connection_not_allowed_by_ruleset = 0x02,

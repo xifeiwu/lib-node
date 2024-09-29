@@ -1,6 +1,16 @@
+import {
+  getRequestInfo,
+  getSocketInfo,
+  startHttpServer,
+  toBuffer,
+  watchSocketState,
+  PORT,
+  startHttpDebugServer,
+  startSocketServer,
+  tcpRequestPropsToBuffer,
+} from '../../service/external';
 import {connectToSocksServer} from '../../client';
 import {handleConnection} from '../../server';
-import {PORT, startHttpDebugServer, startSocketServer, tcpRequestPropsToBuffer} from '../../service/external';
 import {SocksProxyConfig} from '../../service/types';
 
 export async function generalProcess() {
@@ -16,7 +26,7 @@ export async function generalProcess() {
     socksVersion: 'v6',
     auth,
     targetSocksServer: {host, port},
-    clientRequestInfo: httpOrigin,
+    requestTarget: httpOrigin,
   });
   const {socket} = status;
   socket.write(
@@ -32,24 +42,28 @@ export async function generalProcess() {
 
 export async function proxyRequestOnServerSide() {
   let startPort = PORT.start3400.port;
-  const {
-    origin: httpOrigin,
-    port: httpPort,
-    server,
-  } = await startHttpDebugServer({
-    port: startPort++,
-  });
-  // const methodUsePass: MethodUserPass = {
-  //   method: EMethod.UserPass,
-  //   info: ,
-  // };
+  const {port: httpPort} = await startHttpServer(
+    {
+      async request(request, response) {
+        const requestInfo = await getRequestInfo(request);
+        const resData = toBuffer({...requestInfo, socketInfo: getSocketInfo(request.socket)});
+        response.setHeader['content-length'] = resData.byteLength;
+        response.setHeader['content-type'] = 'application/json';
+        response.end(resData);
+      },
+    },
+    {
+      port: startPort++,
+    }
+  );
   const auth = {
     username: 'abc',
     password: 'ddd',
   };
-  const {host: host2, port: port2} = await startSocketServer(
+  const socksServer2 = await startSocketServer(
     socket => {
       handleConnection(socket, {socksVersion: 'v6', auth});
+      watchSocketState(socket, {colorStyle: {color: 'blue'}});
     },
     {
       port: startPort++,
@@ -60,12 +74,9 @@ export async function proxyRequestOnServerSide() {
     socksVersion: 'v6',
     // methodList: [methodUsePass],
     auth,
-    targetSocksServer: {
-      host: host2,
-      port: port2,
-    },
+    targetSocksServer: socksServer2,
   };
-  const {host: host1, port: port1} = await startSocketServer(
+  const socksServer1 = await startSocketServer(
     socket => {
       handleConnection(socket, {
         auth,
@@ -81,8 +92,8 @@ export async function proxyRequestOnServerSide() {
     const status = await connectToSocksServer({
       socksVersion: 'v6',
       auth,
-      targetSocksServer: {host: host1, port: port1},
-      clientRequestInfo: {
+      targetSocksServer: socksServer1,
+      requestTarget: {
         address: '0.0.0.0',
         port: httpPort,
       },
@@ -94,16 +105,19 @@ export async function proxyRequestOnServerSide() {
         data: {to: '0.0.0.0'},
       })
     );
-    socket.on('data', chunk => {
-      console.log(chunk.toString());
+    await new Promise<void>(res => {
+      socket.on('data', chunk => {
+        console.log(chunk.toString());
+        res();
+      });
     });
   }
   {
     const status = await connectToSocksServer({
       socksVersion: 'v6',
       auth,
-      targetSocksServer: {host: host1, port: port1},
-      clientRequestInfo: {
+      targetSocksServer: socksServer1,
+      requestTarget: {
         address: '127.0.0.1',
         port: httpPort,
       },

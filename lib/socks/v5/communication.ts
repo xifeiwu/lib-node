@@ -3,9 +3,9 @@ import {ERRORS, bufferToTargeServiceInfo, createError, targetServiceInfoToBuffer
 import {
   ECommand,
   EMethod,
-  EHandleClientRequestState,
-  ClientRequestInfo,
-  RespondClientRequest,
+  EHandleRequestTargetState,
+  RequestTarget,
+  RespondOfRequestTarget,
 } from '../service/types';
 import {isNumber, toBuffer} from '../service/external';
 
@@ -231,7 +231,7 @@ export async function clientWaitUserPassAuthResultReplied(reader: Readable) {
  *     o  DST.ADDR       desired destination address
  * o  DST.PORT desired destination port in network octet order
  */
-export async function clientSendClientRequestInfo(writer: Writable, info: ClientRequestInfo) {
+export async function clientSendRequestTarget(writer: Writable, info: RequestTarget) {
   const {command = ECommand.CONNECT, address, port} = info;
   if (!address) {
     throw new Error(`address is blank`);
@@ -253,9 +253,9 @@ export async function clientSendClientRequestInfo(writer: Writable, info: Client
     });
   });
 }
-export async function serverWaitClientRequestInfo(reader: Readable) {
+export async function serverWaitRequestTarget(reader: Readable) {
   reader.resume();
-  return new Promise<ClientRequestInfo>((res, rej) => {
+  return new Promise<RequestTarget>((res, rej) => {
     reader.once('data', (chunk: Buffer) => {
       reader.pause();
       const [version, command, _reserve] = chunk;
@@ -298,7 +298,7 @@ export async function serverWaitClientRequestInfo(reader: Readable) {
  *     o  RSV    RESERVED
  * o  ATYP   address type of following address
  */
-export async function serverRespondClientRequest(writer: Writable, respond: RespondClientRequest) {
+export async function serverRespondRequestTarget(writer: Writable, respond: RespondOfRequestTarget) {
   const {reply, address, port} = respond;
   return new Promise<void>((res, rej) => {
     if (!writer.writable) {
@@ -324,17 +324,17 @@ export async function serverRespondClientRequest(writer: Writable, respond: Resp
     );
   });
 }
-export async function clientWaitRequestRespond(reader: Readable) {
+export async function clientWaitRespondOfRequestTarget(reader: Readable) {
   reader.resume();
-  return new Promise<RespondClientRequest>((res, rej) => {
+  return new Promise<RespondOfRequestTarget>((res, rej) => {
     reader.once('data', (chunk: Buffer) => {
       reader.pause();
       const [version, reply, _reserve] = chunk;
       if (version !== 0x05) {
         return rej(createError(ERRORS.InvalidSocksVersion, chunk));
       }
-      if (reply !== EHandleClientRequestState.succeeded) {
-        return rej(createError(EHandleClientRequestState[reply], chunk));
+      if (reply !== EHandleRequestTargetState.succeeded) {
+        return rej(createError(EHandleRequestTargetState[reply], chunk));
       }
       const {addressType, address, port} = bufferToTargeServiceInfo(chunk.subarray(3));
       res({

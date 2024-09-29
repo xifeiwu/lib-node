@@ -1,5 +1,5 @@
 import dns from 'dns';
-import {EHandleClientRequestState, SocksClientStatus, SocksProxyConfig, ClientRequestInfo, AllSocksProxyConfig} from './types';
+import {EHandleRequestTargetState, SocksClientStatus, SocksProxyConfig, RequestTarget, AllSocksProxyConfig} from './types';
 import {ERRORS, createError, getAddressType, getMatchedProxyConfig} from './utils';
 import {connectToSocksServer} from '../client';
 import {deepClone, isString} from './external';
@@ -10,7 +10,7 @@ const state = {
   proxyToSocksServerSuccess: 'proxy to socks server success',
 };
 export async function proxySocksRequest(
-  targetServiceInfo: ClientRequestInfo,
+  targetServiceInfo: RequestTarget,
   proxyConfigList?: Array<AllSocksProxyConfig>
 ) {
   const stateTracer: SocksClientStatus['stateTracer'] = [];
@@ -25,7 +25,7 @@ export async function proxySocksRequest(
   stateTracer.push({key: 'targetSocksServer', value: proxyConfig.targetSocksServer});
   try {
     const {socksVersion, ...restProps} = proxyConfig;
-    const proxyClientInfo = await connectToSocksServer({socksVersion, ...restProps, clientRequestInfo: targetServiceInfo});
+    const proxyClientInfo = await connectToSocksServer({socksVersion, ...restProps, requestTarget: targetServiceInfo});
     stateTracer.push(state.proxyToSocksServerSuccess);
     return {stateTracer, proxyClientInfo};
   } catch (err) {
@@ -33,16 +33,16 @@ export async function proxySocksRequest(
   }
 }
 
-export async function handleConnection(clientRequestInfo: ClientRequestInfo) {
-  const respondClientRequest = deepClone<ClientRequestInfo>(clientRequestInfo);
-  const isDomain = isIP(clientRequestInfo.address) === 0;
+export async function handleConnection(origin: RequestTarget) {
+  const requestTarget = deepClone<RequestTarget>(origin);
+  const isDomain = isIP(requestTarget.address) === 0;
   let state: 'dns' | 'connection' = 'dns';
   let socket: Socket;
-  let connectState = EHandleClientRequestState.succeeded;
+  let connectState: String | string | number = EHandleRequestTargetState.succeeded;
   try {
     if (isDomain) {
       const ip = await new Promise<string>((resolve, reject) => {
-        dns.lookup(clientRequestInfo.address, function (err, ip) {
+        dns.lookup(requestTarget.address, function (err, ip) {
           if (err) {
             reject(err);
           } else {
@@ -50,8 +50,8 @@ export async function handleConnection(clientRequestInfo: ClientRequestInfo) {
           }
         });
       });
-      respondClientRequest.address = ip;
-      respondClientRequest.addressType = getAddressType(ip);
+      requestTarget.address = ip;
+      requestTarget.addressType = getAddressType(ip);
     }
     state = 'connection';
     socket = await new Promise((res, rej) => {
@@ -60,27 +60,27 @@ export async function handleConnection(clientRequestInfo: ClientRequestInfo) {
         res(socket);
       });
       socket.once('error', err => {
-        rej(EHandleClientRequestState.general_SOCKS_server_failure);
+        rej(EHandleRequestTargetState.general_SOCKS_server_failure);
       });
       socket.once('timeout', err => {
-        rej(EHandleClientRequestState.TTL_expired);
+        rej(EHandleRequestTargetState.TTL_expired);
       });
       socket.connect({
-        host: respondClientRequest.address,
-        port: respondClientRequest.port,
+        host: requestTarget.address,
+        port: requestTarget.port,
       });
     });
   } catch (err) {
     const blockByDns = state === 'dns';
     connectState = blockByDns
-      ? EHandleClientRequestState.Host_unreachable
+      ? EHandleRequestTargetState.Host_unreachable
       : isString(err)
       ? err
-      : EHandleClientRequestState.Connection_refused;
+      : EHandleRequestTargetState.Connection_refused;
   }
   return {
     socket,
     connectState,
-    respondClientRequest,
+    requestTarget,
   };
 }

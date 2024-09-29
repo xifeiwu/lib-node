@@ -1,7 +1,7 @@
 ## Key Point
 
 1. Can get socket conneciton by tcp protocol directly or by http upgrade method.
-2. 
+2. Protocol v5 is a common protocol defined in [SOCKS Protocol Version 5](https://datatracker.ietf.org/doc/html/rfc1928), v6 do some change on communication part based on v5.
 
 
 ## Ref
