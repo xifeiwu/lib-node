@@ -296,6 +296,22 @@ export class CpDaemon {
       throw new Error(`No target found by id: ${id}`);
     }
   }
+  getDaemonInfo() {
+    const {config, connectInfo, cpManagerMap} = this;
+    const daemonInfo: Daemon.DaemonInfo = {
+      pid: process.pid,
+      config: config,
+      status: {connection: {}},
+      cpList: Object.values(cpManagerMap).map(it => it.getInfo()),
+    };
+    if (connectInfo) {
+      const {socket} = connectInfo;
+      if (socket) {
+        daemonInfo.status.connection.socket = serializeSocketServerInfo(socket);
+      }
+    }
+    return daemonInfo;
+  }
   /**
    * Get child process or daemon info, prioritise child process
    * @param id daemon id or child process id
@@ -307,19 +323,7 @@ export class CpDaemon {
     if (cpManager) {
       return cpManager.getInfo();
     } else if (id === config.id) {
-      const daemonInfo: Daemon.DaemonInfo = {
-        pid: process.pid,
-        config: config,
-        status: {connection: {}},
-        cpList: Object.values(cpManagerMap).map(it => it.getInfo()),
-      };
-      if (connectInfo) {
-        const {socket} = connectInfo;
-        if (socket) {
-          daemonInfo.status.connection.socket = serializeSocketServerInfo(socket);
-        }
-      }
-      return daemonInfo;
+      return this.getDaemonInfo();
     }
     throw new Error(`No target found by id: ${id}`);
   }
