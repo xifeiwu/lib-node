@@ -9,7 +9,13 @@ function isHttpRequest(buffer: Buffer) {
   return httpFirstLineReg.test(str);
 }
 
-export async function startProxyableTcpServer(
+/**
+ * Redirect to different handler by first line of incoming socket
+ * @param config
+ * @param tcpServerConfig
+ * @returns
+ */
+export async function startRedirectSocketServer(
   config: {
     onConnection?: (socket: Socket) => Promise<boolean | void>;
     httpHandler?: (socket: Socket) => void;
