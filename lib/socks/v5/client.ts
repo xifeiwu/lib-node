@@ -4,16 +4,16 @@ import {
   clientSendMethod,
   clientSendRequestTarget,
   clientSendUserPass,
-  clientWaitRespondOfRequestTarget,
+  clientWaitRequestTargetResponse,
 } from './communication';
 import {toRequestTargetV5} from '../service';
 import {SocksClientStatus} from '../service/types';
 import {ECommand, EMethod, NegotiationInfo, UserPassInfo} from '../service/types/v5';
 import {clientState} from './service';
-import {NegotiationWithServer} from '../service/types/cross';
+import {NegotiationWithServer} from '../service/types/client';
 import {Socket} from 'net';
 
-export const infoNegotiation: NegotiationWithServer<'v5'> = async (
+export const negotiation: NegotiationWithServer<'v5'> = async (
   socket: Socket,
   config: NegotiationInfo,
   clientInfo?: SocksClientStatus
@@ -50,10 +50,12 @@ export const infoNegotiation: NegotiationWithServer<'v5'> = async (
     value: requestTarget,
   });
   await clientSendRequestTarget(socket, requestTarget);
-  const respondOfRequestTarget = await clientWaitRespondOfRequestTarget(socket);
+  const requestTargetResponse = await clientWaitRequestTargetResponse(socket);
   stateTracer.push(clientState.getRepliedTargetSericeInfo);
-  stateTracer.push({key: 'respondOfRequestTarget', value: respondOfRequestTarget});
+  // stateTracer.push({key: 'respondOfRequestTarget', value: respondOfRequestTarget});
   return {
-    respondOfRequestTarget,
+    method: methodList.find(it => it.method === method),
+    requestTarget,
+    requestTargetResponse,
   };
 };

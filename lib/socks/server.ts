@@ -17,7 +17,7 @@ import {
   connectToTargetServer as connectToTargetServerV5,
 } from './v5/server';
 import {
-  getClientRequestTarget as getClientRequestTargetV6,
+  negotiation as getClientRequestTargetV6,
   connectToTargetServer as connectToTargetServerV6,
 } from './vc1/server';
 

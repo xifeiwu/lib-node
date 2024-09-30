@@ -3,6 +3,7 @@ import {ERRORS, createError, getInfoFromStateTracer, globalServerState} from '..
 import {
   ConnectToTargetServerFunc,
   NegotiationWithClient,
+  ProxyConfig,
   SocksClientStatus,
   SocksServerNegotiationInfoV6,
 } from '../service/types';
@@ -10,9 +11,9 @@ import {deepEqual} from '../service/external';
 import {Socket} from 'net';
 import {serverState} from './service';
 import {handleConnection, proxySocksRequest} from '../service/cross';
-import {EHandleRequestTargetState, RespondOfRequestTargetV5} from '../service/types/v5';
+import {EHandleRequestTargetState, RequestTargetV5, RequestTargetV5Response} from '../service/types/v5';
 
-export const getClientRequestTarget: NegotiationWithClient<'vc1'> = async (
+export const negotiation: NegotiationWithClient<'vc1'> = async (
   socket: Socket,
   config: SocksServerNegotiationInfoV6,
   clientInfo: SocksClientStatus
@@ -35,11 +36,18 @@ export const getClientRequestTarget: NegotiationWithClient<'vc1'> = async (
     throw createError(ERRORS.authUserPassFail);
   }
   return {
-    requestTarget: requestTarget,
+    iv,
+    auth,
+    requestTarget,
   };
 };
 
-export const connectToTargetServer: ConnectToTargetServerFunc<'v6'> = async (
+export async function handleRequestTarget(requestTarget: RequestTargetV5, proxyConfigList?: ProxyConfig[]) {
+
+
+  
+}
+export const connectToTargetServer: ConnectToTargetServerFunc<'vc1'> = async (
   socket: Socket,
   config: SocksServerNegotiationInfoV6,
   clientInfo: SocksClientStatus
@@ -73,7 +81,7 @@ export const connectToTargetServer: ConnectToTargetServerFunc<'v6'> = async (
     socket2Service = proxySocket;
   } else {
     const {socket: theSocket, connectState, requestTarget} = await handleConnection(clientRequestInfo);
-    const reply: RespondOfRequestTargetV5 = {
+    const reply: RequestTargetV5Response = {
       reply: connectState as EHandleRequestTargetState,
       ...requestTarget,
     };

@@ -1,6 +1,6 @@
 import {
   serverReplyMethod,
-  serverRespondRequestTarget,
+  serverSendRequestTargetResponse,
   serverReplyUserPassAuthResult,
   serverWaitMethod,
   serverWaitRequestTarget,
@@ -91,7 +91,7 @@ export const connectToTargetServer: ConnectToTargetServerFunc<'v5'> = async (
       reply: EHandleRequestTargetState.succeeded,
       ...(respondClientRequest ?? {address: '8.8.8.8', port: 88}),
     };
-    await serverRespondRequestTarget(socket, replied);
+    await serverSendRequestTargetResponse(socket, replied);
     stateTracer.push(serverState.repliedTargetServiceInfo);
     stateTracer.push({
       key: 'respondOfRequestTarget',
@@ -109,7 +109,7 @@ export const connectToTargetServer: ConnectToTargetServerFunc<'v5'> = async (
       key: 'respondOfRequestTarget',
       value: reply,
     });
-    await serverRespondRequestTarget(socket, reply);
+    await serverSendRequestTargetResponse(socket, reply);
     if (connectState !== EHandleRequestTargetState.succeeded) {
       throw createError(ERRORS.handleClientRequestFail);
     }

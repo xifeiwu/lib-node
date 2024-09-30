@@ -1,5 +1,5 @@
 import dns from 'dns';
-import {EHandleRequestTargetState, SocksClientStatus, SocksProxyConfig, RequestTargetV5, AllSocksProxyConfig} from './types';
+import {EHandleRequestTargetState, SocksClientStatus, SocksProxyConfig, RequestTargetV5, ProxyConfig} from './types';
 import {ERRORS, createError, getAddressType, getMatchedProxyConfig} from './utils';
 import {connectToSocksServer} from '../client';
 import {deepClone, isString} from './external';
@@ -11,7 +11,7 @@ const state = {
 };
 export async function proxySocksRequest(
   targetServiceInfo: RequestTargetV5,
-  proxyConfigList?: Array<AllSocksProxyConfig>
+  proxyConfigList?: Array<ProxyConfig>
 ) {
   const stateTracer: SocksClientStatus['stateTracer'] = [];
   if (!Array.isArray(proxyConfigList) || proxyConfigList.length === 0) {

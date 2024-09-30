@@ -12,7 +12,7 @@ import {
   TracerInfo,
   TracerItem,
   TracerKey,
-  AllSocksProxyConfig,
+  ProxyConfig,
 } from './types';
 import {isString, toUrlInstance, requestAndGetUpgradeInfo, startSocketClient} from './external';
 import {RequestTarget} from './types/base';
@@ -200,8 +200,8 @@ export async function getInfoFromFirstChunk(reader: Socket) {
 
 export function getMatchedProxyConfig(
   target: RequestTargetV5,
-  config: AllSocksProxyConfig
-): AllSocksProxyConfig | null {
+  config: ProxyConfig
+): ProxyConfig | null {
   const {matches = []} = config;
   const matched = matches.find(match => {
     /**

@@ -23,7 +23,7 @@ export interface MethodUserPass {
   method: EMethod.UserPass;
   info: UserPassInfo;
 }
-export type MethodAuthInfo = {method: EMethod.NoAuth} | MethodUserPass;
+export type MethodInfo = {method: EMethod.NoAuth} | MethodUserPass;
 
 export enum ECommand {
   CONNECT = 0x01,
@@ -44,7 +44,7 @@ export interface RequestTargetV5 {
   port: number;
 }
 
-export interface RespondOfRequestTargetV5 {
+export interface RequestTargetV5Response {
   reply: EHandleRequestTargetState;
   addressType?: EAddressType;
   address: string;
@@ -87,8 +87,12 @@ export enum EHandleRequestTargetState {
 
 /** For Client Side */
 export interface NegotiationInfo {
-  methodList?: Array<MethodAuthInfo>;
+  methodList?: Array<MethodInfo>;
   requestTarget: RequestTarget;
 }
 /** For Server Side */
 export interface ServerConfig extends Pick<NegotiationInfo, 'methodList'> {}
+export interface NegotiationResult extends NegotiationInfo {
+  method: MethodInfo;
+  requestTargetResponse?: RequestTargetV5Response;
+}

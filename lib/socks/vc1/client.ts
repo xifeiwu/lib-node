@@ -13,25 +13,25 @@ export const negotiation: NegotiationWithServer<'vc1'> = async (
 ) => {
   const {stateTracer} = clientInfo ?? {};
   const {auth} = config;
-  const clientRequestInfo = toRequestTargetV5(config.requestTarget);
+  const requestTarget = toRequestTargetV5(config.requestTarget, ECommand.CONNECT);
   const iv = getIv(defaultIvBytes);
   await clientSendNegotiationInfo(socket, {
     iv,
     auth,
-    requestTarget: {
-      command: ECommand.CONNECT,
-      ...clientRequestInfo,
-    },
+    requestTarget,
   });
   stateTracer.push(clientState.sentConnectionInfo);
   stateTracer.push({
     key: 'iv',
     value: iv,
   });
-  const respondOfRequestTarget = await clientWaitNegotiationResponse(socket, iv);
+  const requestTargetResponse = await clientWaitNegotiationResponse(socket, iv);
   stateTracer.push(clientState.gotRepliedTargetServiceInfo);
-  stateTracer.push({key: 'respondOfRequestTarget', value: respondOfRequestTarget});
+  // stateTracer.push({key: 'requestTargetResponse', value: respondOfRequestTarget});
   return {
-    respondOfRequestTarget,
+    iv,
+    auth,
+    requestTarget,
+    requestTargetResponse,
   };
 };

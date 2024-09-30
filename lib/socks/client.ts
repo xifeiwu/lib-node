@@ -6,14 +6,14 @@ import {
   SocksClientConfig,
   SocksVersion,
 } from './service/types/cross';
-import {infoNegotiation as infoNegotiationV5} from './v5/client';
-import {negotiation as infoNegotiationV6} from './vc1/client';
+import {negotiation as infoNegotiationV5} from './v5/client';
+import {negotiation as infoNegotiationVc1} from './vc1/client';
 
 const infoNegotiation: {
   [version in SocksVersion]: NegotiationWithServer<SocksVersion>;
 } = {
   v5: infoNegotiationV5,
-  v6: infoNegotiationV6,
+  vc1: infoNegotiationVc1,
 };
 /**
  * Connect to socks server by socket from tcp connect or http upgrade
