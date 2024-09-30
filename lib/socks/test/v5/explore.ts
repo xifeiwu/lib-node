@@ -5,7 +5,7 @@ import {getInfoFromStateTracer, getInfosFromStateTracer} from '../../service';
 import {PORT, startHttpDebugServer, startSocketServer, tcpRequestPropsToBuffer} from '../../service/external';
 import {SocksProxyConfig} from '../../service/types';
 import {EMethod, MethodUserPass} from '../../service/types/v5';
-import {eorBuffer, getCipher} from '../../v6/service';
+import {eorBuffer, getCipher} from '../../vc1/service';
 
 export async function generalProcess() {
   const {origin: httpOrigin, server} = await startHttpDebugServer({port: PORT.fullFeatureHttpServer.port,});

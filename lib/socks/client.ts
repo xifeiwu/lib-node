@@ -8,7 +8,7 @@ import {
   SocksVersion,
 } from './service/types/cross';
 import {infoNegotiation as infoNegotiationV5} from './v5/client';
-import {infoNegotiation as infoNegotiationV6} from './v6/client';
+import {infoNegotiation as infoNegotiationV6} from './vc1/client';
 
 const infoNegotiation: {
   [version in SocksVersion]: InfoNegotiationFunc<SocksVersion>;

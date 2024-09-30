@@ -1,5 +1,5 @@
 import {sendHttpRequestByTcp, watchSocketState} from '../../../node';
-import {EMethod} from '../service/types';
+import {EMethod} from './types';
 import {connectToCustomSocksServer} from './client';
 
 export async function basic() {

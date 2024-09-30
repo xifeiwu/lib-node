@@ -19,7 +19,7 @@ import {
 import {
   getClientRequestTarget as getClientRequestTargetV6,
   connectToTargetServer as connectToTargetServerV6,
-} from './v6/server';
+} from './vc1/server';
 
 const getClientRequestTarget: {
   [version in SocksVersion]: GetClientRequestTargetFunc<SocksVersion>;

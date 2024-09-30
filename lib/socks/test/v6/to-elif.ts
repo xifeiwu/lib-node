@@ -1,7 +1,7 @@
 import {connectToSocksServer} from '../../client';
 import {getInfoFromStateTracer} from '../../service';
 import {requestAndGetResponseInfo, HttpRequestOptions, tcpRequestPropsToBuffer} from '../../service/external';
-import {eorBuffer, getDcipher} from '../../v6/service';
+import {eorBuffer, getDcipher} from '../../vc1/service';
 
 export async function httpRequestToGoogle() {
   const options: HttpRequestOptions = {
