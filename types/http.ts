@@ -52,3 +52,8 @@ export interface Action4IncomingMessage {
   delay?: number | string;
   responseCode?: number | string;
 }
+
+export interface HttpUpgradeConfig {
+  href: string;
+  upgradeProtocol: 'socks';
+}

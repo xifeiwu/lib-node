@@ -1,7 +1,8 @@
 import {Socket, TcpNetConnectOpts, SocketReadyState, Server} from 'net';
 import {CanConvertToBuffer} from './transform';
+import {HttpUpgradeConfig} from './http';
 
-export type GetSocketOptions = TcpNetConnectOpts | Socket;
+export type GetSocketOptions = TcpNetConnectOpts | HttpUpgradeConfig | Socket;
 
 export interface SocketInfo {
   id: string;

@@ -1,21 +1,10 @@
 import os from 'os';
-import fs from 'fs';
-import path from 'path';
 import {Writable} from 'stream';
-import net, {NetConnectOpts, ServerOpts, Socket, TcpNetConnectOpts} from 'net';
+import net, {Socket} from 'net';
 import {isString, isNumber, formatDate} from '../external';
-import {DEFAULT_SOCKET_DIR, httpFirstLineReg, SOCKET_FILE_SUFFIX} from '../constants';
-import {
-  ColorStyle,
-  GetSocketOptions,
-  HttpFirstLineProps,
-  SocketInfo,
-  SocketServerInfo,
-  TcpServerConfig,
-} from '../types';
+import {httpFirstLineReg} from '../constants';
+import {ColorStyle, HttpFirstLineProps, SocketInfo} from '../types';
 import {logColorful} from '../log';
-import {makeSureDirExist} from '../fs';
-import {getFilePathInfo} from '../path';
 
 export function getLocalIpAddress() {
   let localIP = null;
@@ -145,115 +134,6 @@ export function handleSocketEvents(
   });
   socket.on('close', hadError => {
     logColorful({color}, `socket ${tag} close${hadError ? ' [hadError].' : '.'}`);
-  });
-}
-
-export function startSocketClient(options: NetConnectOpts, connectionListener?: () => void): Promise<Socket>;
-export function startSocketClient(
-  port: number,
-  host?: string,
-  connectionListener?: () => void
-): Promise<Socket>;
-export function startSocketClient(path: string, connectionListener?: () => void): Promise<Socket>;
-export async function startSocketClient(...args) {
-  return new Promise<Socket>((res, rej) => {
-    const client = net.createConnection(...(args as [number, string]));
-    client.on('ready', () => {
-      res(client);
-    });
-    client.on('error', err => {
-      rej(err);
-    });
-    client.on('timeout', () => {
-      rej('timeout');
-    });
-  });
-}
-
-export async function getClientSocket(options: GetSocketOptions) {
-  if (options instanceof Socket) {
-    return options;
-  }
-  return await startSocketClient(options);
-}
-
-function checkPermissionBeforeCreateDir(dirname: string) {
-  if (dirname.startsWith(process.env.HOME)) {
-    makeSureDirExist(dirname);
-  } else {
-    throw new Error(`Don't have permission to create dir: ${dirname}`);
-  }
-}
-/**
- * 1. socketPath can be fullPath, or basename(will use dir DEFAULT_SOCKET_DIR)
- * 2. make sure dir of socket exist.
- * @param socketPath
- * @returns
- */
-export function getSocketPath(socketPath: string) {
-  let dirname: string;
-  let basename: string;
-  if (isString(socketPath)) {
-    if (socketPath.startsWith('/')) {
-      const pathInfo = getFilePathInfo(socketPath);
-      dirname = pathInfo.dirname;
-      basename = pathInfo.basename;
-    } else if (!socketPath.includes('/')) {
-      basename = socketPath;
-    } else {
-      throw new Error(
-        `socketPath in format of string can only be fullpath or basename only, basename should not contain character /`
-      );
-    }
-  }
-  if (dirname === undefined) {
-    dirname = DEFAULT_SOCKET_DIR;
-  }
-  if (basename === undefined) {
-    basename = process.pid + '';
-  }
-  if (!basename.endsWith(SOCKET_FILE_SUFFIX)) {
-    basename += SOCKET_FILE_SUFFIX;
-  }
-  checkPermissionBeforeCreateDir(dirname);
-  socketPath = path.join(dirname, basename);
-  return socketPath;
-}
-
-export async function startSocketServer(
-  handleConnection: (socket: Socket) => void,
-  config?: TcpServerConfig
-) {
-  let {host, port, path, options} = config ?? {};
-  if (path !== undefined) {
-    path = getSocketPath(path);
-    /** Check whether file already used as socket file */
-    if (fs.existsSync(path) && path.endsWith(SOCKET_FILE_SUFFIX)) {
-      try {
-        await startSocketClient({path});
-        throw new Error(`The socket path ${path} is already in use by another socket server`);
-      } catch (err) {
-        /** Remove socket file if not in use */
-        fs.unlinkSync(path);
-      }
-    }
-  } else {
-    host = host ?? '';
-    port = port ?? (await getAFreePort());
-  }
-  return new Promise<SocketServerInfo>((res, rej) => {
-    const server = net.createServer(options, handleConnection);
-    server.on('listening', () => {
-      res({host, port, path, server});
-    });
-    server.on('error', err => {
-      rej(err);
-    });
-    if (path) {
-      server.listen(path);
-    } else {
-      server.listen(port, host);
-    }
   });
 }
 
