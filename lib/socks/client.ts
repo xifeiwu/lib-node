@@ -1,11 +1,7 @@
-import {globalClientState, getSocket} from './service';
+import {globalClientState, getSocket, pushState} from './service';
 import {getSocketInfo} from './service/external';
-import {SocksClientStatus} from './service/types';
-import {
-  NegotiationWithServer,
-  SocksClientConfig,
-  SocksVersion,
-} from './service/types/cross';
+import {SocksClientInfo} from './service/types';
+import {NegotiationWithServer, SocksClientConfig, SocksVersion} from './service/types/client';
 import {negotiation as infoNegotiationV5} from './v5/client';
 import {negotiation as infoNegotiationVc1} from './vc1/client';
 
@@ -24,27 +20,26 @@ const infoNegotiation: {
  */
 export async function connectToSocksServer<Version extends SocksVersion>(config: SocksClientConfig<Version>) {
   const {socksVersion, targetSocksServer, ...rest4Exchange} = config;
-  const clientInfo: SocksClientStatus = {
-    socketInfo: {},
+  const clientInfo: SocksClientInfo<Version> = {
     stateTracer: [],
   };
   const {stateTracer} = clientInfo;
   try {
-    stateTracer.push(globalClientState.startNegotiation);
+    pushState(globalClientState.startNegotiation, stateTracer);
     let socket = await getSocket(targetSocksServer);
     if (!socket) {
       throw new Error(`Error: both socketConfig and httpUrl are not set.`);
     }
     clientInfo.socket = socket;
-    clientInfo.socketInfo = getSocketInfo(socket);
-    const infoFromNegotiation = await infoNegotiation[socksVersion](socket, rest4Exchange, clientInfo);
-    for (const [key, value] of Object.entries(infoFromNegotiation)) {
-      clientInfo[key] = value;
-    }
+    const negotiationResult = await infoNegotiation[socksVersion](
+      socket,
+      rest4Exchange,
+      clientInfo.stateTracer
+    );
     socket.resume();
-    stateTracer.push(globalClientState.finishNegotiation);
+    pushState(globalClientState.finishNegotiation, stateTracer);
   } catch (err) {
-    stateTracer.push(`${globalClientState.catchError}: ${err.message}`);
+    pushState(`${globalClientState.catchError}: ${err.message}`, stateTracer);
     // status.error = err;
     throw err;
   }

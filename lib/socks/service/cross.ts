@@ -1,23 +1,25 @@
 import dns from 'dns';
-import {EHandleRequestTargetState, SocksClientStatus, SocksProxyConfig, RequestTargetV5, ProxyConfig} from './types';
-import {ERRORS, createError, getAddressType, getMatchedProxyConfig} from './utils';
+import {SocksClientInfo, ProxyConfig} from './types';
+import {ERRORS, createError, getAddressType, getMatchedProxyConfig, toRequestTargetV5} from './utils';
 import {connectToSocksServer} from '../client';
 import {deepClone, isString} from './external';
 import {Socket, isIP} from 'net';
+import {EAddressType, EHandleRequestTargetState, RequestTargetV5, RequestTargetV5Response} from './types/v5';
 
 const state = {
   matchProxyConfig: 'target server match proxy config',
   proxyToSocksServerSuccess: 'proxy to socks server success',
 };
 export async function proxySocksRequest(
-  targetServiceInfo: RequestTargetV5,
-  proxyConfigList?: Array<ProxyConfig>
+  requestTarget: RequestTargetV5,
+  proxyConfigList?: Array<ProxyConfig>,
+  stateTracer?: string[]
 ) {
-  const stateTracer: SocksClientStatus['stateTracer'] = [];
+  // const stateTracer: SocksClientInfo['stateTracer'] = [];
   if (!Array.isArray(proxyConfigList) || proxyConfigList.length === 0) {
     return null;
   }
-  const proxyConfig = (proxyConfigList ?? []).find(getMatchedProxyConfig.bind(null, targetServiceInfo));
+  const proxyConfig = (proxyConfigList ?? []).find(getMatchedProxyConfig.bind(null, requestTarget));
   if (!proxyConfig) {
     return null;
   }
@@ -25,7 +27,11 @@ export async function proxySocksRequest(
   stateTracer.push({key: 'targetSocksServer', value: proxyConfig.targetSocksServer});
   try {
     const {socksVersion, ...restProps} = proxyConfig;
-    const proxyClientInfo = await connectToSocksServer({socksVersion, ...restProps, requestTarget: targetServiceInfo});
+    const proxyClientInfo = await connectToSocksServer({
+      socksVersion,
+      requestTarget,
+      ...restProps,
+    });
     stateTracer.push(state.proxyToSocksServerSuccess);
     return {stateTracer, proxyClientInfo};
   } catch (err) {
@@ -33,16 +39,20 @@ export async function proxySocksRequest(
   }
 }
 
-export async function handleConnection(origin: RequestTargetV5) {
-  const requestTarget = deepClone<RequestTargetV5>(origin);
-  const isDomain = isIP(requestTarget.address) === 0;
+export async function handleConnection(origin: RequestTargetV5): Promise<{
+  socket: Socket;
+  requestTargetResponse: RequestTargetV5Response;
+}> {
+  let {address, port} = toRequestTargetV5(origin);
+  let addressType: EAddressType = getAddressType(address);
+  const isDomain = isIP(address) === 0;
   let state: 'dns' | 'connection' = 'dns';
   let socket: Socket;
-  let connectState: String | string | number = EHandleRequestTargetState.succeeded;
+  let reply: EHandleRequestTargetState = EHandleRequestTargetState.succeeded;
   try {
     if (isDomain) {
       const ip = await new Promise<string>((resolve, reject) => {
-        dns.lookup(requestTarget.address, function (err, ip) {
+        dns.lookup(address, function (err, ip) {
           if (err) {
             reject(err);
           } else {
@@ -50,8 +60,8 @@ export async function handleConnection(origin: RequestTargetV5) {
           }
         });
       });
-      requestTarget.address = ip;
-      requestTarget.addressType = getAddressType(ip);
+      address = ip;
+      addressType = getAddressType(ip);
     }
     state = 'connection';
     socket = await new Promise((res, rej) => {
@@ -66,21 +76,25 @@ export async function handleConnection(origin: RequestTargetV5) {
         rej(EHandleRequestTargetState.TTL_expired);
       });
       socket.connect({
-        host: requestTarget.address,
-        port: requestTarget.port,
+        host: address,
+        port: port,
       });
     });
   } catch (err) {
     const blockByDns = state === 'dns';
-    connectState = blockByDns
+    reply = blockByDns
       ? EHandleRequestTargetState.Host_unreachable
       : isString(err)
-      ? err
+      ? EHandleRequestTargetState.general_SOCKS_server_failure
       : EHandleRequestTargetState.Connection_refused;
   }
   return {
     socket,
-    connectState,
-    requestTarget,
+    requestTargetResponse: {
+      reply,
+      address,
+      port,
+      addressType,
+    },
   };
 }

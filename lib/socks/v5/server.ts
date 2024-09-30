@@ -11,7 +11,7 @@ import {
   EMethod,
   EHandleRequestTargetState,
   UserPassInfo,
-  SocksClientStatus,
+  SocksClientInfo,
   SocksServerNegotiationInfoV5,
   NegotiationWithClient,
   ConnectToTargetServerFunc,
@@ -28,7 +28,7 @@ import {handleConnection, proxySocksRequest} from '../service/cross';
 export const getClientRequestTarget: NegotiationWithClient<'v5'> = async (
   socket: Socket,
   config: SocksServerNegotiationInfoV5,
-  clientInfo: SocksClientStatus
+  clientInfo: SocksClientInfo
 ) => {
   const {stateTracer = []} = clientInfo;
   stateTracer.push(serverState.waitingMethodList);
@@ -73,7 +73,7 @@ export const getClientRequestTarget: NegotiationWithClient<'v5'> = async (
 export const connectToTargetServer: ConnectToTargetServerFunc<'v5'> = async (
   socket: Socket,
   config: SocksServerNegotiationInfoV5,
-  clientInfo: SocksClientStatus
+  clientInfo: SocksClientInfo
 ) => {
   const {stateTracer} = clientInfo;
   const clientRequestInfo = getInfoFromStateTracer(stateTracer, 'requestTarget');

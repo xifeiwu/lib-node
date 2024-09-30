@@ -2,7 +2,7 @@ import {
   SocksServerStatus,
   SocksVersion,
   SocksServerConfig,
-  SocksClientStatus,
+  SocksClientInfo,
   SocksServerNegotiationInfoV6,
   NegotiationWithClient,
   ECommand,

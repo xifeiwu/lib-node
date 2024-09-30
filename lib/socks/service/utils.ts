@@ -1,36 +1,13 @@
 import net, {Socket, TcpNetConnectOpts} from 'net';
 import {CanConvertToBuffer, getSocketInfo, isNumber, isPlainObject, isRegExp, toBuffer} from './external';
-import {
-  SocksServerStatus,
-  EMethod,
-  MatchItem,
-  SocksProxyConfig,
-  RequestTargetV5,
-  TargetSocket,
-  EAddressType,
-  SocksClientStatus,
-  TracerInfo,
-  TracerItem,
-  TracerKey,
-  ProxyConfig,
-} from './types';
+import {SocksServerStatus, MatchItem, TargetSocket, ProxyConfig} from './types';
+import {EMethod, RequestTargetV5, EAddressType} from './types/v5';
 import {isString, toUrlInstance, requestAndGetUpgradeInfo, startSocketClient} from './external';
-import {RequestTarget} from './types/base';
+import {RequestTarget, StateTracer, TracerItem} from './types/base';
 
 export const upgradeProtocol = 'socks5';
 
 export const MethodList = Object.values(EMethod).filter(v => isNumber(v));
-
-// export function getSocketInfo(socket?: Socket) {
-//   if (!socket) {
-//     return null;
-//   }
-//   const {localAddress, localPort, remoteAddress, remotePort, writable, readable, destroyed, closed} = socket;
-//   const local = `${localAddress}:${localPort}`;
-//   const remote = `${remoteAddress}:${remotePort}`;
-//   const id = [local, '<-', remote].join('');
-//   return {id, readable, writable, destroyed, closed, localAddress, localPort, remoteAddress, remotePort};
-// }
 
 export const ERRORS = {
   InvalidSocksVersion: 'only socks version 5 supported',
@@ -198,10 +175,7 @@ export async function getInfoFromFirstChunk(reader: Socket) {
   });
 }
 
-export function getMatchedProxyConfig(
-  target: RequestTargetV5,
-  config: ProxyConfig
-): ProxyConfig | null {
+export function getMatchedProxyConfig(target: RequestTargetV5, config: ProxyConfig): ProxyConfig | null {
   const {matches = []} = config;
   const matched = matches.find(match => {
     /**
@@ -335,28 +309,35 @@ export const globalServerState = {
   startHandleConnection: 'start handle connection',
 };
 
-export function getInfoFromStateTracer<Key extends TracerKey>(
-  stateTracer: SocksClientStatus['stateTracer'],
-  key: Key
-): TracerInfo[Key] | null {
-  const item = stateTracer.find((it: TracerItem) => {
-    return it?.key && it?.key === key;
-  });
-  if (!item) {
-    return null;
-  }
-  return (item as TracerItem).value as TracerInfo[Key];
-}
+// export function getInfoFromStateTracer<Key extends TracerKey>(
+//   stateTracer: SocksClientInfo['stateTracer'],
+//   key: Key
+// ): TracerInfo[Key] | null {
+//   const item = stateTracer.find((it: TracerItem) => {
+//     return it?.key && it?.key === key;
+//   });
+//   if (!item) {
+//     return null;
+//   }
+//   return (item as TracerItem).value as TracerInfo[Key];
+// }
 
-/**
- * @deprecated rarely used as type of data returned is ambiguous
- * @param stateTracer
- * @param keys
- * @returns
- */
-export function getInfosFromStateTracer<Key extends TracerKey>(
-  stateTracer: SocksClientStatus['stateTracer'],
-  keys: Key[]
-): Array<TracerInfo[Key] | null> {
-  return keys.map(key => getInfoFromStateTracer(stateTracer, key));
+// /**
+//  * @deprecated rarely used as type of data returned is ambiguous
+//  * @param stateTracer
+//  * @param keys
+//  * @returns
+//  */
+// export function getInfosFromStateTracer<Key extends TracerKey>(
+//   stateTracer: SocksClientInfo['stateTracer'],
+//   keys: Key[]
+// ): Array<TracerInfo[Key] | null> {
+//   return keys.map(key => getInfoFromStateTracer(stateTracer, key));
+// }
+
+export function pushState(item: TracerItem, stateTracer?: StateTracer) {
+  if (!Array.isArray(stateTracer)) {
+    return false;
+  }
+  return stateTracer.push(item);
 }

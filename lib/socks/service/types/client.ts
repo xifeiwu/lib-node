@@ -9,6 +9,7 @@ import {
   NegotiationResult as NegotiationResultV5,
 } from './v5';
 import {NegotiationInfo as NegotiationInfoVc1, NegotiationResult as NegotiationResultVc1} from './vc1';
+import {StateTracer} from './base';
 
 export type TargetSocket = TcpNetConnectOpts | string;
 
@@ -35,34 +36,33 @@ export type SocksClientConfig<Version extends SocksVersion> = NegotiationInfo[Ve
  * Different between Tracer and Status
  * 1. Tracer used on record logic process, Status used to store important info of Socks end.
  */
-interface TracerInfoV5 {
-  method: EMethod;
-}
-interface TracerInfoV6 {
-  iv: BinaryLike;
-}
-export interface TracerInfo extends TracerInfoV5, TracerInfoV6 {
-  targetSocksServer: TargetSocket;
-  requestTarget?: RequestTargetV5;
-  respondOfRequestTarget: RequestTargetV5Response;
-}
+// interface TracerInfoV5 {
+//   method: EMethod;
+// }
+// interface TracerInfoV6 {
+//   iv: BinaryLike;
+// }
+// export interface TracerInfo extends TracerInfoV5, TracerInfoV6 {
+//   targetSocksServer: TargetSocket;
+//   requestTarget?: RequestTargetV5;
+//   respondOfRequestTarget: RequestTargetV5Response;
+// }
 
-export type TracerKey = keyof TracerInfo;
-export interface TracerItem {
-  key: TracerKey;
-  value: TracerInfo[TracerKey];
-}
+// export type TracerKey = keyof TracerInfo;
+// export interface TracerItem {
+//   key: TracerKey;
+//   value: TracerInfo[TracerKey];
+// }
 
-export interface SocksClientStatus {
+export interface SocksClientInfo<Version extends SocksVersion> {
   socket?: Socket;
-  socketInfo?: Partial<SocketInfo>;
-  stateTracer: Array<string | TracerItem>;
-  clientRequestInfo?: RequestTargetV5;
-  respondClientRequest?: RequestTargetV5Response;
+  // socketInfo?: Partial<SocketInfo>;
+  stateTracer: StateTracer;
+  negotiationResult?: NegotiationResult[Version];
 }
 
 export type NegotiationWithServer<Version extends SocksVersion> = (
   socket: Socket,
   config: NegotiationInfo[Version],
-  clientInfo?: SocksClientStatus
+  stateTracer?: StateTracer
 ) => Promise<NegotiationResult[Version]>;

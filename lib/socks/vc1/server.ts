@@ -4,7 +4,7 @@ import {
   ConnectToTargetServerFunc,
   NegotiationWithClient,
   ProxyConfig,
-  SocksClientStatus,
+  SocksClientInfo,
   SocksServerNegotiationInfoV6,
 } from '../service/types';
 import {deepEqual} from '../service/external';
@@ -16,7 +16,7 @@ import {EHandleRequestTargetState, RequestTargetV5, RequestTargetV5Response} fro
 export const negotiation: NegotiationWithClient<'vc1'> = async (
   socket: Socket,
   config: SocksServerNegotiationInfoV6,
-  clientInfo: SocksClientStatus
+  clientInfo: SocksClientInfo
 ) => {
   const {stateTracer} = clientInfo;
   stateTracer.push(serverState.waitingConnectionInfo);
@@ -50,7 +50,7 @@ export async function handleRequestTarget(requestTarget: RequestTargetV5, proxyC
 export const connectToTargetServer: ConnectToTargetServerFunc<'vc1'> = async (
   socket: Socket,
   config: SocksServerNegotiationInfoV6,
-  clientInfo: SocksClientStatus
+  clientInfo: SocksClientInfo
 ) => {
   const {stateTracer} = clientInfo;
   const clientRequestInfo = getInfoFromStateTracer(stateTracer, 'requestTarget');

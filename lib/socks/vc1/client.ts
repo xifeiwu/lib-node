@@ -1,17 +1,18 @@
 import {Socket} from 'net';
 import {clientSendNegotiationInfo, clientWaitNegotiationResponse} from './communication';
 import {clientState, getIv, defaultIvBytes} from './service';
-import {SocksClientStatus, NegotiationWithServer} from '../service/types';
-import {toRequestTargetV5} from '../service';
+import {NegotiationWithServer} from '../service/types';
+import {pushState, toRequestTargetV5} from '../service';
 import {ECommand} from '../service/types/v5';
 import {NegotiationInfo} from '../service/types/vc1';
+import {StateTracer} from '../service/types/base';
 
 export const negotiation: NegotiationWithServer<'vc1'> = async (
   socket: Socket,
   config: NegotiationInfo,
-  clientInfo?: SocksClientStatus
+  stateTracer?: StateTracer
 ) => {
-  const {stateTracer} = clientInfo ?? {};
+  stateTracer = stateTracer ?? [];
   const {auth} = config;
   const requestTarget = toRequestTargetV5(config.requestTarget, ECommand.CONNECT);
   const iv = getIv(defaultIvBytes);
@@ -20,14 +21,10 @@ export const negotiation: NegotiationWithServer<'vc1'> = async (
     auth,
     requestTarget,
   });
-  stateTracer.push(clientState.sentConnectionInfo);
-  stateTracer.push({
-    key: 'iv',
-    value: iv,
-  });
+  pushState(clientState.sentConnectionInfo, stateTracer);
   const requestTargetResponse = await clientWaitNegotiationResponse(socket, iv);
-  stateTracer.push(clientState.gotRepliedTargetServiceInfo);
-  // stateTracer.push({key: 'requestTargetResponse', value: respondOfRequestTarget});
+  pushState(clientState.gotRepliedTargetServiceInfo, stateTracer);
+  pushState({key: 'requestTargetResponse', value: requestTargetResponse}, stateTracer);
   return {
     iv,
     auth,
