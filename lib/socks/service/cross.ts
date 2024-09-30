@@ -1,5 +1,5 @@
 import dns from 'dns';
-import {EHandleRequestTargetState, SocksClientStatus, SocksProxyConfig, RequestTarget, AllSocksProxyConfig} from './types';
+import {EHandleRequestTargetState, SocksClientStatus, SocksProxyConfig, RequestTargetV5, AllSocksProxyConfig} from './types';
 import {ERRORS, createError, getAddressType, getMatchedProxyConfig} from './utils';
 import {connectToSocksServer} from '../client';
 import {deepClone, isString} from './external';
@@ -10,7 +10,7 @@ const state = {
   proxyToSocksServerSuccess: 'proxy to socks server success',
 };
 export async function proxySocksRequest(
-  targetServiceInfo: RequestTarget,
+  targetServiceInfo: RequestTargetV5,
   proxyConfigList?: Array<AllSocksProxyConfig>
 ) {
   const stateTracer: SocksClientStatus['stateTracer'] = [];
@@ -33,8 +33,8 @@ export async function proxySocksRequest(
   }
 }
 
-export async function handleConnection(origin: RequestTarget) {
-  const requestTarget = deepClone<RequestTarget>(origin);
+export async function handleConnection(origin: RequestTargetV5) {
+  const requestTarget = deepClone<RequestTargetV5>(origin);
   const isDomain = isIP(requestTarget.address) === 0;
   let state: 'dns' | 'connection' = 'dns';
   let socket: Socket;

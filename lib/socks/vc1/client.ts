@@ -1,24 +1,25 @@
 import {Socket} from 'net';
-import {clientSendConnectionInfo, clientWaitRespondOfRequestTarget} from './communication';
+import {clientSendNigotiationInfo, clientWaitNigotiationResponse} from './communication';
 import {clientState, getIv, defaultIvBytes} from './service';
 import {
   SocksClientStatus,
   SocksClientNegotiationInfoV6,
-  ECommand,
   InfoNegotiationFunc,
 } from '../service/types';
-import {getRequestTarget} from '../service';
+import {toRequestTargetV5} from '../service';
+import { ECommand } from '../service/types/v5';
+import { NegotiationInfo } from '../service/types/vc1';
 
-export const infoNegotiation: InfoNegotiationFunc<'v6'> = async (
+export const negotiation: InfoNegotiationFunc<'v6'> = async (
   socket: Socket,
-  config: SocksClientNegotiationInfoV6,
+  config: NegotiationInfo,
   clientInfo?: SocksClientStatus
 ) => {
   const {stateTracer} = clientInfo ?? {};
-  const {ivBytes = defaultIvBytes, auth} = config;
-  const clientRequestInfo = getRequestTarget(config.requestTarget);
-  const iv = getIv(ivBytes);
-  await clientSendConnectionInfo(socket, {
+  const {auth} = config;
+  const clientRequestInfo = toRequestTargetV5(config.requestTarget);
+  const iv = getIv(defaultIvBytes);
+  await clientSendNigotiationInfo(socket, {
     iv,
     auth,
     requestTarget: {
@@ -31,7 +32,7 @@ export const infoNegotiation: InfoNegotiationFunc<'v6'> = async (
     key: 'iv',
     value: iv,
   });
-  const respondOfRequestTarget = await clientWaitRespondOfRequestTarget(socket, iv);
+  const respondOfRequestTarget = await clientWaitNigotiationResponse(socket, iv);
   stateTracer.push(clientState.gotRepliedTargetServiceInfo);
   stateTracer.push({key: 'respondOfRequestTarget', value: respondOfRequestTarget});
   return {

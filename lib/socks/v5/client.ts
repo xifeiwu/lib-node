@@ -6,7 +6,7 @@ import {
   clientSendUserPass,
   clientWaitRespondOfRequestTarget,
 } from './communication';
-import {getRequestTarget} from '../service';
+import {toRequestTargetV5} from '../service';
 import {ECommand, EMethod, SocksClientStatus, UserPassInfo} from '../service/types';
 import {clientState} from './service';
 import {InfoNegotiationFunc, SocksClientNegotiationInfoV5} from '../service/types/cross';
@@ -19,7 +19,7 @@ export const infoNegotiation: InfoNegotiationFunc<'v5'> = async (
 ) => {
   const {stateTracer = []} = clientInfo ?? {};
   const {methodList = [{method: EMethod.NoAuth}]} = config;
-  const requestTarget = getRequestTarget(config.requestTarget, ECommand.CONNECT);
+  const requestTarget = toRequestTargetV5(config.requestTarget, ECommand.CONNECT);
   /** Use authorized method first */
   methodList.sort((pre, next) => next.method - pre.method);
 

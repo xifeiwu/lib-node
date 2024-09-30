@@ -1,4 +1,4 @@
-import {MethodAuthInfo, RequestTarget as RequestTarget, RespondOfRequestTarget, EMethod} from './v5';
+import {MethodAuthInfo, RequestTargetV5 as RequestTargetV5, RespondOfRequestTarget, EMethod} from './v5';
 import {Socket, TcpNetConnectOpts} from 'net';
 import {SocketInfo} from '../external';
 import {BinaryLike} from 'crypto';
@@ -17,7 +17,7 @@ interface TracerInfoV6 {
 }
 export interface TracerInfo extends TracerInfoV5, TracerInfoV6 {
   targetSocksServer: TargetSocket;
-  requestTarget?: RequestTarget;
+  requestTarget?: RequestTargetV5;
   respondOfRequestTarget: RespondOfRequestTarget;
 }
 
@@ -31,7 +31,7 @@ export interface SocksClientStatus {
   socket?: Socket;
   socketInfo?: Partial<SocketInfo>;
   stateTracer: Array<string | TracerItem>;
-  clientRequestInfo?: RequestTarget;
+  clientRequestInfo?: RequestTargetV5;
   respondClientRequest?: RespondOfRequestTarget;
 }
 
@@ -45,7 +45,7 @@ interface CommonClientNegotiationInfo {
   /**
    * can be a origin/href/url
    */
-  requestTarget: RequestTarget | string;
+  requestTarget: RequestTargetV5 | string;
 }
 interface SocksV5NegotiationInfo {
   methodList?: Array<MethodAuthInfo>;
@@ -120,7 +120,7 @@ export type GetClientRequestTargetFunc<Version extends SocksVersion> = (
   config: SocksServerNegotiationInfo[Version],
   clientInfo: SocksClientStatus
 ) => Promise<{
-  requestTarget: RequestTarget;
+  requestTarget: RequestTargetV5;
 }>;
 
 export type ConnectToTargetServerFunc<Version extends SocksVersion> = (

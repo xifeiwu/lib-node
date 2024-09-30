@@ -1,9 +1,11 @@
 import {BinaryLike} from 'crypto';
-import {RequestTarget} from './v5';
-import {SocksClientNegotiationInfoV6} from './cross';
+import {RequestTarget} from './base';
 
-export interface ConnectionInfo {
+export interface NegotiationInfo {
   iv: BinaryLike;
-  auth: SocksClientNegotiationInfoV6['auth'];
+  auth: {
+    username: string;
+    password: string;
+  };
   requestTarget: RequestTarget;
 }

@@ -5,7 +5,7 @@ import {
   EMethod,
   MatchItem,
   SocksProxyConfig,
-  RequestTarget,
+  RequestTargetV5,
   TargetSocket,
   EAddressType,
   SocksClientStatus,
@@ -15,6 +15,7 @@ import {
   AllSocksProxyConfig,
 } from './types';
 import {isString, toUrlInstance, requestAndGetUpgradeInfo, startSocketClient} from './external';
+import {RequestTarget} from './types/base';
 
 export const upgradeProtocol = 'socks5';
 
@@ -132,7 +133,7 @@ function port2Buffer(port: number) {
   return toBuffer([high, low]);
 }
 
-export function targetServiceInfoToBuffer(targetServiceInfo: Omit<RequestTarget, 'command'>): Buffer {
+export function targetServiceInfoToBuffer(targetServiceInfo: Omit<RequestTargetV5, 'command'>): Buffer {
   const {address, port} = targetServiceInfo;
   let addressType = targetServiceInfo.addressType;
   if (!addressType) {
@@ -141,7 +142,7 @@ export function targetServiceInfoToBuffer(targetServiceInfo: Omit<RequestTarget,
   return toBuffer([addressType, address2Buffer(address), port2Buffer(port)]);
 }
 
-export function bufferToTargeServiceInfo(buf: Buffer): Required<Omit<RequestTarget, 'command'>> {
+export function bufferToTargeServiceInfo(buf: Buffer): Required<Omit<RequestTargetV5, 'command'>> {
   const [addressType] = buf;
   const remainBuffer = buf.subarray(1);
   if (!Object.values(EAddressType).includes(addressType)) {
@@ -198,7 +199,7 @@ export async function getInfoFromFirstChunk(reader: Socket) {
 }
 
 export function getMatchedProxyConfig(
-  target: RequestTarget,
+  target: RequestTargetV5,
   config: AllSocksProxyConfig
 ): AllSocksProxyConfig | null {
   const {matches = []} = config;
@@ -264,6 +265,11 @@ export function getConnectStatusInJson(status?: SocksServerStatus) {
 //   }
 // }
 
+/**
+ * @deprecated
+ * @param target
+ * @returns
+ */
 export async function getSocket(target: TargetSocket) {
   let socket: Socket;
   if (isPlainObject(target)) {
@@ -283,11 +289,11 @@ export async function getSocket(target: TargetSocket) {
   return socket;
 }
 
-export function getRequestTarget(
-  requestTarget: RequestTarget | string,
-  command?: RequestTarget['command']
-): RequestTarget {
-  let result: RequestTarget;
+export function toRequestTargetV5(
+  requestTarget: RequestTarget,
+  command?: RequestTargetV5['command']
+): RequestTargetV5 {
+  let result: RequestTargetV5;
   if (isString(requestTarget)) {
     const url = toUrlInstance({origin: requestTarget});
     const {protocol, hostname} = url;

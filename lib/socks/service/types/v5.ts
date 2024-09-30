@@ -35,7 +35,7 @@ export enum EAddressType {
   IPV6 = 0x04,
 }
 
-export interface RequestTarget {
+export interface RequestTargetV5 {
   command?: ECommand;
   addressType?: EAddressType;
   address: string;

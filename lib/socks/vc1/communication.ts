@@ -1,10 +1,16 @@
 import {Readable, Writable} from 'stream';
-import {ConnectionInfo} from '../service/types/v6';
+import {NegotiationInfo} from '../service/types/vc1';
 import {isNumber, toBuffer} from '../service/external';
-import {ECommand, EHandleRequestTargetState, RespondOfRequestTarget} from '../service/types';
-import {ERRORS, bufferToTargeServiceInfo, createError, targetServiceInfoToBuffer} from '../service';
+import {
+  ERRORS,
+  bufferToTargeServiceInfo,
+  createError,
+  targetServiceInfoToBuffer,
+  toRequestTargetV5,
+} from '../service';
 import {decript, encrypt, defaultIvBytes} from './service';
 import {BinaryLike} from 'crypto';
+import {ECommand, EHandleRequestTargetState, RespondOfRequestTarget} from '../service/types/v5';
 
 /**
  * +----+------+----------+------+----------+
@@ -38,10 +44,11 @@ import {BinaryLike} from 'crypto';
  * | 1  | iv  |  1   | 1 to 255 |  1   | 1 to 255 |  1  | X'00' |  1   | Variable |    2     |
  * +----+-----+------+----------+------+----------+-----+-------+------+----------+----------+
  */
-export async function clientSendConnectionInfo(writer: Writable, info: ConnectionInfo) {
+export async function clientSendNegotiationInfo(writer: Writable, info: NegotiationInfo) {
   const {iv, auth, requestTarget} = info;
+  const requestTargetV5 = toRequestTargetV5(requestTarget);
   const {username, password} = auth;
-  const {command = ECommand.CONNECT, address, port} = requestTarget;
+  const {command = ECommand.CONNECT, address, port} = requestTargetV5;
   if (!address) {
     throw new Error(`address is blank`);
   }
@@ -57,7 +64,7 @@ export async function clientSendConnectionInfo(writer: Writable, info: Connectio
         password,
         command,
         0,
-        targetServiceInfoToBuffer(requestTarget),
+        targetServiceInfoToBuffer(requestTargetV5),
       ]),
       iv
     );
@@ -76,9 +83,9 @@ export async function clientSendConnectionInfo(writer: Writable, info: Connectio
   });
 }
 
-export async function serverWaitConectionInfo(reader: Readable) {
+export async function serverWaitNegotiationInfo(reader: Readable) {
   reader.resume();
-  return new Promise<ConnectionInfo>((res, rej) => {
+  return new Promise<NegotiationInfo>((res, rej) => {
     reader.once('data', (chunk: Buffer) => {
       reader.pause();
       let baseIndex = 0;
@@ -142,7 +149,7 @@ export async function serverWaitConectionInfo(reader: Readable) {
  *     o  RSV    RESERVED
  * o  ATYP   address type of following address
  */
-export async function serverRespondRequestTarget(
+export async function serverSendNegotiationResponse(
   writer: Writable,
   state: {
     reply: EHandleRequestTargetState;
@@ -200,7 +207,7 @@ export async function serverRespondRequestTarget(
  *     o  RSV    RESERVED
  * o  ATYP   address type of following address
  */
-export async function clientWaitRespondOfRequestTarget(reader: Readable, iv: BinaryLike) {
+export async function clientWaitNegotiationResponse(reader: Readable, iv: BinaryLike) {
   reader.resume();
   return new Promise<RespondOfRequestTarget>((res, rej) => {
     reader.once('data', (chunk: Buffer) => {

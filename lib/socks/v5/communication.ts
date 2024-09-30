@@ -4,7 +4,7 @@ import {
   ECommand,
   EMethod,
   EHandleRequestTargetState,
-  RequestTarget,
+  RequestTargetV5,
   RespondOfRequestTarget,
 } from '../service/types';
 import {isNumber, toBuffer} from '../service/external';
@@ -231,7 +231,7 @@ export async function clientWaitUserPassAuthResultReplied(reader: Readable) {
  *     o  DST.ADDR       desired destination address
  * o  DST.PORT desired destination port in network octet order
  */
-export async function clientSendRequestTarget(writer: Writable, info: RequestTarget) {
+export async function clientSendRequestTarget(writer: Writable, info: RequestTargetV5) {
   const {command = ECommand.CONNECT, address, port} = info;
   if (!address) {
     throw new Error(`address is blank`);
@@ -255,7 +255,7 @@ export async function clientSendRequestTarget(writer: Writable, info: RequestTar
 }
 export async function serverWaitRequestTarget(reader: Readable) {
   reader.resume();
-  return new Promise<RequestTarget>((res, rej) => {
+  return new Promise<RequestTargetV5>((res, rej) => {
     reader.once('data', (chunk: Buffer) => {
       reader.pause();
       const [version, command, _reserve] = chunk;

@@ -1,4 +1,4 @@
-import {serverRespondRequestTarget, serverWaitConectionInfo} from './communication';
+import {serverSendNigotiationResponse, serverWaitNegotiationInfo} from './communication';
 import {ERRORS, createError, getInfoFromStateTracer, globalServerState} from '../service';
 import {
   ConnectToTargetServerFunc,
@@ -20,7 +20,7 @@ export const getClientRequestTarget: GetClientRequestTargetFunc<'v6'> = async (
 ) => {
   const {stateTracer} = clientInfo;
   stateTracer.push(serverState.waitingConnectionInfo);
-  const {iv, auth, requestTarget} = await serverWaitConectionInfo(socket);
+  const {iv, auth, requestTarget} = await serverWaitNegotiationInfo(socket);
   stateTracer.push(serverState.gotConnectionInfo);
   stateTracer.push({
     key: 'requestTarget',
@@ -65,7 +65,7 @@ export const connectToTargetServer: ConnectToTargetServerFunc<'v6'> = async (
       reply: EHandleRequestTargetState.succeeded,
       ...(respondClientRequest ?? {address: '8.8.8.8', port: 88}),
     };
-    await serverRespondRequestTarget(socket, replied, iv);
+    await serverSendNigotiationResponse(socket, replied, iv);
     stateTracer.push(serverState.repliedTargetServiceInfo);
     stateTracer.push({
       key: 'respondOfRequestTarget',
@@ -82,7 +82,7 @@ export const connectToTargetServer: ConnectToTargetServerFunc<'v6'> = async (
       key: 'respondOfRequestTarget',
       value: reply,
     });
-    await serverRespondRequestTarget(socket, reply, iv);
+    await serverSendNigotiationResponse(socket, reply, iv);
     if (connectState !== EHandleRequestTargetState.succeeded) {
       throw createError(ERRORS.handleClientRequestFail);
     }
