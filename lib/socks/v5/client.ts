@@ -7,7 +7,7 @@ import {
   clientWaitRequestTargetResponse,
 } from './communication';
 import {pushState, toRequestTargetV5} from '../service';
-import {ECommand, EMethod, NegotiationInfo, UserPassInfo} from '../service/types/v5';
+import {ECommand, EMethod, ClientNegotiationInfo, UserPassInfo} from '../service/types/v5';
 import {clientState} from './service';
 import {NegotiationWithServer} from '../service/types/client';
 import {Socket} from 'net';
@@ -15,11 +15,11 @@ import {StateTracer} from '../service/types/base';
 
 export const negotiation: NegotiationWithServer<'v5'> = async (
   socket: Socket,
-  config: NegotiationInfo,
+  negotiationInfo: ClientNegotiationInfo,
   stateTracer?: StateTracer
 ) => {
-  const {methodList = [{method: EMethod.NoAuth}]} = config;
-  const requestTarget = toRequestTargetV5(config.requestTarget, ECommand.CONNECT);
+  const {methodList = [{method: EMethod.NoAuth}]} = negotiationInfo;
+  const requestTarget = toRequestTargetV5(negotiationInfo.requestTarget, ECommand.CONNECT);
   /** Use authorized method first */
   methodList.sort((pre, next) => next.method - pre.method);
 

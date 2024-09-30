@@ -1,9 +1,10 @@
 import {Socket} from 'net';
-import {ServerConfig as ServerConfigV5} from './v5';
+import {RequestTargetV5Response, ServerConfig as ServerConfigV5} from './v5';
 import {ServerConfig as ServerConfigVc1} from './vc1';
-import {NegotiationResult, SocksClientConfig, SocksClientInfo, SocksVersion} from './client';
+import {NegotiationResult, SocksClientConfig, SocksInfoOnClient, SocksVersion} from './client';
+import {StateTracer} from './base';
 
-interface ServerConfig {
+export interface ServerConfig {
   v5: ServerConfigV5;
   vc1: ServerConfigVc1;
 }
@@ -14,9 +15,9 @@ export type SocksServerConfig<Version extends SocksVersion> = ServerConfig[Versi
 };
 
 /** connect status on server side */
-export interface SocksServerStatus extends SocksClientInfo {
-  socket2Service?: Socket;
-  proxyClientStatus?: SocksClientInfo;
+export interface SocksInfoOnServer extends SocksInfoOnClient {
+  socket2Remote?: Socket;
+  socksClientInfo?: SocksInfoOnClient;
 }
 
 export interface MatchItem {
@@ -34,17 +35,16 @@ export type SocksProxyConfig<Version extends SocksVersion> = {
 
 export type ProxyConfig = SocksProxyConfig<'v5'> | SocksProxyConfig<'vc1'>;
 
+/**
+ * Negotiation with client and get related info from client.
+ */
 export type NegotiationWithClient<Version extends SocksVersion> = (
   socket: Socket,
   config: SocksServerConfig<Version>,
-  clientInfo: SocksClientInfo
+  stateTracer?: StateTracer
 ) => Promise<NegotiationResult[Version]>;
-
-export type ConnectToTargetServerFunc<Version extends SocksVersion> = (
+export type SendRequestTargetResponse<Version extends SocksVersion> = (
   socket: Socket,
-  config: SocksServerConfig<Version>,
-  clientInfo: SocksClientInfo
-) => Promise<{
-  socket: Socket;
-  proxyClientStatus?: SocksClientInfo;
-}>;
+  response: RequestTargetV5Response,
+  negotiationResult: NegotiationResult[Version]
+) => Promise<boolean>;

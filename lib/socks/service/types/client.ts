@@ -5,10 +5,10 @@ import {
   RequestTargetV5 as RequestTargetV5,
   RequestTargetV5Response,
   EMethod,
-  NegotiationInfo as NegotiationInfoV5,
+  ClientNegotiationInfo as NegotiationInfoV5,
   NegotiationResult as NegotiationResultV5,
 } from './v5';
-import {NegotiationInfo as NegotiationInfoVc1, NegotiationResult as NegotiationResultVc1} from './vc1';
+import {ClientNegotiationInfo as NegotiationInfoVc1, NegotiationResult as NegotiationResultVc1} from './vc1';
 import {StateTracer} from './base';
 
 export type TargetSocket = TcpNetConnectOpts | string;
@@ -54,15 +54,15 @@ export type SocksClientConfig<Version extends SocksVersion> = NegotiationInfo[Ve
 //   value: TracerInfo[TracerKey];
 // }
 
-export interface SocksClientInfo<Version extends SocksVersion> {
+export interface SocksInfoOnClient<Version extends SocksVersion = any> {
+  socksVersion: Version;
   socket?: Socket;
-  // socketInfo?: Partial<SocketInfo>;
   stateTracer: StateTracer;
   negotiationResult?: NegotiationResult[Version];
 }
 
 export type NegotiationWithServer<Version extends SocksVersion> = (
   socket: Socket,
-  config: NegotiationInfo[Version],
+  negotiationInfo: NegotiationInfo[Version],
   stateTracer?: StateTracer
 ) => Promise<NegotiationResult[Version]>;

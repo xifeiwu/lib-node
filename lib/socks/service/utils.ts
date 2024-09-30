@@ -1,9 +1,33 @@
-import net, {Socket, TcpNetConnectOpts} from 'net';
-import {CanConvertToBuffer, getSocketInfo, isNumber, isPlainObject, isRegExp, toBuffer} from './external';
-import {SocksServerStatus, MatchItem, TargetSocket, ProxyConfig} from './types';
-import {EMethod, RequestTargetV5, EAddressType} from './types/v5';
-import {isString, toUrlInstance, requestAndGetUpgradeInfo, startSocketClient} from './external';
+import dns from 'dns';
+import net, {Socket, TcpNetConnectOpts, isIP} from 'net';
+import {
+  SocksInfoOnServer,
+  MatchItem,
+  TargetSocket,
+  ProxyConfig,
+  SocksClientConfig,
+  SocksInfoOnClient,
+} from './types';
+import {
+  isString,
+  toUrlInstance,
+  requestAndGetUpgradeInfo,
+  startSocketClient,
+  CanConvertToBuffer,
+  getSocketInfo,
+  isNumber,
+  isPlainObject,
+  isRegExp,
+  toBuffer,
+} from './external';
 import {RequestTarget, StateTracer, TracerItem} from './types/base';
+import {
+  EMethod,
+  EAddressType,
+  EHandleRequestTargetState,
+  RequestTargetV5,
+  RequestTargetV5Response,
+} from './types/v5';
 
 export const upgradeProtocol = 'socks5';
 
@@ -206,37 +230,31 @@ export function getMatchedProxyConfig(target: RequestTargetV5, config: ProxyConf
   return null;
 }
 
-export function getConnectStatusInJson(status?: SocksServerStatus) {
-  if (!status) {
-    return null;
-  }
-  const {socket, socket2Service, proxyClientStatus: proxyAsClientStatus} = status;
-  const results = {
-    ...status,
-    socket: getSocketInfo(socket),
-  };
-  if (socket2Service) {
-    // @ts-ignore
-    results.socket2Service = getSocketInfo(socket2Service);
-  }
-  // if (error) {
-  //   results.error = {
-  //     name: error.name,
-  //     message: error.message,
-  //     stack: error.stack,
-  //   };
-  // }
-  if (proxyAsClientStatus) {
-    // @ts-ignore
-    results.proxyClientStatus = getConnectStatusInJson(proxyAsClientStatus);
-  }
-  return results;
-}
-
-// export async function checkPort(port: number) {
-//   if (await checkPort(port)) {
-//     throw new Error(`Port ${port}is alreay in use`);
+// export function getConnectStatusInJson(status?: SocksServerStatus) {
+//   if (!status) {
+//     return null;
 //   }
+//   const {socket, socket2Service, proxyClientStatus: proxyAsClientStatus} = status;
+//   const results = {
+//     ...status,
+//     socket: getSocketInfo(socket),
+//   };
+//   if (socket2Service) {
+//     // @ts-ignore
+//     results.socket2Service = getSocketInfo(socket2Service);
+//   }
+//   // if (error) {
+//   //   results.error = {
+//   //     name: error.name,
+//   //     message: error.message,
+//   //     stack: error.stack,
+//   //   };
+//   // }
+//   if (proxyAsClientStatus) {
+//     // @ts-ignore
+//     results.proxyClientStatus = getConnectStatusInJson(proxyAsClientStatus);
+//   }
+//   return results;
 // }
 
 /**
@@ -307,6 +325,8 @@ export const globalServerState = {
   socket2ServiceError: 'socket to service error',
   startHandleClientRequest: 'start handle client request',
   startHandleConnection: 'start handle connection',
+  matchProxyConfig: 'target server match proxy config',
+  proxyToSocksServerSuccess: 'proxy to socks server success',
 };
 
 // export function getInfoFromStateTracer<Key extends TracerKey>(
@@ -340,4 +360,74 @@ export function pushState(item: TracerItem, stateTracer?: StateTracer) {
     return false;
   }
   return stateTracer.push(item);
+}
+
+/**
+ * connect to requestTarget from local node runtime
+ * @param requestTarget
+ * @returns
+ */
+export async function connectFromLocal(requestTarget: RequestTargetV5): Promise<{
+  socket: Socket;
+  requestTargetResponse: RequestTargetV5Response;
+}> {
+  let {address, port} = toRequestTargetV5(requestTarget);
+  let addressType: EAddressType = getAddressType(address);
+  const isDomain = isIP(address) === 0;
+  let state: 'dns' | 'connection' = 'dns';
+  let socket: Socket;
+  let reply: EHandleRequestTargetState = EHandleRequestTargetState.succeeded;
+  try {
+    if (isDomain) {
+      const ip = await new Promise<string>((resolve, reject) => {
+        dns.lookup(address, function (err, ip) {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(ip);
+          }
+        });
+      });
+      address = ip;
+      addressType = getAddressType(ip);
+    }
+    state = 'connection';
+    socket = await new Promise((res, rej) => {
+      const socket = new Socket();
+      socket.once('connect', () => {
+        res(socket);
+      });
+      socket.once('error', err => {
+        rej(EHandleRequestTargetState.general_SOCKS_server_failure);
+      });
+      socket.once('timeout', err => {
+        rej(EHandleRequestTargetState.TTL_expired);
+      });
+      socket.connect({
+        host: address,
+        port: port,
+      });
+    });
+  } catch (err) {
+    const blockByDns = state === 'dns';
+    reply = blockByDns
+      ? EHandleRequestTargetState.Host_unreachable
+      : isString(err)
+      ? EHandleRequestTargetState.general_SOCKS_server_failure
+      : EHandleRequestTargetState.Connection_refused;
+  }
+  return {
+    socket,
+    requestTargetResponse: {
+      reply,
+      address,
+      port,
+      addressType,
+    },
+  };
+}
+
+export function serializaleSocksClientInfo(info: SocksInfoOnClient) {
+  const {socket, ...rest} = info;
+  return {...rest};
 }

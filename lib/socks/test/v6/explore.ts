@@ -20,10 +20,10 @@ export async function generalProcess() {
   };
   const {origin: httpOrigin, server} = await startHttpDebugServer();
   const {host, port} = await startSocketServer(socket => {
-    handleConnection(socket, {socksVersion: 'v6', auth});
+    handleConnection(socket, {socksVersion: 'vc1', auth});
   });
   const status = await connectToSocksServer({
-    socksVersion: 'v6',
+    socksVersion: 'vc1',
     auth,
     targetSocksServer: {host, port},
     requestTarget: httpOrigin,
@@ -62,16 +62,16 @@ export async function proxyRequestOnServerSide() {
   };
   const socksServer2 = await startSocketServer(
     socket => {
-      handleConnection(socket, {socksVersion: 'v6', auth});
+      handleConnection(socket, {socksVersion: 'vc1', auth});
       watchSocketState(socket, {colorStyle: {color: 'blue'}});
     },
     {
       port: startPort++,
     }
   );
-  const proxyToV6: SocksProxyConfig<'v6'> = {
+  const proxyToV6: SocksProxyConfig<'vc1'> = {
     matches: [/127.0.0.1/],
-    socksVersion: 'v6',
+    socksVersion: 'vc1',
     // methodList: [methodUsePass],
     auth,
     targetSocksServer: socksServer2,
@@ -80,7 +80,7 @@ export async function proxyRequestOnServerSide() {
     socket => {
       handleConnection(socket, {
         auth,
-        socksVersion: 'v6',
+        socksVersion: 'vc1',
         proxyConfigList: [proxyToV6],
       });
     },
@@ -90,7 +90,7 @@ export async function proxyRequestOnServerSide() {
   );
   {
     const status = await connectToSocksServer({
-      socksVersion: 'v6',
+      socksVersion: 'vc1',
       auth,
       targetSocksServer: socksServer1,
       requestTarget: {
@@ -114,7 +114,7 @@ export async function proxyRequestOnServerSide() {
   }
   {
     const status = await connectToSocksServer({
-      socksVersion: 'v6',
+      socksVersion: 'vc1',
       auth,
       targetSocksServer: socksServer1,
       requestTarget: {

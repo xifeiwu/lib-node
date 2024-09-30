@@ -86,13 +86,14 @@ export enum EHandleRequestTargetState {
 }
 
 /** For Client Side */
-export interface NegotiationInfo {
+export interface ClientNegotiationInfo {
   methodList?: Array<MethodInfo>;
   requestTarget: RequestTarget;
 }
 /** For Server Side */
-export interface ServerConfig extends Pick<NegotiationInfo, 'methodList'> {}
-export interface NegotiationResult extends NegotiationInfo {
+export interface ServerConfig extends Pick<ClientNegotiationInfo, 'methodList'> {}
+export interface NegotiationResult {
   method: MethodInfo;
+  requestTarget: RequestTargetV5;
   requestTargetResponse?: RequestTargetV5Response;
 }

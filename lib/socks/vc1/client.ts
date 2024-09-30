@@ -4,17 +4,17 @@ import {clientState, getIv, defaultIvBytes} from './service';
 import {NegotiationWithServer} from '../service/types';
 import {pushState, toRequestTargetV5} from '../service';
 import {ECommand} from '../service/types/v5';
-import {NegotiationInfo} from '../service/types/vc1';
+import {ClientNegotiationInfo} from '../service/types/vc1';
 import {StateTracer} from '../service/types/base';
 
 export const negotiation: NegotiationWithServer<'vc1'> = async (
   socket: Socket,
-  config: NegotiationInfo,
+  negotiationInfo: ClientNegotiationInfo,
   stateTracer?: StateTracer
 ) => {
   stateTracer = stateTracer ?? [];
-  const {auth} = config;
-  const requestTarget = toRequestTargetV5(config.requestTarget, ECommand.CONNECT);
+  const {auth} = negotiationInfo;
+  const requestTarget = toRequestTargetV5(negotiationInfo.requestTarget, ECommand.CONNECT);
   const iv = getIv(defaultIvBytes);
   await clientSendNegotiationInfo(socket, {
     iv,

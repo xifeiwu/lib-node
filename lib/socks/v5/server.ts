@@ -6,31 +6,30 @@ import {
   serverWaitRequestTarget,
   serverWaitUserPass,
 } from './communication';
-import {ERRORS, createError, getInfoFromStateTracer, globalServerState} from '../service';
+import {ERRORS, createError} from '../service';
+import {NegotiationWithClient} from '../service/types';
 import {
   EMethod,
   EHandleRequestTargetState,
   UserPassInfo,
-  SocksClientInfo,
   SocksServerNegotiationInfoV5,
-  NegotiationWithClient,
-  ConnectToTargetServerFunc,
-  RespondOfRequestTarget,
-} from '../service/types';
+  RequestTargetV5Response,
+  NegotiationResult,
+} from '../service/types/v5';
 import {deepEqual} from '../service/external';
 import {Socket} from 'net';
 import {serverState} from './service';
-import {handleConnection, proxySocksRequest} from '../service/cross';
+import {connectFromLocal} from '../service';
+import {StateTracer} from '../service/types/base';
 
 /**
  * To know what client side want to do
  */
-export const getClientRequestTarget: NegotiationWithClient<'v5'> = async (
+export const negotiation: NegotiationWithClient<'v5'> = async (
   socket: Socket,
   config: SocksServerNegotiationInfoV5,
-  clientInfo: SocksClientInfo
+  stateTracer?: StateTracer
 ) => {
-  const {stateTracer = []} = clientInfo;
   stateTracer.push(serverState.waitingMethodList);
   const {methodList = [{method: EMethod.NoAuth}]} = config ?? {};
   const method = await serverWaitMethod(
@@ -67,54 +66,63 @@ export const getClientRequestTarget: NegotiationWithClient<'v5'> = async (
     key: 'requestTarget',
     value: requestTarget,
   });
-  return {requestTarget};
-}
+  return {method: methodList.find(it => it.key === method), requestTarget};
+};
 
-export const connectToTargetServer: ConnectToTargetServerFunc<'v5'> = async (
+
+export async function sendRequestTargetResponse(
   socket: Socket,
-  config: SocksServerNegotiationInfoV5,
-  clientInfo: SocksClientInfo
-) => {
-  const {stateTracer} = clientInfo;
-  const clientRequestInfo = getInfoFromStateTracer(stateTracer, 'requestTarget');
-  stateTracer.push(globalServerState.startHandleClientRequest);
-  const {proxyConfigList} = config;
-  let socket2Service: Socket;
-  const proxyStatus = proxyConfigList && (await proxySocksRequest(clientRequestInfo, proxyConfigList));
-  if (proxyStatus) {
-    const {
-      stateTracer: tracer = [],
-      proxyClientInfo: {respondClientRequest, socket: proxySocket},
-    } = proxyStatus;
-    stateTracer.push(...tracer);
-    const replied = {
-      reply: EHandleRequestTargetState.succeeded,
-      ...(respondClientRequest ?? {address: '8.8.8.8', port: 88}),
-    };
-    await serverSendRequestTargetResponse(socket, replied);
-    stateTracer.push(serverState.repliedTargetServiceInfo);
-    stateTracer.push({
-      key: 'respondOfRequestTarget',
-      value: replied,
-    });
-    socket2Service = proxySocket;
-  } else {
-    stateTracer.push(globalServerState.startHandleConnection);
-    const {socket: theSocket, connectState, requestTarget} = await handleConnection(clientRequestInfo);
-    const reply: RespondOfRequestTarget = {
-      reply: connectState as EHandleRequestTargetState,
-      ...requestTarget,
-    };
-    stateTracer.push({
-      key: 'respondOfRequestTarget',
-      value: reply,
-    });
-    await serverSendRequestTargetResponse(socket, reply);
-    if (connectState !== EHandleRequestTargetState.succeeded) {
-      throw createError(ERRORS.handleClientRequestFail);
-    }
-    socket2Service = theSocket;
-  }
-
-  return {socket: socket2Service, proxyClientInfo: proxyStatus?.proxyClientInfo};
+  response: RequestTargetV5Response,
+  negotiationResult: NegotiationResult
+) {
+  negotiationResult.requestTargetResponse = response;
+  return await serverSendRequestTargetResponse(socket, response);
 }
+// export const connectToTargetServer: ConnectToTargetServerFunc<'v5'> = async (
+//   socket: Socket,
+//   config: SocksServerNegotiationInfoV5,
+//   clientInfo: SocksInfoOnClient
+// ) => {
+//   const {stateTracer} = clientInfo;
+//   const clientRequestInfo = getInfoFromStateTracer(stateTracer, 'requestTarget');
+//   stateTracer.push(globalServerState.startHandleClientRequest);
+//   const {proxyConfigList} = config;
+//   let socket2Service: Socket;
+//   const proxyStatus = proxyConfigList && (await proxySocksRequest(clientRequestInfo, proxyConfigList));
+//   if (proxyStatus) {
+//     const {
+//       stateTracer: tracer = [],
+//       proxyClientInfo: {respondClientRequest, socket: proxySocket},
+//     } = proxyStatus;
+//     stateTracer.push(...tracer);
+//     const replied = {
+//       reply: EHandleRequestTargetState.succeeded,
+//       ...(respondClientRequest ?? {address: '8.8.8.8', port: 88}),
+//     };
+//     await serverSendRequestTargetResponse(socket, replied);
+//     stateTracer.push(serverState.repliedTargetServiceInfo);
+//     stateTracer.push({
+//       key: 'respondOfRequestTarget',
+//       value: replied,
+//     });
+//     socket2Service = proxySocket;
+//   } else {
+//     stateTracer.push(globalServerState.startHandleConnection);
+//     const {socket: theSocket, connectState, requestTarget} = await connectFromLocal(clientRequestInfo);
+//     const reply: RespondOfRequestTarget = {
+//       reply: connectState as EHandleRequestTargetState,
+//       ...requestTarget,
+//     };
+//     stateTracer.push({
+//       key: 'respondOfRequestTarget',
+//       value: reply,
+//     });
+//     await serverSendRequestTargetResponse(socket, reply);
+//     if (connectState !== EHandleRequestTargetState.succeeded) {
+//       throw createError(ERRORS.handleClientRequestFail);
+//     }
+//     socket2Service = theSocket;
+//   }
+
+//   return {socket: socket2Service, proxyClientInfo: proxyStatus?.proxyClientInfo};
+// };

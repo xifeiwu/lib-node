@@ -1,7 +1,11 @@
 import {globalClientState, getSocket, pushState} from './service';
-import {getSocketInfo} from './service/external';
-import {SocksClientInfo} from './service/types';
-import {NegotiationWithServer, SocksClientConfig, SocksVersion} from './service/types/client';
+import {SocksInfoOnClient} from './service/types';
+import {
+  NegotiationResult,
+  NegotiationWithServer,
+  SocksClientConfig,
+  SocksVersion,
+} from './service/types/client';
 import {negotiation as infoNegotiationV5} from './v5/client';
 import {negotiation as infoNegotiationVc1} from './vc1/client';
 
@@ -19,8 +23,9 @@ const infoNegotiation: {
  * Close socket on socket error events of any error thrown during the logic process
  */
 export async function connectToSocksServer<Version extends SocksVersion>(config: SocksClientConfig<Version>) {
-  const {socksVersion, targetSocksServer, ...rest4Exchange} = config;
-  const clientInfo: SocksClientInfo<Version> = {
+  const {socksVersion, targetSocksServer, ...negotiationInfo} = config;
+  const clientInfo: SocksInfoOnClient<Version> = {
+    socksVersion,
     stateTracer: [],
   };
   const {stateTracer} = clientInfo;
@@ -31,17 +36,18 @@ export async function connectToSocksServer<Version extends SocksVersion>(config:
       throw new Error(`Error: both socketConfig and httpUrl are not set.`);
     }
     clientInfo.socket = socket;
-    const negotiationResult = await infoNegotiation[socksVersion](
+    const negotiationResult = (await infoNegotiation[socksVersion](
       socket,
-      rest4Exchange,
+      negotiationInfo,
       clientInfo.stateTracer
-    );
+    )) as NegotiationResult[Version];
+    clientInfo.negotiationResult = negotiationResult;
     socket.resume();
     pushState(globalClientState.finishNegotiation, stateTracer);
+    return clientInfo;
   } catch (err) {
     pushState(`${globalClientState.catchError}: ${err.message}`, stateTracer);
     // status.error = err;
     throw err;
   }
-  return clientInfo;
 }

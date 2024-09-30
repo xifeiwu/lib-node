@@ -1,5 +1,5 @@
 import {Readable, Writable} from 'stream';
-import {NegotiationInfo} from '../service/types/vc1';
+import {ClientNegotiationInfo} from '../service/types/vc1';
 import {isNumber, toBuffer} from '../service/external';
 import {
   ERRORS,
@@ -44,7 +44,7 @@ import {ECommand, EHandleRequestTargetState, RequestTargetV5Response} from '../s
  * | 1  | iv  |  1   | 1 to 255 |  1   | 1 to 255 |  1  | X'00' |  1   | Variable |    2     |
  * +----+-----+------+----------+------+----------+-----+-------+------+----------+----------+
  */
-export async function clientSendNegotiationInfo(writer: Writable, info: NegotiationInfo) {
+export async function clientSendNegotiationInfo(writer: Writable, info: ClientNegotiationInfo) {
   const {iv, auth, requestTarget} = info;
   const requestTargetV5 = toRequestTargetV5(requestTarget);
   const {username, password} = auth;
@@ -85,7 +85,7 @@ export async function clientSendNegotiationInfo(writer: Writable, info: Negotiat
 
 export async function serverWaitNegotiationInfo(reader: Readable) {
   reader.resume();
-  return new Promise<NegotiationInfo>((res, rej) => {
+  return new Promise<ClientNegotiationInfo>((res, rej) => {
     reader.once('data', (chunk: Buffer) => {
       reader.pause();
       let baseIndex = 0;
@@ -159,7 +159,7 @@ export async function serverSendNegotiationResponse(
   iv: BinaryLike
 ) {
   const {reply, address, port} = state;
-  return new Promise<void>((res, rej) => {
+  return new Promise<boolean>((res, rej) => {
     if (!writer.writable) {
       return rej(createError(ERRORS.SocketUnWritable));
     }
@@ -179,7 +179,7 @@ export async function serverSendNegotiationResponse(
       if (err) {
         rej(err);
       } else {
-        res();
+        res(true);
       }
     });
   });

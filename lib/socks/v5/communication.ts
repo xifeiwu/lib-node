@@ -300,7 +300,7 @@ export async function serverWaitRequestTarget(reader: Readable) {
  */
 export async function serverSendRequestTargetResponse(writer: Writable, respond: RequestTargetV5Response) {
   const {reply, address, port} = respond;
-  return new Promise<void>((res, rej) => {
+  return new Promise<boolean>((res, rej) => {
     if (!writer.writable) {
       return rej(createError(ERRORS.SocketUnWritable));
     }
@@ -318,7 +318,7 @@ export async function serverSendRequestTargetResponse(writer: Writable, respond:
         if (err) {
           rej(err);
         } else {
-          res();
+          res(true);
         }
       }
     );
