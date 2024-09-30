@@ -2,16 +2,15 @@ import {globalClientState, getSocket} from './service';
 import {getSocketInfo} from './service/external';
 import {SocksClientStatus} from './service/types';
 import {
-  InfoNegotiationFunc,
+  NegotiationWithServer,
   SocksClientConfig,
-  SocksClientNegotiationInfoV6,
   SocksVersion,
 } from './service/types/cross';
 import {infoNegotiation as infoNegotiationV5} from './v5/client';
 import {negotiation as infoNegotiationV6} from './vc1/client';
 
 const infoNegotiation: {
-  [version in SocksVersion]: InfoNegotiationFunc<SocksVersion>;
+  [version in SocksVersion]: NegotiationWithServer<SocksVersion>;
 } = {
   v5: infoNegotiationV5,
   v6: infoNegotiationV6,

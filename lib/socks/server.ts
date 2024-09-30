@@ -4,7 +4,7 @@ import {
   SocksServerConfig,
   SocksClientStatus,
   SocksServerNegotiationInfoV6,
-  GetClientRequestTargetFunc,
+  NegotiationWithClient,
   ECommand,
   ConnectToTargetServerFunc,
 } from './service/types';
@@ -22,7 +22,7 @@ import {
 } from './vc1/server';
 
 const getClientRequestTarget: {
-  [version in SocksVersion]: GetClientRequestTargetFunc<SocksVersion>;
+  [version in SocksVersion]: NegotiationWithClient<SocksVersion>;
 } = {
   v5: getClientRequestTargetV5,
   v6: getClientRequestTargetV6,

@@ -1,10 +1,8 @@
-import {serverSendNigotiationResponse, serverWaitNegotiationInfo} from './communication';
+import {serverWaitNegotiationInfo, serverSendNegotiationResponse} from './communication';
 import {ERRORS, createError, getInfoFromStateTracer, globalServerState} from '../service';
 import {
   ConnectToTargetServerFunc,
-  EHandleRequestTargetState,
-  GetClientRequestTargetFunc,
-  RespondOfRequestTarget,
+  NegotiationWithClient,
   SocksClientStatus,
   SocksServerNegotiationInfoV6,
 } from '../service/types';
@@ -12,8 +10,9 @@ import {deepEqual} from '../service/external';
 import {Socket} from 'net';
 import {serverState} from './service';
 import {handleConnection, proxySocksRequest} from '../service/cross';
+import {EHandleRequestTargetState, RespondOfRequestTargetV5} from '../service/types/v5';
 
-export const getClientRequestTarget: GetClientRequestTargetFunc<'v6'> = async (
+export const getClientRequestTarget: NegotiationWithClient<'vc1'> = async (
   socket: Socket,
   config: SocksServerNegotiationInfoV6,
   clientInfo: SocksClientStatus
@@ -65,7 +64,7 @@ export const connectToTargetServer: ConnectToTargetServerFunc<'v6'> = async (
       reply: EHandleRequestTargetState.succeeded,
       ...(respondClientRequest ?? {address: '8.8.8.8', port: 88}),
     };
-    await serverSendNigotiationResponse(socket, replied, iv);
+    await serverSendNegotiationResponse(socket, replied, iv);
     stateTracer.push(serverState.repliedTargetServiceInfo);
     stateTracer.push({
       key: 'respondOfRequestTarget',
@@ -74,7 +73,7 @@ export const connectToTargetServer: ConnectToTargetServerFunc<'v6'> = async (
     socket2Service = proxySocket;
   } else {
     const {socket: theSocket, connectState, requestTarget} = await handleConnection(clientRequestInfo);
-    const reply: RespondOfRequestTarget = {
+    const reply: RespondOfRequestTargetV5 = {
       reply: connectState as EHandleRequestTargetState,
       ...requestTarget,
     };
@@ -82,7 +81,7 @@ export const connectToTargetServer: ConnectToTargetServerFunc<'v6'> = async (
       key: 'respondOfRequestTarget',
       value: reply,
     });
-    await serverSendNigotiationResponse(socket, reply, iv);
+    await serverSendNegotiationResponse(socket, reply, iv);
     if (connectState !== EHandleRequestTargetState.succeeded) {
       throw createError(ERRORS.handleClientRequestFail);
     }

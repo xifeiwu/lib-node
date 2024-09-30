@@ -1,7 +1,39 @@
-import {MethodAuthInfo, RequestTargetV5 as RequestTargetV5, RespondOfRequestTarget, EMethod} from './v5';
+import {
+  MethodAuthInfo,
+  RequestTargetV5 as RequestTargetV5,
+  RespondOfRequestTargetV5,
+  EMethod,
+  NegotiationInfo as NegotiationInfoV5,
+  ServerConfig as ServerConfigV5,
+} from './v5';
 import {Socket, TcpNetConnectOpts} from 'net';
 import {SocketInfo} from '../external';
 import {BinaryLike} from 'crypto';
+import {NegotiationInfo as NegotiationInfoVc1, ServerConfig as ServerConfigVc1} from './vc1';
+
+export interface NegotiationInfo {
+  v5: NegotiationInfoV5;
+  vc1: NegotiationInfoVc1;
+}
+
+export type SocksVersion = keyof NegotiationInfo;
+
+export type SocksClientConfig<Version extends SocksVersion> = NegotiationInfo[Version] & {
+  /** Identify socks version */
+  socksVersion: Version;
+  /** target socks server */
+  targetSocksServer: TargetSocket;
+};
+
+interface ServerConfig {
+  v5: ServerConfigV5;
+  vc1: ServerConfigVc1;
+}
+
+export type SocksServerConfig<Version extends SocksVersion> = ServerConfig[Version] & {
+  socksVersion: Version;
+  proxyConfigList?: Array<AllSocksProxyConfig>;
+};
 
 export type TargetSocket = TcpNetConnectOpts | string;
 
@@ -18,7 +50,7 @@ interface TracerInfoV6 {
 export interface TracerInfo extends TracerInfoV5, TracerInfoV6 {
   targetSocksServer: TargetSocket;
   requestTarget?: RequestTargetV5;
-  respondOfRequestTarget: RespondOfRequestTarget;
+  respondOfRequestTarget: RespondOfRequestTargetV5;
 }
 
 export type TracerKey = keyof TracerInfo;
@@ -32,7 +64,7 @@ export interface SocksClientStatus {
   socketInfo?: Partial<SocketInfo>;
   stateTracer: Array<string | TracerItem>;
   clientRequestInfo?: RequestTargetV5;
-  respondClientRequest?: RespondOfRequestTarget;
+  respondClientRequest?: RespondOfRequestTargetV5;
 }
 
 /** connect status on server side */
@@ -40,58 +72,6 @@ export interface SocksServerStatus extends SocksClientStatus {
   socket2Service?: Socket;
   proxyClientStatus?: SocksClientStatus;
 }
-
-interface CommonClientNegotiationInfo {
-  /**
-   * can be a origin/href/url
-   */
-  requestTarget: RequestTargetV5 | string;
-}
-interface SocksV5NegotiationInfo {
-  methodList?: Array<MethodAuthInfo>;
-}
-interface SocksV6NegotiationInfo {
-  ivBytes?: number;
-  auth: {
-    username: string;
-    password: string;
-  };
-}
-
-export interface SocksClientNegotiationInfoV5 extends CommonClientNegotiationInfo, SocksV5NegotiationInfo {}
-
-export interface SocksClientNegotiationInfoV6 extends CommonClientNegotiationInfo, SocksV6NegotiationInfo {}
-
-export interface SocksClientNegotiationInfo {
-  v5: SocksClientNegotiationInfoV5;
-  v6: SocksClientNegotiationInfoV6;
-}
-
-export type SocksVersion = keyof SocksClientNegotiationInfo;
-
-export type SocksClientConfig<Version extends SocksVersion> = SocksClientNegotiationInfo[Version] & {
-  /** Identify socks version */
-  socksVersion: Version;
-  /** target socks server */
-  targetSocksServer: TargetSocket;
-};
-
-interface CommonServerNegotiationInfo {
-  proxyConfigList?: Array<AllSocksProxyConfig>;
-}
-
-export interface SocksServerNegotiationInfoV5 extends CommonServerNegotiationInfo, SocksV5NegotiationInfo {}
-
-export interface SocksServerNegotiationInfoV6 extends CommonServerNegotiationInfo, SocksV6NegotiationInfo {}
-interface SocksServerNegotiationInfo {
-  v5: SocksServerNegotiationInfoV5;
-  v6: SocksServerNegotiationInfoV6;
-}
-
-export type SocksServerConfig<Version extends SocksVersion> = SocksServerNegotiationInfo[Version] & {
-  // stateTracer: SocksClientStatus['stateTracer'];
-  socksVersion: Version;
-};
 
 export interface MatchItem {
   address: string;
@@ -105,19 +85,20 @@ export type SocksProxyConfig<Version extends SocksVersion> = {
   matches: Array<MatchItem | string | RegExp>;
 } & Omit<SocksClientConfig<Version>, 'requestTarget'>;
 
-export type AllSocksProxyConfig = SocksProxyConfig<'v5'> | SocksProxyConfig<'v6'>;
+export type AllSocksProxyConfig = SocksProxyConfig<'v5'> | SocksProxyConfig<'vc1'>;
 
-export type InfoNegotiationFunc<Version extends SocksVersion> = (
+
+export type NegotiationWithServer<Version extends SocksVersion> = (
   socket: Socket,
-  config: SocksClientNegotiationInfo[Version],
+  config: NegotiationInfo[Version],
   clientInfo?: SocksClientStatus
 ) => Promise<{
-  respondOfRequestTarget: RespondOfRequestTarget;
+  respondOfRequestTarget: RespondOfRequestTargetV5;
 }>;
 
-export type GetClientRequestTargetFunc<Version extends SocksVersion> = (
+export type NegotiationWithClient<Version extends SocksVersion> = (
   socket: Socket,
-  config: SocksServerNegotiationInfo[Version],
+  config: SocksServerConfig<Version>,
   clientInfo: SocksClientStatus
 ) => Promise<{
   requestTarget: RequestTargetV5;
@@ -125,7 +106,7 @@ export type GetClientRequestTargetFunc<Version extends SocksVersion> = (
 
 export type ConnectToTargetServerFunc<Version extends SocksVersion> = (
   socket: Socket,
-  config: SocksServerNegotiationInfo[Version],
+  config: SocksServerConfig<Version>,
   clientInfo: SocksClientStatus
 ) => Promise<{
   socket: Socket;

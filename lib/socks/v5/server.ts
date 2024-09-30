@@ -13,7 +13,7 @@ import {
   UserPassInfo,
   SocksClientStatus,
   SocksServerNegotiationInfoV5,
-  GetClientRequestTargetFunc,
+  NegotiationWithClient,
   ConnectToTargetServerFunc,
   RespondOfRequestTarget,
 } from '../service/types';
@@ -25,7 +25,7 @@ import {handleConnection, proxySocksRequest} from '../service/cross';
 /**
  * To know what client side want to do
  */
-export const getClientRequestTarget: GetClientRequestTargetFunc<'v5'> = async (
+export const getClientRequestTarget: NegotiationWithClient<'v5'> = async (
   socket: Socket,
   config: SocksServerNegotiationInfoV5,
   clientInfo: SocksClientStatus

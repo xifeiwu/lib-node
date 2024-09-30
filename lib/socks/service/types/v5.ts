@@ -1,3 +1,5 @@
+import {RequestTarget} from './base';
+
 /**
  * o  X'00' NO AUTHENTICATION REQUIRED
  * o  X'01' GSSAPI
@@ -42,9 +44,9 @@ export interface RequestTargetV5 {
   port: number;
 }
 
-export interface RespondOfRequestTarget {
+export interface RespondOfRequestTargetV5 {
   reply: EHandleRequestTargetState;
-  addressType?: EAddressType
+  addressType?: EAddressType;
   address: string;
   port: number;
 }
@@ -82,3 +84,11 @@ export enum EHandleRequestTargetState {
   Address_type_not_supported = 0x08,
   to_FF_unassigned = 0x09,
 }
+
+/** For Client Side */
+export interface NegotiationInfo {
+  methodList?: Array<MethodAuthInfo>;
+  requestTarget: RequestTarget;
+}
+/** For Server Side */
+export interface ServerConfig extends Pick<NegotiationInfo, 'methodList'> {}

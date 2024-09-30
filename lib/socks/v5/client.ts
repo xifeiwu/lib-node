@@ -7,14 +7,15 @@ import {
   clientWaitRespondOfRequestTarget,
 } from './communication';
 import {toRequestTargetV5} from '../service';
-import {ECommand, EMethod, SocksClientStatus, UserPassInfo} from '../service/types';
+import {SocksClientStatus} from '../service/types';
+import {ECommand, EMethod, NegotiationInfo, UserPassInfo} from '../service/types/v5';
 import {clientState} from './service';
-import {InfoNegotiationFunc, SocksClientNegotiationInfoV5} from '../service/types/cross';
+import {NegotiationWithServer} from '../service/types/cross';
 import {Socket} from 'net';
 
-export const infoNegotiation: InfoNegotiationFunc<'v5'> = async (
+export const infoNegotiation: NegotiationWithServer<'v5'> = async (
   socket: Socket,
-  config: SocksClientNegotiationInfoV5,
+  config: NegotiationInfo,
   clientInfo?: SocksClientStatus
 ) => {
   const {stateTracer = []} = clientInfo ?? {};
