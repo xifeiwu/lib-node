@@ -24,32 +24,41 @@ export function mergeHttpRequestOptions(
   };
 }
 
+/**
+ * Should set content-length if clientRequest.write(no need when call clientRequest.end)
+ * @param options
+ * @returns
+ */
 export function sendHttpRequest<Payload extends HttpRequestPayload = any>(
   options: HttpRequestOptions<Payload>
 ) {
   const {urlProps, restProps} = getUrlPropsFromConfig(options);
   const {data, headers = {}, ...requestOptions} = restProps;
+  let finalData: Readable | Buffer = data as Buffer;
+  const dataIsReadable = isReadable(finalData as unknown as Readable);
   // requestOptions.headers['connection'] = 'keep-alive';
   if (data !== undefined) {
     const headerKeys = Object.keys(headers).map(it => it.toLowerCase());
-    if (isReadable(data as Readable)) {
+    if (dataIsReadable) {
       if (!headerKeys.includes('transfer-encoding')) {
         headers['Transfer-Encoding'] = 'chunked';
       }
     } else {
+      finalData = toBuffer(data);
       /** 'content-type' passed have higher priority */
       if (!headerKeys.includes('content-type')) {
         headers['content-type'] = getContentTypeByData(data);
+        headers['content-length'] = finalData.byteLength;
       }
     }
   }
   let clientRequest: http.ClientRequest | null = null;
   const {protocol, href} = toUrlInstance(urlProps);
   clientRequest = (protocol === 'https:' ? https : http).request(href, {...requestOptions, headers});
-  if (isReadable(data as Readable)) {
-    (data as Readable).pipe(clientRequest);
+  if (dataIsReadable) {
+    (finalData as unknown as Readable).pipe(clientRequest);
   } else {
-    clientRequest.write(toBuffer(data));
+    clientRequest.write(finalData);
   }
   return clientRequest;
 }
@@ -129,20 +138,20 @@ export async function requestAndGetRelatedInfo<ResData = any, Payload extends Ht
 export async function requestAndGetUpgradeInfo<Payload extends HttpRequestPayload = any>(
   config: HttpRequestOptions<Payload>
 ): Promise<{response: http.IncomingMessage; socket: Socket; head: Buffer}> {
-  const {urlProps, restProps} = getUrlPropsFromConfig(config);
-  const {data, headers = {}, ...requestOptions} = restProps;
-  let clientRequest: http.ClientRequest | null = null;
-  const {protocol, href} = toUrlInstance(urlProps);
-  clientRequest = (protocol === 'https:' ? https : http).request(href, {
-    ...requestOptions,
-    headers: {
-      upgrade: 'websocket',
-      ...headers,
-      'sec-websocket-key': '50P3cqzG82BIWURMgMisUg==',
-      connection: 'Upgrade',
-    },
-  });
-  clientRequest.end(data ? await toBuffer(data) : undefined);
+  const {} = config;
+  const headers = {...(config.headers ?? {})};
+  const {connection, upgrade} = headers;
+  if (upgrade === undefined) {
+    throw new Error(`upgrade property should be set on headers`);
+  }
+  if (connection === undefined) {
+    headers.connection = 'Upgrade';
+  }
+  const options = {
+    ...config,
+    headers,
+  };
+  const clientRequest = sendHttpRequest(options);
   return new Promise<{response: http.IncomingMessage; socket: Socket; head: Buffer}>((res, rej) => {
     clientRequest.on('response', async response => {
       rej(new Error(`Expect upgrade event, but receive response event.`));
