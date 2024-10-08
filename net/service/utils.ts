@@ -267,10 +267,16 @@ export function getSocketInfo(socket: Socket): Partial<SocketInfo> {
   };
 }
 
-export function watchSocketState(socket: Socket, options?: {colorStyle?: ColorStyle; bytesToPrint?: number}) {
-  const {colorStyle = {}, bytesToPrint = 50} = options ?? {};
+export function watchSocketState(
+  socket: Socket,
+  options?: {colorStyle?: ColorStyle; bytesToPrint?: number; printStateOnEvent?: boolean}
+) {
+  const {colorStyle = {}, bytesToPrint = 50, printStateOnEvent} = options ?? {};
   const {color} = colorStyle;
   const printState = () => {
+    if (!printStateOnEvent) {
+      return;
+    }
     logColorful({color}, getSocketInfo(socket));
   };
   // socket.allowHalfOpen = true;
