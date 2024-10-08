@@ -43,6 +43,10 @@ export type NegotiationWithClient<Version extends SocksVersion> = (
   config: ServerConfig[Version],
   stateTracer?: StateTracer
 ) => Promise<NegotiationResult[Version]>;
+/**
+ * After complete RequestTarget from client side, send RequestTargetResponse,
+ * then all negotiation process is finished.
+ */
 export type SendRequestTargetResponse<Version extends SocksVersion> = (
   socket: Socket,
   response: RequestTargetV5Response,
