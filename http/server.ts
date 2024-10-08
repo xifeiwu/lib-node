@@ -1,23 +1,21 @@
-import http, {RequestListener, ServerOptions} from 'http';
+import http, {RequestListener} from 'http';
 import {toBuffer} from '../transform';
 import {createHash} from 'crypto';
 import {IncomingMessage} from 'http';
 import {Duplex} from 'stream';
 import {
-  HttpHeaderPartProps,
   TcpHttpRequestProps,
   HttpRequestOptions,
   HttpResponseProps,
-  getAFreePort,
   getRequestHeaderInfo,
   getRequestInfo,
   logColorful,
   watchSocketState,
   responseInfoToBuffer,
   HttpServerConfig,
-  ColorStyle,
   LogColors,
-} from '..';
+} from '../index';
+import {getAFreePort} from '../net';
 import {Socket} from 'net';
 import {deepEqual, toUrlProps, isNumber, waitFor} from '../external';
 import {Action4IncomingMessage} from '../types';
@@ -26,8 +24,8 @@ import {toInteger} from '../../fe/utils';
 export async function startHttpServer(
   handler: {
     request?: RequestListener;
-    upgrade?: (response, socket: Socket, head: Buffer) => void;
-    connect?: (response, socket: Socket, head: Buffer) => void;
+    upgrade?: (req: IncomingMessage, socket: Socket, head: Buffer) => void;
+    connect?: (req: IncomingMessage, socket: Socket, head: Buffer) => void;
     connection?: (socket: Socket) => void;
   },
   config?: HttpServerConfig
@@ -71,14 +69,28 @@ export async function responseRequestEvent(request: http.IncomingMessage, respon
   response.end(resData);
 }
 
+export function getUpgradeProtocol(req: IncomingMessage) {
+  const {upgrade, connection} = req.headers;
+  if (connection.toLocaleLowerCase() !== 'upgrade') {
+    throw new Error(`connection should be upgrade`);
+  }
+  if (upgrade === undefined) {
+    throw new Error(`upgrade should be set`);
+  }
+  return upgrade;
+}
+
 export const GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
-export function handleUpgrade(
+export function handleWebsocketUpgrade(
   req: IncomingMessage,
   socket?: Duplex,
   head?: Buffer
-): {requestHeaderPartInfo: HttpHeaderPartProps<'Server'>; responseInfo: HttpResponseProps} {
-  const requestHeaderPartInfo = getRequestHeaderInfo(req);
-  const key = requestHeaderPartInfo.headers['sec-websocket-key'];
+): HttpResponseProps {
+  const {headers} = req;
+  if (headers === undefined) {
+    throw new Error(`Not found headers`);
+  }
+  const key = headers['sec-websocket-key'];
   const digest = createHash('sha1')
     .update(key + GUID)
     .digest('base64');
@@ -92,7 +104,7 @@ export function handleUpgrade(
       'Sec-WebSocket-Accept': digest,
     },
   };
-  return {requestHeaderPartInfo, responseInfo};
+  return responseInfo;
 }
 
 /**
