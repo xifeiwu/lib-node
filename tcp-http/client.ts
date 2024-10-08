@@ -4,7 +4,7 @@ import {toBuffer} from '../transform';
 import {Socket, TcpNetConnectOpts} from 'net';
 import {getDataFromReadable} from '../stream';
 import {httpOptionsToTcpConfig, tcpRequestPropsToBuffer} from './service';
-import {startSocketClient} from '../net/utils';
+import {startSocketClient} from '../net';
 
 export async function sendHttpRequestByTcp(
   httpOption: HttpRequestOptions,

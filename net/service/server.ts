@@ -6,6 +6,7 @@ import {SocketServerInfo, TcpServerConfig} from '../../types';
 import {
   DEFAULT_SOCKET_DIR,
   SOCKET_FILE_SUFFIX,
+  getAFreePort,
   getFilePathInfo,
   makeSureDirExist,
   startSocketClient,

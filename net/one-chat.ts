@@ -4,8 +4,8 @@
  * Notice: Server should end data first
  */
 
-import {NetConnectOpts, Socket} from 'net';
-import {startSocketClient, startSocketServer} from './utils';
+import {NetConnectOpts} from 'net';
+import {startSocketClient, startSocketServer} from './service';
 import {fromBuffer, toBuffer} from '../transform';
 import {CanConvertToBuffer, OneChatHandler, TcpServerConfig} from '../types';
 
