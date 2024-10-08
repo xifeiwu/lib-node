@@ -5,10 +5,10 @@ import {
   RequestTargetV5 as RequestTargetV5,
   RequestTargetV5Response,
   EMethod,
-  ClientNegotiationInfo as NegotiationInfoV5,
+  NegotiationInfoClient as NegotiationInfoV5,
   NegotiationResult as NegotiationResultV5,
 } from './v5';
-import {ClientNegotiationInfo as NegotiationInfoVc1, NegotiationResult as NegotiationResultVc1} from './vc1';
+import {NegotiationInfoClient as NegotiationInfoVc1, NegotiationResult as NegotiationResultVc1} from './vc1';
 import {StateTracer} from './base';
 
 export type TargetSocket = TcpNetConnectOpts | string;

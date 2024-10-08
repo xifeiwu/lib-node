@@ -1,5 +1,5 @@
 import {Readable, Writable} from 'stream';
-import {ClientNegotiationInfo} from '../service/types/vc1';
+import {NegotiationInfoClient, NegotiationInfoServer} from '../service/types/vc1';
 import {isNumber, toBuffer} from '../service/external';
 import {
   ERRORS,
@@ -44,7 +44,7 @@ import {ECommand, EHandleRequestTargetState, RequestTargetV5Response} from '../s
  * | 1  | iv  |  1   | 1 to 255 |  1   | 1 to 255 |  1  | X'00' |  1   | Variable |    2     |
  * +----+-----+------+----------+------+----------+-----+-------+------+----------+----------+
  */
-export async function clientSendNegotiationInfo(writer: Writable, info: ClientNegotiationInfo) {
+export async function clientSendNegotiationInfo(writer: Writable, info: NegotiationInfoClient) {
   const {iv, auth, requestTarget} = info;
   const requestTargetV5 = toRequestTargetV5(requestTarget);
   const {username, password} = auth;
@@ -85,7 +85,7 @@ export async function clientSendNegotiationInfo(writer: Writable, info: ClientNe
 
 export async function serverWaitNegotiationInfo(reader: Readable) {
   reader.resume();
-  return new Promise<ClientNegotiationInfo>((res, rej) => {
+  return new Promise<NegotiationInfoServer>((res, rej) => {
     reader.once('data', (chunk: Buffer) => {
       reader.pause();
       let baseIndex = 0;

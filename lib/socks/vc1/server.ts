@@ -4,7 +4,6 @@ import {ERRORS, createError} from '../service';
 import {NegotiationWithClient} from '../service/types';
 import {deepEqual} from '../service/external';
 import {serverState} from './service';
-import {handleCommandConnect} from '../proxy';
 import {NegotiationResult, ServerConfig} from '../service/types/vc1';
 import {StateTracer} from '../service/types/base';
 import {RequestTargetV5Response} from '../service/types/v5';

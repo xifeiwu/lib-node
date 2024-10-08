@@ -10,16 +10,14 @@ import {ERRORS, createError} from '../service';
 import {NegotiationWithClient} from '../service/types';
 import {
   EMethod,
-  EHandleRequestTargetState,
   UserPassInfo,
-  SocksServerNegotiationInfoV5,
+  ServerConfig,
   RequestTargetV5Response,
   NegotiationResult,
 } from '../service/types/v5';
 import {deepEqual} from '../service/external';
 import {Socket} from 'net';
 import {serverState} from './service';
-import {connectFromLocal} from '../service';
 import {StateTracer} from '../service/types/base';
 
 /**
@@ -27,7 +25,7 @@ import {StateTracer} from '../service/types/base';
  */
 export const negotiation: NegotiationWithClient<'v5'> = async (
   socket: Socket,
-  config: SocksServerNegotiationInfoV5,
+  config: ServerConfig,
   stateTracer?: StateTracer
 ) => {
   stateTracer.push(serverState.waitingMethodList);
@@ -66,7 +64,7 @@ export const negotiation: NegotiationWithClient<'v5'> = async (
     key: 'requestTarget',
     value: requestTarget,
   });
-  return {method: methodList.find(it => it.key === method), requestTarget};
+  return {method: methodList.find(it => it.method === method), requestTarget};
 };
 
 

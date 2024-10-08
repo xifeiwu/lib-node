@@ -5,7 +5,7 @@ import {RequestTarget} from './base';
 /**
  * Client Side
  */
-export interface ClientNegotiationInfo {
+export interface NegotiationInfoClient {
   iv: BinaryLike;
   auth: {
     username: string;
@@ -13,10 +13,13 @@ export interface ClientNegotiationInfo {
   };
   requestTarget: RequestTarget;
 }
+export interface NegotiationInfoServer extends Omit<NegotiationInfoClient, 'requestTarget'> {
+  requestTarget: RequestTargetV5;
+}
 
 /** For Server Side */
-export interface ServerConfig extends Pick<ClientNegotiationInfo, 'auth'> {}
-export interface NegotiationResult extends Omit<ClientNegotiationInfo, 'requestTarget'> {
+export interface ServerConfig extends Pick<NegotiationInfoClient, 'auth'> {}
+export interface NegotiationResult extends Omit<NegotiationInfoClient, 'requestTarget'> {
   requestTarget: RequestTargetV5;
   requestTargetResponse?: RequestTargetV5Response;
 }

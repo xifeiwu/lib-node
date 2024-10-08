@@ -4,12 +4,12 @@ import {clientState, getIv, defaultIvBytes} from './service';
 import {NegotiationWithServer} from '../service/types';
 import {pushState, toRequestTargetV5} from '../service';
 import {ECommand} from '../service/types/v5';
-import {ClientNegotiationInfo} from '../service/types/vc1';
+import {NegotiationInfoClient} from '../service/types/vc1';
 import {StateTracer} from '../service/types/base';
 
 export const negotiation: NegotiationWithServer<'vc1'> = async (
   socket: Socket,
-  negotiationInfo: ClientNegotiationInfo,
+  negotiationInfo: NegotiationInfoClient,
   stateTracer?: StateTracer
 ) => {
   stateTracer = stateTracer ?? [];
