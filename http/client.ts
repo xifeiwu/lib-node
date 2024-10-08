@@ -3,7 +3,14 @@ import https from 'https';
 import {toBuffer} from '../transform';
 import {Socket} from 'net';
 import {getContentTypeByData, getResponseInfo} from './common';
-import {toUrlInstance, getUrlPropsFromConfig, deepMerge, urlPropsToHref, isObject} from '../external';
+import {
+  toUrlInstance,
+  getUrlPropsFromConfig,
+  deepMerge,
+  urlPropsToHref,
+  isObject,
+  getRandomBase64String,
+} from '../external';
 import {HttpRequestOptions, HttpResponseProps, HttpRequestPayload, ValidateStatus} from '../types';
 import {Readable, isReadable} from 'stream';
 
@@ -35,9 +42,10 @@ export function sendHttpRequest<Payload extends HttpRequestPayload = any>(
   const {urlProps, restProps} = getUrlPropsFromConfig(options);
   const {data, headers = {}, ...requestOptions} = restProps;
   let finalData: Readable | Buffer = data as Buffer;
+  const dataIsUndefined = data === undefined;
   const dataIsReadable = isReadable(finalData as unknown as Readable);
   // requestOptions.headers['connection'] = 'keep-alive';
-  if (data !== undefined) {
+  if (!dataIsUndefined) {
     const headerKeys = Object.keys(headers).map(it => it.toLowerCase());
     if (dataIsReadable) {
       if (!headerKeys.includes('transfer-encoding')) {
@@ -55,10 +63,15 @@ export function sendHttpRequest<Payload extends HttpRequestPayload = any>(
   let clientRequest: http.ClientRequest | null = null;
   const {protocol, href} = toUrlInstance(urlProps);
   clientRequest = (protocol === 'https:' ? https : http).request(href, {...requestOptions, headers});
-  if (dataIsReadable) {
-    (finalData as unknown as Readable).pipe(clientRequest);
+
+  if (dataIsUndefined) {
+    clientRequest.end();
   } else {
-    clientRequest.write(finalData);
+    if (dataIsReadable) {
+      (finalData as unknown as Readable).pipe(clientRequest);
+    } else {
+      clientRequest.write(finalData);
+    }
   }
   return clientRequest;
 }
@@ -163,6 +176,29 @@ export async function requestAndGetUpgradeInfo<Payload extends HttpRequestPayloa
       rej(error);
     });
   });
+}
+
+export async function upgradeToWebsocket(options: HttpRequestOptions) {
+  const headers = {...(options.headers ?? {})};
+  const {connection, upgrade, 'sec-websocket-key': key} = headers;
+  if (!connection) {
+    headers.connection = 'Upgrade';
+  }
+  if (!upgrade) {
+    headers.upgrade = 'websocket';
+  }
+  if (!key) {
+    headers['sec-websocket-key'] = getRandomBase64String(23);
+  }
+  const finalOptions = {
+    ...options,
+    headers,
+  };
+  const result = await requestAndGetUpgradeInfo(finalOptions);
+  return {
+    ...result,
+    requestOptions: options,
+  };
 }
 
 export async function requestAndGetConnectInfo<Payload extends HttpRequestPayload = any>(

@@ -1,9 +1,14 @@
 import {logWithColor} from '../log';
-import {handleSocketEvents, writeDataByInterval} from '../net';
+import {handleSocketEvents, watchSocketState, writeDataByInterval} from '../net';
 import {toBuffer} from '../transform';
-import {requestAndGetConnectInfo, requestAndGetResponseInfo, requestAndGetUpgradeInfo} from './client';
+import {
+  requestAndGetConnectInfo,
+  requestAndGetResponseInfo,
+  requestAndGetUpgradeInfo,
+  upgradeToWebsocket,
+} from './client';
 import {getRequestInfo, getResponseInfo, responseInfoToBuffer} from './common';
-import {handleConnectEvent, handleUpgrade, startHttpServer} from './server';
+import {handleConnectEvent, handleWebsocketUpgrade, responseRequestEvent, startHttpServer} from './server';
 
 export async function testRequestAndGetResponseInfo() {
   const {statusCode, data, headers} = await requestAndGetResponseInfo({
@@ -24,6 +29,36 @@ export async function testRequestAndGetResponseInfo() {
     },
   });
   console.log({statusCode, data, headers});
+}
+
+export async function testUpgradeToWebsocket() {
+  const {server, origin} = await startHttpServer({
+    async request(req, res) {
+      // console.log(await getRequestInfo(req));
+      responseRequestEvent(req, res);
+    },
+    upgrade(req, socket, head) {
+      const responseInfo = handleWebsocketUpgrade(req, socket, head);
+      socket.write(responseInfoToBuffer(responseInfo));
+      // handleSocketEvents(socket, {isServer: true, color: 'red'});
+      socket.on('data', chunk => {
+        socket.write(chunk);
+      });
+    },
+  });
+  const {socket} = await upgradeToWebsocket({
+    origin,
+    headers: {
+      Connection: 'Upgrade',
+      Upgrade: 'websocket',
+    },
+  });
+  // handleSocketEvents(socket, {color: 'green'});
+  watchSocketState(socket, {colorStyle: {color: 'blue'}});
+  setTimeout(() => {
+    socket.write('abc');
+    // writeDataByInterval(socket, {endStr: 'bye'});
+  });
 }
 
 export async function getSocketByConnect() {
@@ -51,34 +86,6 @@ export async function getSocketByConnect() {
   });
   const resInfo = await getResponseInfo(response);
   console.log(resInfo, head.toString());
-  handleSocketEvents(socket, {color: 'green'});
-  setTimeout(() => {
-    writeDataByInterval(socket, {endStr: 'bye'});
-  });
-  server.close();
-}
-
-export async function getSocketByUpgrade() {
-  const {server, origin} = await startHttpServer({
-    async request(req, rep) {
-      console.log(await getRequestInfo(req));
-    },
-    upgrade(req, socket, head) {
-      const {responseInfo} = handleUpgrade(req, socket, head);
-      socket.write(responseInfoToBuffer(responseInfo));
-      handleSocketEvents(socket, {isServer: true, color: 'red'});
-      socket.on('end', () => {
-        socket.end();
-      });
-    },
-  });
-  const {socket} = await requestAndGetUpgradeInfo({
-    origin,
-    headers: {
-      Connection: 'Upgrade',
-      Upgrade: 'websocket',
-    },
-  });
   handleSocketEvents(socket, {color: 'green'});
   setTimeout(() => {
     writeDataByInterval(socket, {endStr: 'bye'});
