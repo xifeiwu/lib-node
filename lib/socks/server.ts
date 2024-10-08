@@ -54,12 +54,7 @@ export async function handleConnection<Version extends SocksVersion>(
   };
   const {stateTracer} = info;
   try {
-    const negotiationResult = await negotiationWithClient[socksVersion](
-      socket,
-      // @ts-ignore
-      serverConfig as ServerConfig[Version],
-      stateTracer
-    );
+    const negotiationResult = await negotiationWithClient[socksVersion](socket, serverConfig, stateTracer);
     const {requestTarget} = negotiationResult;
     if (!requestTarget) {
       throw createError(`Fail to get requestTarget`);

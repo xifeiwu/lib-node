@@ -40,7 +40,7 @@ export type ProxyConfig = SocksProxyConfig<'v5'> | SocksProxyConfig<'vc1'>;
  */
 export type NegotiationWithClient<Version extends SocksVersion> = (
   socket: Socket,
-  config: SocksServerConfig<Version>,
+  config: ServerConfig[Version],
   stateTracer?: StateTracer
 ) => Promise<NegotiationResult[Version]>;
 export type SendRequestTargetResponse<Version extends SocksVersion> = (
