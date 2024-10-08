@@ -23,7 +23,7 @@ const infoNegotiation: {
  * Close socket on socket error events of any error thrown during the logic process
  */
 export async function connectToSocksServer<Version extends SocksVersion>(config: SocksClientConfig<Version>) {
-  const {socksVersion, targetSocksServer, ...negotiationInfo} = config;
+  const {socksVersion, socksServer, ...negotiationInfo} = config;
   const clientInfo: SocksInfoOnClient<Version> = {
     socksVersion,
     stateTracer: [],
@@ -31,7 +31,7 @@ export async function connectToSocksServer<Version extends SocksVersion>(config:
   const {stateTracer} = clientInfo;
   try {
     pushState(globalClientState.startNegotiation, stateTracer);
-    let socket = await getSocket(targetSocksServer);
+    let socket = await getSocket(socksServer);
     if (!socket) {
       throw new Error(`Error: both socketConfig and httpUrl are not set.`);
     }

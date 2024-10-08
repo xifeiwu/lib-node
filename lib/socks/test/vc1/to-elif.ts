@@ -60,7 +60,7 @@ export async function requestToElif() {
     const status = await connectToSocksServer({
       socksVersion: 'v6',
       auth,
-      targetSocksServer: {
+      socksServer: {
         // host: 'elif.site',
         host: '124.156.155.64',
         port: 3307,

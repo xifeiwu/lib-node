@@ -26,7 +26,7 @@ export async function generalProcess() {
   const status = await connectToSocksServer({
     socksVersion: 'vc1',
     auth,
-    targetSocksServer: {host, port},
+    socksServer: {host, port},
     requestTarget: httpOrigin,
   });
   const {socket} = status;
@@ -80,7 +80,7 @@ export async function proxyRequestOnServerSide() {
     socksVersion: 'vc1',
     // methodList: [methodUsePass],
     auth,
-    targetSocksServer: socksServer2,
+    socksServer: socksServer2,
   };
   const socksServer1 = await startSocketServer(
     socket => {
@@ -98,7 +98,7 @@ export async function proxyRequestOnServerSide() {
     const status = await connectToSocksServer({
       socksVersion: 'vc1',
       auth,
-      targetSocksServer: socksServer1,
+      socksServer: socksServer1,
       requestTarget: {
         address: '0.0.0.0',
         port: httpPort,
@@ -122,7 +122,7 @@ export async function proxyRequestOnServerSide() {
     const status = await connectToSocksServer({
       socksVersion: 'vc1',
       auth,
-      targetSocksServer: socksServer1,
+      socksServer: socksServer1,
       requestTarget: {
         address: '127.0.0.1',
         port: httpPort,

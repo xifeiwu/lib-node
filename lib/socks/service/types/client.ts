@@ -29,7 +29,7 @@ export type SocksClientConfig<Version extends SocksVersion> = NegotiationInfo[Ve
   /** Identify socks version */
   socksVersion: Version;
   /** target socks server */
-  targetSocksServer: TargetSocket;
+  socksServer: TargetSocket;
 };
 
 /**

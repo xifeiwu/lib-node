@@ -34,7 +34,7 @@ export async function tryProxyRequestTarget(
     return null;
   }
   pushState(globalServerState.matchProxyConfig, stateTracer);
-  pushState({key: 'targetSocksServer', value: proxyConfig.targetSocksServer}, stateTracer);
+  pushState({key: 'targetSocksServer', value: proxyConfig.socksServer}, stateTracer);
   try {
     const {socksVersion, ...restProps} = proxyConfig;
     const proxyClientInfo = await connectToSocksServer({
