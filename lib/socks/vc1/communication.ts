@@ -44,7 +44,7 @@ import {ECommand, EHandleRequestTargetState, RequestTargetV5Response} from '../s
  * | 1  | iv  |  1   | 1 to 255 |  1   | 1 to 255 |  1  | X'00' |  1   | Variable |    2     |
  * +----+-----+------+----------+------+----------+-----+-------+------+----------+----------+
  */
-export async function clientSendNegotiationInfo(writer: Writable, info: NegotiationInfoClient) {
+export async function clientSendNegotiationInfo(writer: Writable, info: NegotiationInfoServer) {
   const {iv, auth, requestTarget} = info;
   const requestTargetV5 = toRequestTargetV5(requestTarget);
   const {username, password} = auth;
