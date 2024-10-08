@@ -49,7 +49,7 @@ export function sendHttpRequest<Payload extends HttpRequestPayload = any>(
   if (isReadable(data as Readable)) {
     (data as Readable).pipe(clientRequest);
   } else {
-    clientRequest.end(data ? toBuffer(data) : undefined);
+    clientRequest.write(toBuffer(data));
   }
   return clientRequest;
 }
