@@ -1,4 +1,4 @@
-import {globalClientState, getSocket, pushState} from './service';
+import {getSocketToSocksServer, globalClientState, pushState} from './service';
 import {SocksInfoOnClient} from './service/types';
 import {
   NegotiationResult,
@@ -31,7 +31,7 @@ export async function connectToSocksServer<Version extends SocksVersion>(config:
   const {stateTracer} = clientInfo;
   try {
     pushState(globalClientState.startNegotiation, stateTracer);
-    let socket = await getSocket(socksServer);
+    let socket = await getSocketToSocksServer(socksServer);
     if (!socket) {
       throw new Error(`Error: both socketConfig and httpUrl are not set.`);
     }

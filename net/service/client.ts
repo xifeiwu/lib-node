@@ -25,7 +25,7 @@ export async function startSocketClient(...args) {
 }
 
 /**
- * Not sure whether this function is needed or not.
+ * @deprecated Not sure whether this function is needed or not.
  * @param options
  * @returns
  */

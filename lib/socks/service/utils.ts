@@ -29,7 +29,7 @@ import {
   RequestTargetV5Response,
 } from './types/v5';
 
-export const upgradeProtocol = 'socks5';
+export const socksCustomProtocol = 'sck-vc';
 
 export const MethodList = Object.values(EMethod).filter(v => isNumber(v));
 
@@ -230,57 +230,6 @@ export function getMatchedProxyConfig(target: RequestTargetV5, config: ProxyConf
   return null;
 }
 
-// export function getConnectStatusInJson(status?: SocksServerStatus) {
-//   if (!status) {
-//     return null;
-//   }
-//   const {socket, socket2Service, proxyClientStatus: proxyAsClientStatus} = status;
-//   const results = {
-//     ...status,
-//     socket: getSocketInfo(socket),
-//   };
-//   if (socket2Service) {
-//     // @ts-ignore
-//     results.socket2Service = getSocketInfo(socket2Service);
-//   }
-//   // if (error) {
-//   //   results.error = {
-//   //     name: error.name,
-//   //     message: error.message,
-//   //     stack: error.stack,
-//   //   };
-//   // }
-//   if (proxyAsClientStatus) {
-//     // @ts-ignore
-//     results.proxyClientStatus = getConnectStatusInJson(proxyAsClientStatus);
-//   }
-//   return results;
-// }
-
-/**
- * @deprecated
- * @param target
- * @returns
- */
-export async function getSocket(target: TargetSocket) {
-  let socket: Socket;
-  if (isPlainObject(target)) {
-    socket = await startSocketClient(target as TcpNetConnectOpts);
-  } else if (isString(target)) {
-    const {socket: _socket} = await requestAndGetUpgradeInfo({
-      url: target as string,
-      headers: {
-        Connection: 'Upgrade',
-        Upgrade: upgradeProtocol,
-      },
-    });
-    socket = _socket;
-  } else {
-    throw new Error(`Format of target is not correct`);
-  }
-  return socket;
-}
-
 export function toRequestTargetV5(
   requestTarget: RequestTarget,
   command?: RequestTargetV5['command']
@@ -430,4 +379,20 @@ export async function connectFromLocal(requestTarget: RequestTargetV5): Promise<
 export function serializaleSocksClientInfo(info: SocksInfoOnClient) {
   const {socket, ...rest} = info;
   return {...rest};
+}
+
+export async function getSocketToSocksServer(target: TargetSocket) {
+  let socket: Socket;
+  if (isString(target)) {
+    const result = await requestAndGetUpgradeInfo({
+      href: target,
+      headers: {
+        upgrade: socksCustomProtocol,
+      },
+    });
+    socket = result.socket;
+  } else {
+    socket = await startSocketClient(target as TcpNetConnectOpts);
+  }
+  return socket;
 }
