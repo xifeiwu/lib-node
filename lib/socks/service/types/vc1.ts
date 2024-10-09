@@ -1,5 +1,5 @@
 import {BinaryLike} from 'crypto';
-import {RequestTargetV5, RequestTargetV5Response} from './v5';
+import {RequestTargetV5, RequestTargetResponseV5} from './v5';
 import {RequestTarget} from './base';
 
 /**
@@ -20,5 +20,5 @@ export interface NegotiationInfoServer extends Omit<NegotiationInfoClient, 'requ
 /** For Server Side */
 export interface ServerConfig extends Pick<NegotiationInfoClient, 'auth'> {}
 export interface NegotiationResult extends NegotiationInfoServer {
-  requestTargetResponse?: RequestTargetV5Response;
+  requestTargetResponse?: RequestTargetResponseV5;
 }

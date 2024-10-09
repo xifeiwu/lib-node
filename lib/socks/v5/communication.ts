@@ -5,7 +5,7 @@ import {
   EMethod,
   EHandleRequestTargetState,
   RequestTargetV5,
-  RequestTargetV5Response,
+  RequestTargetResponseV5,
 } from '../service/types/v5';
 import {isNumber, toBuffer} from '../service/external';
 
@@ -298,7 +298,7 @@ export async function serverWaitRequestTarget(reader: Readable) {
  *     o  RSV    RESERVED
  * o  ATYP   address type of following address
  */
-export async function serverSendRequestTargetResponse(writer: Writable, respond: RequestTargetV5Response) {
+export async function serverSendRequestTargetResponse(writer: Writable, respond: RequestTargetResponseV5) {
   const {reply, address, port} = respond;
   return new Promise<boolean>((res, rej) => {
     if (!writer.writable) {
@@ -326,7 +326,7 @@ export async function serverSendRequestTargetResponse(writer: Writable, respond:
 }
 export async function clientWaitRequestTargetResponse(reader: Readable) {
   reader.resume();
-  return new Promise<RequestTargetV5Response>((res, rej) => {
+  return new Promise<RequestTargetResponseV5>((res, rej) => {
     reader.once('data', (chunk: Buffer) => {
       reader.pause();
       const [version, reply, _reserve] = chunk;

@@ -26,7 +26,7 @@ import {
   EAddressType,
   EHandleRequestTargetState,
   RequestTargetV5,
-  RequestTargetV5Response,
+  RequestTargetResponseV5,
 } from './types/v5';
 
 export const socksCustomProtocol = 'sck-vc';
@@ -318,7 +318,7 @@ export function pushState(item: TracerItem, stateTracer?: StateTracer) {
  */
 export async function connectFromLocal(requestTarget: RequestTargetV5): Promise<{
   socket: Socket;
-  requestTargetResponse: RequestTargetV5Response;
+  requestTargetResponse: RequestTargetResponseV5;
 }> {
   let {address, port} = toRequestTargetV5(requestTarget);
   let addressType: EAddressType = getAddressType(address);

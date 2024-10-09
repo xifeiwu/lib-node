@@ -12,7 +12,7 @@ import {
   EMethod,
   UserPassInfo,
   ServerConfig,
-  RequestTargetV5Response,
+  RequestTargetResponseV5,
   NegotiationResult,
 } from '../service/types/v5';
 import {deepEqual} from '../service/external';
@@ -70,7 +70,7 @@ export const negotiation: NegotiationWithClient<'v5'> = async (
 
 export async function sendRequestTargetResponse(
   socket: Socket,
-  response: RequestTargetV5Response,
+  response: RequestTargetResponseV5,
   negotiationResult: NegotiationResult
 ) {
   negotiationResult.requestTargetResponse = response;

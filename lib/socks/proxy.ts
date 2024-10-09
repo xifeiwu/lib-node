@@ -10,7 +10,7 @@ import {
   serializaleSocksClientInfo,
 } from './service';
 import {connectToSocksServer} from './client';
-import {EHandleRequestTargetState, RequestTargetV5, RequestTargetV5Response} from './service/types/v5';
+import {EHandleRequestTargetState, RequestTargetV5, RequestTargetResponseV5} from './service/types/v5';
 import {StateTracer} from './service/types/base';
 
 /**
@@ -55,13 +55,11 @@ export async function handleCommandConnect(
   options: {proxyConfigList?: ProxyConfig[]; stateTracer: StateTracer}
 ): Promise<{
   socket: Socket;
-  requestTargetResponse: RequestTargetV5Response;
+  requestTargetResponse: RequestTargetResponseV5;
   socksClientInfo?: SocksClientInfo;
 }> {
   const {proxyConfigList, stateTracer} = options ?? {};
   const socksClientInfo = await tryProxyRequestTarget(requestTarget, proxyConfigList, stateTracer);
-  // let socket2Server: Socket;
-  // let requestTargetResponse: RequestTargetV5Response;
   if (socksClientInfo) {
     const {socket, negotiationResult} = socksClientInfo;
     return {

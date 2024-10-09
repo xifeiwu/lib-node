@@ -6,7 +6,7 @@ import {deepEqual} from '../service/external';
 import {serverState} from './service';
 import {NegotiationResult, ServerConfig} from '../service/types/vc1';
 import {StateTracer} from '../service/types/base';
-import {RequestTargetV5Response} from '../service/types/v5';
+import {RequestTargetResponseV5} from '../service/types/v5';
 
 export const negotiation: NegotiationWithClient<'vc1'> = async (
   socket: Socket,
@@ -38,7 +38,7 @@ export const negotiation: NegotiationWithClient<'vc1'> = async (
 
 export async function sendRequestTargetResponse(
   socket: Socket,
-  response: RequestTargetV5Response,
+  response: RequestTargetResponseV5,
   negotiationResult: NegotiationResult
 ) {
   const {iv} = negotiationResult;

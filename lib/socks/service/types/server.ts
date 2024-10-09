@@ -1,5 +1,5 @@
 import {Socket} from 'net';
-import {RequestTargetV5Response, ServerConfig as ServerConfigV5} from './v5';
+import {RequestTargetResponseV5, ServerConfig as ServerConfigV5} from './v5';
 import {ServerConfig as ServerConfigVc1} from './vc1';
 import {NegotiationResult, SocksClientConfig, SocksClientInfo, SocksVersion} from './client';
 import {StateTracer} from './base';
@@ -52,6 +52,6 @@ export type NegotiationWithClient<Version extends SocksVersion> = (
  */
 export type SendRequestTargetResponse<Version extends SocksVersion> = (
   socket: Socket,
-  response: RequestTargetV5Response,
+  response: RequestTargetResponseV5,
   negotiationResult: NegotiationResult[Version]
 ) => Promise<boolean>;

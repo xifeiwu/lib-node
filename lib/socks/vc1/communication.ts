@@ -10,7 +10,7 @@ import {
 } from '../service';
 import {decript, encrypt, defaultIvBytes} from './service';
 import {BinaryLike} from 'crypto';
-import {ECommand, EHandleRequestTargetState, RequestTargetV5Response} from '../service/types/v5';
+import {ECommand, EHandleRequestTargetState, RequestTargetResponseV5} from '../service/types/v5';
 
 /**
  * +----+------+----------+------+----------+
@@ -209,7 +209,7 @@ export async function serverSendNegotiationResponse(
  */
 export async function clientWaitNegotiationResponse(reader: Readable, iv: BinaryLike) {
   reader.resume();
-  return new Promise<RequestTargetV5Response>((res, rej) => {
+  return new Promise<RequestTargetResponseV5>((res, rej) => {
     reader.once('data', (chunk: Buffer) => {
       reader.pause();
       const buffer = decript(chunk, iv);

@@ -44,7 +44,7 @@ export interface RequestTargetV5 {
   port: number;
 }
 
-export interface RequestTargetV5Response {
+export interface RequestTargetResponseV5 {
   reply: EHandleRequestTargetState;
   addressType?: EAddressType;
   address: string;
@@ -95,5 +95,5 @@ export interface ServerConfig extends Pick<NegotiationInfoClient, 'methodList'> 
 export interface NegotiationResult {
   method: MethodInfo;
   requestTarget: RequestTargetV5;
-  requestTargetResponse?: RequestTargetV5Response;
+  requestTargetResponse?: RequestTargetResponseV5;
 }

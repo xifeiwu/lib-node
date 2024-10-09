@@ -17,9 +17,15 @@ import {
   negotiation as negotiationVc1,
   sendRequestTargetResponse as sendRequestTargetResponseVc1,
 } from './vc1/server';
-import {ECommand} from './service/types/v5';
+import {ECommand, RequestTargetV5} from './service/types/v5';
 import {handleCommandConnect} from './proxy';
 
+/**
+ * Two phases on server side:
+ * 1. negotiation with client, get RequestTarget
+ * 2. handle RequestTarget
+ * 3. response RequestTarget in format of requestTargetResponse
+ */
 const negotiationWithClient: {
   [version in SocksVersion]: NegotiationWithClient<SocksVersion>;
 } = {
@@ -36,16 +42,12 @@ const sendRequestTargetResponse: {
 
 /**
  * Handle new connection on sock server side
- * @param socket
- * @param methodList auth method supported
- * @param proxyConfigList proxy the socket to a new socket which connect to a new socks server
- * @returns
- * Notice:
  * Close socket on socket error events of any error thrown during the logic process
  */
 export async function handleConnection<Version extends SocksVersion>(
   socket: Socket,
-  config: SocksServerConfig<Version>
+  config: SocksServerConfig<Version>,
+  handleRequestTarget?: (requestTarget: RequestTargetV5) => Promise<boolean | undefined>
 ) {
   const {socksVersion, proxyConfigList, ...serverConfig} = config;
   const info: SocksServerInfo = {
