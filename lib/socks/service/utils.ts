@@ -1,12 +1,12 @@
 import dns from 'dns';
 import net, {Socket, TcpNetConnectOpts, isIP} from 'net';
 import {
-  SocksInfoOnServer,
+  SocksServerInfo,
   MatchItem,
-  TargetSocket,
+  TargetSocksServer,
   ProxyConfig,
   SocksClientConfig,
-  SocksInfoOnClient,
+  SocksClientInfo,
 } from './types';
 import {
   isString,
@@ -376,12 +376,12 @@ export async function connectFromLocal(requestTarget: RequestTargetV5): Promise<
   };
 }
 
-export function serializaleSocksClientInfo(info: SocksInfoOnClient) {
+export function serializaleSocksClientInfo(info: SocksClientInfo) {
   const {socket, ...rest} = info;
   return {...rest};
 }
 
-export async function getSocketToSocksServer(target: TargetSocket) {
+export async function getSocketToSocksServer(target: TargetSocksServer) {
   let socket: Socket;
   if (isString(target)) {
     const result = await requestAndGetUpgradeInfo({

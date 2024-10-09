@@ -1,5 +1,5 @@
 import {Socket} from 'net';
-import {ProxyConfig, SocksInfoOnClient} from './service/types';
+import {ProxyConfig, SocksClientInfo} from './service/types';
 import {
   ERRORS,
   connectFromLocal,
@@ -56,7 +56,7 @@ export async function handleCommandConnect(
 ): Promise<{
   socket: Socket;
   requestTargetResponse: RequestTargetV5Response;
-  socksClientInfo?: SocksInfoOnClient;
+  socksClientInfo?: SocksClientInfo;
 }> {
   const {proxyConfigList, stateTracer} = options ?? {};
   const socksClientInfo = await tryProxyRequestTarget(requestTarget, proxyConfigList, stateTracer);

@@ -34,6 +34,7 @@ export async function generalProcess() {
   socket.write(
     tcpRequestPropsToBuffer({
       method: 'post',
+      url: 'api/test',
       data: {a: 1},
     })
   );

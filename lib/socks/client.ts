@@ -1,5 +1,5 @@
 import {getSocketToSocksServer, globalClientState, pushState} from './service';
-import {SocksInfoOnClient} from './service/types';
+import {SocksClientInfo} from './service/types';
 import {
   NegotiationResult,
   NegotiationWithServer,
@@ -24,7 +24,7 @@ const infoNegotiation: {
  */
 export async function connectToSocksServer<Version extends SocksVersion>(config: SocksClientConfig<Version>) {
   const {socksVersion, socksServer, ...negotiationInfo} = config;
-  const clientInfo: SocksInfoOnClient<Version> = {
+  const clientInfo: SocksClientInfo<Version> = {
     socksVersion,
     stateTracer: [],
   };

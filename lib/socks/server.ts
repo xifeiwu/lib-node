@@ -1,5 +1,5 @@
 import {
-  SocksInfoOnServer,
+  SocksServerInfo,
   SocksVersion,
   SocksServerConfig,
   NegotiationWithClient,
@@ -48,7 +48,7 @@ export async function handleConnection<Version extends SocksVersion>(
   config: SocksServerConfig<Version>
 ) {
   const {socksVersion, proxyConfigList, ...serverConfig} = config;
-  const info: SocksInfoOnServer = {
+  const info: SocksServerInfo = {
     socksVersion,
     stateTracer: [globalServerState.startNegotiation],
   };
