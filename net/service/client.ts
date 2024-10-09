@@ -24,15 +24,20 @@ export async function startSocketClient(...args) {
   });
 }
 
+/**
+ * Not sure whether this function is needed or not.
+ * @param options
+ * @returns
+ */
 export async function getClientSocket(options: GetSocketOptions) {
   let socket: Socket = options as Socket;
   if (Object.prototype.hasOwnProperty.call(options, 'href')) {
-    const {href, upgradeProtocol} = options as HttpUpgradeConfig;
+    const {href, upgrade} = options as HttpUpgradeConfig;
     const {socket: _socket} = await requestAndGetUpgradeInfo({
       url: href,
       headers: {
         Connection: 'Upgrade',
-        Upgrade: upgradeProtocol,
+        Upgrade: upgrade,
       },
     });
     socket = _socket;

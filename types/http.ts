@@ -53,7 +53,10 @@ export interface Action4IncomingMessage {
   responseCode?: number | string;
 }
 
+/**
+ * The least props used to upgrade to other protocol based on http protocol
+ */
 export interface HttpUpgradeConfig {
-  href: string;
-  upgradeProtocol: 'socks';
+  href: HttpRequestOptions['href'];
+  upgrade: HttpRequestOptions['headers']['upgrade'];
 }
