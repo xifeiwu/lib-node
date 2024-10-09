@@ -4,16 +4,21 @@ import {CanConvertToBuffer} from '../types';
 /**
  * Should take care of number: toBuffer(1) is totally different from toBuffer('1')
  */
-export function toBuffer(data: CanConvertToBuffer | Array<CanConvertToBuffer>): Buffer {
-  if (Array.isArray(data)) {
+export function toBuffer(data: CanConvertToBuffer | Array<CanConvertToBuffer>, level = 0): Buffer {
+  if (Array.isArray(data) && level === 0) {
     if (data.every(isNumber)) {
       return Buffer.from(data as Array<number>);
+    } else {
+      const bufAll = data
+        .map(it => {
+          return toBuffer(it, level + 1);
+        })
+        .filter(Buffer.isBuffer);
+      return Buffer.concat(bufAll);
     }
-    const bufAll = data.map(toBuffer).filter(Buffer.isBuffer);
-    return Buffer.concat(bufAll);
   }
   let buffer: Buffer = Buffer.alloc(0);
-  if (isPlainObject(data)) {
+  if (isPlainObject(data) || Array.isArray(data)) {
     buffer = Buffer.from(JSON.stringify(data));
   } else if (isString(data)) {
     buffer = Buffer.from(data as string);
@@ -25,6 +30,28 @@ export function toBuffer(data: CanConvertToBuffer | Array<CanConvertToBuffer>): 
     buffer = Buffer.from(data as ArrayBuffer);
   }
   return buffer;
+}
+
+export function convertToBuffer(...args: Array<CanConvertToBuffer | Array<CanConvertToBuffer>>) {
+  const bufList: Buffer[] = [];
+  for (const data of args) {
+    let buffer: Buffer = data as Buffer;
+    if (Array.isArray(data) && data.every(isNumber)) {
+      buffer = Buffer.from(data as Array<number>);
+    } else if (isPlainObject(data) || Array.isArray(data)) {
+      buffer = Buffer.from(JSON.stringify(data));
+    } else if (isString(data)) {
+      buffer = Buffer.from(data as string);
+    } else if (isNumber(data)) {
+      buffer = Buffer.from([data as number]);
+    } else if (ArrayBuffer.isView(data)) {
+      buffer = Buffer.from(data as ArrayBuffer);
+    }
+    if (Buffer.isBuffer(buffer)) {
+      bufList.push(buffer);
+    }
+  }
+  return Buffer.concat(bufList);
 }
 
 export type TargetDataTypeFromBuffer = 'json' | 'string' | 'buffer';
