@@ -152,7 +152,7 @@ export async function serverWaitNegotiationInfo(reader: Readable) {
  *     o  RSV    RESERVED
  * o  ATYP   address type of following address
  */
-export async function serverSendNegotiationResponse(
+export async function serverSendRequestTargetResponse(
   writer: Writable,
   state: {
     reply: EHandleRequestTargetState;
@@ -210,7 +210,7 @@ export async function serverSendNegotiationResponse(
  *     o  RSV    RESERVED
  * o  ATYP   address type of following address
  */
-export async function clientWaitNegotiationResponse(reader: Readable, iv: BinaryLike) {
+export async function clientWaitRequestTargetResponse(reader: Readable, iv: BinaryLike) {
   reader.resume();
   return new Promise<RequestTargetResponseV5>((res, rej) => {
     reader.once('data', (chunk: Buffer) => {

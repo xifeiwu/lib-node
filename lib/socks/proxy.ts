@@ -48,7 +48,13 @@ export async function tryProxyRequestTarget(
   }
 }
 
-export async function handleCommandConnect(
+/**
+ * handle connect request from client side
+ * @param requestTarget
+ * @param options
+ * @returns
+ */
+export async function handleConnectCommand(
   requestTarget: RequestTargetV5,
   options: {proxyConfigList?: ProxyConfig[]; stateTracer: StateTracer}
 ): Promise<{

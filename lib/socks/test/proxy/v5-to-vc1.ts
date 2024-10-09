@@ -15,7 +15,7 @@ export async function proxy() {
           port: serverVc1.port,
         },
         auth,
-        matches: ['elif.site'],
+        matches: ['elif.site', 'baidu.com'],
       },
     ],
   });

@@ -80,6 +80,40 @@ export const ERRORS = {
   proxyError: 'error while proxy to other socks server',
 };
 
+
+export const CLIENT_STATE = {
+  startNegotiation: 'start negotiation'
+}
+export const SERVER_STATE = {
+  waitingNegotiation: 'waiting negotiation',
+  getNegotiationInfo: 'get negotiation info',
+  authSuccess: 'auth success',
+  authFail: 'auth fail',
+  sendRequestTargetResponse: 'send requestTarget response',
+}
+const commonState = {
+  catchError: 'catch error',
+};
+export const globalClientState = {
+  ...commonState,
+  startNegotiation: 'start negotiaiton with socks server',
+  finishNegotiation: 'finsish negotiation with socks server',
+};
+
+export const globalServerState = {
+  ...commonState,
+  startNegotiation: 'start negotiaiton with socket connection',
+  gotClientRequest: 'got client request info',
+  finishNegotiation: 'finish negotiaiton with socket connection',
+  connectionError: 'connection error',
+  socket2ServiceClosed: 'socket to service closed',
+  socket2ServiceError: 'socket to service error',
+  startHandleClientRequest: 'start handle client request',
+  startHandleConnection: 'start handle connection',
+  matchProxyConfig: 'target server match proxy config',
+  proxyToSocksServerSuccess: 'proxy to socks server success',
+};
+
 export class SocksError extends Error {
   moreInfo?: CanConvertToBuffer;
   constructor(message: string, moreInfo?: CanConvertToBuffer) {
@@ -254,55 +288,6 @@ export function toRequestTargetV5(
   }
   return result;
 }
-
-const commonState = {
-  catchError: 'catch error',
-};
-export const globalClientState = {
-  ...commonState,
-  startNegotiation: 'start negotiaiton with socks server',
-  finishNegotiation: 'finsish negotiation with socks server',
-};
-
-export const globalServerState = {
-  ...commonState,
-  startNegotiation: 'start negotiaiton with socket connection',
-  gotClientRequest: 'got client request info',
-  finishNegotiation: 'finish negotiaiton with socket connection',
-  connectionError: 'connection error',
-  socket2ServiceClosed: 'socket to service closed',
-  socket2ServiceError: 'socket to service error',
-  startHandleClientRequest: 'start handle client request',
-  startHandleConnection: 'start handle connection',
-  matchProxyConfig: 'target server match proxy config',
-  proxyToSocksServerSuccess: 'proxy to socks server success',
-};
-
-// export function getInfoFromStateTracer<Key extends TracerKey>(
-//   stateTracer: SocksClientInfo['stateTracer'],
-//   key: Key
-// ): TracerInfo[Key] | null {
-//   const item = stateTracer.find((it: TracerItem) => {
-//     return it?.key && it?.key === key;
-//   });
-//   if (!item) {
-//     return null;
-//   }
-//   return (item as TracerItem).value as TracerInfo[Key];
-// }
-
-// /**
-//  * @deprecated rarely used as type of data returned is ambiguous
-//  * @param stateTracer
-//  * @param keys
-//  * @returns
-//  */
-// export function getInfosFromStateTracer<Key extends TracerKey>(
-//   stateTracer: SocksClientInfo['stateTracer'],
-//   keys: Key[]
-// ): Array<TracerInfo[Key] | null> {
-//   return keys.map(key => getInfoFromStateTracer(stateTracer, key));
-// }
 
 export function pushState(item: TracerItem, stateTracer?: StateTracer) {
   if (!Array.isArray(stateTracer)) {

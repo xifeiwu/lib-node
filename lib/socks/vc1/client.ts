@@ -1,5 +1,5 @@
 import {Socket} from 'net';
-import {clientSendNegotiationInfo, clientWaitNegotiationResponse} from './communication';
+import {clientSendNegotiationInfo, clientWaitRequestTargetResponse} from './communication';
 import {clientState, getIv, defaultIvBytes} from './service';
 import {NegotiationWithServer} from '../service/types';
 import {pushState, toRequestTargetV5} from '../service';
@@ -22,7 +22,7 @@ export const negotiation: NegotiationWithServer<'vc1'> = async (
     requestTarget,
   });
   pushState(clientState.sentConnectionInfo, stateTracer);
-  const requestTargetResponse = await clientWaitNegotiationResponse(socket, iv);
+  const requestTargetResponse = await clientWaitRequestTargetResponse(socket, iv);
   pushState(clientState.gotRepliedTargetServiceInfo, stateTracer);
   pushState({key: 'requestTargetResponse', value: requestTargetResponse}, stateTracer);
   return {

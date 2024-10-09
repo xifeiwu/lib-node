@@ -18,7 +18,7 @@ import {
   sendRequestTargetResponse as sendRequestTargetResponseVc1,
 } from './vc1/server';
 import {ECommand, RequestTargetV5} from './service/types/v5';
-import {handleCommandConnect} from './proxy';
+import {handleConnectCommand} from './proxy';
 
 /**
  * Two phases on server side:
@@ -70,7 +70,7 @@ export async function handleConnection<Version extends SocksVersion>(
         socket: socket2Remote,
         requestTargetResponse,
         socksClientInfo,
-      } = await handleCommandConnect(requestTarget, {proxyConfigList, stateTracer});
+      } = await handleConnectCommand(requestTarget, {proxyConfigList, stateTracer});
       await sendRequestTargetResponse[socksVersion](socket, requestTargetResponse, negotiationResult);
 
       info.socket2Remote = socket2Remote;
