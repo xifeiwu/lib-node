@@ -8,7 +8,7 @@ import {
   targetServiceInfoToBuffer,
   toRequestTargetV5,
 } from '../service';
-import {decript, encrypt, defaultIvBytes} from './service';
+import {decript, encrypt, defaultIvBytes, VERSION} from './service';
 import {BinaryLike} from 'crypto';
 import {ECommand, EHandleRequestTargetState, RequestTargetResponseV5} from '../service/types/v5';
 
@@ -72,7 +72,7 @@ export async function clientSendNegotiationInfo(writer: Writable, info: Negotiat
     if (!writer.writable) {
       return rej(createError(ERRORS.SocketUnWritable));
     }
-    const buf = toBuffer([5, iv, data]);
+    const buf = toBuffer([VERSION, iv, data]);
     writer.write(buf, err => {
       if (err) {
         rej(err);
@@ -90,6 +90,9 @@ export async function serverWaitNegotiationInfo(reader: Readable) {
       reader.pause();
       let baseIndex = 0;
       const version = chunk[baseIndex];
+      if (version !== VERSION) {
+        throw new Error(`version no match`);
+      }
       baseIndex += 1;
       const iv = chunk.subarray(baseIndex, baseIndex + defaultIvBytes);
       baseIndex += defaultIvBytes;

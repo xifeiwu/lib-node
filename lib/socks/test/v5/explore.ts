@@ -1,7 +1,6 @@
 import { logColorful } from '../../../../log';
 import {connectToSocksServer} from '../../client';
 import {handleConnection} from '../../server';
-import {getInfoFromStateTracer, getInfosFromStateTracer} from '../../service';
 import {PORT, startHttpDebugServer, startSocketServer, tcpRequestPropsToBuffer} from '../../service/external';
 import {SocksProxyConfig} from '../../service/types';
 import {EMethod, MethodUserPass} from '../../service/types/v5';

@@ -98,10 +98,13 @@ export async function handleConnection<Version extends SocksVersion>(
       throw createError(`command ${command} not found`);
     }
   } catch (err) {
-    const {socket, socket2Remote} = info;
+    const {socket2Remote} = info;
     const {message = 'there is an error on socket server'} = err ?? {};
     socket2Remote && socket2Remote.writable && socket2Remote.end(message);
-    socket && socket.writable && socket.end(message);
+    const isSocketActive = socket && socket.writable;
+    if (isSocketActive) {
+      socket.end(message);
+    }
     stateTracer.push(`${globalServerState.catchError}: ${message}`);
   } finally {
     info.stateTracer = stateTracer;
