@@ -7,7 +7,7 @@ import {
   getMatchedProxyConfig,
   globalServerState,
   pushState,
-  serializaleSocksClientInfo,
+  serializableSocksClientInfo,
 } from './service';
 import {connectToSocksServer} from './client';
 import {EHandleRequestTargetState, RequestTargetV5, RequestTargetResponseV5} from './service/types/v5';
@@ -34,7 +34,6 @@ export async function tryProxyRequestTarget(
     return null;
   }
   pushState(globalServerState.matchProxyConfig, stateTracer);
-  pushState({key: 'targetSocksServer', value: proxyConfig.socksServer}, stateTracer);
   try {
     const {socksVersion, ...restProps} = proxyConfig;
     const proxyClientInfo = await connectToSocksServer({
@@ -42,7 +41,6 @@ export async function tryProxyRequestTarget(
       requestTarget,
       ...restProps,
     });
-    pushState({key: 'proxyClientInfo', value: serializaleSocksClientInfo(proxyClientInfo)}, stateTracer);
     pushState(globalServerState.proxyToSocksServerSuccess, stateTracer);
     return proxyClientInfo;
   } catch (err) {

@@ -91,10 +91,10 @@ export class SocksError extends Error {
     this.moreInfo = moreInfo;
   }
 }
-
 export function createError(message: string, moreInfo?: CanConvertToBuffer) {
   return new SocksError(message, moreInfo);
 }
+
 export function getAddressType(host: string): EAddressType {
   const type = net.isIP(host);
   if (type === 4) {
@@ -376,11 +376,6 @@ export async function connectFromLocal(requestTarget: RequestTargetV5): Promise<
   };
 }
 
-export function serializaleSocksClientInfo(info: SocksClientInfo) {
-  const {socket, ...rest} = info;
-  return {...rest};
-}
-
 export async function getSocketToSocksServer(target: TargetSocksServer) {
   let socket: Socket;
   if (isString(target)) {
@@ -404,4 +399,20 @@ export function listenTimeOut(cb: (err: Error) => void, options?: {waitMs?: numb
     cb(new Error('time out: ' + errMessage));
   }, waitMs);
   return timeoutTag;
+}
+
+export function serializableSocksClientInfo(info?: SocksClientInfo) {
+  if (!info) {
+    return undefined;
+  }
+  const {socket, ...rest} = info;
+  return {...rest};
+}
+export function serializableSocksServerInfo(info: SocksServerInfo) {
+  const {socket, socket2Remote, error, socksClientInfo, ...rest} = info;
+  return {
+    error: error ? error.message : undefined,
+    ...rest,
+    socksClientInfo: serializableSocksClientInfo(socksClientInfo),
+  };
 }

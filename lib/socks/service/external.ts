@@ -12,6 +12,7 @@ export {
 export {
   startSocketClient,
   toBuffer,
+  convertToBuffer,
   requestAndGetUpgradeInfo,
   startHttpDebugServer,
   startSocketServer,
@@ -27,4 +28,5 @@ export {
   getRequestInfo,
   startHttpServer,
   watchSocketState,
+  startRedirectSocketServer,
 } from '../../../index';

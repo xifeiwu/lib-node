@@ -52,11 +52,13 @@ export async function handleConnection<Version extends SocksVersion>(
   const {socksVersion, proxyConfigList, ...serverConfig} = config;
   const info: SocksServerInfo = {
     socksVersion,
+    negotiationResult: undefined,
     stateTracer: [globalServerState.startNegotiation],
   };
   const {stateTracer} = info;
   try {
     const negotiationResult = await negotiationWithClient[socksVersion](socket, serverConfig, stateTracer);
+    info.negotiationResult = negotiationResult;
     const {requestTarget} = negotiationResult;
     if (!requestTarget) {
       throw createError(`Fail to get requestTarget`);
@@ -98,6 +100,7 @@ export async function handleConnection<Version extends SocksVersion>(
       throw createError(`command ${command} not found`);
     }
   } catch (err) {
+    info.error = err;
     const {socket2Remote} = info;
     const {message = 'there is an error on socket server'} = err ?? {};
     socket2Remote && socket2Remote.writable && socket2Remote.end(message);
@@ -109,6 +112,5 @@ export async function handleConnection<Version extends SocksVersion>(
   } finally {
     info.stateTracer = stateTracer;
   }
-
   return info;
 }

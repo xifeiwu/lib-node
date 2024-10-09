@@ -44,10 +44,11 @@ export async function connectToSocksServer<Version extends SocksVersion>(config:
     clientInfo.negotiationResult = negotiationResult;
     socket.resume();
     pushState(globalClientState.finishNegotiation, stateTracer);
-    return clientInfo;
   } catch (err) {
-    pushState(`${globalClientState.catchError}: ${err.message}`, stateTracer);
+    // pushState(`${globalClientState.catchError}: ${err.message}`, stateTracer);
     // status.error = err;
-    throw err;
+    // throw err;
+    clientInfo.error = err;
   }
+  return clientInfo;
 }

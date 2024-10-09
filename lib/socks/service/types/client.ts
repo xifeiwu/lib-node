@@ -1,10 +1,8 @@
 import {Socket, TcpNetConnectOpts} from 'net';
-import {
-  NegotiationInfoClient as NegotiationInfoV5,
-  NegotiationResult as NegotiationResultV5,
-} from './v5';
+import {NegotiationInfoClient as NegotiationInfoV5, NegotiationResult as NegotiationResultV5} from './v5';
 import {NegotiationInfoClient as NegotiationInfoVc1, NegotiationResult as NegotiationResultVc1} from './vc1';
 import {StateTracer} from './base';
+import {SocksError} from '../utils';
 
 export type TargetSocksServer = TcpNetConnectOpts | string;
 
@@ -27,12 +25,12 @@ export type SocksClientConfig<Version extends SocksVersion> = NegotiationInfo[Ve
   socksServer: TargetSocksServer;
 };
 
-
 export interface SocksClientInfo<Version extends SocksVersion = any> {
   socksVersion: Version;
-  socket?: Socket;
-  stateTracer: StateTracer;
   negotiationResult?: NegotiationResult[Version];
+  error?: SocksError;
+  socket?: Socket;
+  stateTracer?: StateTracer;
 }
 
 export type NegotiationWithServer<Version extends SocksVersion> = (
