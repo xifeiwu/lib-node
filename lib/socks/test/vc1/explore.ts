@@ -47,7 +47,7 @@ export async function generalProcess() {
   httpServer.close();
 }
 
-export async function proxyRequestOnServerSide() {
+export async function proxyToOtherSocksServer() {
   let startPort = PORT.start3400.port;
   const {port: httpPort} = await startHttpServer(
     {
@@ -79,7 +79,6 @@ export async function proxyRequestOnServerSide() {
   const proxyToV6: SocksProxyConfig<'vc1'> = {
     matches: [/127.0.0.1/],
     socksVersion: 'vc1',
-    // methodList: [methodUsePass],
     auth,
     socksServer: socksServer2,
   };
@@ -129,7 +128,6 @@ export async function proxyRequestOnServerSide() {
         port: httpPort,
       },
     });
-
     const {socket} = status;
     socket.write(
       tcpRequestPropsToBuffer({
