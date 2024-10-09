@@ -396,3 +396,12 @@ export async function getSocketToSocksServer(target: TargetSocksServer) {
   }
   return socket;
 }
+
+const MAX_WAIT_TIME = 20 * 1000;
+export function listenTimeOut(cb: (err: Error) => void, options?: {waitMs?: number; errMessage?: string}) {
+  const {waitMs = MAX_WAIT_TIME, errMessage = 'time out'} = options ?? {};
+  const timeoutTag = setTimeout(() => {
+    cb(new Error('time out: ' + errMessage));
+  }, waitMs);
+  return timeoutTag;
+}

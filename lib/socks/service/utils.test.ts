@@ -1,5 +1,6 @@
-import {EMethod} from './types';
-import {getMatchedProxyConfig} from './utils';
+// import {EMethod} from './types';
+import {EMethod} from './types/v5';
+import {getMatchedProxyConfig, listenTimeOut} from './utils';
 
 export function testGetMatchedProxyConfig() {
   const proxyAsSocketClientConfigList = [
@@ -38,4 +39,19 @@ export function testGetMatchedProxyConfig() {
     })
   );
   console.log(proxyAsClientConfig);
+}
+
+export async function testListenTimeOut() {
+  try {
+    const result = await new Promise((res, rej) => {
+      const timeout = listenTimeOut(rej, {waitMs: 3000});
+      setTimeout(() => {
+        clearTimeout(timeout);
+        res('success');
+      }, 2000);
+    });
+    console.log(result);
+  } catch (err) {
+    console.log(err);
+  }
 }

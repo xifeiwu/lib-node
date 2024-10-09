@@ -1,5 +1,11 @@
 import {Readable, Writable} from 'stream';
-import {ERRORS, bufferToTargeServiceInfo, createError, targetServiceInfoToBuffer} from '../service';
+import {
+  ERRORS,
+  bufferToTargeServiceInfo,
+  createError,
+  listenTimeOut,
+  targetServiceInfoToBuffer,
+} from '../service';
 import {
   ECommand,
   EMethod,
@@ -40,7 +46,9 @@ export async function clientSendMethod(writer: Writable, methods: EMethod[]) {
 export async function serverWaitMethod(reader: Readable, supportedMethods: EMethod[]) {
   reader.resume();
   return new Promise<EMethod>((res, rej) => {
+    const timeoutTag = listenTimeOut(rej, {errMessage: 'serverWaitMethod'});
     reader.once('data', (chunk: Buffer) => {
+      clearTimeout(timeoutTag);
       reader.pause();
       const [version, count, ...methods] = chunk;
       if (version !== 0x05) {
@@ -89,7 +97,9 @@ export async function serverReplyMethod(writer: Writable, method: EMethod) {
 export async function clientWaitMethodReplied(reader: Readable, methods: EMethod[]) {
   reader.resume();
   return new Promise<EMethod>((res, rej) => {
+    const timeoutTag = listenTimeOut(rej, {errMessage: 'clientWaitMethodReplied'});
     reader.once('data', (chunk: Buffer) => {
+      clearTimeout(timeoutTag);
       reader.pause();
       // const version = chunk[0];
       if (chunk.byteLength > 2) {

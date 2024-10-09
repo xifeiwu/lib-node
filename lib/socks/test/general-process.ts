@@ -54,7 +54,7 @@ async function startSocksServerVc1() {
     handleConnection(socket, socksServerConfig);
   });
 }
-async function getSocksClientConfigVc1(socksServer: TargetSocksServer, requestTarget: RequestTarget) {
+function getSocksClientConfigVc1(socksServer: TargetSocksServer, requestTarget: RequestTarget) {
   const info: SocksClientConfig<'vc1'> = {
     socksVersion: 'vc1',
     auth,
@@ -63,22 +63,42 @@ async function getSocksClientConfigVc1(socksServer: TargetSocksServer, requestTa
   };
   return info;
 }
-export async function generalProcess() {
+
+const httpRequestBuffer = tcpRequestPropsToBuffer({
+  method: 'post',
+  url: '/api/test',
+  data: {a: 1},
+});
+
+export async function generalProcessV5() {
   // const socketServerInfo = await startSocksServerVc1();
   const socketServerInfo = await startSocksServerV5();
-  const {host, port} = socketServerInfo;
+  const {host, port, server: socksServer} = socketServerInfo;
   logColorful({}, 'start socks server:', {host, port});
   const {origin: httpOrigin, server: httpServer} = await startHttpDebugServer();
   const status = await connectToSocksServer(getSocksClientConfigV5({host, port}, httpOrigin));
   const {socket} = status;
   watchSocketState(socket, {colorStyle: {color: 'blue'}});
-  socket.write(
-    tcpRequestPropsToBuffer({
-      method: 'post',
-      url: '/api/test',
-      data: {a: 1},
-    })
-  );
+  socket.write(httpRequestBuffer);
+  await new Promise<void>((res, rej) => {
+    socket.on('data', chunk => {
+      console.log(chunk.toString());
+      res();
+    });
+  });
+  httpServer.close();
+  // socksServer.close();
+}
+
+export async function generalProcessVc1() {
+  const socketServerInfo = await startSocksServerVc1();
+  const {host, port} = socketServerInfo;
+  logColorful({}, 'start socks server:', {host, port});
+  const {origin: httpOrigin, server: httpServer} = await startHttpDebugServer();
+  const status = await connectToSocksServer(getSocksClientConfigVc1({host, port}, httpOrigin));
+  const {socket} = status;
+  watchSocketState(socket, {colorStyle: {color: 'blue'}});
+  socket.write(httpRequestBuffer);
   await new Promise<void>((res, rej) => {
     socket.on('data', chunk => {
       console.log(chunk.toString());
