@@ -60,6 +60,7 @@ export async function startSocketServer(
   config?: TcpServerConfig
 ) {
   let {host, port, path, options} = config ?? {};
+  /** if path is not undefined, will listen on path */
   if (path !== undefined) {
     path = getSocketPath(path);
     /** Check whether file already used as socket file */
@@ -73,7 +74,7 @@ export async function startSocketServer(
       }
     }
   } else {
-    host = host ?? '';
+    host = host ?? '127.0.0.1';
     port = port ?? (await getAFreePort());
   }
   return new Promise<SocketServerInfo>((res, rej) => {
