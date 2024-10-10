@@ -87,62 +87,6 @@ export async function getAFreePort(startPort: string | number = 3000) {
   throw new Error('not free port found');
 }
 
-export function handleSocketEvents(
-  socket: Socket,
-  options?: {
-    isServer?: boolean;
-    color?: Parameters<typeof logColorful>[0]['color'];
-    maxPrintDataLength?: number;
-    /** As listening on 'data' event will change flowMode, sometimes we do not want to change flowMode */
-    onData?: null | ((chunk: Buffer) => void);
-  }
-) {
-  if (!socket) {
-    return;
-  }
-  const {isServer = false, color = 'black', maxPrintDataLength, onData = null} = options ?? {};
-  if (!socket) {
-    logColorful({color}, `socket is undefined`);
-    return;
-  }
-  const {localAddress, localPort, remoteAddress, remotePort} = socket;
-  const local = `${localAddress}:${localPort}`;
-  const remote = `${remoteAddress}:${remotePort}`;
-  const tag = [local, '<-', remote].join('');
-  logColorful({color}, `start listen events on socket: ${tag}`);
-  if (onData) {
-    socket.on('data', chunk => {
-      if (onData) {
-        return onData(chunk);
-      }
-      logColorful({color}, `${tag} data:`);
-      logColorful(
-        {
-          color,
-        },
-        `[size: ${chunk.byteLength}]` +
-          (isNumber(maxPrintDataLength) ? chunk.subarray(0, maxPrintDataLength) : chunk).toString()
-      );
-      if (isServer) {
-        socket.writable && socket.write(chunk);
-      }
-    });
-  }
-  socket.on('end', () => {
-    logColorful({color}, `socket ${tag} end.`);
-  });
-  socket.on('timeout', () => {
-    logColorful({color}, `socket ${tag} timeout.`);
-  });
-  socket.on('error', err => {
-    logColorful({color}, `socket ${tag} error:`, err);
-    console.log(err);
-  });
-  socket.on('close', hadError => {
-    logColorful({color}, `socket ${tag} close${hadError ? ' [hadError].' : '.'}`);
-  });
-}
-
 /**
  * @deprecated Shoule be part of stream, not net
  * @param writer
@@ -267,12 +211,85 @@ export function getSocketInfo(socket: Socket): Partial<SocketInfo> {
   };
 }
 
+/**
+ * @deprecated by watchSocketState
+ * @param socket
+ * @param options
+ * @returns
+ */
+export function handleSocketEvents(
+  socket: Socket,
+  options?: {
+    isServer?: boolean;
+    color?: Parameters<typeof logColorful>[0]['color'];
+    maxPrintDataLength?: number;
+    /** As listening on 'data' event will change flowMode, sometimes we do not want to change flowMode */
+    onData?: null | ((chunk: Buffer) => void);
+  }
+) {
+  if (!socket) {
+    return;
+  }
+  const {isServer = false, color = 'black', maxPrintDataLength, onData = null} = options ?? {};
+  if (!socket) {
+    logColorful({color}, `socket is undefined`);
+    return;
+  }
+  const {localAddress, localPort, remoteAddress, remotePort} = socket;
+  const local = `${localAddress}:${localPort}`;
+  const remote = `${remoteAddress}:${remotePort}`;
+  const tag = [local, '<-', remote].join('');
+  logColorful({color}, `start listen events on socket: ${tag}`);
+  if (onData) {
+    socket.on('data', chunk => {
+      if (onData) {
+        return onData(chunk);
+      }
+      logColorful({color}, `${tag} data:`);
+      logColorful(
+        {
+          color,
+        },
+        `[size: ${chunk.byteLength}]` +
+          (isNumber(maxPrintDataLength) ? chunk.subarray(0, maxPrintDataLength) : chunk).toString()
+      );
+      if (isServer) {
+        socket.writable && socket.write(chunk);
+      }
+    });
+  }
+  socket.on('end', () => {
+    logColorful({color}, `socket ${tag} end.`);
+  });
+  socket.on('timeout', () => {
+    logColorful({color}, `socket ${tag} timeout.`);
+  });
+  socket.on('error', err => {
+    logColorful({color}, `socket ${tag} error:`, err);
+    console.log(err);
+  });
+  socket.on('close', hadError => {
+    logColorful({color}, `socket ${tag} close${hadError ? ' [hadError].' : '.'}`);
+  });
+}
+
 export function watchSocketState(
   socket: Socket,
   options?: {colorStyle?: ColorStyle; bytesToPrint?: number; printStateOnEvent?: boolean}
 ) {
   const {colorStyle = {}, bytesToPrint = 50, printStateOnEvent} = options ?? {};
   const {color} = colorStyle;
+  if (!socket) {
+    logColorful(colorStyle, `socket is undefined`);
+    return;
+  }
+  const {localAddress, localPort, remoteAddress, remotePort} = socket;
+  const local = `${localAddress}:${localPort}`;
+  const remote = `${remoteAddress}:${remotePort}`;
+  const tag = [local, '<-', remote].join('');
+  function getPrefix() {
+    return `[${formatDate(new Date(), 'hh:mm:ss.SSS')}][${tag}]`;
+  }
   const printState = () => {
     if (!printStateOnEvent) {
       return;
@@ -283,10 +300,7 @@ export function watchSocketState(
   printState();
   socket.on('data', chunk => {
     const {byteLength} = chunk;
-    logColorful(
-      {color},
-      `[${formatDate(new Date(), 'yyyy-MM-dd hh:mm:ss.SSS')}] on data [size: ${byteLength}]`
-    );
+    logColorful({color}, `${getPrefix()} on data [size: ${byteLength}]`);
     // console.log(chunk.toString());
     logColorful(
       {color},
@@ -295,24 +309,24 @@ export function watchSocketState(
     printState();
   });
   // socket.on('readable', () => {
-  //   logColorful({color}, `[${formatDate(new Date(), 'yyyy-MM-dd hh:mm:ss.SSS')}] on readable`);
+  //   logColorful({color}, `${getPrefix()} on readable`);
   //   printState();
   // })
   socket.on('end', () => {
-    logColorful({color}, `[${formatDate(new Date(), 'yyyy-MM-dd hh:mm:ss.SSS')}] on end`);
+    logColorful({color}, `${getPrefix()} on end`);
     printState();
   });
   socket.on('error', err => {
-    logColorful({color}, `[${formatDate(new Date(), 'yyyy-MM-dd hh:mm:ss.SSS')}] on error`);
+    logColorful({color}, `${getPrefix()} on error`);
     console.log(err);
     printState();
   });
   socket.on('finish', () => {
-    logColorful({color}, `[${formatDate(new Date(), 'yyyy-MM-dd hh:mm:ss.SSS')}] on finish`);
+    logColorful({color}, `${getPrefix()} on finish`);
     printState();
   });
   socket.on('close', () => {
-    logColorful({color}, `[${formatDate(new Date(), 'yyyy-MM-dd hh:mm:ss.SSS')}] on close`);
+    logColorful({color}, `${getPrefix()} on close`);
     printState();
   });
 }
