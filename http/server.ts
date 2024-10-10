@@ -69,61 +69,6 @@ export async function responseRequestEvent(request: http.IncomingMessage, respon
   response.end(resData);
 }
 
-export function getUpgradeProtocol(req: IncomingMessage) {
-  const {upgrade, connection} = req.headers;
-  if (connection.toLocaleLowerCase() !== 'upgrade') {
-    throw new Error(`connection should be upgrade`);
-  }
-  if (upgrade === undefined) {
-    throw new Error(`upgrade should be set`);
-  }
-  return upgrade;
-}
-
-export const GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
-export function handleWebsocketUpgrade(
-  req: IncomingMessage,
-  socket?: Duplex,
-  head?: Buffer
-): HttpResponseProps {
-  const {headers} = req;
-  if (headers === undefined) {
-    throw new Error(`Not found headers`);
-  }
-  const key = headers['sec-websocket-key'];
-  const digest = createHash('sha1')
-    .update(key + GUID)
-    .digest('base64');
-  const responseInfo: HttpResponseProps = {
-    httpVersion: 'HTTP/1.1',
-    statusCode: 101,
-    statusMessage: 'Switching Protocols',
-    headers: {
-      Upgrade: 'websocket',
-      Connection: 'Upgrade',
-      'Sec-WebSocket-Accept': digest,
-    },
-  };
-  return responseInfo;
-}
-
-/**
- * Default way of handle connect event
- */
-export function handleConnectEvent(
-  req: IncomingMessage,
-  socket?: Duplex,
-  head?: Buffer
-): {requestHeaderPartInfo: TcpHttpRequestProps; responseInfo: HttpResponseProps} {
-  const requestHeaderPartInfo = getRequestHeaderInfo(req);
-  const responseInfo: HttpResponseProps = {
-    httpVersion: 'HTTP/1.1',
-    statusCode: 200,
-    statusMessage: 'Connection Established',
-  };
-  return {requestHeaderPartInfo, responseInfo};
-}
-
 export interface HttpConditionAndAction {
   requestConfig: Pick<HttpRequestOptions, 'method' | 'pathname' | 'query'>;
   action: Action4IncomingMessage;
@@ -214,4 +159,77 @@ export async function startHttpDebugServer(
   // });
   console.log(`start http server: ${origin}`);
   return {host, port, origin, server};
+}
+
+export function getUpgradeProtocol(req: IncomingMessage) {
+  const {upgrade, connection} = req.headers;
+  if (connection.toLocaleLowerCase() !== 'upgrade') {
+    throw new Error(`connection should be upgrade`);
+  }
+  if (upgrade === undefined) {
+    throw new Error(`upgrade should be set`);
+  }
+  return upgrade;
+}
+export function getUpgradeSuccessResponse(protocol: string, info?: HttpResponseProps) {
+  const {headers, ...restInfo} = info ?? {};
+  const responseInfo: HttpResponseProps = {
+    httpVersion: 'HTTP/1.1',
+    statusCode: 101,
+    statusMessage: 'Switching Protocols',
+    headers: {
+      Upgrade: protocol,
+      Connection: 'Upgrade',
+      ...(headers ?? {}),
+    },
+    ...(restInfo ?? {}),
+  };
+  return responseInfo;
+}
+
+export const GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
+export function handleWebsocketUpgrade(
+  req: IncomingMessage,
+  socket?: Duplex,
+  head?: Buffer
+): HttpResponseProps {
+  const {headers} = req;
+  if (headers === undefined) {
+    throw new Error(`Not found headers`);
+  }
+  const key = headers['sec-websocket-key'];
+  if (key === undefined) {
+    throw new Error(`sec-websocket-key is not found on header part`);
+  }
+  const digest = createHash('sha1')
+    .update(key + GUID)
+    .digest('base64');
+  const responseInfo: HttpResponseProps = {
+    httpVersion: 'HTTP/1.1',
+    statusCode: 101,
+    statusMessage: 'Switching Protocols',
+    headers: {
+      Upgrade: 'websocket',
+      Connection: 'Upgrade',
+      'Sec-WebSocket-Accept': digest,
+    },
+  };
+  return responseInfo;
+}
+
+/**
+ * Default way of handle connect event
+ */
+export function handleConnectEvent(
+  req: IncomingMessage,
+  socket?: Duplex,
+  head?: Buffer
+): {requestHeaderPartInfo: TcpHttpRequestProps; responseInfo: HttpResponseProps} {
+  const requestHeaderPartInfo = getRequestHeaderInfo(req);
+  const responseInfo: HttpResponseProps = {
+    httpVersion: 'HTTP/1.1',
+    statusCode: 200,
+    statusMessage: 'Connection Established',
+  };
+  return {requestHeaderPartInfo, responseInfo};
 }
