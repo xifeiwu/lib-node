@@ -1,20 +1,12 @@
 import dns from 'dns';
 import net, {Socket, TcpNetConnectOpts, isIP} from 'net';
-import {
-  SocksServerInfo,
-  MatchItem,
-  TargetSocksServer,
-  ProxyConfig,
-  SocksClientConfig,
-  SocksClientInfo,
-} from './types';
+import {SocksServerInfo, MatchItem, TargetSocksServer, ProxyConfig, SocksClientInfo} from './types';
 import {
   isString,
   toUrlInstance,
   requestAndGetUpgradeInfo,
   startSocketClient,
   CanConvertToBuffer,
-  getSocketInfo,
   isNumber,
   isPlainObject,
   isRegExp,
@@ -80,24 +72,20 @@ export const ERRORS = {
   proxyError: 'error while proxy to other socks server',
 };
 
-
 export const CLIENT_STATE = {
-  startNegotiation: 'start negotiation'
-}
+  startConnectToSocksServer: 'start connect to socks server',
+  startNegotiation: 'start negotiation',
+  finishNegotiation: 'finsish negotiation with socks server',
+};
 export const SERVER_STATE = {
   waitingNegotiation: 'waiting negotiation',
   getNegotiationInfo: 'get negotiation info',
   authSuccess: 'auth success',
   authFail: 'auth fail',
   sendRequestTargetResponse: 'send requestTarget response',
-}
+};
 const commonState = {
   catchError: 'catch error',
-};
-export const globalClientState = {
-  ...commonState,
-  startNegotiation: 'start negotiaiton with socks server',
-  finishNegotiation: 'finsish negotiation with socks server',
 };
 
 export const globalServerState = {
@@ -399,5 +387,15 @@ export function serializableSocksServerInfo(info: SocksServerInfo) {
     error: error ? error.message : undefined,
     ...rest,
     socksClientInfo: serializableSocksClientInfo(socksClientInfo),
+  };
+}
+export function simplifySocksServerInfo(info: SocksServerInfo) {
+  const {negotiationResult, stateTracer, socksVersion} = serializableSocksServerInfo(info);
+  const {requestTarget, requestTargetResponse} = negotiationResult ?? {};
+  return {
+    requestTargetResponse,
+    requestTarget,
+    stateTracer,
+    socksVersion,
   };
 }

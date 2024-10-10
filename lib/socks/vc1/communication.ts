@@ -168,7 +168,7 @@ export async function serverSendRequestTargetResponse(
     }
     const {data} = encrypt(
       toBuffer([
-        5,
+        VERSION,
         reply,
         0,
         targetServiceInfoToBuffer({
@@ -217,7 +217,7 @@ export async function clientWaitRequestTargetResponse(reader: Readable, iv: Bina
       reader.pause();
       const buffer = decript(chunk, iv);
       const [version, reply, _reserve] = buffer;
-      if (version !== 0x05) {
+      if (version !== VERSION) {
         return rej(createError(ERRORS.InvalidSocksVersion));
       }
       if (reply !== EHandleRequestTargetState.succeeded) {

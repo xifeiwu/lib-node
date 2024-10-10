@@ -47,6 +47,7 @@ export interface RequestTargetV5 {
 export interface RequestTargetResponseV5 {
   reply: EHandleRequestTargetState;
   addressType?: EAddressType;
+  /** For socks v5, address, port is must to have */
   address: string;
   port: number;
 }

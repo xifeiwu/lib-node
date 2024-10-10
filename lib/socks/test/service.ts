@@ -12,7 +12,7 @@ import {SocksClientConfig, SocksServerConfig, SocksServerInfo, TargetSocksServer
 import {EMethod, NegotiationInfoClient as NegotiationInfoClientV5, UserPassInfo} from '../service/types/v5';
 import {RequestTarget} from '../service/types/base';
 import {Socket} from 'net';
-import {serializableSocksServerInfo} from '../service';
+import {simplifySocksServerInfo} from '../service';
 import {logColorful} from '../../../log';
 
 export const auth: UserPassInfo = {
@@ -25,12 +25,12 @@ async function startSocksServer(socksServerConfig: SocksServerConfig<any>) {
   const httpServerInfo = await startHttpServer({
     request(req, res) {
       res.setHeader('content-type', 'application/json');
-      const data = toBuffer([infoList.map(serializableSocksServerInfo)]);
+      const data = toBuffer([infoList.map(simplifySocksServerInfo)]);
       res.end(data);
     },
   });
   const socksHandler = async (socket: Socket) => {
-    logColorful({color: 'red'}, `socksHandler for ${socksServerConfig.socksVersion}`);
+    logColorful({color: 'red'}, `handle sockeet for ${socksServerConfig.socksVersion}`);
     const info = await handleConnection(socket, socksServerConfig);
     if (infoList.length > 200) {
       infoList.pop();
