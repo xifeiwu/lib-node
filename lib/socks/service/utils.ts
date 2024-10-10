@@ -249,7 +249,7 @@ export function getMatchedProxyConfig(target: RequestTargetV5, config: ProxyConf
     if (isRegExp(address)) {
       result &&= (address as RegExp).test(target.address);
     } else if (isString(address)) {
-      result &&= address === target.address;
+      result &&= target.address.includes(address);
     } else {
       result = false;
     }

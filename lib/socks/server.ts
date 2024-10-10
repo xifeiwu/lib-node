@@ -82,6 +82,16 @@ export async function handleConnection<Version extends SocksVersion>(
       if (!socket || !socket2Remote || socket.destroyed || socket2Remote.destroyed) {
         throw createError(ERRORS.connectionError);
       }
+      // if (socksVersion === 'vc1') {
+      //   socket.on('data', chunk => {
+      //     console.log(`chunk.toString()`);
+      //     console.log(chunk.toString());
+      //   })
+      //   socket2Remote.on('data', chunk => {
+      //     console.log(`socket2Remote chunk.toString()`);
+      //     console.log(chunk.toString());
+      //   })
+      // }
       pipeline(socket, socket2Remote, err => {
         // status.stateTracer = serverserverState.socket_connect_between_client_target_fail;
         // status.error = err;
