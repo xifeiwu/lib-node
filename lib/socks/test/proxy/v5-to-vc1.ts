@@ -4,6 +4,15 @@ import {serializableSocksClientInfo} from '../../service';
 import {startHttpDebugServer} from '../../service/external';
 import {auth, getSocksClientConfigV5, startSocksServerV5, startSocksServerVc1} from '../service';
 
+/**
+ * used to catch error, such as:
+ * node Error: read ECONNRESET
+ */
+process.on('uncaughtException', function(err) {
+  console.log('uncaughtException:');
+  console.log(err.stack);
+});
+
 export async function proxy() {
   const serverVc1 = await startSocksServerVc1();
   const serverV5 = await startSocksServerV5({
