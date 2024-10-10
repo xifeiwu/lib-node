@@ -32,5 +32,6 @@ export {
   filesize,
   normalizeUrlProps,
   uuid,
+  base64Chars,
   getRandomBase64String,
 } from '../../fe/common';

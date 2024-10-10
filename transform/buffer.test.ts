@@ -1,7 +1,8 @@
 import assert from 'assert';
-import {toBuffer, convertToBuffer} from './buffer';
+import {toBuffer, convertToBuffer, getBufferGenerator} from './buffer';
 import {logColorful} from '../log';
 import {CanConvertToBuffer} from '../types';
+import {base64Chars} from '../external';
 
 export async function testToBuffer() {
   console.log(toBuffer(1));
@@ -76,4 +77,65 @@ export async function bufferConvert() {
   const port = 3005;
   const buffer = toBuffer([5, command, 0, addressType, address, port]);
   console.log(buffer);
+}
+
+export function testGetBufferGenerator() {
+  /** the case source is not set, use base64Chars as default source */
+  {
+    const generator = getBufferGenerator({
+      chunkSize: 2,
+      count: 5,
+    });
+    let data: Buffer | null;
+    const results: Buffer[] = [];
+    while ((data = generator()) !== null) {
+      results.push(data);
+    }
+    assert.equal(results.length, 5);
+    assert.deepEqual(
+      results.map(it => it.toString()),
+      base64Chars
+        .substring(0, 5)
+        .split('')
+        .map(it => it + it)
+    );
+  }
+  /** usage of chunkSize */
+  {
+    const generator = getBufferGenerator({
+      source: 'abc',
+      chunkSize: 2,
+      count: 5,
+    });
+    let data: Buffer | null;
+    const results: Buffer[] = [];
+    while ((data = generator()) !== null) {
+      results.push(data);
+    }
+    assert.equal(results.length, 5);
+    assert.deepEqual(
+      results.map(it => it.toString()),
+      ['aa', 'bb', 'cc', 'aa', 'bb']
+    );
+  }
+  /** test the case sameItemPerGenerate = false */
+  {
+    const generator = getBufferGenerator({
+      source: 'abc',
+      chunkSize: 2,
+      count: 5,
+      sameItemPerGenerate: false,
+    });
+    let data: Buffer | null;
+    const results: Buffer[] = [];
+    while ((data = generator()) !== null) {
+      results.push(data);
+    }
+    assert.equal(results.length, 5);
+    assert.deepEqual(
+      results.map(it => it.toString()),
+      ['ab', 'ca', 'bc', 'ab', 'ca']
+    );
+    // logColorful({}, results);
+  }
 }
