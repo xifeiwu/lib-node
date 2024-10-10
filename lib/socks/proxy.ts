@@ -2,10 +2,10 @@ import {Socket} from 'net';
 import {ProxyConfig, SocksClientInfo} from './service/types';
 import {
   ERRORS,
+  SERVER_STATE,
   connectFromLocal,
   createError,
   getMatchedProxyConfig,
-  globalServerState,
   pushState,
   serializableSocksClientInfo,
 } from './service';
@@ -33,7 +33,11 @@ export async function tryProxyRequestTarget(
   if (!proxyConfig) {
     return null;
   }
-  pushState(globalServerState.matchProxyConfig, stateTracer);
+  const {socksVersion, socksServer} = proxyConfig;
+  pushState(
+    SERVER_STATE.willProxyToRemoteSocksServer + JSON.stringify({socksVersion, socksServer}),
+    stateTracer
+  );
   try {
     const {socksVersion, ...restProps} = proxyConfig;
     const proxyClientInfo = await connectToSocksServer({
@@ -41,7 +45,7 @@ export async function tryProxyRequestTarget(
       requestTarget,
       ...restProps,
     });
-    pushState(globalServerState.proxyToSocksServerSuccess, stateTracer);
+    pushState(SERVER_STATE.proxyToRemoteSocksServerSuccess, stateTracer);
     return proxyClientInfo;
   } catch (err) {
     throw createError(ERRORS.proxyError, err?.message);

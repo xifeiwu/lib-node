@@ -8,7 +8,7 @@ import {
 } from './service/types';
 import {Socket} from 'net';
 import {pipeline} from 'stream';
-import {ERRORS, createError, globalServerState} from './service';
+import {ERRORS, createError, SERVER_STATE, pushState} from './service';
 import {
   negotiation as negotiationV5,
   sendRequestTargetResponse as sendRequestTargetResponseV5,
@@ -53,10 +53,11 @@ export async function handleConnection<Version extends SocksVersion>(
   const info: SocksServerInfo = {
     socksVersion,
     negotiationResult: undefined,
-    stateTracer: [globalServerState.startNegotiation],
+    stateTracer: [SERVER_STATE.startHandleConnection],
   };
   const {stateTracer} = info;
   try {
+    pushState(SERVER_STATE.startNegotiation, stateTracer);
     const negotiationResult = await negotiationWithClient[socksVersion](socket, serverConfig, stateTracer);
     info.negotiationResult = negotiationResult;
     const {requestTarget} = negotiationResult;
@@ -65,7 +66,7 @@ export async function handleConnection<Version extends SocksVersion>(
     }
     const {command} = requestTarget;
     if (command === ECommand.CONNECT) {
-      stateTracer.push(globalServerState.gotClientRequest);
+      stateTracer.push(SERVER_STATE.handleConnectCommand);
       const {
         socket: socket2Remote,
         requestTargetResponse,
@@ -76,7 +77,7 @@ export async function handleConnection<Version extends SocksVersion>(
       info.socket2Remote = socket2Remote;
       info.socksClientInfo = socksClientInfo;
       socket2Remote.once('close', () => {
-        stateTracer.push(globalServerState.socket2ServiceClosed);
+        stateTracer.push(SERVER_STATE.remoteSocketClosed);
       });
 
       if (!socket || !socket2Remote || socket.destroyed || socket2Remote.destroyed) {
@@ -95,17 +96,17 @@ export async function handleConnection<Version extends SocksVersion>(
       pipeline(socket, socket2Remote, err => {
         // status.stateTracer = serverserverState.socket_connect_between_client_target_fail;
         // status.error = err;
-        stateTracer.push(`${globalServerState.connectionError}: ${err?.message}`);
+        stateTracer.push(`${SERVER_STATE.connectionError}: ${err?.message}`);
       });
       pipeline(socket2Remote, socket, err => {
         // status.stateTracer = serverserverState.socket_connect_between_client_target_fail;
         // status.error = err;
-        stateTracer.push(`${globalServerState.connectionError}: ${err?.message}`);
+        stateTracer.push(`${SERVER_STATE.connectionError}: ${err?.message}`);
       });
       // }
       socket.resume();
       // status.stateTracer = serverserverState.success;
-      stateTracer.push(globalServerState.finishNegotiation);
+      stateTracer.push(SERVER_STATE.handleConnectCommandSuccess);
     } else {
       throw createError(`command ${command} not found`);
     }
@@ -118,7 +119,7 @@ export async function handleConnection<Version extends SocksVersion>(
     if (isSocketActive) {
       socket.end(message);
     }
-    stateTracer.push(`${globalServerState.catchError}: ${message}`);
+    stateTracer.push(`${SERVER_STATE.catchError}: ${message}`);
   } finally {
     info.stateTracer = stateTracer;
   }

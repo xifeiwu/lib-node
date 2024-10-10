@@ -72,34 +72,30 @@ export const ERRORS = {
   proxyError: 'error while proxy to other socks server',
 };
 
+const COMMON_STATE = {
+  catchError: 'catch error',
+};
 export const CLIENT_STATE = {
+  ...COMMON_STATE,
   startConnectToSocksServer: 'start connect to socks server',
   startNegotiation: 'start negotiation',
   finishNegotiation: 'finsish negotiation with socks server',
 };
 export const SERVER_STATE = {
+  ...COMMON_STATE,
+  startHandleConnection: 'start handle connection',
+  startNegotiation: 'start negotiation',
   waitingNegotiation: 'waiting negotiation',
-  getNegotiationInfo: 'get negotiation info',
+  gotNegotiationInfo: 'got negotiation info',
   authSuccess: 'auth success',
   authFail: 'auth fail',
   sendRequestTargetResponse: 'send requestTarget response',
-};
-const commonState = {
-  catchError: 'catch error',
-};
-
-export const globalServerState = {
-  ...commonState,
-  startNegotiation: 'start negotiaiton with socket connection',
-  gotClientRequest: 'got client request info',
-  finishNegotiation: 'finish negotiaiton with socket connection',
+  handleConnectCommand: 'handle connect command',
+  handleConnectCommandSuccess: 'handle connect command success',
+  willProxyToRemoteSocksServer: 'will proxy connection to remote socks server',
+  proxyToRemoteSocksServerSuccess: 'proxy to remote socks server success',
+  remoteSocketClosed: 'remove socket closed',
   connectionError: 'connection error',
-  socket2ServiceClosed: 'socket to service closed',
-  socket2ServiceError: 'socket to service error',
-  startHandleClientRequest: 'start handle client request',
-  startHandleConnection: 'start handle connection',
-  matchProxyConfig: 'target server match proxy config',
-  proxyToSocksServerSuccess: 'proxy to socks server success',
 };
 
 export class SocksError extends Error {

@@ -6,7 +6,7 @@ import {
   serverWaitRequestTarget,
   serverWaitUserPass,
 } from './communication';
-import {ERRORS, createError} from '../service';
+import {ERRORS, createError, pushState} from '../service';
 import {NegotiationWithClient} from '../service/types';
 import {
   EMethod,
@@ -17,7 +17,7 @@ import {
 } from '../service/types/v5';
 import {deepEqual} from '../service/external';
 import {Socket} from 'net';
-import {serverState} from './service';
+import {SERVER_STATE_V5} from './service';
 import {StateTracer} from '../service/types/base';
 
 /**
@@ -28,20 +28,20 @@ export const negotiation: NegotiationWithClient<'v5'> = async (
   config: ServerConfig,
   stateTracer?: StateTracer
 ) => {
-  stateTracer.push(serverState.waitingMethodList);
+  pushState(SERVER_STATE_V5.waitingMethodList, stateTracer);
   const {methodList = [{method: EMethod.NoAuth}]} = config ?? {};
   const method = await serverWaitMethod(
     socket,
     methodList.map(it => it.method)
   );
   await serverReplyMethod(socket, method);
-  stateTracer.push(`${serverState.repliedMethod}: ${method}`);
+  pushState(`${SERVER_STATE_V5.repliedMethod}: ${method}`, stateTracer);
   if (method === EMethod.UserPass) {
     const methodInfo = methodList.find(it => it.method === method) as {
       method: EMethod.UserPass;
       info: UserPassInfo;
     };
-    stateTracer.push(serverState.waitingAuthUserPass);
+    pushState(SERVER_STATE_V5.waitingAuthUserPass, stateTracer);
     const userInfo = await serverWaitUserPass(socket);
     const authSuccess = deepEqual(
       methodInfo.info,
@@ -51,22 +51,17 @@ export const negotiation: NegotiationWithClient<'v5'> = async (
       }, {})
     );
     if (!authSuccess) {
-      stateTracer.push(serverState.waitingAuthUserPass);
+      pushState(SERVER_STATE_V5.waitingAuthUserPass, stateTracer);
       throw createError(ERRORS.authUserPassFail);
     }
     await serverReplyUserPassAuthResult(socket, authSuccess);
-    stateTracer.push(serverState.authUserPassSuccess);
+    pushState(SERVER_STATE_V5.authUserPassSuccess, stateTracer);
   }
-  stateTracer.push(serverState.waitingTargetServiceInfo);
+  pushState(SERVER_STATE_V5.waitingTargetServiceInfo, stateTracer);
   const requestTarget = await serverWaitRequestTarget(socket);
-  stateTracer.push(serverState.gotTargetServiceInfo);
-  stateTracer.push({
-    key: 'requestTarget',
-    value: requestTarget,
-  });
+  pushState(SERVER_STATE_V5.gotTargetServiceInfo, stateTracer);
   return {method: methodList.find(it => it.method === method), requestTarget};
 };
-
 
 export async function sendRequestTargetResponse(
   socket: Socket,
@@ -83,7 +78,7 @@ export async function sendRequestTargetResponse(
 // ) => {
 //   const {stateTracer} = clientInfo;
 //   const clientRequestInfo = getInfoFromStateTracer(stateTracer, 'requestTarget');
-//   stateTracer.push(globalServerState.startHandleClientRequest);
+//   pushState(globalServerState.startHandleClientRequest, stateTracer);
 //   const {proxyConfigList} = config;
 //   let socket2Service: Socket;
 //   const proxyStatus = proxyConfigList && (await proxySocksRequest(clientRequestInfo, proxyConfigList));
@@ -92,26 +87,26 @@ export async function sendRequestTargetResponse(
 //       stateTracer: tracer = [],
 //       proxyClientInfo: {respondClientRequest, socket: proxySocket},
 //     } = proxyStatus;
-//     stateTracer.push(...tracer);
+//     pushState(...tracer, stateTracer);
 //     const replied = {
 //       reply: EHandleRequestTargetState.succeeded,
 //       ...(respondClientRequest ?? {address: '8.8.8.8', port: 88}),
 //     };
 //     await serverSendRequestTargetResponse(socket, replied);
-//     stateTracer.push(serverState.repliedTargetServiceInfo);
-//     stateTracer.push({
+//     pushState(serverState.repliedTargetServiceInfo, stateTracer);
+//     pushState, stateTracer({
 //       key: 'respondOfRequestTarget',
 //       value: replied,
 //     });
 //     socket2Service = proxySocket;
 //   } else {
-//     stateTracer.push(globalServerState.startHandleConnection);
+//     pushState(globalServerState.startHandleConnection, stateTracer);
 //     const {socket: theSocket, connectState, requestTarget} = await connectFromLocal(clientRequestInfo);
 //     const reply: RespondOfRequestTarget = {
 //       reply: connectState as EHandleRequestTargetState,
 //       ...requestTarget,
 //     };
-//     stateTracer.push({
+//     pushState, stateTracer({
 //       key: 'respondOfRequestTarget',
 //       value: reply,
 //     });

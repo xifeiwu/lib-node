@@ -15,7 +15,7 @@ export const clientState = {
   getRepliedTargetSericeInfo: 'get replied target service info',
 };
 
-export const serverState = {
+export const SERVER_STATE_V5 = {
   ...commonState,
   waitingMethodList: 'waiting for method list',
   repliedMethod: 'replied method',

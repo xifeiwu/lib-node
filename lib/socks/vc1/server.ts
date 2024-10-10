@@ -14,7 +14,7 @@ export const negotiation: NegotiationWithClient<'vc1'> = async (
 ) => {
   pushState(SERVER_STATE.waitingNegotiation, stateTracer);
   const {iv, auth, requestTarget} = await serverWaitNegotiationInfo(socket);
-  pushState(SERVER_STATE.getNegotiationInfo, stateTracer);
+  pushState(SERVER_STATE.gotNegotiationInfo, stateTracer);
   const authSuccess = deepEqual(config.auth, auth);
   pushState(authSuccess ? SERVER_STATE.authSuccess : SERVER_STATE.authFail, stateTracer);
   if (!authSuccess) {
