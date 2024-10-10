@@ -2,20 +2,26 @@ import {logColorful} from '../../../../log';
 import {connectToSocksServer} from '../../client';
 import {serializableSocksClientInfo} from '../../service';
 import {startHttpDebugServer} from '../../service/external';
-import {auth, getSocksClientConfigV5, startSocksServerV5, startSocksServerVc1} from '../service';
+import {
+  auth,
+  getSocksClientConfigV5,
+  startHttpServerForSocksVc1,
+  startSocketServerForSocksV5,
+  startSocketServerForSocksVc1,
+} from '../service';
 
 /**
  * used to catch error, such as:
  * node Error: read ECONNRESET
  */
-process.on('uncaughtException', function(err) {
+process.on('uncaughtException', function (err) {
   console.log('uncaughtException:');
   console.log(err.stack);
 });
 
-export async function proxy() {
-  const serverVc1 = await startSocksServerVc1();
-  const serverV5 = await startSocksServerV5({
+async function startSocksServerOnTcp() {
+  const serverVc1 = await startSocketServerForSocksVc1();
+  const serverV5 = await startSocketServerForSocksV5({
     proxyConfigList: [
       {
         socksVersion: 'vc1',
@@ -28,6 +34,25 @@ export async function proxy() {
       },
     ],
   });
+  return {serverVc1, serverV5};
+}
+async function startSocksServerOnHttp() {
+  const serverVc1 = await startHttpServerForSocksVc1();
+  const serverV5 = await startSocketServerForSocksV5({
+    proxyConfigList: [
+      {
+        socksVersion: 'vc1',
+        socksServer: serverVc1.origin,
+        auth,
+        matches: ['elif.site', 'baidu.com'],
+      },
+    ],
+  });
+  return {serverVc1, serverV5};
+}
+export async function proxy() {
+  // const {serverVc1, serverV5} = await startSocksServerOnTcp();
+  const {serverVc1, serverV5} = await startSocksServerOnHttp();
   logColorful({}, 'socks server vc1:', {host: serverVc1.host, port: serverVc1.port});
   logColorful({}, 'socks server v5:', {host: serverV5.host, port: serverV5.port});
   const {origin: httpOrigin} = await startHttpDebugServer();

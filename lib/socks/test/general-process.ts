@@ -7,13 +7,13 @@ import {
   getSocksClientConfigV5,
   getSocksClientConfigVc1,
   httpRequestBuffer,
-  startSocksServerV5,
-  startSocksServerVc1,
+  startSocketServerForSocksV5,
+  startSocketServerForSocksVc1,
 } from './service';
 
 export async function generalProcessV5() {
   // const socketServerInfo = await startSocksServerVc1();
-  const socketServerInfo = await startSocksServerV5();
+  const socketServerInfo = await startSocketServerForSocksV5();
   const {host, port, server: socksServer} = socketServerInfo;
   logColorful({}, 'start socks server:', {host, port});
   const {origin: httpOrigin, server: httpServer} = await startHttpDebugServer();
@@ -32,7 +32,7 @@ export async function generalProcessV5() {
 }
 
 export async function generalProcessVc1() {
-  const socketServerInfo = await startSocksServerVc1();
+  const socketServerInfo = await startSocketServerForSocksVc1();
   const {host, port} = socketServerInfo;
   logColorful({}, 'start socks server:', {host, port});
   const {origin: httpOrigin, server: httpServer} = await startHttpDebugServer();

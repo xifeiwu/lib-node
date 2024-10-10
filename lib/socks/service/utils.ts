@@ -21,7 +21,7 @@ import {
   RequestTargetResponseV5,
 } from './types/v5';
 
-export const socksCustomProtocol = 'sck-vc';
+export const SOCKS_PROTOCOL = 'sck-vc';
 
 export const MethodList = Object.values(EMethod).filter(v => isNumber(v));
 
@@ -351,7 +351,7 @@ export async function getSocketToSocksServer(target: TargetSocksServer) {
     const result = await requestAndGetUpgradeInfo({
       href: target,
       headers: {
-        upgrade: socksCustomProtocol,
+        upgrade: SOCKS_PROTOCOL,
       },
     });
     socket = result.socket;
