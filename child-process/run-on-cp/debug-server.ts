@@ -1,4 +1,4 @@
-import {startHttpServer, responseRequestEvent, InfoToCp, getAFreePort} from '../../index';
+import {startHttpServer, responseRequestEvent, InfoToCp, getAFreePort, toBuffer} from '../../index';
 import {handleCpCustomization, out, runAllCpCustomization} from './service';
 import {CP} from '../../types';
 
@@ -28,8 +28,15 @@ export async function start() {
             request(request, response) {
               const {url} = request;
               console.log(url);
-              if (url === '/api/exit-process') {
-                process.exit(0);
+              if (url === '/api/exit') {
+                response.statusCode = 302;
+                const url = '/api/list';
+                response.setHeader('Location', '/api');
+                response.setHeader('content-type', 'text/plain; charset=utf-8');
+                response.end(toBuffer(`Redirecting to <a href="${url}">${url}</a>.`));
+                process.nextTick(() => {
+                  process.exit(0);
+                });
               } else {
                 responseRequestEvent(request, response);
               }

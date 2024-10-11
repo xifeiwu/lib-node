@@ -21,7 +21,7 @@ const spawnDebugServer1 = getDaemonCpConfigByScriptPath<CP.DebugServerConfig>(
     retry: {
       maxCount: 3,
       minInterval: 5000,
-    }
+    },
   }
 );
 
@@ -61,29 +61,37 @@ export async function info() {
   const response = await socketClient.info(daemonKey);
   logColorful({}, response);
 }
-export async function startDebugServer1() {
+export async function server1Start() {
   const response = await socketClient.start(debugServer1Id);
   logColorful({}, response);
 }
-export async function getDebugServer1Info() {
+export async function server1Info() {
   const response = await socketClient.info(debugServer1Id);
   logColorful({}, response);
 }
-export async function stopDebugServer1() {
+export async function server1Stop() {
   const response = await socketClient.stop(debugServer1Id);
   logColorful({}, response);
 }
+export async function server1Restart() {
+  const response = await socketClient.restart(debugServer1Id);
+  logColorful({}, response);
+}
 
-export async function startDebugServer2() {
+export async function server2Start() {
   const response = await socketClient.start(spawnDebugServer2);
   logColorful({}, response);
 }
-export async function getDebugServer2Info() {
-  const response = await socketClient.info(spawnDebugServer2.id);
+export async function server2Info() {
+  const response = await socketClient.info(debugServer2Id);
   logColorful({}, response);
 }
-export async function stopDebugServer2() {
-  const response = await socketClient.stop(spawnDebugServer2.id);
+export async function server2Stop() {
+  const response = await socketClient.stop(debugServer2Id);
+  logColorful({}, response);
+}
+export async function server2Restart() {
+  const response = await socketClient.restart(debugServer2Id);
   logColorful({}, response);
 }
 
