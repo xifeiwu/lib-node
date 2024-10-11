@@ -31,12 +31,12 @@ export async function start() {
               if (url === '/api/exit') {
                 response.statusCode = 302;
                 const url = '/api/list';
-                response.setHeader('Location', '/api');
+                response.setHeader('Location', url);
                 response.setHeader('content-type', 'text/plain; charset=utf-8');
                 response.end(toBuffer(`Redirecting to <a href="${url}">${url}</a>.`));
-                process.nextTick(() => {
+                setTimeout(() => {
                   process.exit(0);
-                });
+                }, 2000);
               } else {
                 responseRequestEvent(request, response);
               }
