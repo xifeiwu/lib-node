@@ -21,7 +21,15 @@ export namespace Daemon {
   export interface CpConfig extends SpawnAndTryIpcConfig, DaemonCpConfig {}
 
   export interface CpStatus {
-    status: /** initial state */ 'init' | 'start' | 'running' | 'stop' | 'exiting' | 'restart' | 'exited';
+    status: /** initial state */
+    | 'init'
+      | /** start to spawn process*/ 'toStart'
+      | /** will spawn new process */ 'toSpawn'
+      | /** process is running */ 'running'
+      | /** process is killed */ 'toKill'
+      | /** exit event is triggered */ 'onExit'
+      | /** process is exited */ 'exited'
+      | /** try restart process on exit */ 'toRestart';
     lastAction: 'none' | 'start' | 'stop' | 'restart';
     retryCount: number;
     lastSpawnTime?: number;

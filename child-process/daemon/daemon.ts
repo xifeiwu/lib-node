@@ -9,8 +9,20 @@ import {
   startOneChatSocketServer,
   isPlainObject,
   isString,
+  waitFor,
 } from '../../index';
 
+const statusConvertRule: Partial<{[status in Daemon.CpStatus['status']]: Array<Daemon.CpStatus['status']>}> =
+  {
+    toStart: ['init', 'exited'],
+    toSpawn: ['init', 'toStart', 'toRestart', 'exited'],
+    running: ['toSpawn'],
+    toKill: ['running'],
+    toRestart: ['onExit'],
+  };
+function canChangeToStatus(to: Daemon.CpStatus['status'], from: Daemon.CpStatus['status']) {
+  return !statusConvertRule[to] || statusConvertRule[to].includes(from);
+}
 /**
  * Manager for one process,
  */
@@ -41,6 +53,14 @@ class CpManager {
   getStatus() {
     return this.cpStatus;
   }
+  changeStatus(status: Daemon.CpStatus['status']) {
+    const {cpStatus} = this;
+    const {status: currentStatus} = cpStatus;
+    if (!canChangeToStatus(status, currentStatus)) {
+      throw new Error(`Can't change to status[${status}] from status[${currentStatus}]`);
+    }
+    cpStatus.status = status;
+  }
   getInfo(): Daemon.CpInfo {
     const {
       cpConfig,
@@ -61,28 +81,26 @@ class CpManager {
     const {cpConfig, cpStatus, exitSignal} = this;
     const {spawnInfo, lastAction} = cpStatus;
     const {} = cpConfig;
-    cpStatus.status = 'exiting';
+    this.changeStatus('onExit');
     if (spawnInfo) {
       spawnInfo.deadTime = new Date().toLocaleString();
     }
     const {retry = {}} = cpConfig;
-    const {spawnTime} = spawnInfo ?? {};
-    // const {status, nextAction} = cpInfo.status;
     const {minInterval, maxCount} = retry;
-    let delay = 0;
-    if (isNumber(minInterval)) {
-      delay = minInterval - (Date.now() - new Date(spawnTime).getTime());
-    }
     const letChildDie = () => {
-      cpStatus.status = 'exited';
+      this.changeStatus('exited');
       if (exitSignal.resolve) {
         exitSignal.resolve();
       }
     };
     const restartChild = async () => {
+      this.changeStatus('toRestart');
       await new Promise(res => {
         process.nextTick(res);
       });
+      if (isNumber(minInterval)) {
+        await waitFor(minInterval);
+      }
       await this.trySpawn();
       cpStatus.retryCount++;
     };
@@ -90,11 +108,7 @@ class CpManager {
       letChildDie();
     } else if (lastAction === 'start') {
       if (isNumber(maxCount) && cpStatus.retryCount < maxCount) {
-        if (delay > 0) {
-          setTimeout(restartChild, delay);
-        } else {
-          restartChild();
-        }
+        restartChild();
       } else {
         letChildDie();
       }
@@ -118,10 +132,7 @@ class CpManager {
       // throw new Error(`Please provide spawnConfig`);
       return null;
     }
-    // Only can start new cp when cp status is not equal 'none' or 'exit'
-    if (!['none', 'exit'].includes(cpStatus.status)) {
-      throw new Error(`We can't start child process in this status: ${cpStatus.status}`);
-    }
+    this.changeStatus('toSpawn');
     const cpInfo = await spawnAndTryIpc(cpConfig);
     if (cpStatus.spawnInfo) {
       if (!Array.isArray(cpStatus.spawnHistory)) {
@@ -131,33 +142,28 @@ class CpManager {
     }
     cpStatus.spawnInfo = cpInfo;
     const {childProcess} = cpInfo;
-    childProcess.once('exit', code => {
-      this.onExit();
-    });
+    if (childProcess) {
+      this.changeStatus('running');
+      childProcess.once('exit', code => {
+        this.onExit();
+      });
+    }
     return cpInfo;
   }
 
   async start(cpConfig?: Daemon.CpConfig) {
     const {cpStatus} = this;
-    if (cpStatus.status === 'running') {
-      throw new Error(`Can't start child process when it's running`);
-    }
+    this.changeStatus('toStart');
     cpStatus.lastAction = 'start';
     cpStatus.retryCount = 0;
     if (cpConfig) {
       this.cpConfig === cpConfig;
     }
-    const cpInfo = await this.trySpawn();
-    if (cpInfo && cpInfo.childProcess) {
-      cpStatus.status = 'running';
-    }
+    await this.trySpawn();
   }
 
   async stop() {
     const {cpStatus} = this;
-    if (cpStatus.status !== 'running') {
-      throw new Error(`Child process is not running, it's in status is: ${cpStatus.status}`);
-    }
     const {spawnInfo} = cpStatus;
     if (!spawnInfo) {
       throw new Error(`cpInfo is null`);
@@ -166,17 +172,17 @@ class CpManager {
     if (!childProcess) {
       throw new Error(`childProcess is null`);
     }
+    this.changeStatus('toKill');
+    cpStatus.lastAction = 'stop';
     await killProcessByPid([childProcess.pid]);
     /** change status after killProcessByPid success */
-    cpStatus.status = 'stop';
-    cpStatus.lastAction = 'stop';
     await this.waitExitComplete();
   }
 
   async restart(cpConfig?: Daemon.CpConfig) {
     const {cpStatus} = this;
     cpStatus.lastAction = 'restart';
-    if (cpStatus.status === 'running') {
+    if (canChangeToStatus('toKill', cpStatus.status)) {
       await this.stop();
     }
     await this.start(cpConfig);
