@@ -54,7 +54,7 @@ export async function daemonDebugServer() {
     infoToCp: {
       config: {
         id: daemonKey,
-        cpConfigList: [cpConfig4DebugServer],
+        cpManagerConfigList: [cpConfig4DebugServer],
       },
     },
     maxWaitTime4Ipc: 600,
@@ -85,7 +85,7 @@ export async function daemon2DebugServer() {
     infoToCp: {
       config: {
         id: daemonKey,
-        cpConfigList: [
+        cpManagerConfigList: [
           {...spawnConfig, id: 'debug-server-1'},
           {...spawnConfig2, id: 'debug-server-2'},
         ],

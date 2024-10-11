@@ -1,42 +1,45 @@
 import {SpawnOptions} from 'child_process';
 import {getScriptFullpath} from '../../run-on-cp';
-import {logColorful, CP, getSocketPath} from '../../../index';
-import {getDaemonCpConfigByScriptPath, startDetachedDaemon} from '../service';
+import {logColorful, CP, getSocketPath, Daemon, getCpConfigByScriptPath} from '../../../index';
+import {startDetachedDaemon} from '../service';
 import {SocketClient} from '../client';
 
-const debugMode = true;
-const stdio: SpawnOptions['stdio'] = debugMode ? [0, 1, 2, 'ipc'] : ['ignore', 'ignore', 'ignore', 'ipc'];
+// const debugMode = true;
+// const stdio: SpawnOptions['stdio'] = debugMode ? [0, 1, 2, 'ipc'] : ['ignore', 'ignore', 'ignore', 'ipc'];
 
 const debugServer1Id = 'debug-server-1';
-const spawnDebugServer1 = getDaemonCpConfigByScriptPath<CP.DebugServerConfig>(
-  getScriptFullpath('debug-server.ts'),
-  {
-    spawnOptions: {
-      stdio,
-    },
-    infoToCp: {},
-    maxWaitTime4Ipc: 20,
-    id: debugServer1Id,
-    /** Test retry ability */
+const spawnDebugServer1: Daemon.CpManagerConfig = {
+  id: debugServer1Id,
+  managerConfig: {
     retry: {
       maxCount: 3,
       minInterval: 5000,
     },
-  }
-);
+  },
+  spawnConfig: getCpConfigByScriptPath<CP.DebugServerConfig>(getScriptFullpath('debug-server.ts'), {
+    // spawnOptions: {
+    //   stdio,
+    // },
+    maxWaitTime4Ipc: 20,
+  }),
+};
 
 const debugServer2Id = 'debug-server-2';
-const spawnDebugServer2 = getDaemonCpConfigByScriptPath<CP.DebugServerConfig>(
-  getScriptFullpath('debug-server.ts'),
-  {
-    spawnOptions: {
-      stdio,
-    },
-    infoToCp: {},
+const spawnDebugServer2: Daemon.CpManagerConfig = {
+  id: debugServer2Id,
+  // managerConfig: {
+  //   retry: {
+  //     maxCount: 3,
+  //     minInterval: 5000,
+  //   },
+  // },
+  spawnConfig: getCpConfigByScriptPath<CP.DebugServerConfig>(getScriptFullpath('debug-server.ts'), {
+    // spawnOptions: {
+    //   stdio,
+    // },
     maxWaitTime4Ipc: 20,
-    id: debugServer2Id,
-  }
-);
+  }),
+};
 
 const daemonKey = 'testStartDetachedDaemon';
 const socketPath = getSocketPath(daemonKey);
@@ -46,7 +49,7 @@ export async function runDetachedDaemon() {
   const spawnResponse = await startDetachedDaemon(
     {
       id: daemonKey,
-      cpConfigList: [spawnDebugServer1],
+      cpManagerConfigList: [spawnDebugServer1],
     },
     {debug: true}
   );

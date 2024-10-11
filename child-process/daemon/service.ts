@@ -7,15 +7,19 @@ export async function startDetachedDaemon(
   daemonConfig: Daemon.DaemonConfig,
   featureConfig?: {debug?: boolean}
 ) {
-  const {id: daemonKey, cpConfigList} = daemonConfig;
+  const {id: daemonKey, cpManagerConfigList} = daemonConfig;
   const {debug = false} = featureConfig ?? {};
   if (debug) {
-    for (const cpConfig of cpConfigList) {
-      if (!cpConfig.spawnOptions) {
-        cpConfig.spawnOptions = {};
+    for (const cpManagerConfig of cpManagerConfigList) {
+      const {spawnConfig} = cpManagerConfig ?? {};
+      if (!spawnConfig) {
+        continue;
       }
-      cpConfig.spawnOptions.stdio = [0, 1, 2, 'ipc'];
-      cpConfig.maxWaitTime4Ipc;
+      if (!spawnConfig.spawnOptions) {
+        spawnConfig.spawnOptions = {};
+      }
+      spawnConfig.spawnOptions.stdio = [0, 1, 2, 'ipc'];
+      spawnConfig.maxWaitTime4Ipc = MAX_WAIT_TIME_DEBUG_MODE;
     }
   }
   const spawnConfig4Daemon = getCpConfigByScriptName<Daemon.DaemonConfig>('daemon.ts', {
@@ -48,15 +52,15 @@ export async function startDetachedDaemon(
  * @param options
  * @returns
  */
-export function getDaemonCpConfigByScriptPath<CpConfig = any>(
-  fullPath: string,
-  options?: Partial<Daemon.CpConfig>
-): Daemon.CpConfig {
-  const {id, retry, ...restOptions} = options ?? {};
-  const spawnConfig = getCpConfigByScriptPath<CpConfig>(fullPath, restOptions);
-  return {
-    id,
-    retry,
-    ...spawnConfig,
-  };
-}
+// export function getDaemonCpConfigByScriptPath<CpConfig = any>(
+//   fullPath: string,
+//   options?: Partial<Daemon.CpManagerConfig>
+// ): Daemon.CpManagerConfig {
+//   const {id, retry, ...restOptions} = options ?? {};
+//   const spawnConfig = getCpConfigByScriptPath<CpConfig>(fullPath, restOptions);
+//   return {
+//     id,
+//     retry,
+//     ...spawnConfig,
+//   };
+// }

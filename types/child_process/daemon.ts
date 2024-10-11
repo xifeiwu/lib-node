@@ -6,21 +6,41 @@ import {SocketServerInfo} from '../net';
  * Types for child process of Daemon
  */
 export namespace Daemon {
-  /** Extral Cp config for running on daemon process */
-  interface DaemonCpConfig {
+  // /** Extral Cp config for running on daemon process */
+  // interface DaemonCpConfig {
+  //   /** id used to identify the child process  */
+  //   id: string;
+  //   retry?: {
+  //     /** max count of retry */
+  //     maxCount?: number;
+  //     /** Minimum time before next spawn to make sure all resources are released for prvious cp. */
+  //     minInterval?: number;
+  //   };
+  // }
+  // /** Config for child process of Daemon process */
+  // export interface CpConfig extends SpawnAndTryIpcConfig, DaemonCpConfig {}
+  export interface CpManagerConfig {
     /** id used to identify the child process  */
     id: string;
-    retry?: {
-      /** max count of retry */
-      maxCount?: number;
-      /** Minimum time before next spawn to make sure all resources are released for prvious cp. */
-      minInterval?: number;
+    managerConfig?: {
+      retry?: {
+        /** max count of retry */
+        maxCount?: number;
+        /** Minimum time before next spawn to make sure all resources are released for prvious cp. */
+        minInterval?: number;
+      };
     };
+    spawnConfig?: SpawnAndTryIpcConfig;
   }
-  /** Config for child process of Daemon process */
-  export interface CpConfig extends SpawnAndTryIpcConfig, DaemonCpConfig {}
 
-  export interface CpStatus {
+  export interface CpInfo<ResponseFromCp = any> extends Partial<SpawnAndTryIpcResponse<ResponseFromCp>> {
+    spawnConfig: SpawnAndTryIpcConfig;
+  }
+  export interface SerializableCpInfo<ResponseFromCp = any>
+    extends Omit<CpInfo<ResponseFromCp>, 'childProcess'> {
+    pid: number;
+  }
+  export interface CpManagerStatus {
     status: /** initial state */
     | 'init'
       | /** start to spawn process*/ 'toStart'
@@ -32,18 +52,15 @@ export namespace Daemon {
       | /** try restart process on exit */ 'toRestart';
     lastAction: 'none' | 'start' | 'stop' | 'restart';
     retryCount: number;
-    lastSpawnTime?: number;
-    spawnInfo?: SpawnAndTryIpcResponse;
-    spawnHistory?: SpawnAndTryIpcResponse[];
   }
 
   /** All info of Daemon's child process */
-  export interface CpInfo<ResponseFromCp = any> {
-    config: CpConfig;
-    status: Omit<CpStatus, 'spawnInfo' | 'spawnHistory'> & {
-      spawnInfo?: SerializableSpawnInfo<ResponseFromCp>;
-      spawnHistory?: SerializableSpawnInfo<ResponseFromCp>[];
-    };
+  export interface CpManagerInfo<ResponseFromCp = any> {
+    id: CpManagerConfig['id'];
+    managerConfig: CpManagerConfig['managerConfig'];
+    status: CpManagerStatus;
+    cpInfo?: SerializableCpInfo<ResponseFromCp>;
+    cpInfoHistory?: SerializableCpInfo<ResponseFromCp>[];
   }
 
   export interface DaemonConfig {
@@ -57,7 +74,7 @@ export namespace Daemon {
     connection?: {
       socketConfig?: TcpServerConfig;
     };
-    cpConfigList?: CpConfig[];
+    cpManagerConfigList?: CpManagerConfig[];
   }
 
   export interface DaemonConnectStatus {
@@ -66,11 +83,11 @@ export namespace Daemon {
 
   export interface DaemonInfo {
     pid: number;
-    config: DaemonConfig;
+    config: Omit<DaemonConfig, 'cpConfigList'>;
     status: {
       connection?: {socket?: Partial<Pick<SocketServerInfo, 'host' | 'port' | 'path'>>};
     };
-    cpList: CpInfo[];
+    cpInfoList: CpManagerInfo[];
   }
 
   export type Action2Cp = 'start' | 'restart';
@@ -79,7 +96,7 @@ export namespace Daemon {
 
   export interface Command2Process {
     action: Action2Cp;
-    data?: CpConfig | string;
+    data?: CpManagerConfig | string;
   }
   export interface Command2Daemon {
     action: Action2Daemon;
@@ -93,7 +110,7 @@ export namespace Daemon {
 
   export interface ResponseCpInfo {
     type: Action2Cp;
-    data?: CpInfo;
+    data?: CpManagerInfo;
   }
   export interface ResponsePong {
     type: 'pong';
@@ -102,7 +119,7 @@ export namespace Daemon {
   }
   export interface ResponseInfo {
     type: ActionCommon;
-    data?: DaemonInfo | CpInfo;
+    data?: DaemonInfo | CpManagerInfo;
   }
   export interface ResponseError {
     type: 'error';

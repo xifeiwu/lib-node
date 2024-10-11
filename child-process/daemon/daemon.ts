@@ -5,88 +5,120 @@ import {
   isObject,
   killProcessByPid,
   spawnAndTryIpc,
-  serializeSpawnResponse,
   startOneChatSocketServer,
   isPlainObject,
   isString,
   waitFor,
 } from '../../index';
+import {get} from '../../fe/utils';
 
-const statusConvertRule: Partial<{[status in Daemon.CpStatus['status']]: Array<Daemon.CpStatus['status']>}> =
-  {
-    toStart: ['init', 'exited'],
-    toSpawn: ['init', 'toStart', 'toRestart', 'exited'],
-    running: ['toSpawn'],
-    toKill: ['running'],
-    toRestart: ['onExit'],
-  };
-function canChangeToStatus(to: Daemon.CpStatus['status'], from: Daemon.CpStatus['status']) {
+const statusConvertRule: Partial<{
+  [status in Daemon.CpManagerStatus['status']]: Array<Daemon.CpManagerStatus['status']>;
+}> = {
+  toStart: ['init', 'exited'],
+  toSpawn: ['init', 'toStart', 'toRestart', 'exited'],
+  running: ['toSpawn'],
+  toKill: ['running'],
+  toRestart: ['onExit'],
+};
+function canChangeToStatus(to: Daemon.CpManagerStatus['status'], from: Daemon.CpManagerStatus['status']) {
   return !statusConvertRule[to] || statusConvertRule[to].includes(from);
+}
+function serializeCpInfo(cpInfo: Daemon.CpInfo): Daemon.SerializableCpInfo {
+  const {childProcess, ...rest} = cpInfo;
+  return {
+    pid: childProcess?.pid,
+    ...rest,
+  };
 }
 /**
  * Manager for one process,
  */
 class CpManager {
-  cpConfig: Daemon.CpConfig;
-  cpStatus: Daemon.CpStatus;
+  config: Daemon.CpManagerConfig;
+  status: Daemon.CpManagerStatus['status'];
+  lastAction: Daemon.CpManagerStatus['lastAction'];
+  retryCount: Daemon.CpManagerStatus['retryCount'];
+  cpInfo?: Daemon.CpInfo;
+  cpInfoHistory?: Daemon.SerializableCpInfo[];
   exitSignal: {
     resolve?: () => void;
     reject?: (err: Error) => void;
   } = {};
-  constructor(cpConfig: Daemon.CpConfig) {
-    this.cpStatus = this.getDefaultCpStatus();
-    this.cpConfig = cpConfig;
+  constructor(config: Daemon.CpManagerConfig) {
+    this.resetStatus();
+    this.setConfig(config);
   }
-  getDefaultCpStatus(): Daemon.CpStatus {
-    return {
-      status: 'init',
-      lastAction: 'none',
-      retryCount: 0,
-    };
+  resetStatus() {
+    this.status = 'init';
+    this.lastAction = 'none';
+    this.retryCount = 0;
+    this.cpInfoHistory = [];
   }
   get id() {
-    return this.cpConfig.id;
+    return this.config.id;
   }
   getConfig() {
-    return this.cpConfig;
+    return this.config;
   }
-  getStatus() {
-    return this.cpStatus;
-  }
-  changeStatus(status: Daemon.CpStatus['status']) {
-    const {cpStatus} = this;
-    const {status: currentStatus} = cpStatus;
-    if (!canChangeToStatus(status, currentStatus)) {
-      throw new Error(`Can't change to status[${status}] from status[${currentStatus}]`);
+  setConfig(config: Daemon.CpManagerConfig) {
+    if (!this.config) {
+      this.config = config;
+    } else {
+      this.config = {
+        ...this.config,
+        ...(config ?? {}),
+      };
     }
-    cpStatus.status = status;
   }
-  getInfo(): Daemon.CpInfo {
+  changeStatus(status: Daemon.CpManagerStatus['status']) {
+    if (!canChangeToStatus(status, this.status)) {
+      throw new Error(`Can't change to status[${status}] from status[${this.status}]`);
+    }
+    this.status = status;
+  }
+  getInfo(options?: {simple?: boolean}): Daemon.CpManagerInfo {
+    const {simple} = options ?? {};
     const {
-      cpConfig,
-      cpStatus: {spawnInfo, spawnHistory, ...restStatus},
+      id,
+      config: {managerConfig, spawnConfig: spawnOptions},
+      status,
+      lastAction,
+      retryCount,
+      cpInfo,
+      cpInfoHistory,
+      // status: {spawnInfo, cpInfoHistory: spawnHistory, ...restStatus},
     } = this;
-
-    return {
-      config: cpConfig,
+    const info: Daemon.CpManagerInfo = {
+      id,
+      managerConfig: managerConfig,
       status: {
-        ...restStatus,
-        spawnInfo: serializeSpawnResponse(spawnInfo),
-        spawnHistory: spawnHistory ? spawnHistory.map(serializeSpawnResponse) : undefined,
+        status,
+        lastAction,
+        retryCount,
       },
     };
+    if (cpInfo) {
+      info.cpInfo = serializeCpInfo(cpInfo);
+    } else {
+      info.cpInfo = serializeCpInfo({
+        spawnConfig: spawnOptions,
+      });
+    }
+    if (simple !== true) {
+      info.cpInfoHistory = cpInfoHistory.map(serializeCpInfo);
+    }
+    return info;
   }
 
   async onExit() {
-    const {cpConfig, cpStatus, exitSignal} = this;
-    const {spawnInfo, lastAction} = cpStatus;
-    const {} = cpConfig;
+    const {config, exitSignal, cpInfo, lastAction} = this;
+    const {} = config;
     this.changeStatus('onExit');
-    if (spawnInfo) {
-      spawnInfo.deadTime = new Date().toLocaleString();
+    if (cpInfo) {
+      cpInfo.deadTime = new Date().toLocaleString();
     }
-    const {retry = {}} = cpConfig;
-    const {minInterval, maxCount} = retry;
+    const {minInterval, maxCount} = get(config, ['managerConfig', 'retry'], {});
     const letChildDie = () => {
       this.changeStatus('exited');
       if (exitSignal.resolve) {
@@ -102,12 +134,12 @@ class CpManager {
         await waitFor(minInterval);
       }
       await this.trySpawn();
-      cpStatus.retryCount++;
+      this.retryCount++;
     };
     if (lastAction === 'stop' || lastAction === 'restart') {
       letChildDie();
     } else if (lastAction === 'start') {
-      if (isNumber(maxCount) && cpStatus.retryCount < maxCount) {
+      if (isNumber(maxCount) && this.retryCount < maxCount) {
         restartChild();
       } else {
         letChildDie();
@@ -126,66 +158,64 @@ class CpManager {
   }
 
   async trySpawn() {
-    const {cpConfig, cpStatus} = this;
+    const {config, status, cpInfo} = this;
     /** Not throw erro when spawn child process and spawnConfig is null */
-    if (!cpConfig) {
+    if (!config || !config.spawnConfig) {
       // throw new Error(`Please provide spawnConfig`);
       return null;
     }
+    const {spawnConfig: spawnOptions} = config;
     this.changeStatus('toSpawn');
-    const cpInfo = await spawnAndTryIpc(cpConfig);
-    if (cpStatus.spawnInfo) {
-      if (!Array.isArray(cpStatus.spawnHistory)) {
-        cpStatus.spawnHistory = [];
-      }
-      cpStatus.spawnHistory.push(cpStatus.spawnInfo);
+    const spawnInfo = await spawnAndTryIpc(spawnOptions);
+    if (cpInfo) {
+      this.cpInfoHistory.push(serializeCpInfo(cpInfo));
     }
-    cpStatus.spawnInfo = cpInfo;
-    const {childProcess} = cpInfo;
+    this.cpInfo = {
+      spawnConfig: spawnOptions,
+      ...spawnInfo,
+    };
+    const {childProcess} = spawnInfo;
     if (childProcess) {
       this.changeStatus('running');
       childProcess.once('exit', code => {
         this.onExit();
       });
     }
-    return cpInfo;
+    return this.cpInfo;
   }
 
-  async start(cpConfig?: Daemon.CpConfig) {
-    const {cpStatus} = this;
+  async start(config?: Daemon.CpManagerConfig) {
     this.changeStatus('toStart');
-    cpStatus.lastAction = 'start';
-    cpStatus.retryCount = 0;
-    if (cpConfig) {
-      this.cpConfig === cpConfig;
+    this.lastAction = 'start';
+    this.retryCount = 0;
+    if (config) {
+      this.setConfig(config);
     }
     await this.trySpawn();
   }
 
   async stop() {
-    const {cpStatus} = this;
-    const {spawnInfo} = cpStatus;
-    if (!spawnInfo) {
+    const {cpInfo} = this;
+    if (!cpInfo) {
       throw new Error(`cpInfo is null`);
     }
-    const {childProcess} = spawnInfo;
+    const {childProcess} = cpInfo;
     if (!childProcess) {
       throw new Error(`childProcess is null`);
     }
     this.changeStatus('toKill');
-    cpStatus.lastAction = 'stop';
+    this.lastAction = 'stop';
     await killProcessByPid([childProcess.pid]);
     /** change status after killProcessByPid success */
     await this.waitExitComplete();
   }
 
-  async restart(cpConfig?: Daemon.CpConfig) {
-    const {cpStatus} = this;
-    cpStatus.lastAction = 'restart';
-    if (canChangeToStatus('toKill', cpStatus.status)) {
+  async restart(config?: Daemon.CpManagerConfig) {
+    this.lastAction = 'restart';
+    if (canChangeToStatus('toKill', this.status)) {
       await this.stop();
     }
-    await this.start(cpConfig);
+    await this.start(config);
   }
 }
 
@@ -258,13 +288,13 @@ export class CpDaemon {
   }
 
   /** start one child process */
-  async startCp(cpConfig: Daemon.CpConfig) {
+  async startCp(cpConfig: Daemon.CpManagerConfig) {
     const actionStart: Daemon.Command2Process = {action: 'start', data: cpConfig};
     return await this.handleCommand(actionStart);
   }
   /** Start all child process configured in config */
   async startAllCp() {
-    const {cpConfigList} = this.config;
+    const {cpManagerConfigList: cpConfigList} = this.config;
     /** Child process should start one by one */
     if (Array.isArray(cpConfigList)) {
       for (const cpConfig of cpConfigList) {
@@ -315,11 +345,12 @@ export class CpDaemon {
   }
   getDaemonInfo() {
     const {config, connectInfo, cpManagerMap} = this;
+    const {cpManagerConfigList: cpConfigList, ...restConfig} = config ?? {};
     const daemonInfo: Daemon.DaemonInfo = {
       pid: process.pid,
-      config: config,
+      config: restConfig,
       status: {connection: {}},
-      cpList: Object.values(cpManagerMap).map(it => it.getInfo()),
+      cpInfoList: Object.values(cpManagerMap).map(it => it.getInfo({simple: true})),
     };
     if (connectInfo) {
       const {socket} = connectInfo;
@@ -368,7 +399,7 @@ export class CpDaemon {
        * if cpConfigOrId is object, try find cpManager by id first
        * initialize a new instance if cpManager is not found by id.
        */
-      const {id} = cpConfigOrId as Daemon.CpConfig;
+      const {id} = cpConfigOrId as Daemon.CpManagerConfig;
       if (id === undefined) {
         throw new Error(`id is undefined in cpConfig`);
       }
@@ -379,7 +410,7 @@ export class CpDaemon {
       cpManager = cpManagerMap[id];
       // let cpManager = cpManagerMap[id];
       if (cpManager === undefined) {
-        cpManager = new CpManager(cpConfigOrId as Daemon.CpConfig);
+        cpManager = new CpManager(cpConfigOrId as Daemon.CpManagerConfig);
         cpManagerMap[id] = cpManager;
       }
     }
@@ -416,10 +447,10 @@ export class CpDaemon {
         const isCpConfig = isPlainObject(cpConfigOrId);
         switch (action) {
           case 'start':
-            await cpManager.start(isCpConfig ? (cpConfigOrId as Daemon.CpConfig) : undefined);
+            await cpManager.start(isCpConfig ? (cpConfigOrId as Daemon.CpManagerConfig) : undefined);
             break;
           case 'restart':
-            await cpManager.restart(isCpConfig ? (cpConfigOrId as Daemon.CpConfig) : undefined);
+            await cpManager.restart(isCpConfig ? (cpConfigOrId as Daemon.CpManagerConfig) : undefined);
             break;
         }
         return {
