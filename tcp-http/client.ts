@@ -1,5 +1,5 @@
 import {Readable, Transform, isReadable} from 'stream';
-import {CanConvertToBuffer, HttpResponseProps, HttpRequestOptions} from '../types';
+import {CanConvertToBuffer, HttpResponseInfo, HttpRequestOptions} from '../types';
 import {toBuffer} from '../transform';
 import {Socket, TcpNetConnectOpts} from 'net';
 import {getDataFromReadable} from '../stream';
@@ -62,7 +62,7 @@ export async function sendHttpRequestByTcpAndGetResponseData(
   return data;
 }
 
-export function tcpResponsePropsToBuffer(info: HttpResponseProps): Buffer {
+export function tcpResponsePropsToBuffer(info: HttpResponseInfo): Buffer {
   let {httpVersion, statusCode, statusMessage, headers, data} = info;
   let bufferArray: CanConvertToBuffer[] = [];
   if (!/^http\//i.test(httpVersion)) {

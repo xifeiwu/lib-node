@@ -6,7 +6,7 @@ import {Duplex} from 'stream';
 import {
   TcpHttpRequestProps,
   HttpRequestOptions,
-  HttpResponseProps,
+  HttpResponseInfo,
   getRequestHeaderInfo,
   getRequestInfo,
   logColorful,
@@ -171,9 +171,9 @@ export function getUpgradeProtocol(req: IncomingMessage) {
   }
   return upgrade;
 }
-export function getUpgradeSuccessResponse(protocol: string, info?: HttpResponseProps) {
+export function getUpgradeResponse(protocol: string, info?: HttpResponseInfo) {
   const {headers, ...restInfo} = info ?? {};
-  const responseInfo: HttpResponseProps = {
+  const responseInfo: HttpResponseInfo = {
     httpVersion: 'HTTP/1.1',
     statusCode: 101,
     statusMessage: 'Switching Protocols',
@@ -192,7 +192,7 @@ export function handleWebsocketUpgrade(
   req: IncomingMessage,
   socket?: Duplex,
   head?: Buffer
-): HttpResponseProps {
+): HttpResponseInfo {
   const {headers} = req;
   if (headers === undefined) {
     throw new Error(`Not found headers`);
@@ -204,7 +204,7 @@ export function handleWebsocketUpgrade(
   const digest = createHash('sha1')
     .update(key + GUID)
     .digest('base64');
-  const responseInfo: HttpResponseProps = {
+  const responseInfo: HttpResponseInfo = {
     httpVersion: 'HTTP/1.1',
     statusCode: 101,
     statusMessage: 'Switching Protocols',
@@ -224,9 +224,9 @@ export function handleConnectEvent(
   req: IncomingMessage,
   socket?: Duplex,
   head?: Buffer
-): {requestHeaderPartInfo: TcpHttpRequestProps; responseInfo: HttpResponseProps} {
+): {requestHeaderPartInfo: TcpHttpRequestProps; responseInfo: HttpResponseInfo} {
   const requestHeaderPartInfo = getRequestHeaderInfo(req);
-  const responseInfo: HttpResponseProps = {
+  const responseInfo: HttpResponseInfo = {
     httpVersion: 'HTTP/1.1',
     statusCode: 200,
     statusMessage: 'Connection Established',

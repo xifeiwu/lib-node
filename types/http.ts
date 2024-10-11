@@ -14,7 +14,7 @@ export interface GeneralRequestOptions<Payload extends HttpRequestPayload = any>
   data?: Payload;
 }
 
-export type ValidateStatus = (responseInfo: HttpResponseProps) => boolean;
+export type ValidateStatus = (responseInfo: HttpResponseInfo) => boolean;
 /**
  * A custom requestOptions based on http.RequestOptions, and used for requestAndGetResponse function.
  */
@@ -30,7 +30,7 @@ export interface ResponseSideToHeaderType {
 /**
  * Set Client as default type of Side to make use of key words of type IncomingHttpHeaders
  */
-export interface HttpResponseProps<T = any, Side extends 'Server' | 'Client' = 'Client'> {
+export interface HttpResponseInfo<T = any, Side extends 'Server' | 'Client' = 'Client'> {
   httpVersion: string;
   statusCode: number;
   statusMessage: string;

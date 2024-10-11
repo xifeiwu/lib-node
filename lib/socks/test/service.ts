@@ -14,7 +14,7 @@ import {RequestTarget} from '../service/types/base';
 import {Socket} from 'net';
 import {simplifySocksServerInfo, SOCKS_PROTOCOL} from '../service';
 import {logColorful} from '../../../log';
-import {getUpgradeProtocol, getUpgradeSuccessResponse, responseInfoToBuffer} from '../../../http';
+import {getUpgradeProtocol, getUpgradeResponse, responseInfoToBuffer} from '../../../http';
 
 export const auth: UserPassInfo = {
   username: 'abc',
@@ -104,7 +104,7 @@ export async function startHttpServerForSocks(socksServerConfig: SocksServerConf
       async upgrade(req, socket) {
         const protocol = getUpgradeProtocol(req);
         if (protocol === SOCKS_PROTOCOL) {
-          socket.write(responseInfoToBuffer(getUpgradeSuccessResponse(protocol)));
+          socket.write(responseInfoToBuffer(getUpgradeResponse(protocol)));
         }
 
         logColorful({color: 'red'}, `handle sockeet for ${socksServerConfig.socksVersion}`);

@@ -11,14 +11,14 @@ import {
   validateStatusCode,
 } from '../client';
 import {logColorful} from '../../log';
-import {HttpRequestOptions, HttpResponseProps} from '../../types';
+import {HttpRequestOptions, HttpResponseInfo} from '../../types';
 
 /**
  * On response to proxy: print more info when http status code is invalid.
  * @param resInfo
  * @param proxyReq
  */
-export function onRes2Proxy(resInfo: HttpResponseProps, proxyReq: HttpRequestOptions) {
+export function onRes2Proxy(resInfo: HttpResponseInfo, proxyReq: HttpRequestOptions) {
   if (!validateStatusCode(resInfo)) {
     logColorful(
       {color: 'red'},

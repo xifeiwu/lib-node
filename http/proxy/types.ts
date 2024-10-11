@@ -1,6 +1,6 @@
 import {RequestOptions, IncomingMessage} from 'http';
 import {toReadable} from '../../stream';
-import {TcpHttpRequestProps, HttpResponseProps, HttpRequestOptions} from '../../types';
+import {TcpHttpRequestProps, HttpResponseInfo, HttpRequestOptions} from '../../types';
 
 export interface HttpProxyConfig {
   /**
@@ -29,14 +29,14 @@ export interface HttpProxyConfig {
 
   /** Just on response to proxy */
   onRes2Proxy?: (
-    info: HttpResponseProps,
+    info: HttpResponseInfo,
     proxyReqInfo: HttpRequestOptions,
     response: IncomingMessage
   ) => void;
   /** Handle info of response to proxy */
   handleInfoOfRes2Origin?: (
-    info: HttpResponseProps
-  ) => Promise<HttpResponseProps | void> | HttpResponseProps | void;
+    info: HttpResponseInfo
+  ) => Promise<HttpResponseInfo | void> | HttpResponseInfo | void;
 }
 
 export interface ProxyStatus {
@@ -44,8 +44,8 @@ export interface ProxyStatus {
   ts: number;
   requestInfo?: {origin: TcpHttpRequestProps; proxy: HttpRequestOptions};
   responseInfo?: {
-    toProxy: HttpResponseProps;
-    toOrigin: HttpResponseProps;
+    toProxy: HttpResponseInfo;
+    toOrigin: HttpResponseInfo;
   };
   err?: {
     message: Error['message'];

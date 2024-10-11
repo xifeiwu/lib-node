@@ -11,7 +11,7 @@ import {
   isObject,
   getRandomBase64String,
 } from '../external';
-import {HttpRequestOptions, HttpResponseProps, HttpRequestPayload, ValidateStatus} from '../types';
+import {HttpRequestOptions, HttpResponseInfo, HttpRequestPayload, ValidateStatus} from '../types';
 import {Readable, isReadable} from 'stream';
 
 export function mergeHttpRequestOptions(
@@ -79,8 +79,8 @@ export function sendHttpRequest<Payload extends HttpRequestPayload = any>(
 export class ResponseError extends Error {
   isResponseError: boolean = true;
   requestOptions: HttpRequestOptions;
-  responseInfo: HttpResponseProps;
-  constructor(requestOptions: HttpRequestOptions, responseInfo: HttpResponseProps) {
+  responseInfo: HttpResponseInfo;
+  constructor(requestOptions: HttpRequestOptions, responseInfo: HttpResponseInfo) {
     const {statusCode, statusMessage} = responseInfo;
     super(`Response code ${statusCode}: ${statusMessage}`);
     this.requestOptions = requestOptions;
@@ -120,7 +120,7 @@ export async function requestAndGetResponseInfo<ResData = any, Payload extends H
   responseConfig?: Parameters<typeof getResponseInfo>[1] & {
     validateStatus?: ValidateStatus | boolean;
   }
-): Promise<HttpResponseProps<ResData>> {
+): Promise<HttpResponseInfo<ResData>> {
   const response = await requestAndGetResponse<Payload>(requestOptions);
   let {validateStatus, ...resConfig} = responseConfig ?? {};
   const responseInfo = await getResponseInfo<ResData>(response, resConfig);
@@ -143,7 +143,7 @@ export async function requestAndGetRelatedInfo<ResData = any, Payload extends Ht
   responseConfig?: Parameters<typeof getResponseInfo>[1] & {
     validateStatus?: ValidateStatus | boolean;
   }
-): Promise<{requestOptions: HttpRequestOptions<Payload>; responseInfo: HttpResponseProps<ResData>}> {
+): Promise<{requestOptions: HttpRequestOptions<Payload>; responseInfo: HttpResponseInfo<ResData>}> {
   const responseInfo = await requestAndGetResponseInfo(requestOptions, responseConfig);
   return {requestOptions, responseInfo};
 }
