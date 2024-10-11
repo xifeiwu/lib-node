@@ -28,7 +28,7 @@ class CpManager {
   getDefaultCpStatus(): Daemon.CpStatus {
     return {
       status: 'none',
-      currentAction: 'none',
+      lastAction: 'none',
       retryCount: 0,
     };
   }
@@ -58,7 +58,7 @@ class CpManager {
 
   async onExit() {
     const {cpConfig, cpStatus, exitSignal} = this;
-    const {spawnInfo, currentAction} = cpStatus;
+    const {spawnInfo, lastAction: currentAction} = cpStatus;
     const {} = cpConfig;
     cpStatus.status = 'exit';
     const {retry = {}} = cpConfig;
@@ -138,7 +138,7 @@ class CpManager {
     if (cpInfo) {
       cpStatus.status = 'running';
       cpStatus.spawnInfo = cpInfo;
-      cpStatus.currentAction = 'start';
+      cpStatus.lastAction = 'start';
       cpStatus.retryCount = 0;
     }
   }
@@ -159,13 +159,13 @@ class CpManager {
     await killProcessByPid([childProcess.pid]);
     /** change status after killProcessByPid success */
     cpStatus.status = 'stop';
-    cpStatus.currentAction = 'stop';
+    cpStatus.lastAction = 'stop';
     await this.waitExitComplete();
   }
 
   async restart(cpConfig?: Daemon.CpConfig) {
     const {cpStatus} = this;
-    cpStatus.currentAction = 'restart';
+    cpStatus.lastAction = 'restart';
     if (cpStatus.status === 'running') {
       await this.stop();
     }
