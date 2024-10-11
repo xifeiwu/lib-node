@@ -36,6 +36,7 @@ export interface SpawnAndTryIpcResponse<ResponseFromCp = any> {
   childProcess: ChildProcess;
   /** The time spawn event is triggered */
   spawnTime: string;
+  deadTime?: string;
   responseFromCp?: ResponseFromCp;
 }
 

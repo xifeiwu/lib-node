@@ -180,7 +180,7 @@ export async function spawnAndTryIpc<InfoToCp = any, ResponseFromCp = any>(
   };
   await new Promise<void>((res, rej) => {
     childProcess.once('spawn', () => {
-      info.spawnTime = new Date().toString();
+      info.spawnTime = new Date().toLocaleString();
       res();
     });
     childProcess.once('error', err => rej(err));
