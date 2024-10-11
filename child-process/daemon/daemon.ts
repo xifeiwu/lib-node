@@ -210,7 +210,8 @@ export class CpDaemon {
     if (!socketConfig) {
       finalSocketConfig = {path: daemonKey};
     }
-    const serverInfo = await startOneChatSocketServer(async chunk => {
+    /** Handle command from client, the value returned will be sent to client as response */
+    const handleData = async (chunk: Buffer) => {
       try {
         const command = fromBuffer(chunk, 'json') as Daemon.Command;
         if (!isObject(command)) {
@@ -220,7 +221,8 @@ export class CpDaemon {
       } catch (err) {
         return getErrorResponse(err);
       }
-    }, finalSocketConfig);
+    };
+    const serverInfo = await startOneChatSocketServer(handleData, finalSocketConfig);
     this.connectInfo.socket = serverInfo;
   }
 
@@ -312,7 +314,7 @@ export class CpDaemon {
     return daemonInfo;
   }
   /**
-   * Get child process or daemon info, prioritise child process
+   * Return child process if cpManager exist, else return daemon info.
    * @param id daemon id or child process id
    * @returns
    */
@@ -321,10 +323,8 @@ export class CpDaemon {
     const cpManager = cpManagerMap[id];
     if (cpManager) {
       return cpManager.getInfo();
-    } else if (id === config.id) {
-      return this.getDaemonInfo();
     }
-    throw new Error(`No target found by id: ${id}`);
+    return this.getDaemonInfo();
   }
   /**
    * get cpManager by config, create a new cpManager is cpConfig is passed
@@ -346,7 +346,7 @@ export class CpDaemon {
       /**
        * if cpConfigOrId is string, means get cpManager from cpManagerMap by this id.
        */
-      cpManager = cpManagerMap[cpConfigOrId];
+      cpManager = cpManagerMap[cpConfigOrId as string];
     } else if (isPlainObject(cpConfigOrId)) {
       /**
        * if cpConfigOrId is object, try find cpManager by id first
@@ -363,19 +363,21 @@ export class CpDaemon {
       cpManager = cpManagerMap[id];
       // let cpManager = cpManagerMap[id];
       if (cpManager === undefined) {
-        cpManager = new CpManager(cpConfigOrId);
+        cpManager = new CpManager(cpConfigOrId as Daemon.CpConfig);
         cpManagerMap[id] = cpManager;
       }
     }
     return cpManager;
   }
   async handleCommand(command: Daemon.Command): Promise<Daemon.DaemonResponse> {
+    const {config} = this;
     const {action, data: cpConfigOrId} = command;
     if (['ping'].includes(action)) {
       switch (action) {
         case 'ping':
           return {
             type: 'pong',
+            data: config.id,
           };
       }
     } else if (action === 'info') {
@@ -395,13 +397,13 @@ export class CpDaemon {
         if (!cpManager) {
           throw new Error(`child process is not found by payload you provided.`);
         }
-        const isCpConfig = !isString(cpConfigOrId);
+        const isCpConfig = isPlainObject(cpConfigOrId);
         switch (action) {
           case 'start':
-            await cpManager.start(isCpConfig ? cpConfigOrId : undefined);
+            await cpManager.start(isCpConfig ? (cpConfigOrId as Daemon.CpConfig) : undefined);
             break;
           case 'restart':
-            await cpManager.restart(isCpConfig ? cpConfigOrId : undefined);
+            await cpManager.restart(isCpConfig ? (cpConfigOrId as Daemon.CpConfig) : undefined);
             break;
         }
         return {
