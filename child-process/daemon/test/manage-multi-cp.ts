@@ -1,8 +1,8 @@
-import {getCpConfigByScriptName, getScriptFullpath, spawnScript} from '../../run-on-cp';
-import {logColorful, fromBuffer, CP, getSocketPath} from '../../../index';
+import {SpawnOptions} from 'child_process';
+import {getScriptFullpath} from '../../run-on-cp';
+import {logColorful, CP, getSocketPath} from '../../../index';
 import {getDaemonCpConfigByScriptPath, startDetachedDaemon} from '../service';
 import {SocketClient} from '../client';
-import {SpawnOptions} from 'child_process';
 
 const debugMode = true;
 const stdio: SpawnOptions['stdio'] = debugMode ? [0, 1, 2, 'ipc'] : ['ignore', 'ignore', 'ignore', 'ipc'];
@@ -56,22 +56,32 @@ export async function getDaemonInfo() {
   const response = await socketClient.info(daemonKey);
   logColorful({}, response);
 }
-export async function getCpInfo() {
-  const response = await socketClient.info(debugServer1Id);
-  logColorful({}, response);
-}
-export async function stopdebugServer1() {
-  const response = await socketClient.stop(debugServer1Id);
-  logColorful({}, response);
-}
 export async function startDebugServer1() {
   const response = await socketClient.start(debugServer1Id);
   logColorful({}, response);
 }
+export async function getDebugServer1Info() {
+  const response = await socketClient.info(debugServer1Id);
+  logColorful({}, response);
+}
+export async function stopDebugServer1() {
+  const response = await socketClient.stop(debugServer1Id);
+  logColorful({}, response);
+}
+
 export async function startDebugServer2() {
   const response = await socketClient.start(spawnDebugServer2);
   logColorful({}, response);
 }
+export async function getDebugServer2Info() {
+  const response = await socketClient.info(spawnDebugServer2.id);
+  logColorful({}, response);
+}
+export async function stopDebugServer2() {
+  const response = await socketClient.stop(spawnDebugServer2.id);
+  logColorful({}, response);
+}
+
 export async function stopDaemon() {
   const response = await socketClient.stop(daemonKey);
   logColorful({}, response);

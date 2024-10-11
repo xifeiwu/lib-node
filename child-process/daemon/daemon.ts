@@ -230,9 +230,9 @@ export class CpDaemon {
    */
   async startAsCp(config: Daemon.DaemonConfig) {
     this.config = config;
-    const {id: daemonKey} = this.config;
-    if (!isString(daemonKey)) {
-      throw new Error(`daemonKey is not passed`);
+    const {id} = this.config;
+    if (!isString(id)) {
+      throw new Error(`id property is not set on daemon config.`);
     }
     await this.startConnectionServer();
     await this.startAllCp();

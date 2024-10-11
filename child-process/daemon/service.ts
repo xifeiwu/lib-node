@@ -42,6 +42,12 @@ export async function startDetachedDaemon(
   return serializeSpawnResponse(spawnResponse);
 }
 
+/**
+ * Used to get Daemon's cpConfig for a .ts script
+ * @param fullPath
+ * @param options
+ * @returns
+ */
 export function getDaemonCpConfigByScriptPath<CpConfig = any>(
   fullPath: string,
   options?: Partial<Daemon.CpConfig>
