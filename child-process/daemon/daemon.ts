@@ -27,7 +27,7 @@ class CpManager {
   }
   getDefaultCpStatus(): Daemon.CpStatus {
     return {
-      status: 'none',
+      status: 'init',
       lastAction: 'none',
       retryCount: 0,
     };
@@ -59,9 +59,9 @@ class CpManager {
 
   async onExit() {
     const {cpConfig, cpStatus, exitSignal} = this;
-    const {spawnInfo, lastAction: currentAction} = cpStatus;
+    const {spawnInfo, lastAction} = cpStatus;
     const {} = cpConfig;
-    cpStatus.status = 'exit';
+    cpStatus.status = 'exiting';
     if (spawnInfo) {
       spawnInfo.deadTime = new Date().toLocaleString();
     }
@@ -74,7 +74,7 @@ class CpManager {
       delay = minInterval - (Date.now() - new Date(spawnTime).getTime());
     }
     const letChildDie = () => {
-      cpStatus.status = 'none';
+      cpStatus.status = 'exited';
       if (exitSignal.resolve) {
         exitSignal.resolve();
       }
@@ -86,9 +86,9 @@ class CpManager {
       await this.trySpawn();
       cpStatus.retryCount++;
     };
-    if (currentAction === 'stop' || currentAction === 'restart') {
+    if (lastAction === 'stop' || lastAction === 'restart') {
       letChildDie();
-    } else if (currentAction === 'start') {
+    } else if (lastAction === 'start') {
       if (isNumber(maxCount) && cpStatus.retryCount < maxCount) {
         if (delay > 0) {
           setTimeout(restartChild, delay);

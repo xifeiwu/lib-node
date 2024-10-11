@@ -64,7 +64,7 @@ export namespace CP {
     server?: Server;
   }
   export interface DaemonCPStatus {
-    status: 'none' | 'start' | 'running' | 'stop' | 'exit';
+    status: 'init' | 'start' | 'running' | 'stop' | 'exiting';
     currentAction: 'none' | 'start' | 'stop' | 'restart';
     retryCount: number;
     response?: SpawnAndTryIpcResponse;
