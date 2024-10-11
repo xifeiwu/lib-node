@@ -1,6 +1,3 @@
-import fs from 'fs';
-import net from 'net';
-import path from 'path';
 import {Daemon, SocketServerInfo} from '../../types';
 import {
   fromBuffer,
@@ -11,10 +8,12 @@ import {
   serializeSpawnResponse,
   startOneChatSocketServer,
   isPlainObject,
+  isString,
 } from '../../index';
-import {isString} from 'markdown-it/lib/common/utils';
-import {Socket} from 'net';
 
+/**
+ * Manager for one process,
+ */
 class CpManager {
   cpConfig: Daemon.CpConfig;
   cpStatus: Daemon.CpStatus;
@@ -26,12 +25,6 @@ class CpManager {
     this.cpStatus = this.getDefaultCpStatus();
     this.cpConfig = cpConfig;
   }
-  // async updateCpConfig(cpConfig: DaemonCpConfig, restart?: boolean) {
-  //   this.cpConfig = cpConfig;
-  //   if (restart) {
-  //     await this.restart();
-  //   }
-  // }
   getDefaultCpStatus(): Daemon.CpStatus {
     return {
       status: 'none',
@@ -201,7 +194,7 @@ function serializeSocketServerInfo(info: SocketServerInfo) {
 }
 export class CpDaemon {
   config: Daemon.DaemonConfig;
-  connectInfo: Daemon.ConnectInfo = {};
+  connectInfo: Daemon.DaemonConnectStatus = {};
   cpManagerMap: {
     [id: string]: CpManager;
   } = {};
@@ -230,6 +223,23 @@ export class CpDaemon {
     }, finalSocketConfig);
     this.connectInfo.socket = serverInfo;
   }
+
+  /**
+   * Start Daemon as child process
+   * Apart run as child process, it can also be called in third-party process
+   */
+  async startAsCp(config: Daemon.DaemonConfig) {
+    this.config = config;
+    const {id: daemonKey} = this.config;
+    if (!isString(daemonKey)) {
+      throw new Error(`daemonKey is not passed`);
+    }
+    await this.startConnectionServer();
+    await this.startAllCp();
+    return this.getInfo(config.id);
+  }
+
+  /** start one child process */
   async startCp(cpConfig: Daemon.CpConfig) {
     const actionStart: Daemon.Command2Process = {action: 'start', data: cpConfig};
     return await this.handleCommand(actionStart);
@@ -248,17 +258,6 @@ export class CpDaemon {
         }
       }
     }
-  }
-  /** Start Daemon as child process */
-  async startAsCp(config: Daemon.DaemonConfig) {
-    this.config = config;
-    const {id: daemonKey} = this.config;
-    if (!isString(daemonKey)) {
-      throw new Error(`daemonKey is not passed`);
-    }
-    await this.startConnectionServer();
-    await this.startAllCp();
-    return this.getInfo(config.id);
   }
   /**
    * Stop all child process and daemon process
@@ -318,7 +317,7 @@ export class CpDaemon {
    * @returns
    */
   getInfo(id: string) {
-    const {config, connectInfo, cpManagerMap} = this;
+    const {config, cpManagerMap} = this;
     const cpManager = cpManagerMap[id];
     if (cpManager) {
       return cpManager.getInfo();
@@ -333,22 +332,33 @@ export class CpDaemon {
    * @returns
    */
   getCpManager(cpConfigOrId?: Daemon.Command2Process['data']) {
-    const {cpManagerMap} = this;
+    const {cpManagerMap, config} = this;
     let cpManager: CpManager;
-    /**
-     * if cpConfigOrId is undefined, and there is only one cpManager, return it.
-     */
     if (cpConfigOrId === undefined) {
+      /**
+       * if cpConfigOrId is undefined, and there is only one cpManager, return it.
+       */
       const allCpManager = Object.values(cpManagerMap);
       if (allCpManager.length === 1) {
         cpManager = allCpManager[0];
       }
     } else if (isString(cpConfigOrId)) {
+      /**
+       * if cpConfigOrId is string, means get cpManager from cpManagerMap by this id.
+       */
       cpManager = cpManagerMap[cpConfigOrId];
     } else if (isPlainObject(cpConfigOrId)) {
+      /**
+       * if cpConfigOrId is object, try find cpManager by id first
+       * initialize a new instance if cpManager is not found by id.
+       */
       const {id} = cpConfigOrId as Daemon.CpConfig;
       if (id === undefined) {
         throw new Error(`id is undefined in cpConfig`);
+      }
+      /** child process key should not conflic with daemon key(if exist) */
+      if (id === config.id) {
+        throw new Error(`child process key is the same as daemon key`);
       }
       cpManager = cpManagerMap[id];
       // let cpManager = cpManagerMap[id];

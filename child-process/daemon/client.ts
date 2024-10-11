@@ -3,14 +3,10 @@ import path from 'path';
 import {
   getFileList,
   startSocketClient,
-  fromBuffer,
-  toBuffer,
-  getSocketInfo,
   oneChatFromSocketClient,
 } from '../../index';
 import {NetConnectOpts, Socket} from 'net';
 import {CP, Daemon, InfoToCp} from '../../types';
-import {isString} from 'markdown-it/lib/common/utils';
 import {DAEMON_SOCKET_DIR, SOCKET_FILE_SUFFIX} from '../../constants';
 
 interface CheckSocketActivityConfig {

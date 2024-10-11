@@ -1,6 +1,3 @@
-import fs from 'fs';
-import net from 'net';
-import assert from 'assert';
 import {getCpConfigByScriptName, getScriptFullpath, spawnScript} from '../../run-on-cp';
 import {logColorful, fromBuffer, CP, getSocketPath} from '../../../index';
 import {getDaemonCpConfigByScriptPath, startDetachedDaemon} from '../service';

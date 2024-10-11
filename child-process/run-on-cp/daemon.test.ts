@@ -14,7 +14,7 @@ import {SOCKET_FILE_SUFFIX} from '../../constants';
 export async function runEmptyDaemon() {
   const daemonKey = 'runEmptyDaemon';
   const spawnConfig4Daemon = getCpConfigByScriptName<Daemon.DaemonConfig>('daemon.ts', {
-    args: ['runEmptyDaemon'],
+    params: ['runEmptyDaemon'],
     spawnOptions: {stdio: [0, 1, 2, 'ipc']},
     infoToCp: {
       config: {

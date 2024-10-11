@@ -1,15 +1,13 @@
-import {Server} from 'net';
 import {SerializableSpawnInfo, SpawnAndTryIpcConfig, SpawnAndTryIpcResponse} from './common';
 import {TcpServerConfig} from '../tcp';
 import {SocketServerInfo} from '../net';
 
+/**
+ * Types for child process of Daemon
+ */
 export namespace Daemon {
-  /** Config for connection way with daemon process */
-  export interface ConnectionConfig {
-    socketConfig?: TcpServerConfig;
-  }
   /** Extral Cp config for running on daemon process */
-  export interface ExtralCpConfig {
+  interface DaemonCpConfig {
     /** id used to identify the child process  */
     id: string | number;
     retry?: {
@@ -19,23 +17,8 @@ export namespace Daemon {
       minInterval?: number;
     };
   }
-  export interface CpConfig extends SpawnAndTryIpcConfig, ExtralCpConfig {}
-
-  export interface DaemonConfig {
-    /**
-     * To identify daemon process, 
-     * If daemon run as a seperate child process, it must have at least one connection channel
-     * If connection.socket is not set, daemonKey will be used as socket path
-     */
-    id?: string;
-    /** connectionConfig should be set, as Daemon process is can't be used without communiction way */
-    connection?: ConnectionConfig;
-    cpConfigList?: CpConfig[];
-  }
-
-  export interface ConnectInfo {
-    socket?: SocketServerInfo;
-  }
+  /** Config for child process of Daemon process */
+  export interface CpConfig extends SpawnAndTryIpcConfig, DaemonCpConfig {}
 
   export interface CpStatus {
     status: 'none' | 'start' | 'running' | 'stop' | 'exit';
@@ -44,11 +27,31 @@ export namespace Daemon {
     spawnInfo?: SpawnAndTryIpcResponse;
   }
 
+  /** All info of Daemon's child process */
   export interface CpInfo<ResponseFromCp = any> {
     config: CpConfig;
     status: Omit<CpStatus, 'spawnInfo'> & {
       spawnInfo?: SerializableSpawnInfo<ResponseFromCp>;
     };
+  }
+
+  export interface DaemonConfig {
+    /**
+     * To identify daemon process,
+     * If daemon run as a seperate child process, it must have at least one connection channel
+     * If connection.socket is not set, daemonKey will be used as socket path
+     */
+    id?: string;
+    /** connectionConfig should be set, as Daemon process is can't be used without communiction way */
+    connection?: {
+      socketConfig?: TcpServerConfig;
+    };
+    cpConfigList?: CpConfig[];
+  }
+
+
+  export interface DaemonConnectStatus {
+    socket?: SocketServerInfo;
   }
 
   export interface DaemonInfo {

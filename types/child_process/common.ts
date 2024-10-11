@@ -21,7 +21,7 @@ export interface IpcConfig<CpConfig = any> {
   /** Info send to child process if process.send is enabled */
   infoToCp?: InfoToCp<CpConfig>;
   /**
-   * Max wait time for ipc message from Child Process with unit second
+   * Max wait time for ipc message from Child Process in unit of second
    * If maxWaitTime4Ipc is not equal undefined, main process will wait response from child process
    * until maxWaitTime4Ipc second is passed
    * Else main process will not wait for response from child process.

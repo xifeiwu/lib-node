@@ -1,9 +1,8 @@
 /**
  * Client request connection, send a command(in any format, such as object, string)
- * Server wait socket connection, listen data from socket
+ * Server wait socket connection, listen data from socket, and end connection with response.
  * Notice: Server should end data first
  */
-
 import {NetConnectOpts} from 'net';
 import {startSocketClient, startSocketServer} from './service';
 import {fromBuffer, toBuffer} from '../transform';
