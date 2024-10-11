@@ -26,8 +26,13 @@ export async function start() {
         const {origin, host, port} = await startHttpServer(
           {
             request(request, response) {
-              console.log(request.url);
-              responseRequestEvent(request, response);
+              const {url} = request;
+              console.log(url);
+              if (url === '/api/exit-process') {
+                process.exit(0);
+              } else {
+                responseRequestEvent(request, response);
+              }
             },
           },
           {port: config[key]}
