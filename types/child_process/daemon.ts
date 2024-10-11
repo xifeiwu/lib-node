@@ -9,11 +9,11 @@ export namespace Daemon {
   /** Extral Cp config for running on daemon process */
   interface DaemonCpConfig {
     /** id used to identify the child process  */
-    id: string | number;
+    id: string;
     retry?: {
       /** max count of retry */
       maxCount?: number;
-      /** Minimum time a child process has to be up. */
+      /** Minimum time before next spawn to make sure all resources are released for prvious cp. */
       minInterval?: number;
     };
   }
@@ -21,17 +21,20 @@ export namespace Daemon {
   export interface CpConfig extends SpawnAndTryIpcConfig, DaemonCpConfig {}
 
   export interface CpStatus {
-    status: 'none' | 'start' | 'running' | 'stop' | 'exit';
-    currentAction: 'none' | 'start' | 'stop' | 'restart';
+    status: /** initial state */ 'none' | 'start' | 'running' | 'stop' | 'exit';
+    lastAction: 'none' | 'start' | 'stop' | 'restart';
     retryCount: number;
+    lastSpawnTime?: number;
     spawnInfo?: SpawnAndTryIpcResponse;
+    spawnHistory?: SpawnAndTryIpcResponse[];
   }
 
   /** All info of Daemon's child process */
   export interface CpInfo<ResponseFromCp = any> {
     config: CpConfig;
-    status: Omit<CpStatus, 'spawnInfo'> & {
+    status: Omit<CpStatus, 'spawnInfo' | 'spawnHistory'> & {
       spawnInfo?: SerializableSpawnInfo<ResponseFromCp>;
+      spawnHistory?: SerializableSpawnInfo<ResponseFromCp>[];
     };
   }
 
@@ -48,7 +51,6 @@ export namespace Daemon {
     };
     cpConfigList?: CpConfig[];
   }
-
 
   export interface DaemonConnectStatus {
     socket?: SocketServerInfo;
@@ -85,13 +87,14 @@ export namespace Daemon {
     type: Action2Cp;
     data?: CpInfo;
   }
+  export interface ResponsePong {
+    type: 'pong';
+    /** daemon id */
+    data: string;
+  }
   export interface ResponseInfo {
     type: ActionCommon;
     data?: DaemonInfo | CpInfo;
-  }
-  export interface ResponsePong {
-    type: 'pong';
-    data?: string;
   }
   export interface ResponseError {
     type: 'error';

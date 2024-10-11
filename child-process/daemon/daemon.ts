@@ -44,7 +44,7 @@ class CpManager {
   getInfo(): Daemon.CpInfo {
     const {
       cpConfig,
-      cpStatus: {spawnInfo, ...restStatus},
+      cpStatus: {spawnInfo, spawnHistory, ...restStatus},
     } = this;
 
     return {
@@ -52,6 +52,7 @@ class CpManager {
       status: {
         ...restStatus,
         spawnInfo: serializeSpawnResponse(spawnInfo),
+        spawnHistory: spawnHistory ? spawnHistory.map(serializeSpawnResponse) : undefined,
       },
     };
   }
@@ -61,6 +62,9 @@ class CpManager {
     const {spawnInfo, lastAction: currentAction} = cpStatus;
     const {} = cpConfig;
     cpStatus.status = 'exit';
+    if (spawnInfo) {
+      spawnInfo.deadTime = new Date().toLocaleString();
+    }
     const {retry = {}} = cpConfig;
     const {spawnTime} = spawnInfo ?? {};
     // const {status, nextAction} = cpInfo.status;
@@ -69,19 +73,19 @@ class CpManager {
     if (isNumber(minInterval)) {
       delay = minInterval - (Date.now() - new Date(spawnTime).getTime());
     }
-    function letChildDie() {
+    const letChildDie = () => {
       cpStatus.status = 'none';
       if (exitSignal.resolve) {
         exitSignal.resolve();
       }
-    }
-    async function restartChild() {
+    };
+    const restartChild = async () => {
       await new Promise(res => {
         process.nextTick(res);
       });
       await this.trySpawn();
       cpStatus.retryCount++;
-    }
+    };
     if (currentAction === 'stop' || currentAction === 'restart') {
       letChildDie();
     } else if (currentAction === 'start') {
@@ -114,11 +118,18 @@ class CpManager {
       // throw new Error(`Please provide spawnConfig`);
       return null;
     }
-    // Only can start new cp when cp status is not equal 'none'
-    if (cpStatus.status !== 'none') {
+    // Only can start new cp when cp status is not equal 'none' or 'exit'
+    if (!['none', 'exit'].includes(cpStatus.status)) {
       throw new Error(`We can't start child process in this status: ${cpStatus.status}`);
     }
     const cpInfo = await spawnAndTryIpc(cpConfig);
+    if (cpStatus.spawnInfo) {
+      if (!Array.isArray(cpStatus.spawnHistory)) {
+        cpStatus.spawnHistory = [];
+      }
+      cpStatus.spawnHistory.push(cpStatus.spawnInfo);
+    }
+    cpStatus.spawnInfo = cpInfo;
     const {childProcess} = cpInfo;
     childProcess.once('exit', code => {
       this.onExit();
@@ -131,15 +142,14 @@ class CpManager {
     if (cpStatus.status === 'running') {
       throw new Error(`Can't start child process when it's running`);
     }
+    cpStatus.lastAction = 'start';
+    cpStatus.retryCount = 0;
     if (cpConfig) {
       this.cpConfig === cpConfig;
     }
     const cpInfo = await this.trySpawn();
-    if (cpInfo) {
+    if (cpInfo && cpInfo.childProcess) {
       cpStatus.status = 'running';
-      cpStatus.spawnInfo = cpInfo;
-      cpStatus.lastAction = 'start';
-      cpStatus.retryCount = 0;
     }
   }
 

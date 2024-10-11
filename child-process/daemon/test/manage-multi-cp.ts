@@ -17,6 +17,11 @@ const spawnDebugServer1 = getDaemonCpConfigByScriptPath<CP.DebugServerConfig>(
     infoToCp: {},
     maxWaitTime4Ipc: 20,
     id: debugServer1Id,
+    /** Test retry ability */
+    retry: {
+      maxCount: 3,
+      minInterval: 5000,
+    }
   }
 );
 
@@ -52,7 +57,7 @@ export async function ping() {
   const response = await socketClient.ping();
   logColorful({}, response);
 }
-export async function getDaemonInfo() {
+export async function info() {
   const response = await socketClient.info(daemonKey);
   logColorful({}, response);
 }
