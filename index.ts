@@ -1,4 +1,4 @@
-export * from './constants'
+export * from './constants';
 export * from './general';
 export * from './transform';
 export * from './net';
@@ -17,4 +17,5 @@ export * from './types';
 export * from './external';
 export * from './test';
 export * from './lib/parse-body';
+export * from './lib/socks';
 // export * from './lib/memcached';
