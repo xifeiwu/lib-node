@@ -12,7 +12,7 @@ import {SocksClientConfig, SocksServerConfig, SocksServerInfo, TargetSocksServer
 import {EMethod, NegotiationInfoClient as NegotiationInfoClientV5, UserPassInfo} from '../service/types/v5';
 import {RequestTarget} from '../service/types/base';
 import {Socket} from 'net';
-import {simplifySocksServerInfo, UPGRADE_PROTOCOL_SOCKS} from '../service';
+import {simplifySocksServerInfo, UPGRADE_PROTOCOL_SOCKS_PREFIX} from '../service';
 import {logColorful} from '../../../log';
 import {getUpgradeProtocol, getUpgradeResponse, responseInfoToBuffer} from '../../../http';
 
@@ -21,7 +21,7 @@ export const auth: UserPassInfo = {
   password: 'dddd',
 };
 
-async function startSocketServerForSocks(socksServerConfig: SocksServerConfig<any>) {
+export async function startSocketServerForSocks(socksServerConfig: SocksServerConfig<any>) {
   const infoList: SocksServerInfo[] = [];
   const httpServerInfo = await startHttpServer(
     {
@@ -54,6 +54,20 @@ async function startSocketServerForSocks(socksServerConfig: SocksServerConfig<an
     httpHandler,
   });
 }
+export function getSocksServerConfigV5(config?: Partial<SocksServerConfig<'v5'>>) {
+  const socksServerConfig: SocksServerConfig<'v5'> = {
+    socksVersion: 'v5',
+    methodList: [{method: EMethod.NoAuth}],
+    ...(config ?? {}),
+  };
+  return socksServerConfig;
+}
+
+export async function getSocksServerConfigVc1(config?: Partial<SocksServerConfig<'vc1'>>) {
+  const socksServerConfig: SocksServerConfig<'vc1'> = {socksVersion: 'vc1', auth: auth, ...(config ?? {})};
+  return socksServerConfig;
+}
+
 export async function startSocketServerForSocksV5(config?: Partial<SocksServerConfig<'v5'>>) {
   const socksServerConfig: SocksServerConfig<'v5'> = {
     socksVersion: 'v5',
@@ -103,7 +117,7 @@ export async function startHttpServerForSocks(socksServerConfig: SocksServerConf
       },
       async upgrade(req, socket) {
         const protocol = getUpgradeProtocol(req);
-        if (protocol === UPGRADE_PROTOCOL_SOCKS) {
+        if (protocol === UPGRADE_PROTOCOL_SOCKS_PREFIX) {
           socket.write(responseInfoToBuffer(getUpgradeResponse(protocol)));
         }
 

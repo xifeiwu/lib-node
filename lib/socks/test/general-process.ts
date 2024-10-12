@@ -6,14 +6,15 @@ import {logColorful} from '../../../log';
 import {
   getSocksClientConfigV5,
   getSocksClientConfigVc1,
+  getSocksServerConfigV5,
   httpRequestBuffer,
-  startSocketServerForSocksV5,
+  startSocketServerForSocks,
   startSocketServerForSocksVc1,
 } from './service';
 
 export async function generalProcessV5() {
   // const socketServerInfo = await startSocksServerVc1();
-  const socketServerInfo = await startSocketServerForSocksV5();
+  const socketServerInfo = await startSocketServerForSocks(getSocksServerConfigV5());
   const {host, port, server: socksServer} = socketServerInfo;
   logColorful({}, 'start socks server:', {host, port});
   const {origin: httpOrigin, server: httpServer} = await startHttpDebugServer();

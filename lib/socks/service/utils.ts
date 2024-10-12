@@ -1,6 +1,13 @@
 import dns from 'dns';
 import net, {Socket, TcpNetConnectOpts, isIP} from 'net';
-import {SocksServerInfo, MatchItem, TargetSocksServer, ProxyConfig, SocksClientInfo} from './types';
+import {
+  SocksServerInfo,
+  MatchItem,
+  TargetSocksServer,
+  ProxyConfig,
+  SocksClientInfo,
+  SocksVersion,
+} from './types';
 import {
   isString,
   toUrlInstance,
@@ -21,7 +28,7 @@ import {
   RequestTargetResponseV5,
 } from './types/v5';
 
-export const UPGRADE_PROTOCOL_SOCKS = 'sck-vc';
+export const UPGRADE_PROTOCOL_SOCKS_PREFIX = 'scks-';
 
 export const MethodList = Object.values(EMethod).filter(v => isNumber(v));
 
@@ -345,13 +352,16 @@ export async function connectFromLocal(requestTarget: RequestTargetV5): Promise<
   };
 }
 
-export async function getSocketToSocksServer(target: TargetSocksServer) {
+export async function getSocketToSocksServer(target: TargetSocksServer, socksVersion?: SocksVersion) {
   let socket: Socket;
   if (isString(target)) {
+    if (socksVersion === undefined) {
+      throw new Error(`Please provide socksVersion`);
+    }
     const result = await requestAndGetUpgradeInfo({
       href: target,
       headers: {
-        upgrade: UPGRADE_PROTOCOL_SOCKS,
+        upgrade: UPGRADE_PROTOCOL_SOCKS_PREFIX + socksVersion,
       },
     });
     socket = result.socket;
