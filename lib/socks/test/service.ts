@@ -12,7 +12,7 @@ import {SocksClientConfig, SocksServerConfig, SocksServerInfo, TargetSocksServer
 import {EMethod, NegotiationInfoClient as NegotiationInfoClientV5, UserPassInfo} from '../service/types/v5';
 import {RequestTarget} from '../service/types/base';
 import {Socket} from 'net';
-import {simplifySocksServerInfo, SOCKS_PROTOCOL} from '../service';
+import {simplifySocksServerInfo, UPGRADE_PROTOCOL_SOCKS} from '../service';
 import {logColorful} from '../../../log';
 import {getUpgradeProtocol, getUpgradeResponse, responseInfoToBuffer} from '../../../http';
 
@@ -103,7 +103,7 @@ export async function startHttpServerForSocks(socksServerConfig: SocksServerConf
       },
       async upgrade(req, socket) {
         const protocol = getUpgradeProtocol(req);
-        if (protocol === SOCKS_PROTOCOL) {
+        if (protocol === UPGRADE_PROTOCOL_SOCKS) {
           socket.write(responseInfoToBuffer(getUpgradeResponse(protocol)));
         }
 
