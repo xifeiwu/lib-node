@@ -49,7 +49,7 @@ export interface HttpServerConfig {
  * There is no object values to make sure params can be passed by querystring
  */
 export interface CustomHandleRequestOptions {
-  delay?: number | string;
+  delayMs?: number | string;
   responseCode?: number | string;
 }
 

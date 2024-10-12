@@ -110,10 +110,10 @@ export async function customHandleRequest(
   config?: CustomHandleRequestOptions
 ) {
   const {response} = httpStream;
-  const {delay, responseCode} = config ?? {};
-  if (delay) {
-    const delayInMs = parseInt(delay as string);
-    isNumber(delayInMs) && (await waitFor(delayInMs));
+  const {delayMs, responseCode} = config ?? {};
+  if (delayMs) {
+    const delayInMs = parseInt(delayMs as string);
+    !Number.isNaN(delayInMs) && (await waitFor(delayInMs));
   }
   if (responseCode) {
     const code = toInteger(responseCode);
