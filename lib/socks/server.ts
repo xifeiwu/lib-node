@@ -44,7 +44,7 @@ const sendRequestTargetResponse: {
  * Handle new connection on sock server side
  * Close socket on socket error events of any error thrown during the logic process
  */
-export async function handleConnection<Version extends SocksVersion>(
+export async function handleSocksConnection<Version extends SocksVersion>(
   socket: Socket,
   config: SocksServerConfig<Version>,
   handleRequestTarget?: (requestTarget: RequestTargetV5) => Promise<boolean | undefined>

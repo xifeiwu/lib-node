@@ -7,7 +7,7 @@ import {
   tcpRequestPropsToBuffer,
   toBuffer,
 } from '../service/external';
-import {handleConnection} from '../server';
+import {handleSocksConnection} from '../server';
 import {SocksClientConfig, SocksServerConfig, SocksServerInfo, TargetSocksServer} from '../service/types';
 import {EMethod, NegotiationInfoClient as NegotiationInfoClientV5, UserPassInfo} from '../service/types/v5';
 import {RequestTarget} from '../service/types/base';
@@ -37,7 +37,7 @@ async function startSocketServerForSocks(socksServerConfig: SocksServerConfig<an
   );
   const socksHandler = async (socket: Socket) => {
     logColorful({color: 'red'}, `handle sockeet for ${socksServerConfig.socksVersion}`);
-    const info = await handleConnection(socket, socksServerConfig);
+    const info = await handleSocksConnection(socket, socksServerConfig);
     if (infoList.length > 200) {
       infoList.pop();
     }
@@ -108,7 +108,7 @@ export async function startHttpServerForSocks(socksServerConfig: SocksServerConf
         }
 
         logColorful({color: 'red'}, `handle sockeet for ${socksServerConfig.socksVersion}`);
-        const info = await handleConnection(socket, socksServerConfig);
+        const info = await handleSocksConnection(socket, socksServerConfig);
         if (infoList.length > 200) {
           infoList.pop();
         }

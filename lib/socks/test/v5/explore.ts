@@ -1,6 +1,6 @@
 import { logColorful } from '../../../../log';
 import {connectToSocksServer} from '../../client';
-import {handleConnection} from '../../server';
+import {handleSocksConnection} from '../../server';
 import {PORT, startHttpDebugServer, startSocketServer, tcpRequestPropsToBuffer} from '../../service/external';
 import {SocksProxyConfig} from '../../service/types';
 import {EMethod, MethodUserPass} from '../../service/types/v5';
@@ -9,7 +9,7 @@ import {eorBuffer, getCipher} from '../../vc1/service';
 export async function generalProcess() {
   const {origin: httpOrigin, server} = await startHttpDebugServer({port: PORT.fullFeatureHttpServer.port,});
   const {host, port} = await startSocketServer(socket => {
-    handleConnection(socket, {socksVersion: 'v5', methodList: [{method: EMethod.NoAuth}]});
+    handleSocksConnection(socket, {socksVersion: 'v5', methodList: [{method: EMethod.NoAuth}]});
   });
   const status = await connectToSocksServer({
     socksVersion: 'v5',
@@ -49,7 +49,7 @@ export async function useAuthUserPass() {
     },
   };
   const {host, port} = await startSocketServer(socket => {
-    handleConnection(socket, {socksVersion: 'v5', methodList: [methodUsePass]});
+    handleSocksConnection(socket, {socksVersion: 'v5', methodList: [methodUsePass]});
   });
   const status = await connectToSocksServer({
     socksVersion: 'v5',
@@ -87,7 +87,7 @@ export async function proxyRequestOnServerSide() {
   };
   const {host: host2, port: port2} = await startSocketServer(
     socket => {
-      handleConnection(socket, {socksVersion: 'v5', methodList: [methodUsePass]});
+      handleSocksConnection(socket, {socksVersion: 'v5', methodList: [methodUsePass]});
     },
     {
       port: startPort++,
@@ -104,7 +104,7 @@ export async function proxyRequestOnServerSide() {
   };
   const {host: host1, port: port1} = await startSocketServer(
     socket => {
-      handleConnection(socket, {
+      handleSocksConnection(socket, {
         socksVersion: 'v5',
         proxyConfigList: [proxyToV5],
       });

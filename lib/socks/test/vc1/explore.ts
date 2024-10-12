@@ -10,7 +10,7 @@ import {
   tcpRequestPropsToBuffer,
 } from '../../service/external';
 import {connectToSocksServer} from '../../client';
-import {handleConnection} from '../../server';
+import {handleSocksConnection} from '../../server';
 import {SocksProxyConfig, SocksServerConfig} from '../../service/types';
 
 export async function generalProcess() {
@@ -21,7 +21,7 @@ export async function generalProcess() {
   const {origin: httpOrigin, server: httpServer} = await startHttpDebugServer();
   const socksServerConfig: SocksServerConfig<'vc1'> = {socksVersion: 'vc1', auth};
   const {host, port} = await startSocketServer(socket => {
-    handleConnection(socket, socksServerConfig);
+    handleSocksConnection(socket, socksServerConfig);
   });
   const status = await connectToSocksServer({
     socksVersion: 'vc1',
@@ -69,7 +69,7 @@ export async function proxyToOtherSocksServer() {
   };
   const socksServer2 = await startSocketServer(
     socket => {
-      handleConnection(socket, {socksVersion: 'vc1', auth});
+      handleSocksConnection(socket, {socksVersion: 'vc1', auth});
       watchSocketState(socket, {colorStyle: {color: 'blue'}});
     },
     {
@@ -84,7 +84,7 @@ export async function proxyToOtherSocksServer() {
   };
   const socksServer1 = await startSocketServer(
     socket => {
-      handleConnection(socket, {
+      handleSocksConnection(socket, {
         auth,
         socksVersion: 'vc1',
         proxyConfigList: [proxyToV6],
