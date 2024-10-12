@@ -6,6 +6,7 @@ export const getJsonParser: GetParserFunc = (
   headers: IncomingHttpHeaders,
   parseOptions: Required<ParserOptions>
 ) => {
+  // content-type: application/json; charset=utf-8
   const {'content-type': contentType} = headers;
   const json = /json/i.test(contentType);
   if (!json) {

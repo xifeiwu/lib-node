@@ -1,5 +1,6 @@
-import {Writable} from 'stream';
+import {Readable, Writable} from 'stream';
 import {ParsedItem, ParsedResult, ParsedValue, ParserOptions} from './types';
+import {IncomingHttpHeaders} from 'http';
 
 export const defaultParseOptions: Required<ParserOptions> = {
   // maxPayloadSizeinKb?: number;
@@ -69,4 +70,33 @@ export function getCacheWriter(parserOptions: ParserOptions) {
     });
   });
   return {writer, waitCacheData};
+}
+
+export async function getRequestData(reader: Readable, headers: IncomingHttpHeaders) {
+  const contentLength = parseInt(headers['content-length']);
+  let resolved = false;
+  return new Promise<Buffer>((res, rej) => {
+    let byteLength = 0;
+    const bufferList: Buffer[] = [];
+    reader.on('data', (chunk: Buffer) => {
+      if (resolved) {
+        return;
+      }
+      bufferList.push(chunk);
+      byteLength += chunk.byteLength;
+      if (!Number.isNaN(contentLength) && byteLength >= contentLength) {
+        resolved = true;
+        res(Buffer.concat(bufferList).subarray(0, contentLength));
+      }
+    });
+    reader.on('end', () => {
+      if (resolved) {
+        return;
+      }
+      res(Buffer.concat(bufferList));
+    });
+    reader.on('error', (err: any) => {
+      rej(err);
+    });
+  });
 }

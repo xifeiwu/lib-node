@@ -5,15 +5,13 @@ import {pipeline} from 'stream/promises';
 import {IncomingMessage} from 'http';
 import {ParserOptions} from './service/types';
 import {getRequestHeaderInfo} from '../../http/common';
-import {getMultpartParser} from './parser';
-import {getJsonParser} from './parser/json';
-import {defaultParseOptions, getCacheWriter} from './service/utils';
-import {getOctetParser} from './parser/octet-stream';
+import {getJsonParser, getMultpartParser, getOctetParser} from './parser';
+import {defaultParseOptions, getCacheWriter, getRequestData} from './service/utils';
 
 /**
  * Parse http body by params provided on http header part
- * @param request 
- * @param parserOptions 
+ * @param request
+ * @param parserOptions
  * @returns undefined/null when there is no data part
  */
 export async function parseBody(request: IncomingMessage, parserOptions?: ParserOptions) {
@@ -52,6 +50,10 @@ export async function parseBody(request: IncomingMessage, parserOptions?: Parser
      * just return undefined other than throw Error
      */
     // throw new Error(`Parser is not found for content-type: ${reqHeaders['content-type']}`);
+    const buffer = await getRequestData(request, reqHeaders);
+    if (buffer.byteLength > 0) {
+      return buffer;
+    }
     return;
   }
   const {writer, waitCacheData} = getCacheWriter(mregedParserOptions);
