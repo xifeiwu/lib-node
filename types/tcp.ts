@@ -3,7 +3,8 @@ import {ServerOpts} from 'net';
 
 export interface TcpServerConfig {
   host?: string;
-  port?: number;
+  /** support string for more compatible */
+  port?: number | string;
   path?: string;
   options?: ServerOpts;
 }

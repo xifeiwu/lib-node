@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import net, {Socket} from 'net';
-import {isString} from '../../external';
+import {isNumber, isString, toNumber} from '../../external';
 import {SocketServerInfo, TcpServerConfig} from '../../types';
 import {
   DEFAULT_SOCKET_DIR,
@@ -75,12 +75,19 @@ export async function startSocketServer(
     }
   } else {
     host = host ?? '127.0.0.1';
-    port = port ?? (await getAFreePort());
+    if (port !== undefined) {
+      port = toNumber(port);
+      if (!isNumber(port)) {
+        throw new Error(`The port parameter passed can't convert to number: ${port}`);
+      }
+    } else {
+      port = await getAFreePort();
+    }
   }
   return new Promise<SocketServerInfo>((res, rej) => {
     const server = net.createServer(options, handleConnection);
     server.on('listening', () => {
-      res({host, port, path, server});
+      res({host, port: port as number, path, server});
     });
     server.on('error', err => {
       rej(err);
@@ -88,7 +95,7 @@ export async function startSocketServer(
     if (path) {
       server.listen(path);
     } else {
-      server.listen(port, host);
+      server.listen(port as number, host);
     }
   });
 }
