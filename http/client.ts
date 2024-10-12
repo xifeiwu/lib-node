@@ -62,7 +62,8 @@ export function sendHttpRequest<Payload extends HttpRequestPayload = any>(
   }
   let clientRequest: http.ClientRequest | null = null;
   const {protocol, href} = toUrlInstance(urlProps);
-  clientRequest = (protocol === 'https:' ? https : http).request(href, {...requestOptions, headers});
+  const mergedRequestOptions = {...requestOptions, headers};
+  clientRequest = (protocol === 'https:' ? https : http).request(href, mergedRequestOptions);
 
   if (dataIsUndefined) {
     clientRequest.end();
@@ -100,6 +101,10 @@ export async function requestAndGetResponse<Payload extends HttpRequestPayload =
       rej(new Error(`Expect response event, but receive upgrade event.`));
     });
     clientRequest.on('timeout', () => {
+      /**
+       * timeout will be triggered when time-cost of request larger than timeout setted options
+       * But it will not stop request process, or trigger error
+       */
       // console.log('timeout');
       // clientRequest.destroy();
     });
