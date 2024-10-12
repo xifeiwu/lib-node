@@ -4,9 +4,9 @@ import {Transform} from 'stream';
 import {pipeline} from 'stream/promises';
 import {IncomingMessage} from 'http';
 import {ParserOptions} from './service/types';
-import {getRequestHeaderInfo} from '../../http/common';
 import {getJsonParser, getMultpartParser, getOctetParser} from './parser';
-import {defaultParseOptions, getCacheWriter, getRequestData} from './service/utils';
+import {defaultParseOptions, getCacheWriter} from './service/utils';
+import {getRequestHeaderInfo, getIncomingMessageData} from './service/external';
 
 /**
  * Parse http body by params provided on http header part
@@ -50,7 +50,7 @@ export async function parseBody(request: IncomingMessage, parserOptions?: Parser
      * just return undefined other than throw Error
      */
     // throw new Error(`Parser is not found for content-type: ${reqHeaders['content-type']}`);
-    const buffer = await getRequestData(request, reqHeaders);
+    const buffer = await getIncomingMessageData(request);
     if (buffer.byteLength > 0) {
       return buffer;
     }
