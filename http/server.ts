@@ -18,7 +18,7 @@ import {
 import {getAFreePort} from '../net';
 import {Socket} from 'net';
 import {deepEqual, toUrlProps, isNumber, waitFor} from '../external';
-import {Action4IncomingMessage} from '../types';
+import {CustomHandleRequestOptions} from '../types';
 import {toInteger} from '../../fe/utils';
 
 export async function startHttpServer(
@@ -71,7 +71,7 @@ export async function responseRequestEvent(request: http.IncomingMessage, respon
 
 export interface HttpConditionAndAction {
   requestConfig: Pick<HttpRequestOptions, 'method' | 'pathname' | 'query'>;
-  action: Action4IncomingMessage;
+  action: CustomHandleRequestOptions;
 }
 
 /**
@@ -101,13 +101,13 @@ export async function handleIncomingMessage(
   if (!matchedConfig) {
     return false;
   }
-  await handleIncomingMessageByConfig(httpStream, matchedConfig.action);
+  await customHandleRequest(httpStream, matchedConfig.action);
   return false;
 }
 
-export async function handleIncomingMessageByConfig(
+export async function customHandleRequest(
   httpStream: {request: http.IncomingMessage; response?: http.ServerResponse},
-  config?: Action4IncomingMessage
+  config?: CustomHandleRequestOptions
 ) {
   const {response} = httpStream;
   const {delay, responseCode} = config ?? {};
