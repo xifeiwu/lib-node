@@ -1,14 +1,45 @@
-import http from 'http';
+import http, {IncomingMessage} from 'http';
 import {getDataFromReadable} from '../stream';
 import {fromBuffer, toBuffer} from '../transform';
 import {CanConvertToBuffer, HttpHeaderPartProps, HttpResponseInfo, TcpHttpRequestProps} from '../types';
 import {isPlainObject} from '../external';
 import {Readable} from 'stream';
 
-export function getRequestHeaderInfo(request: http.IncomingMessage): HttpHeaderPartProps<'Server'> {
+export function getRequestHeaderInfo(request: IncomingMessage): HttpHeaderPartProps<'Server'> {
   const {method, url, httpVersion, headers} = request;
   return {method, url, httpVersion, headers};
 }
+
+export async function getIncomingMessageData(reader: IncomingMessage) {
+  const headers = getRequestHeaderInfo(reader);
+  const contentLength = parseInt(headers['content-length']);
+  let resolved = false;
+  return new Promise<Buffer>((res, rej) => {
+    let byteLength = 0;
+    const bufferList: Buffer[] = [];
+    reader.on('data', (chunk: Buffer) => {
+      if (resolved) {
+        return;
+      }
+      bufferList.push(chunk);
+      byteLength += chunk.byteLength;
+      if (!Number.isNaN(contentLength) && byteLength >= contentLength) {
+        resolved = true;
+        res(Buffer.concat(bufferList).subarray(0, contentLength));
+      }
+    });
+    reader.on('end', () => {
+      if (resolved) {
+        return;
+      }
+      res(Buffer.concat(bufferList));
+    });
+    reader.on('error', (err: any) => {
+      rej(err);
+    });
+  });
+}
+
 export async function getRequestInfo(request: http.IncomingMessage): Promise<TcpHttpRequestProps> {
   const data = fromBuffer(await getDataFromReadable(request), 'json');
   return {
