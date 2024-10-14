@@ -14,6 +14,7 @@ import {
   RequestTargetResponseV5,
 } from '../service/types/v5';
 import {isNumber, toBuffer} from '../service/external';
+import {PROTOCOL_BYTE} from './service';
 
 /**
  * +----+----------+----------+
@@ -33,7 +34,7 @@ export async function clientSendMethod(writer: Writable, methods: EMethod[]) {
     if (!writer.writable) {
       return rej(createError(ERRORS.SocketUnWritable));
     }
-    writer.write(Buffer.from([5, methods.length, ...methods]), err => {
+    writer.write(Buffer.from([PROTOCOL_BYTE, methods.length, ...methods]), err => {
       if (err) {
         rej(err);
       } else {
@@ -51,7 +52,7 @@ export async function serverWaitMethod(reader: Readable, supportedMethods: EMeth
       clearTimeout(timeoutTag);
       reader.pause();
       const [version, count, ...methods] = chunk;
-      if (version !== 0x05) {
+      if (version !== PROTOCOL_BYTE) {
         return rej(createError(ERRORS.InvalidSocksVersion, chunk));
       }
       if (count !== methods.length) {
@@ -84,7 +85,7 @@ export async function serverReplyMethod(writer: Writable, method: EMethod) {
     if (!writer.writable) {
       return rej(createError(ERRORS.SocketUnWritable));
     }
-    writer.write(Buffer.from([5, method]), err => {
+    writer.write(Buffer.from([PROTOCOL_BYTE, method]), err => {
       if (err) {
         rej(err);
       } else {
@@ -106,7 +107,7 @@ export async function clientWaitMethodReplied(reader: Readable, methods: EMethod
         return rej(createError(ERRORS.InvalidSchemaFormat, chunk));
       }
       const [version, method] = chunk;
-      if (version !== 0x05) {
+      if (version !== PROTOCOL_BYTE) {
         return rej(createError(ERRORS.InvalidSocksVersion, chunk));
       }
       if (method === EMethod.NoAcceptable) {
@@ -250,7 +251,7 @@ export async function clientSendRequestTarget(writer: Writable, info: RequestTar
     throw new Error(`port ${port} is not a number`);
   }
   return new Promise<void>(async (res, rej) => {
-    const buffer = toBuffer([5, command, 0, targetServiceInfoToBuffer(info)]);
+    const buffer = toBuffer([PROTOCOL_BYTE, command, 0, targetServiceInfoToBuffer(info)]);
     if (!writer.writable) {
       return rej(createError(ERRORS.SocketUnWritable));
     }
@@ -269,7 +270,7 @@ export async function serverWaitRequestTarget(reader: Readable) {
     reader.once('data', (chunk: Buffer) => {
       reader.pause();
       const [version, command, _reserve] = chunk;
-      if (version !== 0x05) {
+      if (version !== PROTOCOL_BYTE) {
         return rej(createError(ERRORS.InvalidSocksVersion));
       }
       const {addressType, address, port} = bufferToTargeServiceInfo(chunk.subarray(3));
@@ -316,7 +317,7 @@ export async function serverSendRequestTargetResponse(writer: Writable, respond:
     }
     writer.write(
       toBuffer([
-        5,
+        PROTOCOL_BYTE,
         reply,
         0,
         targetServiceInfoToBuffer({
@@ -340,7 +341,7 @@ export async function clientWaitRequestTargetResponse(reader: Readable) {
     reader.once('data', (chunk: Buffer) => {
       reader.pause();
       const [version, reply, _reserve] = chunk;
-      if (version !== 0x05) {
+      if (version !== PROTOCOL_BYTE) {
         return rej(createError(ERRORS.InvalidSocksVersion, chunk));
       }
       if (reply !== EHandleRequestTargetState.succeeded) {

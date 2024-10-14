@@ -1,6 +1,6 @@
 export * from './cipher';
 
-export const VERSION = 1;
+export const PROTOCOL_BYTE = 1;
 
 export const clientState = {
   sentConnectionInfo: 'sent connection info',

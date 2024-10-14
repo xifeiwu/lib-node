@@ -1,3 +1,5 @@
+export const PROTOCOL_BYTE = 0x05;
+
 const commonState = {
   // initial: 'initial',
   finishedProcess: 'finish process',

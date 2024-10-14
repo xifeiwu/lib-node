@@ -8,7 +8,7 @@ import {
   targetServiceInfoToBuffer,
   toRequestTargetV5,
 } from '../service';
-import {decript, encrypt, defaultIvBytes, VERSION} from './service';
+import {decript, encrypt, defaultIvBytes, PROTOCOL_BYTE} from './service';
 import {BinaryLike} from 'crypto';
 import {ECommand, EHandleRequestTargetState, RequestTargetResponseV5} from '../service/types/v5';
 
@@ -72,7 +72,7 @@ export async function clientSendNegotiationInfo(writer: Writable, info: Negotiat
     if (!writer.writable) {
       return rej(createError(ERRORS.SocketUnWritable));
     }
-    const buf = toBuffer([VERSION, iv, data]);
+    const buf = toBuffer([PROTOCOL_BYTE, iv, data]);
     writer.write(buf, err => {
       if (err) {
         rej(err);
@@ -90,7 +90,7 @@ export async function serverWaitNegotiationInfo(reader: Readable) {
       reader.pause();
       let baseIndex = 0;
       const version = chunk[baseIndex];
-      if (version !== VERSION) {
+      if (version !== PROTOCOL_BYTE) {
         throw new Error(`version no match`);
       }
       baseIndex += 1;
@@ -168,7 +168,7 @@ export async function serverSendRequestTargetResponse(
     }
     const {data} = encrypt(
       toBuffer([
-        VERSION,
+        PROTOCOL_BYTE,
         reply,
         0,
         targetServiceInfoToBuffer({
@@ -217,7 +217,7 @@ export async function clientWaitRequestTargetResponse(reader: Readable, iv: Bina
       reader.pause();
       const buffer = decript(chunk, iv);
       const [version, reply, _reserve] = buffer;
-      if (version !== VERSION) {
+      if (version !== PROTOCOL_BYTE) {
         return rej(createError(ERRORS.InvalidSocksVersion));
       }
       if (reply !== EHandleRequestTargetState.succeeded) {
