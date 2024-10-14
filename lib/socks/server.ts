@@ -5,10 +5,10 @@ import {
   NegotiationWithClient,
   ServerConfig,
   SendRequestTargetResponse,
-} from './service/types';
+} from './types';
 import {Socket} from 'net';
 import {pipeline} from 'stream';
-import {ERRORS, createError, SERVER_STATE, pushState, serializeErrorInfo} from './service';
+import {ERRORS, createError, SERVER_STATE, pushState, serializeErrorInfo} from './';
 import {
   negotiation as negotiationV5,
   sendRequestTargetResponse as sendRequestTargetResponseV5,
@@ -17,7 +17,7 @@ import {
   negotiation as negotiationVc1,
   sendRequestTargetResponse as sendRequestTargetResponseVc1,
 } from './vc1/server';
-import {ECommand, RequestTargetV5} from './service/types/v5';
+import {ECommand, RequestTargetV5} from './types/v5';
 import {handleConnectCommand} from './proxy';
 
 /**

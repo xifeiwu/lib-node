@@ -11,7 +11,7 @@ import {
   httpRequestBuffer,
   startTcpServerForSocks,
 } from './service';
-import {SocksClientConfig} from '../service';
+import {SocksClientConfig} from '..';
 
 async function startSocksServer() {
   return await startTcpServerForSocks({

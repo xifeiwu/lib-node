@@ -5,14 +5,14 @@ import {
   createError,
   listenTimeOut,
   targetServiceInfoToBuffer,
-} from '../service';
+} from '..';
 import {
   ECommand,
   EMethod,
   EHandleRequestTargetState,
   RequestTargetV5,
   RequestTargetResponseV5,
-} from '../service/types/v5';
+} from '../types/v5';
 import {isNumber, toBuffer} from '../service/external';
 import {PROTOCOL_BYTE} from './service';
 

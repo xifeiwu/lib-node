@@ -2,8 +2,8 @@ import { logColorful } from '../../../../log';
 import {connectToSocksServer} from '../../client';
 import {handleSocksConnection} from '../../server';
 import {PORT, startHttpDebugServer, startSocketServer, tcpRequestPropsToBuffer} from '../../service/external';
-import {SocksProxyConfig} from '../../service/types';
-import {EMethod, MethodUserPass} from '../../service/types/v5';
+import {SocksProxyConfig} from '../../types';
+import {EMethod, MethodUserPass} from '../../types/v5';
 import {eorBuffer, getCipher} from '../../vc1/service';
 
 export async function generalProcess() {

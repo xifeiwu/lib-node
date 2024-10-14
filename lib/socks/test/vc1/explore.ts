@@ -11,7 +11,7 @@ import {
 } from '../../service/external';
 import {connectToSocksServer} from '../../client';
 import {handleSocksConnection} from '../../server';
-import {SocksProxyConfig, SocksServerConfig} from '../../service/types';
+import {SocksProxyConfig, SocksServerConfig} from '../../types';
 
 export async function generalProcess() {
   const auth = {

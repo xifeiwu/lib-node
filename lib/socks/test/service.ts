@@ -21,11 +21,11 @@ import {
   SocksServerConfig,
   SocksServerInfo,
   TargetSocksServer,
-} from '../service/types';
-import {EMethod, NegotiationInfoClient as NegotiationInfoClientV5, UserPassInfo} from '../service/types/v5';
-import {RequestTarget} from '../service/types/base';
+} from '../types';
+import {EMethod, NegotiationInfoClient as NegotiationInfoClientV5, UserPassInfo} from '../types/v5';
+import {RequestTarget} from '../types/base';
 import {Socket} from 'net';
-import {simplifySocksServerInfo, UPGRADE_PROTOCOL_SOCKS_PREFIX} from '../service';
+import {simplifySocksServerInfo, UPGRADE_PROTOCOL_SOCKS_PREFIX} from '..';
 
 export const auth: UserPassInfo = {
   username: 'abc',

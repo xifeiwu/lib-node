@@ -1,5 +1,5 @@
 import {Readable, Writable} from 'stream';
-import {NegotiationInfoClient, NegotiationInfoServer} from '../service/types/vc1';
+import {NegotiationInfoClient, NegotiationInfoServer} from '../types/vc1';
 import {isNumber, toBuffer} from '../service/external';
 import {
   ERRORS,
@@ -7,10 +7,10 @@ import {
   createError,
   targetServiceInfoToBuffer,
   toRequestTargetV5,
-} from '../service';
+} from '..';
 import {decript, encrypt, defaultIvBytes, PROTOCOL_BYTE} from './service';
 import {BinaryLike} from 'crypto';
-import {ECommand, EHandleRequestTargetState, RequestTargetResponseV5} from '../service/types/v5';
+import {ECommand, EHandleRequestTargetState, RequestTargetResponseV5} from '../types/v5';
 
 /**
  * +----+------+----------+------+----------+

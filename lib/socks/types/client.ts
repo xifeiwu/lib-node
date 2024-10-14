@@ -2,7 +2,7 @@ import {Socket, TcpNetConnectOpts} from 'net';
 import {NegotiationInfoClient as NegotiationInfoV5, NegotiationResult as NegotiationResultV5} from './v5';
 import {NegotiationInfoClient as NegotiationInfoVc1, NegotiationResult as NegotiationResultVc1} from './vc1';
 import {StateTracer} from './base';
-import {SocksError} from '../utils';
+import {SocksError} from '../service/utils';
 
 /**
  * if type is string, will treat as http href and get socket by http upgrade protocol

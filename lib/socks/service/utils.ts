@@ -7,7 +7,7 @@ import {
   ProxyConfig,
   SocksClientInfo,
   SocksVersion,
-} from './types';
+} from '../types';
 import {
   isString,
   toUrlInstance,
@@ -20,14 +20,14 @@ import {
   toBuffer,
   fromBuffer,
 } from './external';
-import {RequestTarget, StateTracer, TracerItem} from './types/base';
+import {RequestTarget, StateTracer, TracerItem} from '../types/base';
 import {
   EMethod,
   EAddressType,
   EHandleRequestTargetState,
   RequestTargetV5,
   RequestTargetResponseV5,
-} from './types/v5';
+} from '../types/v5';
 
 export const UPGRADE_PROTOCOL_SOCKS_PREFIX = 'scks-';
 

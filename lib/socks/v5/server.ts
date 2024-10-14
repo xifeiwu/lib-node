@@ -6,19 +6,19 @@ import {
   serverWaitRequestTarget,
   serverWaitUserPass,
 } from './communication';
-import {ERRORS, createError, pushState} from '../service';
-import {NegotiationWithClient} from '../service/types';
+import {ERRORS, createError, pushState} from '..';
+import {NegotiationWithClient} from '../types';
 import {
   EMethod,
   UserPassInfo,
   ServerConfig,
   RequestTargetResponseV5,
   NegotiationResult,
-} from '../service/types/v5';
+} from '../types/v5';
 import {deepEqual} from '../service/external';
 import {Socket} from 'net';
 import {SERVER_STATE_V5} from './service';
-import {StateTracer} from '../service/types/base';
+import {StateTracer} from '../types/base';
 
 /**
  * To know what client side want to do

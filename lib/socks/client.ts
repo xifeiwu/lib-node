@@ -1,11 +1,11 @@
-import {CLIENT_STATE, getSocketToSocksServer, pushState} from './service';
-import {SocksClientInfo} from './service/types';
+import {CLIENT_STATE, getSocketToSocksServer, pushState} from './';
+import {SocksClientInfo} from './types';
 import {
   NegotiationResult,
   NegotiationWithServer,
   SocksClientConfig,
   SocksVersion,
-} from './service/types/client';
+} from './types/client';
 import {negotiation as infoNegotiationV5} from './v5/client';
 import {negotiation as infoNegotiationVc1} from './vc1/client';
 

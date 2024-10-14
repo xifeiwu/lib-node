@@ -1,5 +1,5 @@
 import {connectToSocksServer} from '../../client';
-import {getInfoFromStateTracer} from '../../service';
+import {getInfoFromStateTracer} from '../..';
 import {requestAndGetResponseInfo, HttpRequestOptions, tcpRequestPropsToBuffer} from '../../service/external';
 import {eorBuffer, getDcipher} from '../../vc1/service';
 

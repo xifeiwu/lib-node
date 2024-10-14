@@ -1,5 +1,5 @@
 import {Socket} from 'net';
-import {ProxyConfig, SocksClientInfo} from './service/types';
+import {ProxyConfig, SocksClientInfo} from './types';
 import {
   ERRORS,
   SERVER_STATE,
@@ -8,10 +8,10 @@ import {
   getMatchedProxyConfig,
   pushState,
   serializeErrorInfo,
-} from './service';
+} from './';
 import {connectToSocksServer} from './client';
-import {EHandleRequestTargetState, RequestTargetV5, RequestTargetResponseV5} from './service/types/v5';
-import {StateTracer} from './service/types/base';
+import {EHandleRequestTargetState, RequestTargetV5, RequestTargetResponseV5} from './types/v5';
+import {StateTracer} from './types/base';
 
 /**
  * If requestTarget match condition, send a new socks request to the target socks server

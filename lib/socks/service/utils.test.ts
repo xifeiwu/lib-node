@@ -1,5 +1,5 @@
 // import {EMethod} from './types';
-import {EMethod} from './types/v5';
+import {EMethod} from '../types/v5';
 import {getMatchedProxyConfig, listenTimeOut} from './utils';
 
 export function testGetMatchedProxyConfig() {

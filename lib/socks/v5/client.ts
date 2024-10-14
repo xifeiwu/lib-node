@@ -6,12 +6,12 @@ import {
   clientSendUserPass,
   clientWaitRequestTargetResponse,
 } from './communication';
-import {pushState, toRequestTargetV5} from '../service';
-import {ECommand, EMethod, NegotiationInfoClient, UserPassInfo} from '../service/types/v5';
+import {pushState, toRequestTargetV5} from '..';
+import {ECommand, EMethod, NegotiationInfoClient, UserPassInfo} from '../types/v5';
 import {clientState} from './service';
-import {NegotiationWithServer} from '../service/types/client';
+import {NegotiationWithServer} from '../types/client';
 import {Socket} from 'net';
-import {StateTracer} from '../service/types/base';
+import {StateTracer} from '../types/base';
 
 export const negotiation: NegotiationWithServer<5> = async (
   socket: Socket,

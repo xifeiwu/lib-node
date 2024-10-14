@@ -1,6 +1,6 @@
 import {logColorful} from '../../../../log';
 import {connectToSocksServer} from '../../client';
-import {serializableSocksClientInfo} from '../../service';
+import {serializableSocksClientInfo} from '../..';
 import {startHttpDebugServer} from '../../service/external';
 import {
   auth,
