@@ -4,61 +4,59 @@ import {
   startSocketClient,
   tcpRequestPropsToBuffer,
   toBuffer,
+  toUrlProps,
+  toUl,
+  toHtml,
+  getOneLineFromReader,
+  responseHttpConnection,
+  getUpgradeProtocol,
+  getUpgradeResponse,
+  responseInfoToBuffer,
+  logColorful,
 } from '../service/external';
 import {handleSocksConnection} from '../server';
 import {
-  AllSocksServerConfig,
+  SocksServerConfigPerVersion,
   SocksClientConfig,
   SocksServerConfig,
   SocksServerInfo,
-  SocksVersion,
   TargetSocksServer,
 } from '../service/types';
 import {EMethod, NegotiationInfoClient as NegotiationInfoClientV5, UserPassInfo} from '../service/types/v5';
 import {RequestTarget} from '../service/types/base';
 import {Socket} from 'net';
 import {simplifySocksServerInfo, UPGRADE_PROTOCOL_SOCKS_PREFIX} from '../service';
-import {logColorful} from '../../../log';
-import {getUpgradeProtocol, getUpgradeResponse, responseInfoToBuffer} from '../../../http';
 
 export const auth: UserPassInfo = {
   username: 'abc',
   password: 'dddd',
 };
 
-export async function startSocketServerForSocks(socksServerConfig: SocksServerConfig<any>) {
-  const infoList: SocksServerInfo[] = [];
-  const httpServerInfo = await startHttpServer(
-    {
-      request(req, res) {
-        res.setHeader('content-type', 'application/json');
-        const data = toBuffer([infoList.map(simplifySocksServerInfo)]);
-        res.end(data);
-      },
-    },
-    {
-      host: '127.0.0.1',
-    }
-  );
-  const socksHandler = async (socket: Socket) => {
-    logColorful({color: 'red'}, `handle sockeet for ${socksServerConfig.socksVersion}`);
-    const info = await handleSocksConnection(socket, socksServerConfig);
-    if (infoList.length > 200) {
-      infoList.pop();
-    }
-    infoList.unshift(info);
+export function getSocksClientConfigV5(socksServer: TargetSocksServer, requestTarget: RequestTarget) {
+  const info: SocksClientConfig<5> = {
+    socksVersion: 5,
+    methodList: [{method: EMethod.NoAuth}, {method: EMethod.UserPass, info: auth}],
+    socksServer,
+    requestTarget,
   };
-  const httpHandler = async (socket: Socket) => {
-    const {host, port} = httpServerInfo;
-    const proxyClient = await startSocketClient({host, port});
-    socket.pipe(proxyClient).pipe(socket);
-  };
-
-  return await startTcpProxyServer({
-    tcpHandler: socksHandler,
-    httpHandler,
-  });
+  return info;
 }
+
+export function getSocksClientConfigVc1(socksServer: TargetSocksServer, requestTarget: RequestTarget) {
+  const info: SocksClientConfig<1> = {
+    socksVersion: 1,
+    auth,
+    socksServer,
+    requestTarget,
+  };
+  return info;
+}
+
+export const httpRequestBuffer = tcpRequestPropsToBuffer({
+  method: 'post',
+  url: '/api/test',
+  data: {a: 1},
+});
 
 export function getSocksServerConfigV5(config?: Partial<SocksServerConfig<5>>) {
   const socksServerConfig: SocksServerConfig<5> = {
@@ -74,14 +72,32 @@ export function getSocksServerConfigVc1(config?: Partial<SocksServerConfig<1>>) 
   return socksServerConfig;
 }
 
-export async function runSocksOnTcpServer(socksServerConfig: Partial<AllSocksServerConfig>) {
+export async function startTcpServerForSocks(socksServerConfig: Partial<SocksServerConfigPerVersion>) {
   const infoList: SocksServerInfo[] = [];
   const httpServerInfo = await startHttpServer(
     {
       request(req, res) {
         res.setHeader('content-type', 'application/json');
-        const data = toBuffer([infoList.map(simplifySocksServerInfo)]);
-        res.end(data);
+        const {pathname} = toUrlProps(req.url);
+        if (pathname === '/api/list') {
+          const data = toBuffer([infoList.map(simplifySocksServerInfo)]);
+          res.end(data);
+        } else if (pathname === '/api/clear') {
+          const {length} = infoList;
+          infoList.length = 0;
+          res.end(toBuffer({length}));
+        } else {
+          const data = toBuffer(
+            toHtml(
+              toUl([
+                {href: '/api/list', content: '/api/list'},
+                {href: '/api/clear', content: '/api/clear'},
+              ])
+            )
+          );
+          res.setHeader('content-type', 'text/html');
+          res.end(data);
+        }
       },
     },
     {
@@ -116,42 +132,14 @@ export async function runSocksOnTcpServer(socksServerConfig: Partial<AllSocksSer
   return tcpServerInfo;
 }
 
-export async function startSocketServerForSocksV5(config?: Partial<SocksServerConfig<5>>) {
-  const socksServerConfig: SocksServerConfig<5> = {
-    socksVersion: 5,
-    methodList: [{method: EMethod.NoAuth}],
-    ...(config ?? {}),
-  };
-  return startSocketServerForSocks(socksServerConfig);
-}
-export function getSocksClientConfigV5(socksServer: TargetSocksServer, requestTarget: RequestTarget) {
-  const info: SocksClientConfig<5> = {
-    socksVersion: 5,
-    methodList: [{method: EMethod.NoAuth}, {method: EMethod.UserPass, info: auth}],
-    socksServer,
-    requestTarget,
-  };
-  return info;
-}
-
-export function getSocksClientConfigVc1(socksServer: TargetSocksServer, requestTarget: RequestTarget) {
-  const info: SocksClientConfig<1> = {
-    socksVersion: 1,
-    auth,
-    socksServer,
-    requestTarget,
-  };
-  return info;
-}
-
-export const httpRequestBuffer = tcpRequestPropsToBuffer({
-  method: 'post',
-  url: '/api/test',
-  data: {a: 1},
-});
-
-export async function startHttpServerForSocks(socksServerConfig: SocksServerConfig<any>) {
+export async function startHttpServerForSocks(allSocksServerConfig: Partial<SocksServerConfigPerVersion>) {
   const infoList: SocksServerInfo[] = [];
+  function abortRequest(socket: Socket, protocol: string) {
+    responseHttpConnection(socket, {
+      code: 400,
+      message: `can not handle protocol: ${protocol}`,
+    });
+  }
   const httpServerInfo = await startHttpServer(
     {
       request(req, res) {
@@ -161,10 +149,29 @@ export async function startHttpServerForSocks(socksServerConfig: SocksServerConf
       },
       async upgrade(req, socket) {
         const protocol = getUpgradeProtocol(req);
-        if (protocol === UPGRADE_PROTOCOL_SOCKS_PREFIX) {
-          socket.write(responseInfoToBuffer(getUpgradeResponse(protocol)));
+        if (!protocol.startsWith(UPGRADE_PROTOCOL_SOCKS_PREFIX)) {
+          return abortRequest(socket, protocol);
         }
-
+        let socksServerConfig: SocksServerConfig;
+        /** Get version from protocol string first */
+        const version = protocol.replace(UPGRADE_PROTOCOL_SOCKS_PREFIX, '');
+        if (version.length > 0) {
+          socksServerConfig = allSocksServerConfig[version];
+          if (!socksServerConfig) {
+            return abortRequest(socket, protocol);
+          }
+        }
+        socket.write(responseInfoToBuffer(getUpgradeResponse(protocol)));
+        if (!socksServerConfig) {
+          const bufferOfFirstLine = await getOneLineFromReader(socket, {firstChunkOnly: true});
+          const firstByte = bufferOfFirstLine[0];
+          socksServerConfig = allSocksServerConfig[firstByte];
+          if (socksServerConfig) {
+            socket.unshift(bufferOfFirstLine);
+          } else {
+            return abortRequest(socket, protocol);
+          }
+        }
         logColorful({color: 'red'}, `handle sockeet for ${socksServerConfig.socksVersion}`);
         const info = await handleSocksConnection(socket, socksServerConfig);
         if (infoList.length > 200) {
@@ -178,18 +185,4 @@ export async function startHttpServerForSocks(socksServerConfig: SocksServerConf
     }
   );
   return httpServerInfo;
-}
-
-export async function startHttpServerForSocksV5(config?: Partial<SocksServerConfig<5>>) {
-  const socksServerConfig: SocksServerConfig<5> = {
-    socksVersion: 5,
-    methodList: [{method: EMethod.NoAuth}],
-    ...(config ?? {}),
-  };
-  return startHttpServerForSocks(socksServerConfig);
-}
-
-export async function startHttpServerForSocksVc1(config?: Partial<SocksServerConfig<1>>) {
-  const socksServerConfig: SocksServerConfig<1> = {socksVersion: 1, auth: auth, ...(config ?? {})};
-  return startHttpServerForSocks(socksServerConfig);
 }

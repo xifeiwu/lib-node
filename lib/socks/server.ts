@@ -8,7 +8,7 @@ import {
 } from './service/types';
 import {Socket} from 'net';
 import {pipeline} from 'stream';
-import {ERRORS, createError, SERVER_STATE, pushState} from './service';
+import {ERRORS, createError, SERVER_STATE, pushState, serializeErrorInfo} from './service';
 import {
   negotiation as negotiationV5,
   sendRequestTargetResponse as sendRequestTargetResponseV5,
@@ -115,13 +115,13 @@ export async function handleSocksConnection<Version extends SocksVersion>(
   } catch (err) {
     info.error = err;
     const {socket2Remote} = info;
-    const {message = 'there is an error on socket server', } = err ?? {};
+    const {message = 'there is an error on socket server'} = err ?? {};
     socket2Remote && socket2Remote.writable && socket2Remote.end(message);
     const isSocketActive = socket && socket.writable;
     if (isSocketActive) {
       socket.end(message);
     }
-    stateTracer.push(`${SERVER_STATE.catchError}: ${message}`);
+    stateTracer.push(`${SERVER_STATE.catchError}: ${serializeErrorInfo(err)}`);
   } finally {
     info.stateTracer = stateTracer;
   }

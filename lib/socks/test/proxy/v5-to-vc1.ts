@@ -7,9 +7,8 @@ import {
   getSocksClientConfigV5,
   getSocksServerConfigV5,
   getSocksServerConfigVc1,
-  startHttpServerForSocksVc1,
-  startSocketServerForSocks,
-  startSocketServerForSocksV5,
+  startTcpServerForSocks,
+  startHttpServerForSocks,
 } from '../service';
 
 /**
@@ -21,41 +20,32 @@ process.on('uncaughtException', function (err) {
   console.log(err.stack);
 });
 
-async function startSocksServerOnTcp() {
-  const serverVc1 = await startSocketServerForSocks(getSocksServerConfigVc1());
-  const serverV5 = await startSocketServerForSocks(
-    getSocksServerConfigV5({
+async function runSocksOverHttp() {
+  /** only vc1 can be handle by http upgrade */
+  return await startHttpServerForSocks({
+    1: getSocksServerConfigVc1(),
+  });
+}
+async function startTwoSocksServer() {
+  const serverOverHttp = await runSocksOverHttp();
+  const serverOverTcp = await startTcpServerForSocks({
+    5: getSocksServerConfigV5({
       proxyConfigList: [
         {
-          socksVersion: 'vc1',
-          socksServer: {
-            host: serverVc1.host,
-            port: serverVc1.port,
-          },
+          socksVersion: 1,
+          socksServer: serverOverHttp.origin,
           auth,
           matches: ['elif.site', 'baidu.com'],
         },
       ],
-    })
-  );
-  return {serverVc1, serverV5};
-}
-async function startSocksServerOnHttp() {
-  const serverVc1 = await startHttpServerForSocksVc1();
-  const serverV5 = await startSocketServerForSocksV5({
-    proxyConfigList: [
-      {
-        socksVersion: 'vc1',
-        socksServer: serverVc1.origin,
-        auth,
-        matches: ['elif.site', 'baidu.com'],
-      },
-    ],
+    }),
+    1: getSocksServerConfigVc1(),
   });
-  return {serverVc1, serverV5};
+  return {serverOverTcp, serverOverHttp};
 }
+
 export async function proxy() {
-  const {serverVc1, serverV5} = await startSocksServerOnTcp();
+  const {serverOverHttp: serverVc1, serverOverTcp: serverV5} = await startTwoSocksServer();
   // const {serverVc1, serverV5} = await startSocksServerOnHttp();
   logColorful({}, 'socks server vc1:', {host: serverVc1.host, port: serverVc1.port});
   logColorful({}, 'socks server v5:', {host: serverV5.host, port: serverV5.port});

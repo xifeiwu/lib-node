@@ -9,12 +9,12 @@ import {
   getSocksServerConfigV5,
   getSocksServerConfigVc1,
   httpRequestBuffer,
-  runSocksOnTcpServer,
+  startTcpServerForSocks,
 } from './service';
 import {SocksClientConfig} from '../service';
 
 async function startSocksServer() {
-  return await runSocksOnTcpServer({
+  return await startTcpServerForSocks({
     5: getSocksServerConfigV5(),
     1: getSocksServerConfigVc1(),
   });

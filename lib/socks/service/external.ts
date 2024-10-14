@@ -10,6 +10,7 @@ export {
 } from '../../../external';
 
 export {
+  logColorful,
   startSocketClient,
   toBuffer,
   convertToBuffer,
@@ -34,4 +35,8 @@ export {
   toUrlProps,
   fromBuffer,
   getOneLineFromReader,
+  responseHttpConnection,
+  getUpgradeProtocol,
+  getUpgradeResponse,
+  responseInfoToBuffer,
 } from '../../../index';
