@@ -29,4 +29,9 @@ export {
   startHttpServer,
   watchSocketState,
   startTcpProxyServer,
+  toUl,
+  toHtml,
+  toUrlProps,
+  fromBuffer,
+  getOneLineFromReader,
 } from '../../../index';

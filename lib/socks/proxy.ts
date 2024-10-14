@@ -7,7 +7,7 @@ import {
   createError,
   getMatchedProxyConfig,
   pushState,
-  serializableSocksClientInfo,
+  serializeErrorInfo,
 } from './service';
 import {connectToSocksServer} from './client';
 import {EHandleRequestTargetState, RequestTargetV5, RequestTargetResponseV5} from './service/types/v5';
@@ -45,10 +45,13 @@ export async function tryProxyRequestTarget(
       requestTarget,
       ...restProps,
     });
+    if (proxyClientInfo.error) {
+      throw proxyClientInfo.error;
+    }
     pushState(SERVER_STATE.proxyToRemoteSocksServerSuccess, stateTracer);
     return proxyClientInfo;
   } catch (err) {
-    throw createError(ERRORS.proxyError, err?.message);
+    throw createError(ERRORS.proxyError + proxyConfig.socksServer, serializeErrorInfo(err));
   }
 }
 

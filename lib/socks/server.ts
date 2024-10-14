@@ -76,9 +76,11 @@ export async function handleSocksConnection<Version extends SocksVersion>(
 
       info.socket2Remote = socket2Remote;
       info.socksClientInfo = socksClientInfo;
-      socket2Remote.once('close', () => {
-        stateTracer.push(SERVER_STATE.remoteSocketClosed);
-      });
+      if (socket2Remote) {
+        socket2Remote.once('close', () => {
+          stateTracer.push(SERVER_STATE.remoteSocketClosed);
+        });
+      }
 
       if (!socket || !socket2Remote || socket.destroyed || socket2Remote.destroyed) {
         throw createError(ERRORS.connectionError);
@@ -113,7 +115,7 @@ export async function handleSocksConnection<Version extends SocksVersion>(
   } catch (err) {
     info.error = err;
     const {socket2Remote} = info;
-    const {message = 'there is an error on socket server'} = err ?? {};
+    const {message = 'there is an error on socket server', } = err ?? {};
     socket2Remote && socket2Remote.writable && socket2Remote.end(message);
     const isSocketActive = socket && socket.writable;
     if (isSocketActive) {

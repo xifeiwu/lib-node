@@ -18,6 +18,7 @@ import {
   isPlainObject,
   isRegExp,
   toBuffer,
+  fromBuffer,
 } from './external';
 import {RequestTarget, StateTracer, TracerItem} from './types/base';
 import {
@@ -33,7 +34,7 @@ export const UPGRADE_PROTOCOL_SOCKS_PREFIX = 'scks-';
 export const MethodList = Object.values(EMethod).filter(v => isNumber(v));
 
 export const ERRORS = {
-  InvalidSocksVersion: 'only socks version 5 supported',
+  InvalidSocksVersion: 'invalid socks version',
   InvalidSchemaFormat: 'schema format is not correct',
   invalid_methods: 'all methods is not valid',
   IPv6NotSupported: 'ipv6 not supported',
@@ -109,15 +110,38 @@ export class SocksError extends Error {
   moreInfo?: CanConvertToBuffer;
   constructor(message: string, moreInfo?: CanConvertToBuffer) {
     moreInfo = toBuffer(moreInfo);
-    if (Buffer.isBuffer(moreInfo) && moreInfo.byteLength > 0) {
-      message = `${message}: ${moreInfo.toString()}`;
-    }
+    // if (Buffer.isBuffer(moreInfo) && moreInfo.byteLength > 0) {
+    //   message = `${message}: ${moreInfo.toString()}`;
+    // }
     super(message);
     this.moreInfo = moreInfo;
   }
 }
 export function createError(message: string, moreInfo?: CanConvertToBuffer) {
   return new SocksError(message, moreInfo);
+}
+
+export function serializeErrorInfo(err: Error): {
+  message: string;
+  stack: string;
+  moreInfo?: string | object;
+} {
+  if (!(err instanceof Error)) {
+    return;
+  }
+  const {message, stack} = err;
+  let result: {
+    message: string;
+    stack: string;
+    moreInfo?: string | object;
+  } = {message, stack};
+  if (err instanceof SocksError) {
+    const {moreInfo} = err;
+    if (moreInfo) {
+      result.moreInfo = fromBuffer(moreInfo, 'json') as object;
+    }
+  }
+  return result;
 }
 
 export function getAddressType(host: string): EAddressType {
@@ -352,16 +376,21 @@ export async function connectFromLocal(requestTarget: RequestTargetV5): Promise<
   };
 }
 
+/**
+ * Can optionally set socksVersion as part of protocol or not
+ * If socksVersion set in protocol part, server will use it as socksVersion with high priority
+ * Else will use firstByte of firstChunk as socksVersion
+ * @param target
+ * @param socksVersion
+ * @returns
+ */
 export async function getSocketToSocksServer(target: TargetSocksServer, socksVersion?: SocksVersion) {
   let socket: Socket;
   if (isString(target)) {
-    if (socksVersion === undefined) {
-      throw new Error(`Please provide socksVersion`);
-    }
     const result = await requestAndGetUpgradeInfo({
       href: target,
       headers: {
-        upgrade: UPGRADE_PROTOCOL_SOCKS_PREFIX + socksVersion,
+        upgrade: UPGRADE_PROTOCOL_SOCKS_PREFIX + (socksVersion ?? ''),
       },
     });
     socket = result.socket;
@@ -390,15 +419,16 @@ export function serializableSocksClientInfo(info?: SocksClientInfo) {
 export function serializableSocksServerInfo(info: SocksServerInfo) {
   const {socket, socket2Remote, error, socksClientInfo, ...rest} = info;
   return {
-    error: error ? error.message : undefined,
+    error: error ? serializeErrorInfo(error) : undefined,
     ...rest,
     socksClientInfo: serializableSocksClientInfo(socksClientInfo),
   };
 }
 export function simplifySocksServerInfo(info: SocksServerInfo) {
-  const {negotiationResult, stateTracer, socksVersion} = serializableSocksServerInfo(info);
+  const {error, negotiationResult, stateTracer, socksVersion} = serializableSocksServerInfo(info);
   const {requestTarget, requestTargetResponse} = negotiationResult ?? {};
   return {
+    error,
     requestTargetResponse,
     requestTarget,
     stateTracer,

@@ -218,7 +218,7 @@ export async function clientWaitRequestTargetResponse(reader: Readable, iv: Bina
       const buffer = decript(chunk, iv);
       const [version, reply, _reserve] = buffer;
       if (version !== PROTOCOL_BYTE) {
-        return rej(createError(ERRORS.InvalidSocksVersion));
+        return rej(createError(`${ERRORS.InvalidSocksVersion}: ${version}, only support version ${PROTOCOL_BYTE}`));
       }
       if (reply !== EHandleRequestTargetState.succeeded) {
         return rej(createError(EHandleRequestTargetState[reply]));

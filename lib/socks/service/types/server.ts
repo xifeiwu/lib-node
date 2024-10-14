@@ -27,12 +27,12 @@ export type SocksProxyConfig<Version extends SocksVersion> = {
 
 export type ProxyConfig = SocksProxyConfig<5> | SocksProxyConfig<1>;
 
-export type SocksServerConfig<Version extends SocksVersion> = ServerConfig[Version] & {
+export type SocksServerConfig<Version extends SocksVersion = any> = ServerConfig[Version] & {
   socksVersion: Version;
   proxyConfigList?: Array<ProxyConfig>;
 };
 
-export type AllSocksServerConfig = {
+export type SocksServerConfigPerVersion = {
   [v in SocksVersion]: SocksServerConfig<SocksVersion>;
 };
 

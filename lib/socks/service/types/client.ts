@@ -4,6 +4,9 @@ import {NegotiationInfoClient as NegotiationInfoVc1, NegotiationResult as Negoti
 import {StateTracer} from './base';
 import {SocksError} from '../utils';
 
+/**
+ * if type is string, will treat as http href and get socket by http upgrade protocol
+ */
 export type TargetSocksServer = TcpNetConnectOpts | string;
 
 export interface NegotiationInfo {
