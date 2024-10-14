@@ -1,7 +1,8 @@
 import {Socket} from 'net';
 import {RequestTargetResponseV5, ServerConfig as ServerConfigV5} from './v5';
 import {ServerConfig as ServerConfigVc1} from './vc1';
-import {NegotiationResult, SocksClientConfig, SocksClientInfo, SocksVersion} from './client';
+import {NegotiationResult, SocksClientConfig, SocksClientInfo} from './client';
+import {SocksVersion} from './common';
 import {StateTracer} from './base';
 
 /**

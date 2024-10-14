@@ -435,3 +435,8 @@ export function simplifySocksServerInfo(info: SocksServerInfo) {
     socksVersion,
   };
 }
+
+export function isSocksProtocol(firstByte: number) {
+  const socksVersion: SocksVersion[] = [1, 5];
+  return socksVersion.includes(firstByte as SocksVersion);
+}

@@ -1,4 +1,6 @@
-export const PROTOCOL_BYTE = 0x05;
+import {SocksVersion} from '../types/base';
+
+export const PROTOCOL_BYTE: SocksVersion = 0x05;
 
 const commonState = {
   // initial: 'initial',
