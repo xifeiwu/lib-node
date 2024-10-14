@@ -18,8 +18,12 @@ function isHttpRequest(buffer: Buffer) {
 export async function startTcpProxyServer(
   config: {
     onConnection?: (socket: Socket) => Promise<boolean | void>;
-    httpHandler?: (socket: Socket) => void;
-    tcpHandler?: (socket: Socket, firstChunk: Buffer) => void;
+    /**
+     * return false means connection is not handled
+     * else return undefined or true means it's handled by httpHander or tcpHandler
+     */
+    httpHandler?: (socket: Socket) => Promise<boolean | void>;
+    tcpHandler?: (socket: Socket, firstChunk: Buffer) => Promise<boolean | void>;
   },
   tcpServerConfig?: TcpServerConfig
 ) {
@@ -33,15 +37,16 @@ export async function startTcpProxyServer(
     const bufferOfFirstLine = await getOneLineFromReader(socket, {firstChunkOnly: true});
     socket.unshift(bufferOfFirstLine);
 
-    let foundHandler = false;
+    // let foundHandler = false;
+    let isHandled;
     if (isHttpRequest(bufferOfFirstLine)) {
-      foundHandler = Boolean(httpHandler);
-      if (httpHandler) {
-        httpHandler(socket);
-      }
+      isHandled = httpHandler && (await httpHandler(socket));
     } else {
-      foundHandler = Boolean(tcpHandler);
-      tcpHandler(socket, bufferOfFirstLine);
+      // foundHandler = Boolean(tcpHandler);
+      isHandled = tcpHandler && (await tcpHandler(socket, bufferOfFirstLine));
+    }
+    if (isHandled === false) {
+      socket.end('not handle');
     }
   }, tcpServerConfig);
   return {host, port, server};
