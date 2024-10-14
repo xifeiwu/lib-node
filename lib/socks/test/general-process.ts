@@ -9,16 +9,19 @@ import {
   getSocksServerConfigV5,
   getSocksServerConfigVc1,
   httpRequestBuffer,
-  startSocketServerForSocks,
+  runSocksOnTcpServer,
 } from './service';
+import {SocksClientConfig} from '../service';
 
-export async function generalProcessV5() {
-  // const socketServerInfo = await startSocksServerVc1();
-  const socketServerInfo = await startSocketServerForSocks(getSocksServerConfigV5());
-  const {host, port, server: socksServer} = socketServerInfo;
-  logColorful({}, 'start socks server:', {host, port});
-  const {origin: httpOrigin, server: httpServer} = await startHttpDebugServer();
-  const status = await connectToSocksServer(getSocksClientConfigV5({host, port}, httpOrigin));
+async function startSocksServer() {
+  return await runSocksOnTcpServer({
+    5: getSocksServerConfigV5(),
+    1: getSocksServerConfigVc1(),
+  });
+}
+
+async function conectAndShowFirstChunk(clientSocksConfig: SocksClientConfig) {
+  const status = await connectToSocksServer(clientSocksConfig);
   const {socket} = status;
   watchSocketState(socket, {colorStyle: {color: 'blue'}});
   socket.write(httpRequestBuffer);
@@ -28,24 +31,28 @@ export async function generalProcessV5() {
       res();
     });
   });
+}
+export async function generalProcessV5() {
+  const {host, port, server: socksServer} = await startSocksServer();
+  logColorful({}, 'start socks server:', {host, port});
+  const {origin: httpOrigin, server: httpServer} = await startHttpDebugServer();
+  await conectAndShowFirstChunk(getSocksClientConfigV5({host, port}, httpOrigin));
   httpServer.close();
-  // socksServer.close();
 }
 
 export async function generalProcessVc1() {
-  const socketServerInfo = await startSocketServerForSocks(getSocksServerConfigVc1());
-  const {host, port} = socketServerInfo;
+  const {host, port, server: socksServer} = await startSocksServer();
   logColorful({}, 'start socks server:', {host, port});
   const {origin: httpOrigin, server: httpServer} = await startHttpDebugServer();
-  const status = await connectToSocksServer(getSocksClientConfigVc1({host, port}, httpOrigin));
-  const {socket} = status;
-  watchSocketState(socket, {colorStyle: {color: 'blue'}});
-  socket.write(httpRequestBuffer);
-  await new Promise<void>((res, rej) => {
-    socket.on('data', chunk => {
-      console.log(chunk.toString());
-      res();
-    });
-  });
+  await conectAndShowFirstChunk(getSocksClientConfigVc1({host, port}, httpOrigin));
+  httpServer.close();
+}
+
+export async function generalProcessAll() {
+  const {host, port, server: socksServer} = await startSocksServer();
+  logColorful({}, 'start socks server:', {host, port});
+  const {origin: httpOrigin, server: httpServer} = await startHttpDebugServer();
+  await conectAndShowFirstChunk(getSocksClientConfigV5({host, port}, httpOrigin));
+  await conectAndShowFirstChunk(getSocksClientConfigVc1({host, port}, httpOrigin));
   httpServer.close();
 }

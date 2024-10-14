@@ -7,18 +7,18 @@ import {SocksError} from '../utils';
 export type TargetSocksServer = TcpNetConnectOpts | string;
 
 export interface NegotiationInfo {
-  v5: NegotiationInfoV5;
-  vc1: NegotiationInfoVc1;
+  5: NegotiationInfoV5;
+  1: NegotiationInfoVc1;
 }
 
 export interface NegotiationResult {
-  v5: NegotiationResultV5;
-  vc1: NegotiationResultVc1;
+  5: NegotiationResultV5;
+  1: NegotiationResultVc1;
 }
 
-export type SocksVersion = keyof NegotiationInfo;
+export type SocksVersion = 5 | 1;
 
-export type SocksClientConfig<Version extends SocksVersion> = NegotiationInfo[Version] & {
+export type SocksClientConfig<Version extends SocksVersion = any> = NegotiationInfo[Version] & {
   /** Identify socks version */
   socksVersion: Version;
   /** target socks server */

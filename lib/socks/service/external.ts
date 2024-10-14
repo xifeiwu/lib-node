@@ -28,5 +28,5 @@ export {
   getRequestInfo,
   startHttpServer,
   watchSocketState,
-  startTcpProxyServer as startTcpProxyServer,
+  startTcpProxyServer,
 } from '../../../index';

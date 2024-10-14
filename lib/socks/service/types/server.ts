@@ -8,8 +8,8 @@ import {StateTracer} from './base';
  * Config pre version
  */
 export interface ServerConfig {
-  v5: ServerConfigV5;
-  vc1: ServerConfigVc1;
+  5: ServerConfigV5;
+  1: ServerConfigVc1;
 }
 
 export interface MatchItem {
@@ -25,11 +25,15 @@ export type SocksProxyConfig<Version extends SocksVersion> = {
   matches: Array<MatchItem | string | RegExp>;
 } & Omit<SocksClientConfig<Version>, 'requestTarget'>;
 
-export type ProxyConfig = SocksProxyConfig<'v5'> | SocksProxyConfig<'vc1'>;
+export type ProxyConfig = SocksProxyConfig<5> | SocksProxyConfig<1>;
 
 export type SocksServerConfig<Version extends SocksVersion> = ServerConfig[Version] & {
   socksVersion: Version;
   proxyConfigList?: Array<ProxyConfig>;
+};
+
+export type AllSocksServerConfig = {
+  [v in SocksVersion]: SocksServerConfig<SocksVersion>;
 };
 
 /** connect status on server side */

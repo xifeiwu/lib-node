@@ -12,8 +12,8 @@ import {negotiation as infoNegotiationVc1} from './vc1/client';
 const infoNegotiation: {
   [version in SocksVersion]: NegotiationWithServer<SocksVersion>;
 } = {
-  v5: infoNegotiationV5,
-  vc1: infoNegotiationVc1,
+  5: infoNegotiationV5,
+  1: infoNegotiationVc1,
 };
 /**
  * Connect to socks server by socket from tcp connect or http upgrade

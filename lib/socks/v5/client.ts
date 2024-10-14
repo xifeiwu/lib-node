@@ -13,7 +13,7 @@ import {NegotiationWithServer} from '../service/types/client';
 import {Socket} from 'net';
 import {StateTracer} from '../service/types/base';
 
-export const negotiation: NegotiationWithServer<'v5'> = async (
+export const negotiation: NegotiationWithServer<5> = async (
   socket: Socket,
   negotiationInfo: NegotiationInfoClient,
   stateTracer?: StateTracer

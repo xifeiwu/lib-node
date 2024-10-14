@@ -7,7 +7,7 @@ import {ECommand} from '../service/types/v5';
 import {NegotiationInfoClient} from '../service/types/vc1';
 import {StateTracer} from '../service/types/base';
 
-export const negotiation: NegotiationWithServer<'vc1'> = async (
+export const negotiation: NegotiationWithServer<1> = async (
   socket: Socket,
   negotiationInfo: NegotiationInfoClient,
   stateTracer?: StateTracer

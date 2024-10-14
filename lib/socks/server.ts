@@ -29,15 +29,15 @@ import {handleConnectCommand} from './proxy';
 const negotiationWithClient: {
   [version in SocksVersion]: NegotiationWithClient<SocksVersion>;
 } = {
-  v5: negotiationV5,
-  vc1: negotiationVc1,
+  5: negotiationV5,
+  1: negotiationVc1,
 };
 
 const sendRequestTargetResponse: {
   [version in SocksVersion]: SendRequestTargetResponse<SocksVersion>;
 } = {
-  v5: sendRequestTargetResponseV5,
-  vc1: sendRequestTargetResponseVc1,
+  5: sendRequestTargetResponseV5,
+  1: sendRequestTargetResponseVc1,
 };
 
 /**

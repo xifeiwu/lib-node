@@ -23,7 +23,7 @@ import {StateTracer} from '../service/types/base';
 /**
  * To know what client side want to do
  */
-export const negotiation: NegotiationWithClient<'v5'> = async (
+export const negotiation: NegotiationWithClient<5> = async (
   socket: Socket,
   config: ServerConfig,
   stateTracer?: StateTracer

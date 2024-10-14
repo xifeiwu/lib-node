@@ -46,7 +46,7 @@ export async function startTcpProxyServer(
       isHandled = tcpHandler && (await tcpHandler(socket, bufferOfFirstLine));
     }
     if (isHandled === false) {
-      socket.end('not handle');
+      socket.writable && socket.end('not handle');
     }
   }, tcpServerConfig);
   return {host, port, server};
