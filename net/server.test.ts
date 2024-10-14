@@ -1,7 +1,7 @@
 import assert from 'assert';
 import {requestAndGetResponseInfo, startHttpDebugServer} from '../http';
 import {startSocketClient} from '../net';
-import {startRedirectSocketServer} from './server';
+import {startTcpProxyServer} from './server';
 import {Socket} from 'net';
 
 async function getHttpHandler() {
@@ -18,7 +18,7 @@ function tcpHandler(socket: Socket, chunk: Buffer) {
   });
 }
 export async function testStartProxyableTcpServer() {
-  const {host, port, server} = await startRedirectSocketServer({
+  const {host, port, server} = await startTcpProxyServer({
     httpHandler: await getHttpHandler(),
     tcpHandler,
   });

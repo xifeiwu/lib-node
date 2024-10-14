@@ -1,12 +1,12 @@
 import {
   startHttpServer,
-  startRedirectSocketServer,
+  startTcpProxyServer,
   startSocketClient,
   tcpRequestPropsToBuffer,
   toBuffer,
 } from '../service/external';
 import {handleSocksConnection} from '../server';
-import {SocksClientConfig, SocksServerConfig, SocksServerInfo, TargetSocksServer} from '../service/types';
+import {SocksClientConfig, SocksServerConfig, SocksServerInfo, SocksVersion, TargetSocksServer} from '../service/types';
 import {EMethod, NegotiationInfoClient as NegotiationInfoClientV5, UserPassInfo} from '../service/types/v5';
 import {RequestTarget} from '../service/types/base';
 import {Socket} from 'net';
@@ -47,13 +47,15 @@ export async function startSocketServerForSocks(socksServerConfig: SocksServerCo
     socket.pipe(proxyClient).pipe(socket);
   };
 
-  return await startRedirectSocketServer({
+  return await startTcpProxyServer({
     tcpHandler: socksHandler,
     httpHandler,
   });
 }
 
-export async function runSocksOnTcpServer() {
+export async function runSocksOnTcpServer(config: {
+  [v in SocksVersion]: SocksServerConfig<SocksVersion>
+}, ) {
   
 }
 

@@ -15,7 +15,7 @@ function isHttpRequest(buffer: Buffer) {
  * @param tcpServerConfig
  * @returns
  */
-export async function startRedirectSocketServer(
+export async function startTcpProxyServer(
   config: {
     onConnection?: (socket: Socket) => Promise<boolean | void>;
     httpHandler?: (socket: Socket) => void;
