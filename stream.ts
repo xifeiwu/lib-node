@@ -92,6 +92,7 @@ export function getDataByTransform(
 export function getOneLineFromReader(
   reader: Readable,
   options?: {
+    /** retrn first chunk when not find '\r\n' on first chunk  */
     firstChunkOnly?: boolean;
   }
 ): Promise<Buffer> {

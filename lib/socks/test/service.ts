@@ -2,8 +2,6 @@ import {
   startHttpServer,
   startRedirectSocketServer,
   startSocketClient,
-  startSocketServer,
-  convertToBuffer,
   tcpRequestPropsToBuffer,
   toBuffer,
 } from '../service/external';
@@ -54,6 +52,12 @@ export async function startSocketServerForSocks(socksServerConfig: SocksServerCo
     httpHandler,
   });
 }
+
+export async function runSocksOnTcpServer() {
+  
+}
+
+
 export function getSocksServerConfigV5(config?: Partial<SocksServerConfig<'v5'>>) {
   const socksServerConfig: SocksServerConfig<'v5'> = {
     socksVersion: 'v5',
@@ -86,10 +90,6 @@ export function getSocksClientConfigV5(socksServer: TargetSocksServer, requestTa
   return info;
 }
 
-export async function startSocketServerForSocksVc1(config?: Partial<SocksServerConfig<'vc1'>>) {
-  const socksServerConfig: SocksServerConfig<'vc1'> = {socksVersion: 'vc1', auth: auth, ...(config ?? {})};
-  return startSocketServerForSocks(socksServerConfig);
-}
 export function getSocksClientConfigVc1(socksServer: TargetSocksServer, requestTarget: RequestTarget) {
   const info: SocksClientConfig<'vc1'> = {
     socksVersion: 'vc1',
