@@ -2,7 +2,7 @@ import {Socket} from 'net';
 import {startSocketClient, startSocketServer} from '../net';
 import {getOneLineFromReader} from '../stream';
 import {httpFirstLineReg} from '../constants';
-import {Protocol, TcpHandler, TcpServerConfig} from '../types';
+import {HttpHandler, Protocol, TcpHandler, TcpServerConfig} from '../types';
 import {isSocksProtocol, SocksVersion} from '../lib/socks';
 
 function isHttpRequest(buffer: Buffer) {
@@ -44,7 +44,7 @@ export async function startTcpProxyServer(
      * else return undefined or true means it's handled by httpHander or tcpHandler
      * httpHandler has high priority than httpServerInfo, as caller can do more customized action,
      */
-    httpHandler?: (socket: Socket, info: {firstChunk}) => Promise<boolean | void>;
+    httpHandler?: HttpHandler;
     httpServerInfo?: {
       host: string;
       port: number;

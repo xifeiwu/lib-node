@@ -40,3 +40,4 @@ export type TcpHandler = (
   socket: Socket,
   info: {protocol: Protocol; firstChunk: Buffer}
 ) => Promise<boolean | void>;
+export type HttpHandler = (socket: Socket, info: {firstChunk}) => Promise<boolean | void>;
