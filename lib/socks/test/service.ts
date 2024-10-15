@@ -117,8 +117,8 @@ export async function startTcpServerForSocks(socksServerConfig: Partial<SocksSer
     }
     infoList.unshift(info);
   };
-  const tcpHandler = async (socket: Socket, firstChunk: Buffer) => {
-    return handleAsSocks(socket, firstChunk);
+  const tcpHandler = async (socket: Socket, info) => {
+    return handleAsSocks(socket, info.firstChunk);
   };
   const httpHandler = async (socket: Socket) => {
     const {host, port} = httpServerInfo;

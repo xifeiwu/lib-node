@@ -42,8 +42,9 @@ export async function startTcpProxyServer(
     /**
      * return false means connection is not handled
      * else return undefined or true means it's handled by httpHander or tcpHandler
+     * httpHandler has high priority than httpServerInfo, as caller can do more customized action,
      */
-    // httpHandler?: (socket: Socket, info: {firstChunk}) => Promise<boolean | void>;
+    httpHandler?: (socket: Socket, info: {firstChunk}) => Promise<boolean | void>;
     httpServerInfo?: {
       host: string;
       port: number;
@@ -52,7 +53,7 @@ export async function startTcpProxyServer(
   },
   tcpServerConfig?: TcpServerConfig
 ) {
-  const {onConnection, httpServerInfo, tcpHandler} = config;
+  const {onConnection, httpHandler, httpServerInfo, tcpHandler} = config;
   function closeSocket(socket: Socket, protocol?: Protocol) {
     const message = protocol !== undefined ? `Not handle protocol: ${protocol}` : `Protocol is unknown`;
     socket.writable && socket.end(message);
@@ -67,12 +68,15 @@ export async function startTcpProxyServer(
     if (protocol === undefined) {
       return closeSocket(socket);
     }
-
     let isHandled;
-    if (protocol === 'http' && httpServerInfo) {
-      const proxySocket = await startSocketClient(httpServerInfo);
-      socket.pipe(proxySocket).pipe(socket);
-      isHandled = true;
+    if (protocol === 'http' && (httpHandler || httpServerInfo)) {
+      if (httpHandler) {
+        isHandled = httpHandler(socket, {firstChunk});
+      } else {
+        const proxySocket = await startSocketClient(httpServerInfo);
+        socket.pipe(proxySocket).pipe(socket);
+        isHandled = true;
+      }
     } else {
       // foundHandler = Boolean(tcpHandler);
       isHandled = tcpHandler && (await tcpHandler(socket, {protocol, firstChunk}));
