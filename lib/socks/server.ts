@@ -121,7 +121,7 @@ export async function handleSocksConnection<Version extends SocksVersion>(
     if (isSocketActive) {
       socket.end(message);
     }
-    stateTracer.push(`${SERVER_STATE.catchError}: ${serializeErrorInfo(err)}`);
+    stateTracer.push(`${SERVER_STATE.catchError}: ${JSON.stringify(serializeErrorInfo(err))}`);
   } finally {
     info.stateTracer = stateTracer;
   }
