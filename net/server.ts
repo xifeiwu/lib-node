@@ -4,6 +4,7 @@ import {getOneLineFromReader} from '../stream';
 import {httpFirstLineReg} from '../constants';
 import {HttpHandler, Protocol, TcpHandler, TcpServerConfig} from '../types';
 import {isSocksProtocol, SocksVersion} from '../lib/socks';
+import {responseHttpConnection} from '../tcp-http';
 
 function isHttpRequest(buffer: Buffer) {
   const str = buffer.toString();
@@ -55,8 +56,10 @@ export async function startTcpProxyServer(
 ) {
   const {onConnection, httpHandler, httpServerInfo, tcpHandler} = config;
   function closeSocket(socket: Socket, protocol?: Protocol) {
-    const message = protocol !== undefined ? `Not handle protocol: ${protocol}` : `Protocol is unknown`;
-    socket.writable && socket.end(message);
+    responseHttpConnection(socket, {
+      code: 400,
+      message: `No handler found for protocol: ${protocol}`,
+    });
   }
 
   const {host, port, server} = await startSocketServer(async socket => {

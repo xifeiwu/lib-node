@@ -24,12 +24,13 @@ export function responseHttpConnection(
 
   socket.once('finish', socket.destroy);
 
-  socket.end(
-    `HTTP/1.1 ${code} ${http.STATUS_CODES[code]}\r\n` +
-      Object.keys(mergedHeaders)
-        .map(h => `${h}: ${mergedHeaders[h]}`)
-        .join('\r\n') +
-      '\r\n\r\n' +
-      message
-  );
+  socket.writable &&
+    socket.end(
+      `HTTP/1.1 ${code} ${http.STATUS_CODES[code]}\r\n` +
+        Object.keys(mergedHeaders)
+          .map(h => `${h}: ${mergedHeaders[h]}`)
+          .join('\r\n') +
+        '\r\n\r\n' +
+        message
+    );
 }
