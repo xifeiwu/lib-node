@@ -147,6 +147,12 @@ type ProtocolInfo =
   | {
       protocol: 'socks5';
     };
+
+/**
+ * @deprecated replace by getConnectionProtocol in file ../server.ts
+ * @param chunk
+ * @returns
+ */
 export function getProtocolInfoByFirstChunk(chunk: Buffer): ProtocolInfo {
   const index = chunk.findIndex((it, index) => {
     return it === 0x0d && chunk[index + 1] === 0x0a;

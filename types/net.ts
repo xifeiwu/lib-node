@@ -1,6 +1,7 @@
 import {Socket, TcpNetConnectOpts, SocketReadyState, Server} from 'net';
 import {CanConvertToBuffer} from './transform';
 import {HttpUpgradeConfig} from './http';
+import {SocksVersion} from './socks';
 
 export type GetSocketOptions = TcpNetConnectOpts | HttpUpgradeConfig | Socket;
 
@@ -28,3 +29,14 @@ export interface SocketServerInfo {
 }
 
 export type OneChatHandler = (data: Buffer) => Promise<CanConvertToBuffer>;
+
+export type Protocol = 'http' | SocksVersion;
+
+/**
+ * Return false means there is not handler found for protocol
+ * Else means the connection handled success
+ */
+export type TcpHandler = (
+  socket: Socket,
+  info: {protocol: Protocol; firstChunk: Buffer}
+) => Promise<boolean | void>;
