@@ -1,11 +1,6 @@
 import {CLIENT_STATE, getSocketToSocksServer, pushState} from './';
 import {SocksClientInfo} from './types';
-import {
-  NegotiationResult,
-  NegotiationWithServer,
-  SocksClientConfig,
-  SocksVersion,
-} from './types/client';
+import {NegotiationResult, NegotiationWithServer, SocksClientConfig, SocksVersion} from './types';
 import {negotiation as infoNegotiationV5} from './v5/client';
 import {negotiation as infoNegotiationVc1} from './vc1/client';
 

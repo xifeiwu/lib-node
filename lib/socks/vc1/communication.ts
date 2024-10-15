@@ -5,6 +5,7 @@ import {
   ERRORS,
   bufferToTargeServiceInfo,
   createError,
+  listenTimeOut,
   targetServiceInfoToBuffer,
   toRequestTargetV5,
 } from '..';
@@ -86,7 +87,9 @@ export async function clientSendNegotiationInfo(writer: Writable, info: Negotiat
 export async function serverWaitNegotiationInfo(reader: Readable) {
   reader.resume();
   return new Promise<NegotiationInfoServer>((res, rej) => {
+    const timeoutTag = listenTimeOut(rej, {errMessage: 'serverWaitNegotiationInfo'});
     reader.once('data', (chunk: Buffer) => {
+      clearTimeout(timeoutTag);
       reader.pause();
       let baseIndex = 0;
       const version = chunk[baseIndex];
@@ -213,7 +216,9 @@ export async function serverSendRequestTargetResponse(
 export async function clientWaitRequestTargetResponse(reader: Readable, iv: BinaryLike) {
   reader.resume();
   return new Promise<RequestTargetResponseV5>((res, rej) => {
+    const timeoutTag = listenTimeOut(rej, {errMessage: 'clientWaitRequestTargetResponse'});
     reader.once('data', (chunk: Buffer) => {
+      clearTimeout(timeoutTag);
       reader.pause();
       const buffer = decript(chunk, iv);
       const [version, reply, _reserve] = buffer;

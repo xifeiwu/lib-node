@@ -34,7 +34,9 @@ export type SocksServerConfig<Version extends SocksVersion = any> = ServerConfig
 };
 
 export type SocksServerConfigPerVersion = {
-  [v in SocksVersion]: SocksServerConfig<SocksVersion>;
+  1: SocksServerConfig[1];
+  5: SocksServerConfig[5];
+  // [v in SocksVersion]: SocksServerConfig<SocksVersion>;
 };
 
 /** connect status on server side */

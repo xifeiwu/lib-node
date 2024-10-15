@@ -1,4 +1,4 @@
-import {SocksVersion} from '../types/base';
+import {SocksVersion} from '../types';
 
 export const PROTOCOL_BYTE: SocksVersion = 0x05;
 

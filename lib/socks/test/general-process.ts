@@ -14,10 +14,11 @@ import {
 import {SocksClientConfig} from '..';
 
 async function startSocksServer() {
-  return await startTcpServerForSocks({
+  const socksConfig = {
     5: getSocksServerConfigV5(),
     1: getSocksServerConfigVc1(),
-  });
+  };
+  return await startTcpServerForSocks(socksConfig);
 }
 
 async function conectAndShowFirstChunk(clientSocksConfig: SocksClientConfig) {
