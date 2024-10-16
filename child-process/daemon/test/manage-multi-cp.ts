@@ -1,8 +1,7 @@
-import {SpawnOptions} from 'child_process';
 import {getScriptFullpath} from '../../run-on-cp';
 import {logColorful, CP, getSocketPath, Daemon, getCpConfigByScriptPath} from '../../../index';
 import {startDetachedDaemon} from '../service';
-import {SocketClient} from '../client';
+import {SocketClientToDaemon} from '../client';
 
 // const debugMode = true;
 // const stdio: SpawnOptions['stdio'] = debugMode ? [0, 1, 2, 'ipc'] : ['ignore', 'ignore', 'ignore', 'ipc'];
@@ -43,7 +42,7 @@ const spawnDebugServer2: Daemon.CpManagerConfig = {
 
 const daemonKey = 'testStartDetachedDaemon';
 const socketPath = getSocketPath(daemonKey);
-const socketClient = new SocketClient({path: socketPath});
+const socketClient = new SocketClientToDaemon({path: socketPath});
 
 export async function runDetachedDaemon() {
   const spawnResponse = await startDetachedDaemon(

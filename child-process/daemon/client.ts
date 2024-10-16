@@ -57,7 +57,7 @@ export async function checkDaemonSocketActivityByDir(dirname?: string, config?: 
   return {active, deactive};
 }
 
-export class SocketClient {
+export class SocketClientToDaemon {
   connectOpts: NetConnectOpts;
   constructor(connectOpts: NetConnectOpts) {
     this.connectOpts = connectOpts;

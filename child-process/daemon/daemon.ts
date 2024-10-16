@@ -308,7 +308,7 @@ export class CpDaemon {
     }
   }
   /**
-   * Stop all child process and daemon process
+   * Stop daemon process and all it's child process it managed
    */
   async stopDaemon() {
     const {cpManagerMap, connectInfo} = this;
@@ -365,13 +365,17 @@ export class CpDaemon {
    * @param id daemon id or child process id
    * @returns
    */
-  getInfo(id: string) {
+  getInfo(id?: string) {
     const {config, cpManagerMap} = this;
-    const cpManager = cpManagerMap[id];
-    if (cpManager) {
+    if (id === undefined || id === config.id) {
+      return this.getDaemonInfo();
+    } else {
+      const cpManager = cpManagerMap[id];
+      if (!cpManager) {
+        throw new Error(`Not found cpManager with id: ${id}`);
+      }
       return cpManager.getInfo();
     }
-    return this.getDaemonInfo();
   }
   /**
    * get cpManager by config, create a new cpManager is cpConfig is passed
