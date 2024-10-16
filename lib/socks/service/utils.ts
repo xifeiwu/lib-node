@@ -264,7 +264,7 @@ export function getMatchedProxyConfig(target: RequestTargetV5, config: ProxyConf
     if (isRegExp(address)) {
       result &&= (address as RegExp).test(target.address);
     } else if (isString(address)) {
-      result &&= target.address.includes(address);
+      result &&= target.address.includes(address as string);
     } else {
       result = false;
     }
@@ -285,7 +285,7 @@ export function toRequestTargetV5(
 ): RequestTargetV5 {
   let result: RequestTargetV5;
   if (isString(requestTarget)) {
-    const url = toUrlInstance({origin: requestTarget});
+    const url = toUrlInstance({origin: requestTarget as string});
     const {protocol, hostname} = url;
     let port = protocol === 'https:' ? 443 : protocol === 'http:' ? 80 : 0;
     if (url.port) {
@@ -296,7 +296,7 @@ export function toRequestTargetV5(
       port,
     };
   } else {
-    result = requestTarget;
+    result = requestTarget as RequestTargetV5;
   }
   if (command) {
     result.command = command;
@@ -388,7 +388,7 @@ export async function getSocketToSocksServer(target: TargetSocksServer, socksVer
   let socket: Socket;
   if (isString(target)) {
     const result = await requestAndGetUpgradeInfo({
-      href: target,
+      href: target as string,
       headers: {
         upgrade: UPGRADE_PROTOCOL_SOCKS_PREFIX + (socksVersion ?? ''),
       },
