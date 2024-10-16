@@ -166,22 +166,26 @@ class CpManager {
     }
     const {spawnConfig: spawnOptions} = config;
     this.changeStatus('toSpawn');
-    const spawnInfo = await spawnAndTryIpc(spawnOptions);
-    if (cpInfo) {
-      this.cpInfoHistory.push(serializeCpInfo(cpInfo));
+    try {
+      const spawnInfo = await spawnAndTryIpc(spawnOptions);
+      if (cpInfo) {
+        this.cpInfoHistory.push(serializeCpInfo(cpInfo));
+      }
+      this.cpInfo = {
+        spawnConfig: spawnOptions,
+        ...spawnInfo,
+      };
+      const {childProcess} = spawnInfo;
+      if (childProcess) {
+        this.changeStatus('running');
+        childProcess.once('exit', code => {
+          this.onExit();
+        });
+      }
+      return this.cpInfo;
+    } catch (err) {
+      this.changeStatus('exited');
     }
-    this.cpInfo = {
-      spawnConfig: spawnOptions,
-      ...spawnInfo,
-    };
-    const {childProcess} = spawnInfo;
-    if (childProcess) {
-      this.changeStatus('running');
-      childProcess.once('exit', code => {
-        this.onExit();
-      });
-    }
-    return this.cpInfo;
   }
 
   async start(config?: Daemon.CpManagerConfig) {
@@ -307,6 +311,40 @@ export class CpDaemon {
       }
     }
   }
+  getDaemonInfo() {
+    const {config, connectInfo, cpManagerMap} = this;
+    const {cpManagerConfigList: cpConfigList, ...restConfig} = config ?? {};
+    const daemonInfo: Daemon.DaemonInfo = {
+      pid: process.pid,
+      config: restConfig,
+      status: {connection: {}},
+      cpInfoList: Object.values(cpManagerMap).map(it => it.getInfo({simple: true})),
+    };
+    if (connectInfo) {
+      const {socket} = connectInfo;
+      if (socket) {
+        daemonInfo.status.connection.socket = serializeSocketServerInfo(socket);
+      }
+    }
+    return daemonInfo;
+  }
+  /**
+   * Return child process if cpManager exist, else return daemon info.
+   * @param id daemon id or child process id
+   * @returns
+   */
+  getInfo(id?: string) {
+    const {config, cpManagerMap} = this;
+    if (id === undefined || id === config.id) {
+      return this.getDaemonInfo();
+    } else {
+      const cpManager = cpManagerMap[id];
+      if (!cpManager) {
+        throw new Error(`Not found cpManager with id: ${id}`);
+      }
+      return cpManager.getInfo();
+    }
+  }
   /**
    * Stop daemon process and all it's child process it managed
    */
@@ -341,40 +379,6 @@ export class CpDaemon {
       await this.stopDaemon();
     } else {
       throw new Error(`No target found by id: ${id}`);
-    }
-  }
-  getDaemonInfo() {
-    const {config, connectInfo, cpManagerMap} = this;
-    const {cpManagerConfigList: cpConfigList, ...restConfig} = config ?? {};
-    const daemonInfo: Daemon.DaemonInfo = {
-      pid: process.pid,
-      config: restConfig,
-      status: {connection: {}},
-      cpInfoList: Object.values(cpManagerMap).map(it => it.getInfo({simple: true})),
-    };
-    if (connectInfo) {
-      const {socket} = connectInfo;
-      if (socket) {
-        daemonInfo.status.connection.socket = serializeSocketServerInfo(socket);
-      }
-    }
-    return daemonInfo;
-  }
-  /**
-   * Return child process if cpManager exist, else return daemon info.
-   * @param id daemon id or child process id
-   * @returns
-   */
-  getInfo(id?: string) {
-    const {config, cpManagerMap} = this;
-    if (id === undefined || id === config.id) {
-      return this.getDaemonInfo();
-    } else {
-      const cpManager = cpManagerMap[id];
-      if (!cpManager) {
-        throw new Error(`Not found cpManager with id: ${id}`);
-      }
-      return cpManager.getInfo();
     }
   }
   /**
@@ -420,6 +424,14 @@ export class CpDaemon {
     }
     return cpManager;
   }
+  /**
+   * Daemon Only: ping
+   * Both Daemon and cpManager: info, stop
+   * cpManager Only: start, restart
+   * If you want to restart Daemon, should stop and then start
+   * @param command
+   * @returns
+   */
   async handleCommand(command: Daemon.Command): Promise<Daemon.DaemonResponse> {
     const {config} = this;
     const {action, data: cpConfigOrId} = command;

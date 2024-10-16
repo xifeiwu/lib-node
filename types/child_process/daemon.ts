@@ -1,4 +1,4 @@
-import {SerializableSpawnInfo, SpawnAndTryIpcConfig, SpawnAndTryIpcResponse} from './common';
+import {SpawnAndTryIpcConfig, SpawnAndTryIpcResponse} from './common';
 import {TcpServerConfig} from '../tcp';
 import {SocketServerInfo} from '../net';
 
@@ -6,19 +6,6 @@ import {SocketServerInfo} from '../net';
  * Types for child process of Daemon
  */
 export namespace Daemon {
-  // /** Extral Cp config for running on daemon process */
-  // interface DaemonCpConfig {
-  //   /** id used to identify the child process  */
-  //   id: string;
-  //   retry?: {
-  //     /** max count of retry */
-  //     maxCount?: number;
-  //     /** Minimum time before next spawn to make sure all resources are released for prvious cp. */
-  //     minInterval?: number;
-  //   };
-  // }
-  // /** Config for child process of Daemon process */
-  // export interface CpConfig extends SpawnAndTryIpcConfig, DaemonCpConfig {}
   export interface CpManagerConfig {
     /** id used to identify the child process  */
     id: string;
@@ -90,8 +77,8 @@ export namespace Daemon {
     cpInfoList: CpManagerInfo[];
   }
 
-  export type Action2Cp = 'start' | 'restart';
   export type Action2Daemon = 'ping';
+  export type Action2Cp = 'start' | 'restart';
   export type ActionCommon = 'info' | 'stop';
 
   export interface Command2Process {
