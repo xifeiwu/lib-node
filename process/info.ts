@@ -79,8 +79,8 @@ export async function getProcessInfo(options?: GetProcessInfoOptions): Promise<P
   const filterFunc = getFilterFunc(filter);
   let processLister;
   // const props = ['pid', 'ppid', 'pgid', 'sess', 'rss', 'vsz', 'pcpu', 'args', 'user', 'time'];
-  const propsWithNumberType: ProcessProps[] = ['pid', 'ppid', 'pgid', 'sess', 'rss'];
-  const propsWithStringtype: ProcessProps[] = ['command'];
+  const propsWithNumberType: ProcessProps[] = ['pid', 'ppid', 'pgid', 'cpu', 'rss', 'vsize'];
+  const propsWithStringtype: ProcessProps[] = ['etime', 'command'];
   const props: ProcessProps[] = [...propsWithNumberType, ...propsWithStringtype];
   if (process.platform === 'win32') {
     // win32 is not supported

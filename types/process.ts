@@ -2,8 +2,10 @@ export type ProcessInfo = {
   pid: number;
   ppid: number;
   pgid: number;
-  sess: number;
+  cpu: number;
   rss: number;
+  vsize: number;
+  etime: string;
   command: string;
   children?: ProcessInfo[];
 };
