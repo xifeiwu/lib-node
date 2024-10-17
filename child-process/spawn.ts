@@ -168,6 +168,7 @@ export async function spawnAndTryIpc<InfoToCp = any, ResponseFromCp = any>(
   const childProcess = spawn(command, args, spawnOptions);
   const supportIpc = Boolean(childProcess.send);
   if (infoToCp && !supportIpc) {
+    /** Shoule kill child process created when throw Error */
     childProcess.kill();
     throw new Error(`Please set ipc channel in spawnOption.stdio, or set infoToCp to false.`);
   }
