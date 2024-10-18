@@ -1,6 +1,7 @@
+import path from 'path';
 import {Daemon} from '../../types';
-import {getCpConfigByScriptName} from '../run-on-cp';
 import {getCpConfigByScriptPath, serializeSpawnResponse, spawnAndTryIpc} from '../spawn';
+import {tryUseJsFile} from '../service';
 
 const MAX_WAIT_TIME_DEBUG_MODE = 120;
 export async function startDetachedDaemon(
@@ -22,7 +23,8 @@ export async function startDetachedDaemon(
       spawnConfig.maxWaitTime4Ipc = MAX_WAIT_TIME_DEBUG_MODE;
     }
   }
-  const spawnConfig4Daemon = getCpConfigByScriptName<Daemon.DaemonConfig>('daemon.ts', {
+  const scriptPath = tryUseJsFile(path.resolve(__dirname, '../run-on-cp/daemon.ts'));
+  const spawnConfig4Daemon = getCpConfigByScriptPath<Daemon.DaemonConfig>(scriptPath, {
     /** args key is used for killing Zombie Daemon Process */
     params: [daemonKey],
     infoToCp: {
@@ -45,22 +47,3 @@ export async function startDetachedDaemon(
   // console.log(responseFromCp instanceof Error);
   return serializeSpawnResponse(spawnResponse);
 }
-
-/**
- * Used to get Daemon's cpConfig for a .ts script
- * @param fullPath
- * @param options
- * @returns
- */
-// export function getDaemonCpConfigByScriptPath<CpConfig = any>(
-//   fullPath: string,
-//   options?: Partial<Daemon.CpManagerConfig>
-// ): Daemon.CpManagerConfig {
-//   const {id, retry, ...restOptions} = options ?? {};
-//   const spawnConfig = getCpConfigByScriptPath<CpConfig>(fullPath, restOptions);
-//   return {
-//     id,
-//     retry,
-//     ...spawnConfig,
-//   };
-// }
