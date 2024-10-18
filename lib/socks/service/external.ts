@@ -39,4 +39,5 @@ export {
   getUpgradeProtocol,
   getUpgradeResponse,
   responseInfoToBuffer,
+  getDataFromReadable,
 } from '../../../index';

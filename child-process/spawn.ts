@@ -90,7 +90,7 @@ export function getSpawnConfigByScriptPath(fullPath: string, options?: SpawnTsFi
   const suffix = path.basename(fullPath).split('.').pop().toLowerCase();
   let command = '';
   let args: string[] = [];
-  const {tsNodeOptions, params, spawnOptions} = options ?? {};
+  const {tsNodeOptions, params = [], spawnOptions} = options ?? {};
   if (suffix === 'ts') {
     command = 'ts-node';
     args = getTsParams(fullPath, {tsNodeOptions, params});
