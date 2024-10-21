@@ -3,6 +3,7 @@ export * from './http';
 export * from './net';
 export * from './log';
 export * from './transform';
+export * from './stream';
 export * from './config';
 export * from './test';
 export * from './process';

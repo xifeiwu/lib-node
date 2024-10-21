@@ -1,5 +1,7 @@
 import {Writable} from 'stream';
 import {toBuffer} from '../transform';
+import {WatchStreamOptions} from '../types';
+import {logColorful} from '../log';
 
 /**
  * Get writer with data write to a buffer
@@ -25,4 +27,17 @@ export function getCacheWriter() {
     });
   });
   return {writer, waitCacheData};
+}
+
+export function watchWritableState(writer: Writable, options?: WatchStreamOptions) {
+  const {colorStyle = {color: 'black'}, logPrefix = ''} = options ?? {};
+  const eventNameList = ['drain', 'finish', 'pipe', 'unpipe', 'error', 'close'];
+  for (const eventName of eventNameList) {
+    writer.on(eventName, chunkOrError => {
+      logColorful(colorStyle, `${logPrefix} writer on-${eventName}`);
+      if (eventName === 'error') {
+        colorStyle && logColorful(colorStyle, chunkOrError.stack);
+      }
+    });
+  }
 }

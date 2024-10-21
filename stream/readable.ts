@@ -1,13 +1,15 @@
-import stream, {Transform, Readable, Writable} from 'stream';
-import {waitFor} from '../external';
+import stream, {Transform, Readable} from 'stream';
+import {isNumber} from '../external';
 import {
   DataTypeFromBuffer,
+  ReadableEvent,
   TargetDataTypeFromBuffer,
   fromBuffer,
+  logColorful,
   toBuffer,
-  getBufferMatcher,
-  CanConvertToBuffer,
 } from '../index';
+import {getBufferMatcher} from '../general';
+import {CanConvertToBuffer, WatchStreamOptions} from '../types';
 
 export function getDataFromReadable(reader: Readable): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -27,31 +29,6 @@ export function getDataFromReadable(reader: Readable): Promise<Buffer> {
   });
 }
 
-/**
- * Get writer with data write to a buffer
- * @returns
- */
-export function getCacheWriter() {
-  const bufferList: Buffer[] = [];
-  const writer = new Writable({
-    write(chunk, _enc, cb) {
-      bufferList.push(toBuffer(chunk));
-      cb && cb();
-    },
-    final(cb) {
-      cb && cb();
-    },
-  });
-  const waitCacheData = new Promise<Buffer>((res, rej) => {
-    writer.on('finish', () => {
-      res(Buffer.concat(bufferList));
-    });
-    writer.on('error', err => {
-      rej(err);
-    });
-  });
-  return {writer, waitCacheData};
-}
 /**
  * @param {data}, null stands for end the reader immediately
  * TODO: use toBuffer
@@ -174,25 +151,32 @@ export function getOneLineFromBuffer(buffer: Buffer) {
   };
 }
 
-// TODO: fix stream.push() after EOF
-export function slowStream(chunkSize = 1024, wait = 500) {
-  return new stream.Transform({
-    async transform(data, enc, next) {
-      const dataSize = data.length;
-      let pos = 0;
-      let chunk = null;
-      while (pos < dataSize) {
-        let size = chunkSize;
-        if (pos + chunkSize > dataSize) {
-          size = dataSize - pos;
-        }
-        chunk = Buffer.alloc(size);
-        data.copy(chunk, 0, pos, pos + size);
-        await waitFor(wait);
-        this.push(chunk);
-        pos += size;
+export function watchReadableState(reader: Readable, options?: WatchStreamOptions) {
+  const {colorStyle = {color: 'black'}, logPrefix = '', maxPrintSizeOnData} = options ?? {};
+  /**
+   * Event readable, data will change flowMode of Readable, so it will not in event list by default.
+   * NOTICE: data, readable can not be listened together.
+   */
+  const eventNameList: ReadableEvent[] = ['pause', 'resume', 'end', 'error', 'close'];
+  if (isNumber(maxPrintSizeOnData)) {
+    reader.on('data', chunk => {
+      const {byteLength} = chunk;
+      logColorful(colorStyle, `${logPrefix} reader on-${'data'} [size: ${byteLength}]`);
+      // console.log(chunk.toString());
+      logColorful(
+        colorStyle,
+        byteLength > maxPrintSizeOnData
+          ? chunk.subarray(0, maxPrintSizeOnData).toString() + '...'
+          : chunk.toString()
+      );
+    });
+  }
+  for (const eventName of eventNameList) {
+    reader.on(eventName, chunkOrError => {
+      colorStyle && logColorful(colorStyle, `${logPrefix} reader on-${eventName}`);
+      if (eventName === 'error') {
+        colorStyle && logColorful(colorStyle, chunkOrError.stack);
       }
-      next();
-    },
-  });
+    });
+  }
 }
