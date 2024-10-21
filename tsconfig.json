@@ -12,6 +12,5 @@
     "allowSyntheticDefaultImports": true,
     "moduleResolution": "node",
     "types": ["node"],
-    "baseUrl": ".",
   },
 }

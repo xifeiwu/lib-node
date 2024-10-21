@@ -1,8 +1,13 @@
 import stream, {Transform, Readable, Writable} from 'stream';
-import {waitFor} from './external';
-import {DataTypeFromBuffer, TargetDataTypeFromBuffer, fromBuffer, toBuffer} from './transform';
-import {getBufferMatcher} from './general';
-import {CanConvertToBuffer} from './types';
+import {waitFor} from '../external';
+import {
+  DataTypeFromBuffer,
+  TargetDataTypeFromBuffer,
+  fromBuffer,
+  toBuffer,
+  getBufferMatcher,
+  CanConvertToBuffer,
+} from '../index';
 
 export function getDataFromReadable(reader: Readable): Promise<Buffer> {
   return new Promise((resolve, reject) => {
