@@ -246,6 +246,12 @@ export function httpRequestOptionsToCurlCommand(options: HttpRequestOptions) {
   ].join(' ');
   return command;
 }
+export function responseErrorToCurlCommand(err: ResponseError) {
+  if (!err.isResponseError) {
+    return err;
+  }
+  return httpRequestOptionsToCurlCommand(err.requestOptions);
+}
 
 export function makeSureHttpRequestOptionsSerializable(options: HttpRequestOptions) {
   const {agent, ...restProps} = options;
