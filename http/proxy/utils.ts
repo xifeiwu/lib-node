@@ -24,9 +24,9 @@ export function getPreRequestCb(config: {
     proxyStatus.id = id;
     const {
       origin: {method, url},
-      proxy: {href},
+      proxy,
     } = reqInfo;
-    logWithColor(color ?? 'yellow', `[${id}]: ${method.toUpperCase()} ${url} -> ${href}`);
+    logWithColor(color ?? 'yellow', `[${id}]: ${method.toUpperCase()} ${url} -> ${proxy.origin + proxy.url}`);
     if (isNumber(maxAge) && maxAge > 0) {
       const now = Date.now();
       for (let i = statusList.length; i >= 0; i--) {
