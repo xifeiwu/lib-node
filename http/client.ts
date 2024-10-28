@@ -14,6 +14,8 @@ import {
 import {HttpRequestOptions, HttpResponseInfo, HttpRequestPayload, ValidateStatus} from '../types';
 import {Readable, isReadable} from 'stream';
 
+process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
+
 export function mergeHttpRequestOptions(
   options1: HttpRequestOptions,
   options2?: HttpRequestOptions
