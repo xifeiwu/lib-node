@@ -40,3 +40,8 @@ export type NegotiationWithServer<Version extends SocksVersion> = (
   negotiationInfo: NegotiationInfo[Version],
   stateTracer?: StateTracer
 ) => Promise<NegotiationResult[Version]>;
+
+export type GetWrappedSocket<Version extends SocksVersion> = (
+  socket: Socket,
+  info: NegotiationResult[Version]
+) => Socket;

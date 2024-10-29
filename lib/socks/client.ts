@@ -1,4 +1,5 @@
-import {CLIENT_STATE, getSocketToSocksServer, pushState} from './';
+import {CLIENT_STATE, getSocketToSocksServer, GetWrappedSocket, pushState} from './';
+import {getWrapSocketFunc} from './service/common';
 import {SocksClientInfo} from './types';
 import {NegotiationResult, NegotiationWithServer, SocksClientConfig, SocksVersion} from './types';
 import {negotiation as infoNegotiationV5} from './v5/client';
@@ -10,6 +11,7 @@ const infoNegotiation: {
   5: infoNegotiationV5,
   1: infoNegotiationVc1,
 };
+
 /**
  * Connect to socks server by socket from tcp connect or http upgrade
  * @param config
@@ -30,12 +32,13 @@ export async function connectToSocksServer<Version extends SocksVersion>(config:
     if (!socket) {
       throw new Error(`Error: both socketConfig and httpUrl are not set.`);
     }
-    clientInfo.socket = socket;
     const negotiationResult = (await infoNegotiation[socksVersion](
       socket,
       negotiationInfo,
       clientInfo.stateTracer
     )) as NegotiationResult[Version];
+    /** After negotiation, may wrap current socket if necessary */
+    clientInfo.socket = getWrapSocketFunc(socksVersion)(socket, negotiationResult);
     clientInfo.negotiationResult = negotiationResult;
     socket.resume();
     pushState(CLIENT_STATE.finishNegotiation, stateTracer);

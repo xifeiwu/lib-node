@@ -40,4 +40,7 @@ export {
   getUpgradeResponse,
   responseInfoToBuffer,
   getDataFromReadable,
+  getIv,
+  xorData,
+  isFunction,
 } from '../../../index';

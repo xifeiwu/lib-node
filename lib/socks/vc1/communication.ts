@@ -1,5 +1,5 @@
 import {Readable, Writable} from 'stream';
-import {NegotiationInfoClient, NegotiationInfoServer} from '../types/vc1';
+import {NegotiationInfoServer} from '../types/vc1';
 import {isNumber, toBuffer} from '../service/external';
 import {
   ERRORS,
@@ -57,7 +57,7 @@ export async function clientSendNegotiationInfo(writer: Writable, info: Negotiat
     throw new Error(`port ${port} is not a number`);
   }
   return new Promise<void>(async (res, rej) => {
-    const {data} = encrypt(
+    const data = encrypt(
       toBuffer([
         username.length,
         username,
@@ -169,7 +169,7 @@ export async function serverSendRequestTargetResponse(
     if (!writer.writable) {
       return rej(createError(ERRORS.SocketUnWritable));
     }
-    const {data} = encrypt(
+    const data = encrypt(
       toBuffer([
         PROTOCOL_BYTE,
         reply,

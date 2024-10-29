@@ -1,11 +1,12 @@
 import {Socket} from 'net';
 import {clientSendNegotiationInfo, clientWaitRequestTargetResponse} from './communication';
-import {clientState, getIv, defaultIvBytes} from './service';
+import {clientState, defaultIvBytes} from './service';
 import {NegotiationWithServer} from '../types';
 import {pushState, toRequestTargetV5} from '..';
 import {ECommand} from '../types/v5';
 import {NegotiationInfoClient} from '../types/vc1';
 import {StateTracer} from '../types/base';
+import {getIv} from '../service/external';
 
 export const negotiation: NegotiationWithServer<1> = async (
   socket: Socket,

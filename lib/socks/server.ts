@@ -19,6 +19,7 @@ import {
 } from './vc1/server';
 import {ECommand, RequestTargetV5} from './types/v5';
 import {handleConnectCommand} from './proxy';
+import {getWrapSocketFunc} from './service/common';
 
 /**
  * Two phases on server side:
@@ -95,12 +96,13 @@ export async function handleSocksConnection<Version extends SocksVersion>(
       //     console.log(chunk.toString());
       //   })
       // }
-      pipeline(socket, socket2Remote, err => {
+      const wrappedSocket = getWrapSocketFunc(socksVersion)(socket, negotiationResult);
+      pipeline(wrappedSocket, socket2Remote, err => {
         // status.stateTracer = serverserverState.socket_connect_between_client_target_fail;
         // status.error = err;
         stateTracer.push(`${SERVER_STATE.connectionError}: ${err?.message}`);
       });
-      pipeline(socket2Remote, socket, err => {
+      pipeline(socket2Remote, wrappedSocket, err => {
         // status.stateTracer = serverserverState.socket_connect_between_client_target_fail;
         // status.error = err;
         stateTracer.push(`${SERVER_STATE.connectionError}: ${err?.message}`);

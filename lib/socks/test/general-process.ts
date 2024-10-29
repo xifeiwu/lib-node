@@ -29,6 +29,7 @@ async function conectAndShowFirstChunk(clientSocksConfig: SocksClientConfig) {
   await new Promise<void>((res, rej) => {
     socket.on('data', chunk => {
       console.log(chunk.toString());
+      logColorful({color: 'red'}, 'success');
       res();
     });
   });
@@ -39,6 +40,7 @@ export async function generalProcessV5() {
   const {origin: httpOrigin, server: httpServer} = await startHttpDebugServer();
   await conectAndShowFirstChunk(getSocksClientConfigV5({host, port}, httpOrigin));
   httpServer.close();
+  socksServer.close();
 }
 
 export async function generalProcessVc1() {
@@ -47,6 +49,7 @@ export async function generalProcessVc1() {
   const {origin: httpOrigin, server: httpServer} = await startHttpDebugServer();
   await conectAndShowFirstChunk(getSocksClientConfigVc1({host, port}, httpOrigin));
   httpServer.close();
+  socksServer.close();
 }
 
 export async function generalProcessAll() {

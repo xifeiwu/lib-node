@@ -2,9 +2,7 @@ import { logColorful } from '../../../../log';
 import {connectToSocksServer} from '../../client';
 import {handleSocksConnection} from '../../server';
 import {PORT, startHttpDebugServer, startSocketServer, tcpRequestPropsToBuffer} from '../../service/external';
-import {SocksProxyConfig} from '../../types';
 import {EMethod, MethodUserPass} from '../../types/v5';
-import {eorBuffer, getCipher} from '../../vc1/service';
 
 export async function generalProcess() {
   const {origin: httpOrigin, server} = await startHttpDebugServer({port: PORT.fullFeatureHttpServer.port,});
@@ -67,96 +65,4 @@ export async function useAuthUserPass() {
   socket.on('data', chunk => {
     console.log(chunk.toString());
   });
-}
-
-export async function proxyRequestOnServerSide() {
-  let startPort = PORT.start3400.port;
-  const {
-    origin: httpOrigin,
-    port: httpPort,
-    server,
-  } = await startHttpDebugServer({
-    port: startPort++,
-  });
-  const methodUsePass: MethodUserPass = {
-    method: EMethod.UserPass,
-    info: {
-      username: 'abc',
-      password: 'ddd',
-    },
-  };
-  const {host: host2, port: port2} = await startSocketServer(
-    socket => {
-      handleSocksConnection(socket, {socksVersion: 'v5', methodList: [methodUsePass]});
-    },
-    {
-      port: startPort++,
-    }
-  );
-  const proxyToV5: SocksProxyConfig<'v5'> = {
-    socksVersion: 'v5',
-    matches: [/127.0.0.1/],
-    methodList: [methodUsePass],
-    socksServer: {
-      host: host2,
-      port: port2,
-    },
-  };
-  const {host: host1, port: port1} = await startSocketServer(
-    socket => {
-      handleSocksConnection(socket, {
-        socksVersion: 'v5',
-        proxyConfigList: [proxyToV5],
-      });
-    },
-    {
-      port: startPort++,
-    }
-  );
-  {
-    const status = await connectToSocksServer({
-      socksVersion: 'v5',
-      socksServer: {host: host1, port: port1},
-      requestTarget: {
-        address: '0.0.0.0',
-        port: httpPort,
-      },
-    });
-    const {socket} = status;
-    socket.write(
-      tcpRequestPropsToBuffer({
-        method: 'post',
-        data: {to: '0.0.0.0'},
-      })
-    );
-    socket.on('data', chunk => {
-      console.log(chunk.toString());
-    });
-  }
-  {
-    const status = await connectToSocksServer({
-      socksVersion: 'v5',
-      socksServer: {host: host1, port: port1},
-      requestTarget: {
-        address: '127.0.0.1',
-        port: httpPort,
-      },
-    });
-
-    const {socket, stateTracer} = status;
-    const iv = getInfoFromStateTracer(stateTracer, 'iv');
-    // toReadable()
-    socket.write(
-      eorBuffer(
-        tcpRequestPropsToBuffer({
-          method: 'post',
-          data: {to: '127.0.0.1'},
-        }),
-        iv
-      )
-    );
-    socket.on('data', chunk => {
-      console.log(chunk.toString());
-    });
-  }
 }

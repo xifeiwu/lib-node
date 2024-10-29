@@ -1,13 +1,14 @@
 import {BinaryLike, randomFillSync} from 'crypto';
 import {Transform} from 'stream';
 import {toBuffer} from '../transform';
+import {CanConvertToBuffer} from '../types';
 
 export const defaultIvBytes = 1;
 
 export function getIv(length: number) {
   return randomFillSync(new Uint8Array(length));
 }
-export function xorData(data: BinaryLike, iv: BinaryLike) {
+export function xorData(data: BinaryLike, iv: CanConvertToBuffer) {
   const chunk = toBuffer(data);
   const key = toBuffer(iv);
   const keyLength = key.byteLength;
