@@ -39,6 +39,8 @@ export async function testDebugServer() {
 
 export async function debugDebugServer() {
   const tag = 'debugDebugServer';
+  // console.log(process.env.NODE_ENV)
+  // console.log(process.env)
   const port = await getAFreePort(4000);
   const spawnInfo = await spawnScript<CP.DebugServerConfig, CP.DebugServerResponse>('debug-server.ts', {
     args: [tag],

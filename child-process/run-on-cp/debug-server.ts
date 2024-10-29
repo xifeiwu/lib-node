@@ -1,6 +1,31 @@
-import {startHttpServer, responseRequestEvent, InfoToCp, getAFreePort, toBuffer} from '../../index';
+import {
+  startHttpServer,
+  responseRequestEvent,
+  InfoToCp,
+  getAFreePort,
+  toBuffer,
+  toHtml,
+  toUl,
+  toUrlProps,
+} from '../../index';
 import {handleCpCustomization, out, runAllCpCustomization} from './service';
 import {CP} from '../../types';
+
+const allPathname = {
+  apiList: '/api',
+  exitProcess: '/api/exit',
+  getEnv: '/api/env',
+};
+const apiListHtml = toHtml(
+  toUl(
+    Object.entries(allPathname).map(([key, href]) => {
+      return {
+        href,
+        content: key,
+      };
+    })
+  )
+);
 
 export async function start() {
   let ipcMessage: InfoToCp<CP.DebugServerConfig> = {};
@@ -27,16 +52,26 @@ export async function start() {
           {
             request(request, response) {
               const {url} = request;
-              console.log(url);
-              if (url === '/api/exit') {
+              const {pathname} = toUrlProps(url);
+              if (pathname === '/api/exit') {
                 response.statusCode = 302;
-                const url = '/api/list';
-                response.setHeader('Location', url);
+                response.setHeader('Location', allPathname.apiList);
                 response.setHeader('content-type', 'text/plain; charset=utf-8');
-                response.end(toBuffer(`Redirecting to <a href="${url}">${url}</a>.`));
+                response.end(
+                  toBuffer(`Redirecting to <a href="${allPathname.apiList}">${allPathname.apiList}</a>.`)
+                );
                 setTimeout(() => {
                   process.exit(0);
                 }, 2000);
+              } else if (pathname === allPathname.getEnv) {
+                response.setHeader('content-type', 'application/json; charset=utf-8');
+                const env = process.env;
+                console.log(JSON.stringify(env));
+                const buf = toBuffer(JSON.stringify(env));
+                response.end(buf);
+              } else if (pathname === allPathname.apiList) {
+                response.setHeader('content-type', 'text/html; charset=utf-8');
+                response.end(toBuffer(apiListHtml));
               } else {
                 responseRequestEvent(request, response);
               }
