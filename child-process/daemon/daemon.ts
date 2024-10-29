@@ -169,7 +169,7 @@ class CpManager {
     try {
       const spawnInfo = await spawnAndTryIpc(spawnOptions);
       if (cpInfo) {
-        this.cpInfoHistory.push(serializeCpInfo(cpInfo));
+        this.cpInfoHistory.unshift(serializeCpInfo(cpInfo));
       }
       this.cpInfo = {
         spawnConfig: spawnOptions,
