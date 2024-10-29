@@ -1,5 +1,6 @@
 import {connectToSocksServer} from '../client';
-import {getDataFromReadable, tcpRequestPropsToBuffer} from '../service/external';
+import {basicAuth, serializeErrorInfo} from '../service';
+import {getDataFromReadable, logColorful, tcpRequestPropsToBuffer} from '../service/external';
 
 const httpBuffer = tcpRequestPropsToBuffer({
   method: 'get',
@@ -13,10 +14,7 @@ export async function bySocketServer() {
       host: 'elif.site',
       port: 80,
     },
-    auth: {
-      username: 'abc',
-      password: 'dddd',
-    },
+    auth: basicAuth,
     requestTarget: {
       address: 'elif.site',
       port: 80,
@@ -32,16 +30,17 @@ export async function byHttpUpgrade() {
   const status = await connectToSocksServer({
     socksVersion: 1,
     socksServer: 'http://elif.site',
-    auth: {
-      username: 'abc',
-      password: 'dddd',
-    },
+    auth: basicAuth,
     requestTarget: {
       address: 'elif.site',
       port: 80,
     },
   });
-  const {socket} = status;
+  const {socket, error} = status;
+  if (error) {
+    logColorful({}, serializeErrorInfo(error));
+    return;
+  }
   socket.write(httpBuffer);
   const response = await getDataFromReadable(socket);
   console.log(response.toString());

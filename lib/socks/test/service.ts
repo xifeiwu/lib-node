@@ -14,6 +14,7 @@ import {
   responseInfoToBuffer,
   logColorful,
 } from '../service/external';
+import {basicAuth} from '../service';
 import {handleSocksConnection} from '../server';
 import {
   SocksServerConfigPerVersion,
@@ -22,20 +23,15 @@ import {
   SocksServerInfo,
   TargetSocksServer,
 } from '../types';
-import {EMethod, NegotiationInfoClient as NegotiationInfoClientV5, UserPassInfo} from '../types/v5';
+import {EMethod, NegotiationInfoClient as NegotiationInfoClientV5} from '../types/v5';
 import {RequestTarget} from '../types/base';
 import {Socket} from 'net';
 import {simplifySocksServerInfo, UPGRADE_PROTOCOL_SOCKS_PREFIX} from '..';
 
-export const auth: UserPassInfo = {
-  username: 'abc',
-  password: 'dddd',
-};
-
 export function getSocksClientConfigV5(socksServer: TargetSocksServer, requestTarget: RequestTarget) {
   const info: SocksClientConfig<5> = {
     socksVersion: 5,
-    methodList: [{method: EMethod.NoAuth}, {method: EMethod.UserPass, info: auth}],
+    methodList: [{method: EMethod.NoAuth}, {method: EMethod.UserPass, info: basicAuth}],
     socksServer,
     requestTarget,
   };
@@ -45,7 +41,7 @@ export function getSocksClientConfigV5(socksServer: TargetSocksServer, requestTa
 export function getSocksClientConfigVc1(socksServer: TargetSocksServer, requestTarget: RequestTarget) {
   const info: SocksClientConfig<1> = {
     socksVersion: 1,
-    auth,
+    auth: basicAuth,
     socksServer,
     requestTarget,
   };
@@ -68,7 +64,7 @@ export function getSocksServerConfigV5(config?: Partial<SocksServerConfig<5>>) {
 }
 
 export function getSocksServerConfigVc1(config?: Partial<SocksServerConfig<1>>) {
-  const socksServerConfig: SocksServerConfig<1> = {socksVersion: 1, auth: auth, ...(config ?? {})};
+  const socksServerConfig: SocksServerConfig<1> = {socksVersion: 1, auth: basicAuth, ...(config ?? {})};
   return socksServerConfig;
 }
 
@@ -110,7 +106,7 @@ export async function startTcpServerForSocks(socksServerConfig: Partial<SocksSer
     if (!socksConfig) {
       return false;
     }
-    logColorful({color: 'red'}, `handle sockeet for ${socksConfig.socksVersion}`);
+    logColorful({color: 'red'}, `handle socket for ${socksConfig.socksVersion}`);
     const info = await handleSocksConnection(socket, socksConfig);
     if (infoList.length > 200) {
       infoList.pop();
@@ -172,7 +168,7 @@ export async function startHttpServerForSocks(allSocksServerConfig: Partial<Sock
             return abortRequest(socket, protocol);
           }
         }
-        logColorful({color: 'red'}, `handle sockeet for ${socksServerConfig.socksVersion}`);
+        logColorful({color: 'red'}, `handle socket for ${socksServerConfig.socksVersion}`);
         const info = await handleSocksConnection(socket, socksServerConfig);
         if (infoList.length > 200) {
           infoList.pop();

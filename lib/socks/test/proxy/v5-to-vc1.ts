@@ -1,9 +1,8 @@
 import {logColorful} from '../../../../log';
 import {connectToSocksServer} from '../../client';
-import {serializableSocksClientInfo} from '../..';
+import {basicAuth, serializableSocksClientInfo} from '../..';
 import {startHttpDebugServer} from '../../service/external';
 import {
-  auth,
   getSocksClientConfigV5,
   getSocksServerConfigV5,
   getSocksServerConfigVc1,
@@ -34,7 +33,7 @@ async function startTwoSocksServer() {
         {
           socksVersion: 1,
           socksServer: serverOverHttp.origin,
-          auth,
+          auth: basicAuth,
           matches: ['elif.site', 'baidu.com'],
         },
       ],
