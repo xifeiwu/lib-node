@@ -107,10 +107,26 @@ export async function handleSocksConnection<Version extends SocksVersion>(
         // status.error = err;
         stateTracer.push(`${SERVER_STATE.connectionError}: ${err?.message}`);
       });
-      // }
       socket.resume();
       // status.stateTracer = serverserverState.success;
       stateTracer.push(SERVER_STATE.handleConnectCommandSuccess);
+    } else if (command === ECommand.ECHO) {
+      stateTracer.push(SERVER_STATE.handleConnectCommand);
+      await sendRequestTargetResponse[socksVersion](
+        socket,
+        {
+          reply: 0,
+          address: '0.0.0.0',
+          port: 80,
+        },
+        negotiationResult
+      );
+      socket.resume();
+      socket.on('data', chunk => {
+        if (socket.writable) {
+          socket.write(chunk);
+        }
+      });
     } else {
       throw createError(`command ${command} not found`);
     }

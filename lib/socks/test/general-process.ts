@@ -11,7 +11,7 @@ import {
   httpRequestBuffer,
   startTcpServerForSocks,
 } from './service';
-import {SocksClientConfig} from '..';
+import {serializeErrorInfo, SocksClientConfig} from '..';
 
 async function startSocksServer() {
   const socksConfig = {
@@ -23,11 +23,16 @@ async function startSocksServer() {
 
 async function conectAndShowFirstChunk(clientSocksConfig: SocksClientConfig) {
   const status = await connectToSocksServer(clientSocksConfig);
-  const {socket} = status;
+  const {socket, error} = status;
+  if (error) {
+    logColorful({}, serializeErrorInfo(error));
+    return;
+  }
   watchSocketState(socket, {colorStyle: {color: 'blue'}});
   socket.write(httpRequestBuffer);
   await new Promise<void>((res, rej) => {
     socket.on('data', chunk => {
+      console.log(`chunk.toString():`);
       console.log(chunk.toString());
       logColorful({color: 'red'}, 'success');
       res();

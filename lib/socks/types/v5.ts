@@ -29,6 +29,8 @@ export enum ECommand {
   CONNECT = 0x01,
   BIND = 0x02,
   UDP = 0x03,
+  /** echo original data send from client side for debug */
+  ECHO = 0x10,
 }
 
 export enum EAddressType {
