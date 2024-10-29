@@ -50,7 +50,7 @@ export function getSocksClientConfigVc1(socksServer: TargetSocksServer, requestT
 
 export const httpRequestBuffer = tcpRequestPropsToBuffer({
   method: 'post',
-  url: '/api/test',
+  url: '/api/debug/echo',
   data: {a: 1},
 });
 
