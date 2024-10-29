@@ -1,16 +1,21 @@
 {
   "compilerOptions": {
-    "outDir": ".",
-    "target": "es6",
+    "baseUrl": ".",
+    "rootDir": "./",
+    "outDir": "./",
+    "target": "ES2022",
     // "target": "es2019",
     // "lib": "es2019",
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "module": "CommonJS",
     "strict": false,
+    "allowJs": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
     "moduleResolution": "node",
     "types": ["node"],
   },
+  "include": ["**/*"],
+  "exclude": ["node_modules/*"]
 }
