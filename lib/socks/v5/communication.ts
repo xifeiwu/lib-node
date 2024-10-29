@@ -1,18 +1,13 @@
 import {Readable, Writable} from 'stream';
 import {
+  DEFAULT_COMMAND,
   ERRORS,
   bufferToTargeServiceInfo,
   createError,
   listenTimeOut,
   targetServiceInfoToBuffer,
 } from '..';
-import {
-  ECommand,
-  EMethod,
-  EHandleRequestTargetState,
-  RequestTargetV5,
-  RequestTargetResponseV5,
-} from '../types/v5';
+import {EMethod, EHandleRequestTargetState, RequestTargetV5, RequestTargetResponseV5} from '../types/v5';
 import {isNumber, toBuffer} from '../service/external';
 import {PROTOCOL_BYTE} from './service';
 
@@ -243,7 +238,7 @@ export async function clientWaitUserPassAuthResultReplied(reader: Readable) {
  * o  DST.PORT desired destination port in network octet order
  */
 export async function clientSendRequestTarget(writer: Writable, info: RequestTargetV5) {
-  const {command = ECommand.CONNECT, address, port} = info;
+  const {command = DEFAULT_COMMAND, address, port} = info;
   if (!address) {
     throw new Error(`address is blank`);
   }

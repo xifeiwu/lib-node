@@ -42,6 +42,9 @@ export async function byHttpUpgrade() {
     return;
   }
   socket.write(httpBuffer);
-  const response = await getDataFromReadable(socket);
-  console.log(response.toString());
+  socket.on('data', chunk => {
+    logColorful({}, chunk.toString());
+  })
+  // const response = await getDataFromReadable(socket);
+  // console.log(response.toString());
 }

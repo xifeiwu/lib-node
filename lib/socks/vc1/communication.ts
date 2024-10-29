@@ -2,6 +2,7 @@ import {Readable, Writable} from 'stream';
 import {NegotiationInfoServer} from '../types/vc1';
 import {isNumber, toBuffer} from '../service/external';
 import {
+  DEFAULT_COMMAND,
   ERRORS,
   bufferToTargeServiceInfo,
   createError,
@@ -11,7 +12,7 @@ import {
 } from '..';
 import {decript, encrypt, defaultIvBytes, PROTOCOL_BYTE} from './service';
 import {BinaryLike} from 'crypto';
-import {ECommand, EHandleRequestTargetState, RequestTargetResponseV5} from '../types/v5';
+import {EHandleRequestTargetState, RequestTargetResponseV5} from '../types/v5';
 
 /**
  * +----+------+----------+------+----------+
@@ -49,7 +50,7 @@ export async function clientSendNegotiationInfo(writer: Writable, info: Negotiat
   const {iv, auth, requestTarget} = info;
   const requestTargetV5 = toRequestTargetV5(requestTarget);
   const {username, password} = auth;
-  const {command = ECommand.CONNECT, address, port} = requestTargetV5;
+  const {command = DEFAULT_COMMAND, address, port} = requestTargetV5;
   if (!address) {
     throw new Error(`address is blank`);
   }
@@ -223,7 +224,9 @@ export async function clientWaitRequestTargetResponse(reader: Readable, iv: Bina
       const buffer = decript(chunk, iv);
       const [version, reply, _reserve] = buffer;
       if (version !== PROTOCOL_BYTE) {
-        return rej(createError(`${ERRORS.InvalidSocksVersion}: ${version}, only support version ${PROTOCOL_BYTE}`));
+        return rej(
+          createError(`${ERRORS.InvalidSocksVersion}: ${version}, only support version ${PROTOCOL_BYTE}`)
+        );
       }
       if (reply !== EHandleRequestTargetState.succeeded) {
         return rej(createError(EHandleRequestTargetState[reply]));
