@@ -1,14 +1,16 @@
+import assert from 'assert';
 import {Duplex, pipeline} from 'stream';
 import {getIv, xorData, getXorTransform} from './xor';
 import {logColorful, toBuffer} from '..';
 
 export async function testXor() {
-  const iv = getIv(3);
-  const data = '初始数据';
-  const decrypted = xorData(data, iv);
-  logColorful({}, decrypted);
-  const enctypted = xorData(decrypted, iv);
+  const iv = getIv(1);
+  const origin = '初始数据';
+  const enctypted = xorData(origin, iv);
   logColorful({}, enctypted);
+  const decrypted = xorData(enctypted, iv);
+  logColorful({}, decrypted);
+  assert.equal(decrypted, origin);
 }
 
 function getClientAndServer() {
