@@ -1,12 +1,10 @@
 import {CP, Daemon} from '../../types';
 import {
-  getAFreePort,
   getCpConfigByScriptName,
   logColorful,
   oneChatFromSocketClient,
   spawnAndTryIpc,
 } from '../../index';
-import {SOCKET_FILE_SUFFIX} from '../../constants';
 
 /**
  * Make sure daemon process is through
@@ -28,7 +26,7 @@ export async function runEmptyDaemon() {
   );
   logColorful({}, responseFromCp);
   const socketPath = responseFromCp.status.connection.socket.path;
-  const infoCommand: Daemon.Command2Daemon = {action: 'info'};
+  const infoCommand: Daemon.CommandCommon = {action: 'info'};
   const socketResponse = await oneChatFromSocketClient(infoCommand, {path: socketPath});
   logColorful({}, socketResponse);
 }
@@ -39,17 +37,17 @@ export async function runEmptyDaemon() {
 export async function daemonDebugServer() {
   const daemonKey = 'daemonDebugServer';
   const spawnConfigDebugServer = getCpConfigByScriptName<CP.DebugServerConfig>('debug-server.ts', {
-    args: [daemonKey],
+    params: [daemonKey],
     spawnOptions: {stdio: [0, 1, 2, 'ipc']},
     infoToCp: {},
     maxWaitTime4Ipc: 600,
   });
-  const cpConfig4DebugServer: Daemon.CpConfig = {
+  const cpConfig4DebugServer: Daemon.CpManagerConfig = {
     ...spawnConfigDebugServer,
     id: daemonKey,
   };
   const spawnConfig4Daemon = getCpConfigByScriptName<Daemon.DaemonConfig>('daemon.ts', {
-    args: [daemonKey],
+    params: [daemonKey],
     spawnOptions: {stdio: [0, 1, 2, 'ipc']},
     infoToCp: {
       config: {
@@ -68,19 +66,19 @@ export async function daemonDebugServer() {
 export async function daemon2DebugServer() {
   const daemonKey = 'daemon2DebugServer';
   const spawnConfig = getCpConfigByScriptName<CP.DebugServerConfig>('debug-server.ts', {
-    args: [daemonKey],
+    params: [daemonKey],
     spawnOptions: {stdio: [0, 1, 2, 'ipc']},
     infoToCp: {},
     maxWaitTime4Ipc: 600,
   });
   const spawnConfig2 = getCpConfigByScriptName<CP.DebugServerConfig>('debug-server.ts', {
-    args: [daemonKey],
+    params: [daemonKey],
     spawnOptions: {stdio: ['pipe', 'pipe', 'pipe', 'ipc']},
     infoToCp: {},
     maxWaitTime4Ipc: 600,
   });
   const spawnConfig4Daemon = getCpConfigByScriptName<Daemon.DaemonConfig>('daemon.ts', {
-    args: [daemonKey],
+    params: [daemonKey],
     spawnOptions: {stdio: [0, 1, 2, 'ipc']},
     infoToCp: {
       config: {

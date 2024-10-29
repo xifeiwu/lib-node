@@ -1,9 +1,10 @@
 import path from 'path';
 import {FormFile, NodeFormData, formDataToBuffer} from './form-data';
 import {requestAndGetResponseInfo} from './client';
-import {sendHttpRequestByTcp, watchSocketState} from '../net';
+import {watchSocketState} from '../net';
 import {getDataFromReadable} from '../stream';
 import {startHttpDebugServer} from './server';
+import {sendHttpRequestByTcp} from '../tcp-http';
 
 export async function getFormData() {
   const formData: NodeFormData = {
@@ -50,7 +51,7 @@ export async function sendFormDataByTcp() {
       allowHalfOpen: true,
     }
   );
-  watchSocketState(client, {color: 'cyan'});
+  watchSocketState(client, {colorStyle: {color: 'cyan'}});
   const resData = await getDataFromReadable(client);
   console.log(resData.toString());
 }

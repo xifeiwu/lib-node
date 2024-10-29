@@ -1,16 +1,17 @@
 import { logColorful } from '../../../../log';
 import {connectToSocksServer} from '../../client';
 import {handleSocksConnection} from '../../server';
+import { basicAuth } from '../../service';
 import {PORT, startHttpDebugServer, startSocketServer, tcpRequestPropsToBuffer} from '../../service/external';
 import {EMethod, MethodUserPass} from '../../types/v5';
 
 export async function generalProcess() {
   const {origin: httpOrigin, server} = await startHttpDebugServer({port: PORT.fullFeatureHttpServer.port,});
   const {host, port} = await startSocketServer(socket => {
-    handleSocksConnection(socket, {socksVersion: 'v5', methodList: [{method: EMethod.NoAuth}]});
+    handleSocksConnection(socket, {socksVersion: 5, methodList: [{method: EMethod.NoAuth}]});
   });
   const status = await connectToSocksServer({
-    socksVersion: 'v5',
+    socksVersion: 5,
     socksServer: {host, port},
     requestTarget: httpOrigin,
   });
@@ -41,16 +42,13 @@ export async function useAuthUserPass() {
   const {origin: httpOrigin, server} = await startHttpDebugServer();
   const methodUsePass: MethodUserPass = {
     method: EMethod.UserPass,
-    info: {
-      username: 'abc',
-      password: 'ddd',
-    },
+    info: basicAuth,
   };
   const {host, port} = await startSocketServer(socket => {
-    handleSocksConnection(socket, {socksVersion: 'v5', methodList: [methodUsePass]});
+    handleSocksConnection(socket, {socksVersion: 5, methodList: [methodUsePass]});
   });
   const status = await connectToSocksServer({
-    socksVersion: 'v5',
+    socksVersion: 5,
     methodList: [methodUsePass],
     socksServer: {host, port},
     requestTarget: httpOrigin,

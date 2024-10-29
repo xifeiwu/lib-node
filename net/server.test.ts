@@ -3,6 +3,7 @@ import {requestAndGetResponseInfo, startHttpDebugServer} from '../http';
 import {startSocketClient} from '../net';
 import {startTcpProxyServer} from './server';
 import {Socket} from 'net';
+import {TcpHandler} from '../index';
 
 async function getHttpHandler() {
   const {host, port} = await startHttpDebugServer();
@@ -12,11 +13,11 @@ async function getHttpHandler() {
   };
 }
 
-function tcpHandler(socket: Socket, chunk: Buffer) {
+const tcpHandler: TcpHandler = async (socket: Socket) => {
   socket.on('data', chunk => {
     socket.write(chunk);
   });
-}
+};
 export async function testStartProxyableTcpServer() {
   const {host, port, server} = await startTcpProxyServer({
     httpHandler: await getHttpHandler(),

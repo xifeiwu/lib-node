@@ -1,8 +1,7 @@
-import {getBufferGenerator} from 'transform';
 import {startSocketServer} from './server';
 import {watchSocketState} from './utils';
 import {startSocketClient} from './client';
-import {waitFor} from '../../index';
+import {waitFor, getBufferGenerator} from '../../index';
 
 export async function testSocketConnection() {
   const {host, port, server} = await startSocketServer(async socket => {

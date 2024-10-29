@@ -11,9 +11,7 @@ import {
   watchSocketState,
 } from '../index';
 import {
-  getRequestHeaderInfo,
   responseInfoToBuffer,
-  responseRequestEvent,
   sendHttpRequest,
   startHttpDebugServer,
 } from '../http';
@@ -73,7 +71,7 @@ function httpClient(config: {origin: string; watchSocketState?: boolean}) {
   const {origin} = config;
   const client = sendHttpRequest(getRequestOptions({origin}));
   client.on('socket', socket => {
-    config.watchSocketState && watchSocketState(socket, {color: 'cyan'});
+    config.watchSocketState && watchSocketState(socket, {colorStyle: {color: 'cyan'}});
     socket.on('data', chunk => {
       logColorful({color: 'blue'}, 'server response:');
       console.log(chunk.toString());
@@ -89,7 +87,7 @@ async function tcpClient(config: {origin: string; watchSocketState?: boolean}) {
     })
   );
   const client = await startSocketClient(connectionOptions);
-  config.watchSocketState && watchSocketState(client, {color: 'cyan'});
+  config.watchSocketState && watchSocketState(client, {colorStyle: {color: 'cyan'}});
   client.end(tcpRequestPropsToBuffer(props));
   client.on('data', chunk => {
     logColorful({color: 'blue'}, 'onData:');

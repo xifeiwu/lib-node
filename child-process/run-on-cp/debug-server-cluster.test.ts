@@ -6,7 +6,7 @@ export async function runDebugServerCluster() {
   const port = await getAFreePort(4000);
   const moreArgs = ['runTDebugServerCluster'];
   const spawnConfig = getCpConfigByScriptName('debug-server-cluster.ts', {
-    args: moreArgs,
+    params: moreArgs,
     spawnOptions: {
       stdio: ['ipc', 'ignore', 'ignore'],
     },

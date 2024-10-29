@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "outDir": "./dist",
+    "outDir": ".",
     "target": "es6",
     // "target": "es2019",
     // "lib": "es2019",
