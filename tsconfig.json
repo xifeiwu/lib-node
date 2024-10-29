@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
-    "rootDir": "./",
+    // "rootDir": "./",
     "outDir": "./",
     "target": "ES2022",
     // "target": "es2019",
@@ -16,6 +16,6 @@
     "moduleResolution": "node",
     "types": ["node"],
   },
-  "include": ["**/*"],
+  "include": ["**/*.ts"],
   "exclude": ["node_modules/*"]
 }

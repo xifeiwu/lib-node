@@ -10,11 +10,7 @@ import {
   tcpRequestPropsToBuffer,
   watchSocketState,
 } from '../index';
-import {
-  responseInfoToBuffer,
-  sendHttpRequest,
-  startHttpDebugServer,
-} from '../http';
+import {responseInfoToBuffer, sendHttpRequest, startHttpDebugServer} from '../http';
 import {HttpRequestOptions} from '../types';
 import {getDataFromReadable} from '../stream';
 import {logColorful} from '../log';
@@ -30,7 +26,7 @@ export async function tcpServer() {
     /** Should not consume data before parsing header part finished */
     const incomingMessage = await getHttpIncomingMessage(socket);
     logColorful({color: 'yellow'}, 'headerPart Info:', incomingMessage.headerPartProps);
-    watchSocketState(socket, {color: 'yellow'});
+    watchSocketState(socket, {colorStyle: {color: 'yellow'}});
     const data = await getDataFromReadable(incomingMessage);
     const requestInfo = {
       ...incomingMessage.headerPartProps,
