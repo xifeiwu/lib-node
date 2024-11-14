@@ -1,10 +1,10 @@
 import assert from 'assert';
 import {requestAndGetResponseInfo} from './client';
-import {responseRequestEvent, startHttpServer} from './server';
+import {responseRequestInfo, startHttpServer} from './server';
 
 export async function testResponseRequestInfo() {
   const {origin, server} = await startHttpServer({
-    request: responseRequestEvent,
+    request: responseRequestInfo,
   });
   const responseInfo = await requestAndGetResponseInfo<{
     method: string;

@@ -1,6 +1,6 @@
 import {
   startHttpServer,
-  responseRequestEvent,
+  responseRequestInfo,
   InfoToCp,
   getAFreePort,
   toBuffer,
@@ -73,7 +73,7 @@ export async function start() {
                 response.setHeader('content-type', 'text/html; charset=utf-8');
                 response.end(toBuffer(apiListHtml));
               } else {
-                responseRequestEvent(request, response);
+                responseRequestInfo(request, response);
               }
             },
           },

@@ -56,10 +56,25 @@ export async function startHttpServer(
   });
 }
 
+/**
+ * @deprecated by getHttpRequestHeaderPartProps
+ * @param request
+ * @returns
+ */
 export const getRequestHeaderInfo: GetIncomingMessageHeader<'server'> = (request: IncomingMessage) => {
   const {method, url, httpVersion, headers} = request;
   return {method, url, httpVersion, headers};
 };
+export const getHttpRequestHeaderPartProps: GetIncomingMessageHeader<'server'> = (
+  request: IncomingMessage
+) => {
+  return getRequestHeaderInfo(request);
+};
+/**
+ * @deprecated by getHttpRequestProps
+ * @param request
+ * @returns
+ */
 export async function getRequestInfo(request: http.IncomingMessage): Promise<HttpRequestProps> {
   const data = fromBuffer(await getIncomingMessageData(request), 'json');
   return {
@@ -67,12 +82,15 @@ export async function getRequestInfo(request: http.IncomingMessage): Promise<Htt
     data,
   };
 }
+export async function getHttpRequestInfo(request: http.IncomingMessage): Promise<HttpRequestProps> {
+  return getRequestInfo(request);
+}
 
 /**
  * responsee/echo requestInfo
  */
-export async function responseRequestEvent(request: http.IncomingMessage, response: http.ServerResponse) {
-  const requestInfo = await getRequestInfo(request);
+export async function responseHttpRequestInfo(request: http.IncomingMessage, response: http.ServerResponse) {
+  const requestInfo = await getHttpRequestInfo(request);
   const resData = toBuffer(requestInfo);
   response.setHeader['content-length'] = resData.byteLength;
   response.setHeader['content-type'] = 'application/json';
@@ -93,7 +111,7 @@ export async function handleIncomingMessage(
   configList?: HttpConditionAndAction[]
 ) {
   const {request, response} = httpStream;
-  const {method, url} = getRequestHeaderInfo(request);
+  const {method, url} = getHttpRequestHeaderPartProps(request);
   const {pathname, query} = toUrlProps(url);
   if (!Array.isArray(configList)) {
     return false;
@@ -148,7 +166,7 @@ export async function startHttpDebugServer(
         logRequestHeaderInfo &&
           logColorful({color: logRequestHeaderInfo}, 'headerPart Info:', getRequestHeaderInfo(request));
         logSocketState && watchSocketState(request.socket, {colorStyle: {color: 'yellow'}});
-        responseRequestEvent(request, response);
+        responseHttpRequestInfo(request, response);
       },
       connect(req, socket, head) {
         const {responseInfo} = handleConnectEvent(req);

@@ -12,7 +12,7 @@ import {
   getRequestInfo,
   handleConnectEvent,
   handleWebsocketUpgrade,
-  responseRequestEvent,
+  responseRequestInfo,
   startHttpServer,
 } from './server';
 
@@ -41,7 +41,7 @@ export async function testUpgradeToWebsocket() {
   const {server, origin} = await startHttpServer({
     async request(req, res) {
       // console.log(await getRequestInfo(req));
-      responseRequestEvent(req, res);
+      responseRequestInfo(req, res);
     },
     upgrade(req, socket, head) {
       const responseInfo = handleWebsocketUpgrade(req, socket, head);
