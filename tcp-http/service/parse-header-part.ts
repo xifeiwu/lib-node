@@ -1,18 +1,18 @@
 import {Socket} from 'net';
 import {Readable} from 'stream';
-import {HttpRequestHeaderPartProps, HttpRequestFirstLineProps} from '../../types';
+import {HttpRequestHeaderPartInfo, HttpRequestFirstLineInfo} from '../../types';
 import {httpFirstLineReg, httpHeaderLineReg} from '../../constants';
 import {getDataFromReadable, getOneLineFromBuffer, getOneLineFromReader} from '../../stream';
 
 interface ParseFirstLineResults {
-  firstLineInfo?: HttpRequestFirstLineProps;
+  firstLineInfo?: HttpRequestFirstLineInfo;
   dataConsumed: Buffer;
 }
 export async function tryParseHttpFirstLine(reader: Readable): Promise<ParseFirstLineResults | null> {
   const buffer = await getOneLineFromReader(reader);
   const line = buffer.toString('utf-8').trim().replace(/\r\n$/, '');
   const execResult = httpFirstLineReg.exec(line);
-  let firstLineInfo: HttpRequestFirstLineProps;
+  let firstLineInfo: HttpRequestFirstLineInfo;
   if (execResult) {
     const [method, url, httpVersion] = execResult.slice(1);
     firstLineInfo = {method, url, httpVersion};
@@ -21,14 +21,14 @@ export async function tryParseHttpFirstLine(reader: Readable): Promise<ParseFirs
 }
 
 interface ParseHttpHeaderResults {
-  headerPartProps?: HttpRequestHeaderPartProps<'receiver'>;
+  headerPartProps?: HttpRequestHeaderPartInfo<'receiver'>;
   dataConsumed: Buffer;
 }
 export async function tryParseHttpHeaderPart<T extends Readable>(
   reader: T,
-  firstLineInfo?: HttpRequestFirstLineProps
+  firstLineInfo?: HttpRequestFirstLineInfo
 ): Promise<ParseHttpHeaderResults> {
-  let headerPartProps: HttpRequestHeaderPartProps<'receiver'>;
+  let headerPartProps: HttpRequestHeaderPartInfo<'receiver'>;
   // let resolve: (v: ParseHttpHeaderResults) => void;
   // let reject: (err: Error) => void;
   let dataConsumed: Buffer = Buffer.alloc(0);

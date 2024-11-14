@@ -12,10 +12,10 @@ import {
   responseInfoToBuffer,
   HttpServerConfig,
   LogColors,
-  HttpRequestHeaderPartProps,
+  HttpRequestHeaderPartInfo,
   getIncomingMessageData,
 } from '../index';
-import {HttpRequestProps, CustomHandleRequestOptions, GetIncomingMessageHeader} from '../types';
+import {HttpRequestInfo, CustomHandleRequestOptions, GetIncomingMessageHeader} from '../types';
 import {getAFreePort} from '../net';
 import {deepEqual, toUrlProps, isNumber, waitFor, toInteger} from '../external';
 
@@ -61,36 +61,24 @@ export async function startHttpServer(
  * @param request
  * @returns
  */
-export const getRequestHeaderInfo: GetIncomingMessageHeader<'server'> = (request: IncomingMessage) => {
+export const getHttpRequestHeaderPartInfo: GetIncomingMessageHeader<'server'> = (request: IncomingMessage) => {
   const {method, url, httpVersion, headers} = request;
   return {method, url, httpVersion, headers};
 };
-export const getHttpRequestHeaderPartProps: GetIncomingMessageHeader<'server'> = (
-  request: IncomingMessage
-) => {
-  return getRequestHeaderInfo(request);
-};
-/**
- * @deprecated by getHttpRequestProps
- * @param request
- * @returns
- */
-export async function getHttpRequestProps(request: http.IncomingMessage): Promise<HttpRequestProps> {
+
+export async function getHttpRequestInfo(request: http.IncomingMessage): Promise<HttpRequestInfo> {
   const data = fromBuffer(await getIncomingMessageData(request), 'json');
   return {
-    ...getHttpRequestHeaderPartProps(request),
+    ...getHttpRequestHeaderPartInfo(request),
     data,
   };
 }
-// export async function getHttpRequestProps(request: http.IncomingMessage): Promise<HttpRequestProps> {
-//   return getHttpRequestProps(request);
-// }
 
 /**
  * response/echo requestInfo
  */
-export async function responseHttpRequestProps(request: http.IncomingMessage, response: http.ServerResponse) {
-  const requestInfo = await getHttpRequestProps(request);
+export async function responseHttpRequestInfo(request: http.IncomingMessage, response: http.ServerResponse) {
+  const requestInfo = await getHttpRequestInfo(request);
   const resData = toBuffer(requestInfo);
   response.setHeader['content-length'] = resData.byteLength;
   response.setHeader['content-type'] = 'application/json';
@@ -111,7 +99,7 @@ export async function handleIncomingMessage(
   configList?: HttpConditionAndAction[]
 ) {
   const {request, response} = httpStream;
-  const {method, url} = getHttpRequestHeaderPartProps(request);
+  const {method, url} = getHttpRequestHeaderPartInfo(request);
   const {pathname, query} = toUrlProps(url);
   if (!Array.isArray(configList)) {
     return false;
@@ -164,9 +152,9 @@ export async function startHttpDebugServer(
     {
       request(request, response) {
         logRequestHeaderInfo &&
-          logColorful({color: logRequestHeaderInfo}, 'headerPart Info:', getRequestHeaderInfo(request));
+          logColorful({color: logRequestHeaderInfo}, 'headerPart Info:', getHttpRequestHeaderPartInfo(request));
         logSocketState && watchSocketState(request.socket, {colorStyle: {color: 'yellow'}});
-        responseHttpRequestProps(request, response);
+        responseHttpRequestInfo(request, response);
       },
       connect(req, socket, head) {
         const {responseInfo} = handleConnectEvent(req);
@@ -252,8 +240,8 @@ export function handleConnectEvent(
   req: IncomingMessage,
   socket?: Duplex,
   head?: Buffer
-): {requestHeaderPartInfo: HttpRequestHeaderPartProps<'receiver'>; responseInfo: HttpResponseInfo} {
-  const requestHeaderPartInfo = getRequestHeaderInfo(req);
+): {requestHeaderPartInfo: HttpRequestHeaderPartInfo<'receiver'>; responseInfo: HttpResponseInfo} {
+  const requestHeaderPartInfo = getHttpRequestHeaderPartInfo(req);
   const responseInfo: HttpResponseInfo = {
     httpVersion: 'HTTP/1.1',
     statusCode: 200,

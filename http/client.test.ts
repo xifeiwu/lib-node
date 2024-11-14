@@ -9,10 +9,10 @@ import {
 } from './client';
 import {getResponseInfo, responseInfoToBuffer} from './common';
 import {
-  getHttpRequestProps,
+  getHttpRequestInfo,
   handleConnectEvent,
   handleWebsocketUpgrade,
-  responseHttpRequestProps,
+  responseHttpRequestInfo,
   startHttpServer,
 } from './server';
 
@@ -41,7 +41,7 @@ export async function testUpgradeToWebsocket() {
   const {server, origin} = await startHttpServer({
     async request(req, res) {
       // console.log(await getRequestInfo(req));
-      responseHttpRequestProps(req, res);
+      responseHttpRequestInfo(req, res);
     },
     upgrade(req, socket, head) {
       const responseInfo = handleWebsocketUpgrade(req, socket, head);
@@ -102,10 +102,10 @@ export async function getSocketByConnect() {
 export async function swithHttpToSocks() {
   const {origin} = await startHttpServer({
     async request(req, rep) {
-      console.log(await getHttpRequestProps(req));
+      console.log(await getHttpRequestInfo(req));
     },
     async upgrade(req, socket, head) {
-      logWithColor('red', await getHttpRequestProps(req));
+      logWithColor('red', await getHttpRequestInfo(req));
       socket.write(
         'HTTP/1.1 101 Web Socket Protocol Handshake\r\n' +
           'Upgrade: socks5\r\n' +

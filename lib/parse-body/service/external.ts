@@ -1,2 +1,2 @@
 export {toBuffer} from '../../../transform';
-export {getRequestHeaderInfo, getIncomingMessageData} from '../../../http';
+export {getHttpRequestHeaderPartInfo as getRequestHeaderInfo, getIncomingMessageData} from '../../../http';

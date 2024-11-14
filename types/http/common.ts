@@ -3,11 +3,11 @@
  */
 import {IncomingMessage} from 'http';
 import {ConnectionEnd} from '../../types';
-import {HttpRequestHeaderPartProps, HttpResponseHeaderPartProps} from './tcp';
+import {HttpRequestHeaderPartInfo, HttpResponseHeaderPartInfo} from './tcp';
 
 interface ConnectionEndToHeaderPart {
-  client: HttpResponseHeaderPartProps<'receiver'>;
-  server: HttpRequestHeaderPartProps<'receiver'>;
+  client: HttpResponseHeaderPartInfo<'receiver'>;
+  server: HttpRequestHeaderPartInfo<'receiver'>;
 }
 export type GetIncomingMessageHeader<End extends ConnectionEnd> = (
   incomingMessage: IncomingMessage

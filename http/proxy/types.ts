@@ -1,6 +1,6 @@
 import {RequestOptions, IncomingMessage} from 'http';
 import {toReadable} from '../../stream';
-import {HttpRequestProps, HttpResponseInfo, HttpRequestOptions} from '../../types';
+import {HttpRequestInfo, HttpResponseInfo, HttpRequestOptions} from '../../types';
 
 export interface HttpProxyConfig {
   /**
@@ -42,7 +42,7 @@ export interface HttpProxyConfig {
 export interface ProxyStatus {
   id?: string;
   ts: number;
-  requestInfo?: {origin: HttpRequestProps; proxy: HttpRequestOptions};
+  requestInfo?: {origin: HttpRequestInfo; proxy: HttpRequestOptions};
   responseInfo?: {
     toProxy: HttpResponseInfo;
     toOrigin: HttpResponseInfo;

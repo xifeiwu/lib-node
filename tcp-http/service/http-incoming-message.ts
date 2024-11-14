@@ -1,13 +1,13 @@
 import {Readable} from 'stream';
 import {isNumber} from '../../external';
 import {Socket} from 'net';
-import {HttpRequestHeaderPartProps} from '../../types';
+import {HttpRequestHeaderPartInfo} from '../../types';
 import {getOneLineFromBuffer} from '../../stream';
 import {tryParseHttpHeaderPart} from './parse-header-part';
 
 export class HttpIncomingMessage extends Readable {
   socket: Socket;
-  headerPartProps: HttpRequestHeaderPartProps<'receiver'>;
+  headerPartProps: HttpRequestHeaderPartInfo<'receiver'>;
   receivedDataLength: number;
   handleDataByContentLength: (chunk: Buffer) => void;
   handleChunkedData: (chunk: Buffer) => void;

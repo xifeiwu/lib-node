@@ -1,5 +1,5 @@
 import {Readable, isReadable} from 'stream';
-import {CanConvertToBuffer, HttpRequestOptions, HttpRequestProps, TcpHttpRequestOptions} from '../../types';
+import {CanConvertToBuffer, HttpRequestOptions, HttpRequestInfo, TcpHttpRequestOptions} from '../../types';
 import {toBuffer} from '../../transform';
 import {
   getUrlPropsFromConfig,
@@ -16,7 +16,7 @@ import {Socket, TcpNetConnectOpts} from 'net';
  * @returns
  */
 export function httpOptionsToTcpConfig(httpOption: HttpRequestOptions): {
-  props: HttpRequestProps;
+  props: HttpRequestInfo;
   connectionOptions: Pick<TcpNetConnectOpts, 'host' | 'port'>;
 } {
   const {

@@ -12,7 +12,7 @@ import {
 } from '../client';
 import {logColorful} from '../../log';
 import {HttpRequestOptions, HttpResponseInfo} from '../../types';
-import { getRequestHeaderInfo } from '../server';
+import { getHttpRequestHeaderPartInfo } from '../server';
 
 /**
  * On response to proxy: print more info when http status code is invalid.
@@ -50,7 +50,7 @@ export async function proxyRequest(req: IncomingMessage, res: ServerResponse, co
     preProxyReq,
     onRes2Proxy,
   } = config;
-  const originReqInfo = getRequestHeaderInfo(req);
+  const originReqInfo = getHttpRequestHeaderPartInfo(req);
   let proxyReqInfo: HttpRequestOptions = deepMerge(defaultRequestOptions, {
     origin: config.targetHref,
     url: originReqInfo.url,

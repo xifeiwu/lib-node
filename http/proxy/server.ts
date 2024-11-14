@@ -1,6 +1,6 @@
 import {startHttpServer} from '../server';
 import {HttpProxyConfig, ProxyStatus} from './types';
-import {getRequestHeaderInfo} from '../server';
+import {getHttpRequestHeaderPartInfo} from '../server';
 import {toBuffer} from '../../transform';
 import {proxyRequest} from './handler';
 import {toUrlInstance} from '../../external';
@@ -13,7 +13,7 @@ export async function startProxyServer(proxyConfig: HttpProxyConfig, httpServerC
   const {origin, host, port, server} = await startHttpServer(
     {
       request: (req, res) => {
-        const {url} = getRequestHeaderInfo(req);
+        const {url} = getHttpRequestHeaderPartInfo(req);
         const {pathname, searchParams} = toUrlInstance(url);
 
         if (pathname === PATHNAME_PROXY_STATUS) {

@@ -3,7 +3,7 @@ import https from 'https';
 import {getDataFromReadable} from '../../stream';
 // import {getAFreePort} from '../../net/http';
 import {proxyRequest} from './handler';
-import {getRequestHeaderInfo} from '../server';
+import {getHttpRequestHeaderPartInfo} from '../server';
 import {requestAndGetResponseInfo} from '../client';
 import { getAFreePort } from '../../net';
 
@@ -47,7 +47,7 @@ export async function twoWayOfProxyPayload() {
       res({origin});
     });
     server.on('request', (req, res) => {
-      const {headers} = getRequestHeaderInfo(req);
+      const {headers} = getHttpRequestHeaderPartInfo(req);
       const {handler = '2'} = headers;
       if (handler === '2') {
         return handler2(req, res);

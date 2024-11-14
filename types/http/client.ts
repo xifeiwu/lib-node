@@ -1,11 +1,11 @@
+import {Readable} from 'stream';
 import {IncomingHttpHeaders, OutgoingHttpHeaders, RequestOptions} from 'http';
 import {UrlProps} from '../../external';
 import {CanConvertToBuffer} from '../transform';
-import {Readable} from 'stream';
-import { HttpResponseProps } from './tcp';
+import {HttpResponseInfo} from './tcp';
 
 export type HttpRequestPayload = CanConvertToBuffer | Readable;
-export type HttpResponseInfo<DataType = any> = HttpResponseProps<DataType, 'receiver'>
+export type HttpReceiverResponseInfo<DataType = any> = HttpResponseInfo<DataType, 'receiver'>;
 /**
  * A very simple request options can be used for both HttpRequest and AxiosRequest
  */
@@ -14,7 +14,7 @@ export interface GeneralRequestOptions<Payload extends HttpRequestPayload = any>
   data?: Payload;
 }
 
-export type ValidateStatus = (responseInfo: HttpResponseInfo) => boolean;
+export type ValidateStatus = (responseInfo: HttpReceiverResponseInfo) => boolean;
 /**
  * A custom requestOptions based on http.RequestOptions, and used for requestAndGetResponse function.
  */

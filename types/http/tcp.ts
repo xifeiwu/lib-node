@@ -10,19 +10,19 @@ interface ConnectionRoleToHeaderType {
 }
 
 // GET /api/test/echo HTTP/1.1
-export interface HttpRequestFirstLineProps {
+export interface HttpRequestFirstLineInfo {
   method: string;
   url: string;
   httpVersion: string;
 }
 
-export interface HttpRequestHeaderPartProps<Role extends ConnectionRole = 'sender'>
-  extends HttpRequestFirstLineProps {
+export interface HttpRequestHeaderPartInfo<Role extends ConnectionRole = 'sender'>
+  extends HttpRequestFirstLineInfo {
   headers?: ConnectionRoleToHeaderType[Role];
 }
 
-export interface HttpRequestProps<DataType = any, Role extends ConnectionRole = 'sender'>
-  extends HttpRequestHeaderPartProps<Role> {
+export interface HttpRequestInfo<DataType = any, Role extends ConnectionRole = 'sender'>
+  extends HttpRequestHeaderPartInfo<Role> {
   data?: DataType;
 }
 
@@ -32,15 +32,15 @@ export interface HttpResponseFirstLineProps {
   statusMessage: string;
 }
 
-export interface HttpResponseHeaderPartProps<Role extends ConnectionRole = 'receiver'>
+export interface HttpResponseHeaderPartInfo<Role extends ConnectionRole = 'receiver'>
   extends HttpResponseFirstLineProps {
   headers?: ConnectionRoleToHeaderType[Role];
 }
 
-export interface HttpResponseProps<DataType = any, Role extends ConnectionRole = 'receiver'>
-  extends HttpResponseHeaderPartProps<Role> {
+export interface HttpResponseInfo<DataType = any, Role extends ConnectionRole = 'receiver'>
+  extends HttpResponseHeaderPartInfo<Role> {
   data?: DataType;
 }
 
-export type TcpHttpRequestOptions = Omit<HttpRequestProps, 'method' | 'url' | 'httpVersion' | 'headers'> &
-  Partial<Pick<HttpRequestProps, 'method' | 'url' | 'httpVersion' | 'headers'>>;
+export type TcpHttpRequestOptions = Omit<HttpRequestInfo, 'method' | 'url' | 'httpVersion' | 'headers'> &
+  Partial<Pick<HttpRequestInfo, 'method' | 'url' | 'httpVersion' | 'headers'>>;

@@ -7,7 +7,7 @@ import {
   formatDate,
   httpFirstLineReg,
   ColorStyle,
-  HttpRequestFirstLineProps,
+  HttpRequestFirstLineInfo,
   SocketInfo,
   logColorful,
 } from '../../index';
@@ -142,7 +142,7 @@ export function writeDataByInterval(
 type ProtocolInfo =
   | {
       protocol: 'http';
-      infoRequest: HttpRequestFirstLineProps;
+      infoRequest: HttpRequestFirstLineInfo;
     }
   | {
       protocol: 'socks5';

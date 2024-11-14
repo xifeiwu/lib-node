@@ -1,5 +1,5 @@
 import {
-  getRequestHeaderInfo,
+  getHttpRequestHeaderPartInfo,
   startHttpServer,
   toBuffer,
   toHtml,
@@ -58,7 +58,7 @@ export async function start() {
     const {host, port, origin, server} = await startHttpServer(
       {
         request(req, res) {
-          const {url} = getRequestHeaderInfo(req);
+          const {url} = getHttpRequestHeaderPartInfo(req);
           const port = url.substring(1);
           const ports = Object.keys(originToSalve);
           if (ports.includes(port)) {
