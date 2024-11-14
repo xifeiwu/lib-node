@@ -75,21 +75,21 @@ export const getHttpRequestHeaderPartProps: GetIncomingMessageHeader<'server'> =
  * @param request
  * @returns
  */
-export async function getRequestInfo(request: http.IncomingMessage): Promise<HttpRequestProps> {
+export async function getHttpRequestProps(request: http.IncomingMessage): Promise<HttpRequestProps> {
   const data = fromBuffer(await getIncomingMessageData(request), 'json');
   return {
-    ...getRequestHeaderInfo(request),
+    ...getHttpRequestHeaderPartProps(request),
     data,
   };
 }
-export async function getHttpRequestProps(request: http.IncomingMessage): Promise<HttpRequestProps> {
-  return getRequestInfo(request);
-}
+// export async function getHttpRequestProps(request: http.IncomingMessage): Promise<HttpRequestProps> {
+//   return getHttpRequestProps(request);
+// }
 
 /**
- * responsee/echo requestInfo
+ * response/echo requestInfo
  */
-export async function responseHttpRequestInfo(request: http.IncomingMessage, response: http.ServerResponse) {
+export async function responseHttpRequestProps(request: http.IncomingMessage, response: http.ServerResponse) {
   const requestInfo = await getHttpRequestProps(request);
   const resData = toBuffer(requestInfo);
   response.setHeader['content-length'] = resData.byteLength;
@@ -166,7 +166,7 @@ export async function startHttpDebugServer(
         logRequestHeaderInfo &&
           logColorful({color: logRequestHeaderInfo}, 'headerPart Info:', getRequestHeaderInfo(request));
         logSocketState && watchSocketState(request.socket, {colorStyle: {color: 'yellow'}});
-        responseHttpRequestInfo(request, response);
+        responseHttpRequestProps(request, response);
       },
       connect(req, socket, head) {
         const {responseInfo} = handleConnectEvent(req);

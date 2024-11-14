@@ -26,7 +26,7 @@ export {
   HttpRequestOptions,
   requestAndGetResponseInfo,
   toReadable,
-  getRequestInfo,
+  getHttpRequestProps,
   startHttpServer,
   watchSocketState,
   startTcpProxyServer,

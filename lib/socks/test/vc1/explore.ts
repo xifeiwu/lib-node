@@ -1,5 +1,5 @@
 import {
-  getRequestInfo,
+  getHttpRequestProps,
   getSocketInfo,
   startHttpServer,
   toBuffer,
@@ -52,7 +52,7 @@ export async function proxyToOtherSocksServer() {
   const {port: httpPort} = await startHttpServer(
     {
       async request(request, response) {
-        const requestInfo = await getRequestInfo(request);
+        const requestInfo = await getHttpRequestProps(request);
         const resData = toBuffer({...requestInfo, socketInfo: getSocketInfo(request.socket)});
         response.setHeader['content-length'] = resData.byteLength;
         response.setHeader['content-type'] = 'application/json';
