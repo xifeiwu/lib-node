@@ -26,14 +26,14 @@ export interface HttpRequestInfo<DataType = any, Role extends ConnectionRole = '
   data?: DataType;
 }
 
-export interface HttpResponseFirstLineProps {
+export interface HttpResponseFirstLineInfo {
   httpVersion: string;
   statusCode: number;
   statusMessage: string;
 }
 
 export interface HttpResponseHeaderPartInfo<Role extends ConnectionRole = 'receiver'>
-  extends HttpResponseFirstLineProps {
+  extends HttpResponseFirstLineInfo {
   headers?: ConnectionRoleToHeaderType[Role];
 }
 

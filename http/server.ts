@@ -56,11 +56,6 @@ export async function startHttpServer(
   });
 }
 
-/**
- * @deprecated by getHttpRequestHeaderPartProps
- * @param request
- * @returns
- */
 export const getHttpRequestHeaderPartInfo: GetIncomingMessageHeader<'server'> = (request: IncomingMessage) => {
   const {method, url, httpVersion, headers} = request;
   return {method, url, httpVersion, headers};
