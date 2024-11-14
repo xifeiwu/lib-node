@@ -34,4 +34,5 @@ export {
   uuid,
   base64Chars,
   getRandomBase64String,
+  toInteger,
 } from '../../fe/common';

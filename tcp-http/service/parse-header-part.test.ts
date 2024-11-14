@@ -3,9 +3,9 @@ import {Readable} from 'stream';
 import {tryParseHttpFirstLine, tryParseHttpHeaderPart} from './parse-header-part';
 import {tcpRequestPropsToBuffer} from './client';
 import {getDataFromReadable} from '../../stream';
-import {TcpRequestProps} from '../../types';
+import {TcpHttpRequestOptions} from '../../types';
 
-const requestProps: TcpRequestProps = {
+const requestProps: TcpHttpRequestOptions = {
   method: 'post',
   url: '/api/debug/echo',
   headers: {

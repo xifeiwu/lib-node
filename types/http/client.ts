@@ -1,11 +1,11 @@
-import {IncomingHttpHeaders, RequestOptions, ServerOptions} from 'http';
-import {OutgoingHttpHeaders} from 'http2';
-import {UrlProps} from '../external';
-import {CanConvertToBuffer} from './transform';
+import {IncomingHttpHeaders, OutgoingHttpHeaders, RequestOptions} from 'http';
+import {UrlProps} from '../../external';
+import {CanConvertToBuffer} from '../transform';
 import {Readable} from 'stream';
+import { HttpResponseProps } from './tcp';
 
 export type HttpRequestPayload = CanConvertToBuffer | Readable;
-
+export type HttpResponseInfo<DataType = any> = HttpResponseProps<DataType, 'receiver'>
 /**
  * A very simple request options can be used for both HttpRequest and AxiosRequest
  */
@@ -25,32 +25,6 @@ export interface HttpRequestOptions<Payload extends HttpRequestPayload = any>
 export interface ResponseSideToHeaderType {
   Server: OutgoingHttpHeaders;
   Client: IncomingHttpHeaders;
-}
-
-/**
- * Set Client as default type of Side to make use of key words of type IncomingHttpHeaders
- */
-export interface HttpResponseInfo<T = any, Side extends 'Server' | 'Client' = 'Client'> {
-  httpVersion: string;
-  statusCode: number;
-  statusMessage: string;
-  headers?: ResponseSideToHeaderType[Side];
-  data?: T;
-}
-
-export interface HttpServerConfig {
-  host?: string;
-  port?: number;
-  options?: ServerOptions;
-}
-
-/**
- * How to handle IncomingMessage
- * There is no object values to make sure params can be passed by querystring
- */
-export interface CustomHandleRequestOptions {
-  delayMs?: number | string;
-  responseCode?: number | string;
 }
 
 /**

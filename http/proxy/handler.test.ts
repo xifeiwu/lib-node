@@ -3,7 +3,7 @@ import https from 'https';
 import {getDataFromReadable} from '../../stream';
 // import {getAFreePort} from '../../net/http';
 import {proxyRequest} from './handler';
-import {getRequestHeaderInfo} from '../common';
+import {getRequestHeaderInfo} from '../server';
 import {requestAndGetResponseInfo} from '../client';
 import { getAFreePort } from '../../net';
 

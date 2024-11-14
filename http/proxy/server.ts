@@ -1,6 +1,6 @@
 import {startHttpServer} from '../server';
 import {HttpProxyConfig, ProxyStatus} from './types';
-import {getRequestHeaderInfo} from '../common';
+import {getRequestHeaderInfo} from '../server';
 import {toBuffer} from '../../transform';
 import {proxyRequest} from './handler';
 import {toUrlInstance} from '../../external';

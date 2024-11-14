@@ -1,25 +1,23 @@
+import {Socket} from 'net';
 import http, {RequestListener} from 'http';
-import {toBuffer} from '../transform';
+import {fromBuffer, toBuffer} from '../transform';
 import {createHash} from 'crypto';
 import {IncomingMessage} from 'http';
 import {Duplex} from 'stream';
 import {
-  TcpHttpRequestProps,
   HttpRequestOptions,
   HttpResponseInfo,
-  getRequestHeaderInfo,
-  getRequestInfo,
   logColorful,
   watchSocketState,
   responseInfoToBuffer,
   HttpServerConfig,
   LogColors,
+  HttpRequestHeaderPartProps,
+  getIncomingMessageData,
 } from '../index';
+import {HttpRequestProps, CustomHandleRequestOptions, GetIncomingMessageHeader} from '../types';
 import {getAFreePort} from '../net';
-import {Socket} from 'net';
-import {deepEqual, toUrlProps, isNumber, waitFor} from '../external';
-import {CustomHandleRequestOptions} from '../types';
-import {toInteger} from '../../fe/utils';
+import {deepEqual, toUrlProps, isNumber, waitFor, toInteger} from '../external';
 
 export async function startHttpServer(
   handler: {
@@ -56,6 +54,18 @@ export async function startHttpServer(
       rej(err);
     });
   });
+}
+
+export const getRequestHeaderInfo: GetIncomingMessageHeader<'server'> = (request: IncomingMessage) => {
+  const {method, url, httpVersion, headers} = request;
+  return {method, url, httpVersion, headers};
+};
+export async function getRequestInfo(request: http.IncomingMessage): Promise<HttpRequestProps> {
+  const data = fromBuffer(await getIncomingMessageData(request), 'json');
+  return {
+    ...getRequestHeaderInfo(request),
+    data,
+  };
 }
 
 /**
@@ -224,7 +234,7 @@ export function handleConnectEvent(
   req: IncomingMessage,
   socket?: Duplex,
   head?: Buffer
-): {requestHeaderPartInfo: TcpHttpRequestProps; responseInfo: HttpResponseInfo} {
+): {requestHeaderPartInfo: HttpRequestHeaderPartProps<'receiver'>; responseInfo: HttpResponseInfo} {
   const requestHeaderPartInfo = getRequestHeaderInfo(req);
   const responseInfo: HttpResponseInfo = {
     httpVersion: 'HTTP/1.1',

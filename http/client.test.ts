@@ -7,8 +7,14 @@ import {
   requestAndGetUpgradeInfo,
   upgradeToWebsocket,
 } from './client';
-import {getRequestInfo, getResponseInfo, responseInfoToBuffer} from './common';
-import {handleConnectEvent, handleWebsocketUpgrade, responseRequestEvent, startHttpServer} from './server';
+import {getResponseInfo, responseInfoToBuffer} from './common';
+import {
+  getRequestInfo,
+  handleConnectEvent,
+  handleWebsocketUpgrade,
+  responseRequestEvent,
+  startHttpServer,
+} from './server';
 
 export async function testRequestAndGetResponseInfo() {
   const {statusCode, data, headers} = await requestAndGetResponseInfo({

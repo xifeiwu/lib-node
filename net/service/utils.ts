@@ -7,7 +7,7 @@ import {
   formatDate,
   httpFirstLineReg,
   ColorStyle,
-  HttpFirstLineProps,
+  HttpRequestFirstLineProps,
   SocketInfo,
   logColorful,
 } from '../../index';
@@ -142,7 +142,7 @@ export function writeDataByInterval(
 type ProtocolInfo =
   | {
       protocol: 'http';
-      info: HttpFirstLineProps;
+      infoRequest: HttpRequestFirstLineProps;
     }
   | {
       protocol: 'socks5';
@@ -164,7 +164,7 @@ export function getProtocolInfoByFirstChunk(chunk: Buffer): ProtocolInfo {
       const [method, url, httpVersion] = execHttpReg.slice(1);
       return {
         protocol: 'http',
-        info: {
+        infoRequest: {
           method,
           url,
           httpVersion,

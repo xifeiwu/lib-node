@@ -1,6 +1,6 @@
 import https from 'https';
 import http, {IncomingMessage, ServerResponse} from 'http';
-import {getRequestHeaderInfo, getResponseHeaderInfo} from '../common';
+import {getResponseHeaderInfo} from '../common';
 import {toUrlInstance, deepClone, deepMerge, getUrlPropsFromConfig} from '../../external';
 import {HttpProxyConfig, ProxyStatus} from './types';
 import {toReadable, getDataByTransform} from '../../stream';
@@ -12,6 +12,7 @@ import {
 } from '../client';
 import {logColorful} from '../../log';
 import {HttpRequestOptions, HttpResponseInfo} from '../../types';
+import { getRequestHeaderInfo } from '../server';
 
 /**
  * On response to proxy: print more info when http status code is invalid.
