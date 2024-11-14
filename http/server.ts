@@ -82,7 +82,7 @@ export async function getRequestInfo(request: http.IncomingMessage): Promise<Htt
     data,
   };
 }
-export async function getHttpRequestInfo(request: http.IncomingMessage): Promise<HttpRequestProps> {
+export async function getHttpRequestProps(request: http.IncomingMessage): Promise<HttpRequestProps> {
   return getRequestInfo(request);
 }
 
@@ -90,7 +90,7 @@ export async function getHttpRequestInfo(request: http.IncomingMessage): Promise
  * responsee/echo requestInfo
  */
 export async function responseHttpRequestInfo(request: http.IncomingMessage, response: http.ServerResponse) {
-  const requestInfo = await getHttpRequestInfo(request);
+  const requestInfo = await getHttpRequestProps(request);
   const resData = toBuffer(requestInfo);
   response.setHeader['content-length'] = resData.byteLength;
   response.setHeader['content-type'] = 'application/json';
