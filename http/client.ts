@@ -1,5 +1,6 @@
 import http from 'http';
 import https from 'https';
+import querystring, {ParsedUrlQueryInput} from 'querystring';
 import {toBuffer} from '../transform';
 import {Socket} from 'net';
 import {getContentTypeByData, getResponseInfo} from './common';
@@ -42,24 +43,35 @@ export function sendHttpRequest<Payload extends HttpRequestPayload = any>(
   options: HttpRequestOptions<Payload>
 ) {
   const {urlProps, restProps} = getUrlPropsFromConfig(options);
-  const {data, headers = {}, ...requestOptions} = restProps;
-  let finalData: Readable | Buffer = data as Buffer;
+  const {data, headers: _headers = {}, ...requestOptions} = restProps;
+  const headers = Object.entries(_headers).reduce<http.OutgoingHttpHeaders>((sum, [key, value]) => {
+    return {
+      ...sum,
+      [key.toLocaleLowerCase()]: value,
+    };
+  }, {});
+  let finalData: HttpRequestPayload = data as Buffer;
   const dataIsUndefined = data === undefined;
   const dataIsReadable = isReadable(finalData as unknown as Readable);
   // requestOptions.headers['connection'] = 'keep-alive';
   if (!dataIsUndefined) {
-    const headerKeys = Object.keys(headers).map(it => it.toLowerCase());
     if (dataIsReadable) {
-      if (!headerKeys.includes('transfer-encoding')) {
-        headers['Transfer-Encoding'] = 'chunked';
+      if (!headers['transfer-encoding']) {
+        headers['transfer-encoding'] = 'chunked';
       }
     } else {
-      finalData = toBuffer(data);
-      /** 'content-type' passed have higher priority */
-      if (!headerKeys.includes('content-type')) {
-        headers['content-type'] = getContentTypeByData(data);
-        headers['content-length'] = finalData.byteLength;
+      const contentType = headers['content-type'] ?? getContentTypeByData(data);
+      finalData = data;
+      if (
+        typeof contentType === 'string' &&
+        contentType.includes('x-www-form-urlencoded') &&
+        isObject(data)
+      ) {
+        finalData = querystring.stringify(finalData as ParsedUrlQueryInput);
       }
+      finalData = toBuffer(finalData);
+      headers['content-length'] = (finalData as Buffer).byteLength;
+      headers['content-type'] = contentType;
     }
   }
   let clientRequest: http.ClientRequest | null = null;
