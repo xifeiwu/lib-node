@@ -15,7 +15,7 @@ function unifyObject(value: any) {
 
 export function findMockFile(
   targetRequestConfig: RequestConfig,
-  mockContentList: MockFileContentWithRelativePath[],
+  mockContentList: MockFileContentWithPathInfo[],
   options?: {
     debugCompare?: ParamsForFindMockInfoInDir['options']['debugCompare'];
   }
@@ -80,11 +80,12 @@ export function findMockFile(
   return target;
 }
 
-export interface MockFileContentWithRelativePath extends MockFileContent {
+export interface MockFileContentWithPathInfo extends MockFileContent {
+  fullPath: string;
   relativePath: string;
 }
 export function getMockFileFinderByDir(config: ParamsForFindMockInfoInDir): {
-  mockFileList: Array<MockFileContentWithRelativePath>;
+  mockFileList: Array<MockFileContentWithPathInfo>;
   finder: MockFileFinder;
 } {
   const {targetDir, options = {}} = config;
@@ -103,12 +104,12 @@ export function getMockFileFinderByDir(config: ParamsForFindMockInfoInDir): {
   } else if (Array.isArray(excludedFileList)) {
     targetFileList = relativeFileList.filter(it => !matchFilters(excludedFileList, it));
   }
-  const mockFileList: MockFileContentWithRelativePath[] = targetFileList
+  const mockFileList: MockFileContentWithPathInfo[] = targetFileList
     .map(relativePath => {
       const fullPath = path.resolve(targetDir, relativePath);
       try {
         const mockFileContent = require(fullPath) as MockFileContent;
-        return {...mockFileContent, relativePath};
+        return {...mockFileContent, relativePath, fullPath};
       } catch (err) {
         console.log(`Error, require mock file: ${fullPath}`);
         // console.log(err);
