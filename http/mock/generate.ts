@@ -60,19 +60,24 @@ export async function requestAndSaveMockInfo(requestConfig: RequestConfig, optio
     fullPath = fullPath + '.js';
   }
   console.log(`writing mock file ${fullPath}`);
-  fs.writeFileSync(
-    fullPath,
-    convertObjectToCjsContent({
-      ignore: false,
-      ignoreComparePayload: false,
+  const content: MockFileContent = {
+    ignore: false,
+    queryCompare: {
+      ignore: true,
       includeObjectKeys: null,
-      excludeObjectKeys: null,
-      requestConfig: makeSureHttpRequestOptionsSerializable(requestConfig),
-      resHeaders: headers,
-      resData,
-      ...(otherContents ?? {}),
-    })
-  );
+      excludeObjectKeys: {},
+    },
+    payloadCompare: {
+      ignore: true,
+      includeObjectKeys: null,
+      excludeObjectKeys: {},
+    },
+    requestConfig: makeSureHttpRequestOptionsSerializable(requestConfig),
+    resHeaders: headers,
+    resData,
+    ...(otherContents ?? {}),
+  };
+  fs.writeFileSync(fullPath, convertObjectToCjsContent(content));
 }
 
 export async function generateMockInfoByDir(requestConfigDir: string, options: RequestByDir) {
