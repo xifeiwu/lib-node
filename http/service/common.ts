@@ -54,3 +54,19 @@ export function getContentTypeByData(data: CanConvertToBuffer | Readable) {
     return 'text/plain';
   }
 }
+
+export function updateHeadersByHttpInfo
+let finalData: ConnectionPayload = data;
+const dataIsUndefined = data === undefined;
+const dataIsReadable = isReadable(finalData as Readable);
+if (!dataIsUndefined && !dataIsReadable) {
+  const contentType = headers['content-type'];
+  if (typeof contentType === 'string' && contentType.includes('x-www-form-urlencoded') && isObject(data)) {
+    finalData = querystring.stringify(finalData as ParsedUrlQueryInput);
+  }
+}
+finalData = convertToBuffer(finalData);
+/** As we try to avoid close connection on client side, so must append content-length on headers */
+if (!headers['content-length']) {
+  headers['content-length'] = (finalData as Buffer).byteLength;
+}
