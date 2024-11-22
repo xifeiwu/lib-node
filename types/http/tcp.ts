@@ -4,9 +4,17 @@
 import {IncomingHttpHeaders, OutgoingHttpHeaders} from 'http';
 import {ConnectionRole} from '../tcp';
 
-interface ConnectionRoleToHeaderType {
+interface HttpHeadersTypByConnectionRole {
   sender: OutgoingHttpHeaders;
   receiver: IncomingHttpHeaders;
+}
+
+/**
+ * Http headers, data part are common for both client, server, sender or receiver
+ */
+export interface HttpCommonInfo<DataType = any, Role extends ConnectionRole = 'sender'> {
+  headers?: HttpHeadersTypByConnectionRole[Role];
+  data?: DataType;
 }
 
 // GET /api/test/echo HTTP/1.1
@@ -18,7 +26,7 @@ export interface HttpRequestFirstLineInfo {
 
 export interface HttpRequestHeaderPartInfo<Role extends ConnectionRole = 'sender'>
   extends HttpRequestFirstLineInfo {
-  headers?: ConnectionRoleToHeaderType[Role];
+  headers?: HttpHeadersTypByConnectionRole[Role];
 }
 
 export interface HttpRequestInfo<DataType = any, Role extends ConnectionRole = 'sender'>
@@ -34,7 +42,7 @@ export interface HttpResponseFirstLineInfo {
 
 export interface HttpResponseHeaderPartInfo<Role extends ConnectionRole = 'receiver'>
   extends HttpResponseFirstLineInfo {
-  headers?: ConnectionRoleToHeaderType[Role];
+  headers?: HttpHeadersTypByConnectionRole[Role];
 }
 
 export interface HttpResponseInfo<DataType = any, Role extends ConnectionRole = 'receiver'>

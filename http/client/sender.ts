@@ -1,7 +1,7 @@
 import http from 'http';
 import https from 'https';
 import querystring, {ParsedUrlQueryInput} from 'querystring';
-import {fromBuffer, toBuffer} from '../../transform';
+import {convertToBuffer, fromBuffer, toBuffer} from '../../transform';
 import {Socket} from 'net';
 import {getContentTypeByData, getIncomingMessageData, convertKeyToLowerCase} from '../service';
 import {
@@ -12,12 +12,7 @@ import {
   isObject,
   getRandomBase64String,
 } from '../../external';
-import {
-  HttpRequestOptions,
-  HttpResponseInfo,
-  HttpRequestPayload,
-  ValidateStatus,
-} from '../../types';
+import {HttpRequestOptions, HttpResponseInfo, HttpRequestPayload, ValidateStatus} from '../../types';
 import {Readable, isReadable} from 'stream';
 import {getHttpResponseInfo} from './receiver';
 
@@ -51,29 +46,19 @@ export function sendHttpRequest<Payload extends HttpRequestPayload = any>(
   const {urlProps, restProps} = getUrlPropsFromConfig(options);
   const {data, headers: _headers = {}, ...requestOptions} = restProps;
   const headers = convertKeyToLowerCase(_headers);
-  let finalData: HttpRequestPayload = data as Buffer;
+  let finalData: HttpRequestPayload = data;
   const dataIsUndefined = data === undefined;
-  const dataIsReadable = isReadable(finalData as unknown as Readable);
-  // requestOptions.headers['connection'] = 'keep-alive';
-  if (!dataIsUndefined) {
-    if (dataIsReadable) {
-      if (!headers['transfer-encoding']) {
-        headers['transfer-encoding'] = 'chunked';
-      }
-    } else {
-      const contentType = headers['content-type'] ?? getContentTypeByData(data);
-      finalData = data;
-      if (
-        typeof contentType === 'string' &&
-        contentType.includes('x-www-form-urlencoded') &&
-        isObject(data)
-      ) {
-        finalData = querystring.stringify(finalData as ParsedUrlQueryInput);
-      }
-      finalData = toBuffer(finalData);
-      headers['content-length'] = (finalData as Buffer).byteLength;
-      headers['content-type'] = contentType;
+  const dataIsReadable = isReadable(finalData as Readable);
+  if (!dataIsUndefined && !dataIsReadable) {
+    const contentType = headers['content-type'];
+    if (typeof contentType === 'string' && contentType.includes('x-www-form-urlencoded') && isObject(data)) {
+      finalData = querystring.stringify(finalData as ParsedUrlQueryInput);
     }
+  }
+  finalData = convertToBuffer(finalData);
+  /** As we try to avoid close connection on client side, so must append content-length on headers */
+  if (!headers['content-length']) {
+    headers['content-length'] = (finalData as Buffer).byteLength;
   }
   let clientRequest: http.ClientRequest | null = null;
   const {protocol, href} = toUrlInstance(urlProps);

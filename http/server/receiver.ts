@@ -1,6 +1,6 @@
 import {Socket} from 'net';
 import http, {RequestListener} from 'http';
-import {fromBuffer, toBuffer} from '../../transform';
+import {convertToBuffer, fromBuffer, toBuffer} from '../../transform';
 import {createHash} from 'crypto';
 import {IncomingMessage} from 'http';
 import {Duplex} from 'stream';
@@ -86,7 +86,7 @@ export async function getHttpRequestInfo<DataType = any>(
  */
 export async function responseHttpRequestInfo(request: http.IncomingMessage, response: http.ServerResponse) {
   const requestInfo = await getHttpRequestInfo(request);
-  const resData = toBuffer(requestInfo);
+  const resData = convertToBuffer(requestInfo);
   response.setHeader['content-length'] = resData.byteLength;
   response.setHeader['content-type'] = 'application/json';
   response.end(resData);

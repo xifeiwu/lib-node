@@ -1,7 +1,9 @@
-import {IncomingHttpHeaders, OutgoingHttpHeaders} from 'http';
-import {toBuffer, convertToBuffer} from '../../transform';
-import {CanConvertToBuffer, HttpResponseInfo, HttpRequestInfo} from '../../types';
+import {convertToBuffer} from '../../transform';
+import querystring, {ParsedUrlQueryInput} from 'querystring';
+import {HttpResponseInfo, HttpRequestInfo, HttpCommonInfo, HttpRequestPayload} from '../../types';
 import {convertKeyToLowerCase, getContentTypeByData} from '../service';
+import {isReadable, Readable} from 'stream';
+import {isObject} from '../../external';
 
 /**
  * @deprecated by httpResponseInfoToBuffer
@@ -9,11 +11,50 @@ import {convertKeyToLowerCase, getContentTypeByData} from '../service';
  */
 export function tcpResponsePropsToBuffer(info: HttpResponseInfo) {}
 
-function httpInfoToBuffer(
-  firstLine: string,
-  restInfo?: {headers?: IncomingHttpHeaders | OutgoingHttpHeaders; data?: CanConvertToBuffer}
-) {
-  const {headers, data} = restInfo;
+/**
+ * supplement some logic existed in http modules
+ * @param info
+ * @returns
+ */
+export function updateHeadersByHttpInfo(info: HttpCommonInfo) {
+  const {headers: _headers, data} = info;
+
+  const headers = convertKeyToLowerCase(_headers);
+  if (!data) {
+    return headers;
+  }
+  // if (!headers['content-type']) {
+  //   headers['content-type'] = getContentTypeByData(data);
+  // }
+  let finalData: HttpRequestPayload = data;
+  const dataIsReadable = isReadable(finalData as Readable);
+  if (dataIsReadable) {
+    if (!headers['transfer-encoding']) {
+      headers['transfer-encoding'] = 'chunked';
+    }
+  } else {
+    finalData = data;
+    const contentType = headers['content-type'];
+    if (contentType) {
+      if (
+        typeof contentType === 'string' &&
+        contentType.includes('x-www-form-urlencoded') &&
+        isObject(data)
+      ) {
+        finalData = querystring.stringify(finalData as ParsedUrlQueryInput);
+      }
+    }
+    finalData = convertToBuffer(finalData);
+    if (!headers['content-length']) {
+      headers['content-length'] = (finalData as Buffer).byteLength;
+    }
+  }
+  return {headers, data: finalData};
+}
+
+function httpInfoToBuffer(firstLine: string, commonInfo?: HttpCommonInfo, options?: {preTreat?: boolean}) {
+  const {preTreat = true} = options ?? {};
+  const {headers, data} = preTreat ? updateHeadersByHttpInfo(commonInfo) : commonInfo;
   const headerLines = Object.entries(headers)
     .map(([key, value]) => {
       return key + ': ' + value + '\r\n';
@@ -41,14 +82,3 @@ export function httpRequestInfoToBuffer(requestInfo: Partial<HttpRequestInfo>) {
   const firstLine = [method, url, finalHttpVersion].join(' ').toUpperCase();
   return httpInfoToBuffer(firstLine, {headers, data});
 }
-
-// const headers = convertKeyToLowerCase(_headers);
-// if (!headers['content-type'] && data) {
-//   headers['content-type'] = getContentTypeByData(data);
-// }
-// const bufferOfData = convertToBuffer(data);
-// if (bufferOfData.byteLength > 0) {
-//   headers['content-length'] = bufferOfData.byteLength + '';
-// } else {
-//   headers['content-length'] = 0 + '';
-// }

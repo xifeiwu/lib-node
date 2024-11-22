@@ -13,10 +13,12 @@ import {
   handleConnectEvent,
   handleWebsocketUpgrade,
   responseHttpRequestInfo,
+  startHttpDebugServer,
   startHttpServer,
 } from '../server';
 
 export async function testRequestAndGetResponseInfo() {
+  const d = await startHttpDebugServer();
   const {statusCode, data, headers} = await requestAndGetResponseInfo({
     url: 'http://elif.site/api/debug/:action',
     pathnameParams: {
