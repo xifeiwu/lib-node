@@ -58,7 +58,7 @@ export function htmlUlItems(config: {items: Array<LiProps>; htmlProps?: HtmlProp
 // return file list in the form of <ul><li></li></ul>
 export function ulDirContent(dir: string, options?: GoThroughDirOptions) {
   options = {
-    maxDepth: 0,
+    maxDepth: 1,
     ignoreError: true,
     ...(options ?? {}),
   };
@@ -98,7 +98,7 @@ export function ulDirContent(dir: string, options?: GoThroughDirOptions) {
 }
 
 export function htmlDirContent(dir: string, options?: GoThroughDirOptions, htmlProps?: HtmlProps) {
-  const {title = '文件列表', body = ''} = htmlProps ?? {};
+  const {title = `content of ${path.basename(dir)}`, body = ''} = htmlProps ?? {};
   return toHtml({
     title,
     body: body + ulDirContent(dir, options),
@@ -108,7 +108,7 @@ export function htmlDirContent(dir: string, options?: GoThroughDirOptions, htmlP
 /**
  * response for a file or dir
  */
-export async function getFileContentInFormOfStream(targetFile: string) {
+export function streamFileContent(targetFile: string) {
   if (!targetFile) {
     return null;
   }
