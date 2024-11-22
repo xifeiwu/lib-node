@@ -1,6 +1,5 @@
-
 import {IncomingMessage} from 'http';
-import {CanConvertToBuffer, HttpResponseInfo} from '../../types';
+import {CanConvertToBuffer} from '../../types';
 import {isPlainObject} from '../../external';
 import {Readable} from 'stream';
 
@@ -17,7 +16,7 @@ export async function getIncomingMessageData(incomingMessage: IncomingMessage) {
   const {headers} = incomingMessage;
   const contentLength = parseInt(headers['content-length']);
   let resolved = false;
-  return new Promise<Buffer>((res, rej) => {
+  return new Promise<Buffer | undefined>((res, rej) => {
     let byteLength = 0;
     const bufferList: Buffer[] = [];
     incomingMessage.on('data', (chunk: Buffer) => {
@@ -26,6 +25,7 @@ export async function getIncomingMessageData(incomingMessage: IncomingMessage) {
       }
       bufferList.push(chunk);
       byteLength += chunk.byteLength;
+      /** This logic is a bit redundant, nodejs http module can handle it well and trigger end event at correct moment */
       if (!Number.isNaN(contentLength) && byteLength >= contentLength) {
         resolved = true;
         res(Buffer.concat(bufferList).subarray(0, contentLength));
@@ -35,7 +35,11 @@ export async function getIncomingMessageData(incomingMessage: IncomingMessage) {
       if (resolved) {
         return;
       }
-      res(Buffer.concat(bufferList));
+      if (bufferList.length > 0) {
+        res(Buffer.concat(bufferList));
+      } else {
+        res(undefined);
+      }
     });
     incomingMessage.on('error', (err: any) => {
       rej(err);
