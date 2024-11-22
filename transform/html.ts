@@ -3,36 +3,36 @@ import path from 'path';
 import {Readable} from 'stream';
 import {GoThroughDirOptions, getFileInfoTree} from '../fs';
 import {filesize} from '../external';
+import {HtmlProps, LiProps} from '../types';
 
-export function toUl(items: Array<{href?: string; content: string; style?: object}>) {
+export function liItem(item: LiProps) {
+  const {href, label, style = {}} = item;
+  const finalLabel = label ?? href;
+  const styleStr = Object.entries(style)
+    .map(([key, value]) => {
+      return key + ': ' + value;
+    })
+    .join(';');
   return [
-    '<ul>',
-    ...items.map(item => {
-      const {href, content, style = {}} = item;
-      const styleStr = Object.entries(style)
-        .map(([key, value]) => {
-          return key + ': ' + value;
-        })
-        .join(';');
-      return [
-        '<li',
-        styleStr.length > 0 ? ' ' + styleStr : '',
-        '>',
-        href ? `<a href=${href}>${content}</a>` : content,
-        '</li>',
-      ].join('');
-    }),
-    '</ul>',
+    '<li',
+    styleStr.length > 0 ? ' ' + styleStr : '',
+    '>',
+    href ? `<a href=${href}>${finalLabel}</a>` : finalLabel,
+    '</li>',
   ].join('');
 }
+export function ulItems(items: Array<LiProps>) {
+  return ['<ul>', ...items.map(liItem), '</ul>'].join('');
+}
 
-export function toHtml(htmlTxt: string) {
+export function toHtml(props?: HtmlProps) {
+  const {title = '', body = ''} = props ?? {};
   return `<html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="viewport" content="initial-scale=1, width=device-width, maximum-scale=1, user-scalable=no" />
     <link rel="stylesheet" href="">
-    <title>文件列表</title>
+    <title>${title}</title>
     <script>
     window.addEventListener('load', function() {
     });
@@ -41,13 +41,22 @@ export function toHtml(htmlTxt: string) {
     </style>
   </head>
   <body>
-    ${htmlTxt}
+    ${body}
   </body>
 </html>`;
 }
 
+export function htmlUlItems(config: {items: Array<LiProps>; htmlProps?: HtmlProps}) {
+  const {items, htmlProps} = config;
+  const {title = '', body = ''} = htmlProps ?? {};
+  return toHtml({
+    title,
+    body: body + ulItems(items),
+  });
+}
+
 // return file list in the form of <ul><li></li></ul>
-export function htmlFileList(dir: string, options?: GoThroughDirOptions) {
+export function ulDirContent(dir: string, options?: GoThroughDirOptions) {
   options = {
     maxDepth: 0,
     ignoreError: true,
@@ -59,57 +68,41 @@ export function htmlFileList(dir: string, options?: GoThroughDirOptions) {
   }
   try {
     const {children} = getFileInfoTree(dir, options);
-    const liList = children.map(it => {
+    const liItems = children.map(it => {
       const {
         relativePath,
         stat: {size},
       } = it;
-      let item = '';
-      const content = `${relativePath} [${filesize(size)}]`;
+      let label: LiProps['label'] = `${relativePath} [${filesize(size)}]`;
+      let href: LiProps['href'] = relativePath;
+      let style: LiProps['style'];
       try {
         const statInfo = fs.statSync(path.resolve(dir, relativePath));
         if (statInfo.isDirectory()) {
-          item = `<li><a href="${relativePath}/">${content}/</a></li>`;
+          href = href + '/';
         } else if (statInfo.isFile()) {
-          item = `<li><a href="${relativePath}">${content}</a></li>`;
         } else {
-          item = `<li style="color: red"><a href="${relativePath}">${content}</a></li>`;
+          style = {
+            color: 'red',
+          };
         }
       } catch (err) {
-        item = `<li>${content} ${err?.message}</li>`;
+        label = label + ' ' + err?.message;
       }
-      return item;
+      return {label, href, style};
     });
-    const ul = ['<ul>', ...liList, '</ul>'].join('\n');
-    return ul;
+    return ulItems(liItems);
   } catch (err) {
     return `<div>${err.message}</div>`;
   }
 }
 
-export function htmlDirContent(dir: string, options?: GoThroughDirOptions) {
-  options = {
-    maxDepth: 1,
-    ...(options ?? {}),
-  };
-  const ulStr = htmlFileList(dir, options);
-  return `<html>
-  <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <meta name="viewport" content="initial-scale=1, width=device-width, maximum-scale=1, user-scalable=no" />
-    <link rel="stylesheet" href="">
-    <title>文件列表</title>
-    <script>
-    window.addEventListener('load', function() {
-    });
-    </script>
-    <style>
-    </style>
-  </head>
-  <body>
-    ${ulStr}
-  </body>
-</html>`;
+export function htmlDirContent(dir: string, options?: GoThroughDirOptions, htmlProps?: HtmlProps) {
+  const {title = '文件列表', body = ''} = htmlProps ?? {};
+  return toHtml({
+    title,
+    body: body + ulDirContent(dir, options),
+  });
 }
 
 /**
@@ -122,7 +115,6 @@ export async function getFileContentInFormOfStream(targetFile: string) {
   if (!fs.existsSync(targetFile)) {
     return null;
   }
-
   const statInfo = fs.statSync(targetFile);
   if (statInfo.isDirectory()) {
     const body = htmlDirContent(targetFile);

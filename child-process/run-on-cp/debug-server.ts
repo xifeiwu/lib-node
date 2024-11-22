@@ -5,8 +5,9 @@ import {
   getAFreePort,
   toBuffer,
   toHtml,
-  toUl,
+  ulItems,
   toUrlProps,
+  htmlUlItems,
 } from '../../index';
 import {handleCpCustomization, out, runAllCpCustomization} from './service';
 import {CP} from '../../types';
@@ -16,16 +17,14 @@ const allPathname = {
   exitProcess: '/api/exit',
   getEnv: '/api/env',
 };
-const apiListHtml = toHtml(
-  toUl(
-    Object.entries(allPathname).map(([key, href]) => {
-      return {
-        href,
-        content: key,
-      };
-    })
-  )
-);
+const apiListHtml = htmlUlItems({
+  items: Object.entries(allPathname).map(([key, href]) => {
+    return {
+      href,
+      content: key,
+    };
+  }),
+});
 
 export async function start() {
   let ipcMessage: InfoToCp<CP.DebugServerConfig> = {};

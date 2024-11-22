@@ -27,6 +27,7 @@ import {EMethod, NegotiationInfoClient as NegotiationInfoClientV5} from '../type
 import {RequestTarget} from '../types/base';
 import {Socket} from 'net';
 import {simplifySocksServerInfo, UPGRADE_PROTOCOL_SOCKS_PREFIX} from '..';
+import {htmlUlItems} from '../../..';
 
 export function getSocksClientConfigV5(socksServer: TargetSocksServer, requestTarget: RequestTarget) {
   const info: SocksClientConfig<5> = {
@@ -84,12 +85,12 @@ export async function startTcpServerForSocks(socksServerConfig: Partial<SocksSer
           res.end(toBuffer({length}));
         } else {
           const data = toBuffer(
-            toHtml(
-              toUl([
-                {href: '/api/list', content: '/api/list'},
-                {href: '/api/clear', content: '/api/clear'},
-              ])
-            )
+            htmlUlItems({
+              items: [
+                {href: '/api/list', label: '/api/list'},
+                {href: '/api/clear', label: '/api/clear'},
+              ],
+            })
           );
           res.setHeader('content-type', 'text/html');
           res.end(data);

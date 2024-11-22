@@ -3,10 +3,11 @@ import {
   startHttpServer,
   toBuffer,
   toHtml,
-  toUl,
+  ulItems,
   InfoToCp,
   serializeSpawnResponse,
   SerializableSpawnInfo,
+  htmlUlItems,
 } from '../../index';
 import {spawnScript} from './service';
 import {out} from './service';
@@ -68,16 +69,14 @@ export async function start() {
             res.setHeader('content-type', 'text/html');
             res.end(
               toBuffer(
-                toHtml(
-                  toUl(
-                    ports.map(it => {
-                      return {
-                        href: '/' + it,
-                        content: it,
-                      };
-                    })
-                  )
-                )
+                htmlUlItems({
+                  items: ports.map(it => {
+                    return {
+                      href: '/' + it,
+                      content: it,
+                    };
+                  }),
+                })
               )
             );
           }
