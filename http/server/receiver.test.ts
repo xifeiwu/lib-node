@@ -1,6 +1,6 @@
 import assert from 'assert';
-import {requestAndGetResponseInfo} from './client';
-import {responseHttpRequestInfo, startHttpServer} from './server';
+import {requestAndGetResponseInfo} from '../client';
+import {responseHttpRequestInfo, startHttpServer} from './receiver';
 
 export async function testResponseHttpRequestProps() {
   const {origin, server} = await startHttpServer({

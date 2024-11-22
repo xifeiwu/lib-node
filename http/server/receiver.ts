@@ -1,6 +1,6 @@
 import {Socket} from 'net';
 import http, {RequestListener} from 'http';
-import {fromBuffer, toBuffer} from '../transform';
+import {fromBuffer, toBuffer} from '../../transform';
 import {createHash} from 'crypto';
 import {IncomingMessage} from 'http';
 import {Duplex} from 'stream';
@@ -9,15 +9,15 @@ import {
   HttpResponseInfo,
   logColorful,
   watchSocketState,
-  responseInfoToBuffer,
   HttpServerConfig,
   LogColors,
   HttpRequestHeaderPartInfo,
   getIncomingMessageData,
-} from '../index';
-import {HttpRequestInfo, CustomHandleRequestOptions, GetIncomingMessageHeader} from '../types';
-import {getAFreePort} from '../net';
-import {deepEqual, toUrlProps, isNumber, waitFor, toInteger} from '../external';
+} from '../../index';
+import {HttpRequestInfo, CustomHandleRequestOptions, GetIncomingMessageHeader} from '../../types';
+import {getAFreePort} from '../../net';
+import {deepEqual, toUrlProps, isNumber, waitFor, toInteger} from '../../external';
+import {httpResponseInfoToBuffer} from '../tcp';
 
 export async function startHttpServer(
   handler: {
@@ -169,7 +169,7 @@ export async function startHttpDebugServer(
       },
       connect(req, socket, head) {
         const {responseInfo} = handleConnectEvent(req);
-        socket.write(responseInfoToBuffer(responseInfo));
+        socket.write(httpResponseInfoToBuffer(responseInfo));
         // handleSocketEvents(socket, {isServer: true, color: 'red'});
         socket.on('end', () => {
           socket.end();

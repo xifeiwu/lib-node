@@ -1,8 +1,17 @@
+
 import {IncomingMessage} from 'http';
-import {toBuffer} from '../transform';
-import {CanConvertToBuffer, HttpResponseInfo} from '../types';
-import {isPlainObject} from '../external';
+import {CanConvertToBuffer, HttpResponseInfo} from '../../types';
+import {isPlainObject} from '../../external';
 import {Readable} from 'stream';
+
+export function convertKeyToLowerCase<T extends object>(obj: T) {
+  return Object.entries(obj).reduce<T>((sum, [key, value]) => {
+    return {
+      ...sum,
+      [key.toLocaleLowerCase()]: value,
+    };
+  }, {} as T);
+}
 
 export async function getIncomingMessageData(incomingMessage: IncomingMessage) {
   const {headers} = incomingMessage;

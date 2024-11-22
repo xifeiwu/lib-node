@@ -1,9 +1,9 @@
 import http from 'http';
 import https from 'https';
 import querystring, {ParsedUrlQueryInput} from 'querystring';
-import {fromBuffer, toBuffer} from '../transform';
+import {fromBuffer, toBuffer} from '../../transform';
 import {Socket} from 'net';
-import {getContentTypeByData, getIncomingMessageData} from './common';
+import {getContentTypeByData, getIncomingMessageData, convertKeyToLowerCase} from '../service';
 import {
   toUrlInstance,
   getUrlPropsFromConfig,
@@ -11,15 +11,15 @@ import {
   urlPropsToHref,
   isObject,
   getRandomBase64String,
-} from '../external';
+} from '../../external';
 import {
   HttpRequestOptions,
   HttpResponseInfo,
   HttpRequestPayload,
   ValidateStatus,
-  GetIncomingMessageHeader,
-} from '../types';
+} from '../../types';
 import {Readable, isReadable} from 'stream';
+import {getHttpResponseInfo} from './receiver';
 
 process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
 
@@ -50,12 +50,7 @@ export function sendHttpRequest<Payload extends HttpRequestPayload = any>(
 ) {
   const {urlProps, restProps} = getUrlPropsFromConfig(options);
   const {data, headers: _headers = {}, ...requestOptions} = restProps;
-  const headers = Object.entries(_headers).reduce<http.OutgoingHttpHeaders>((sum, [key, value]) => {
-    return {
-      ...sum,
-      [key.toLocaleLowerCase()]: value,
-    };
-  }, {});
+  const headers = convertKeyToLowerCase(_headers);
   let finalData: HttpRequestPayload = data as Buffer;
   const dataIsUndefined = data === undefined;
   const dataIsReadable = isReadable(finalData as unknown as Readable);
@@ -249,32 +244,6 @@ export async function requestAndGetConnectInfo<Payload extends HttpRequestPayloa
       rej(error);
     });
   });
-}
-
-export const getHttpResponseHeaderPartInfo: GetIncomingMessageHeader<'client'> = (
-  response: http.IncomingMessage
-) => {
-  const {httpVersion, statusCode, statusMessage, headers} = response;
-  return {statusCode, statusMessage, httpVersion, headers};
-};
-
-export async function getHttpResponseInfo<DataType = any>(
-  incomingMessage: http.IncomingMessage,
-  options?: {
-    maxLength?: number;
-    dataType?: 'buffer' | 'string' | 'json';
-  }
-): Promise<HttpResponseInfo<DataType>> {
-  const {maxLength = 32 * 1024 * 1024, dataType = 'json'} = options;
-  let buffer = await getIncomingMessageData(incomingMessage);
-  if (buffer.byteLength > maxLength) {
-    buffer = buffer.subarray(0, maxLength);
-  }
-  const data = fromBuffer(buffer, dataType) as DataType;
-  return {
-    ...getHttpResponseHeaderPartInfo(incomingMessage),
-    data,
-  };
 }
 
 export function httpRequestOptionsToCurlCommand(options: HttpRequestOptions) {

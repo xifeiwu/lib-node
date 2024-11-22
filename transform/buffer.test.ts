@@ -76,7 +76,9 @@ export async function bufferConvert() {
   const address = '127.0.0.1';
   const port = 3005;
   const buffer = toBuffer([5, command, 0, addressType, address, port]);
+  const buffer2 = convertToBuffer(5, command, 0, addressType, address, port)
   console.log(buffer);
+  console.log(buffer2);
 }
 
 export function testGetBufferGenerator() {

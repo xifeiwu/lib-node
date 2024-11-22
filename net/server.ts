@@ -4,7 +4,7 @@ import {getOneLineFromReader} from '../stream';
 import {httpFirstLineReg} from '../constants';
 import {HttpHandler, Protocol, TcpHandler, TcpServerConfig} from '../types';
 import {isSocksProtocol, SocksVersion} from '../lib/socks';
-import {responseHttpConnection} from '../tcp-http';
+import {responseHttpConnection} from '../http';
 
 function isHttpRequest(buffer: Buffer) {
   const str = buffer.toString();

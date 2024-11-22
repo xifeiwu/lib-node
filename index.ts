@@ -3,7 +3,6 @@ export * from './general';
 export * from './crypto';
 export * from './transform';
 export * from './net';
-export * from './tcp-http';
 export * from './stream';
 export * from './config';
 export * from './http';

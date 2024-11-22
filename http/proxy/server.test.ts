@@ -1,6 +1,4 @@
-import https from 'https';
 import {PATHNAME_PROXY_STATUS, startProxyServer} from '.';
-import {getResponseInfo} from '../common';
 import {HttpProxyConfig} from './types';
 import {requestAndGetResponseInfo} from '../client';
 import {waitFor} from '../../external';

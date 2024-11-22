@@ -16,6 +16,6 @@
     "moduleResolution": "node",
     "types": ["node"],
   },
-  "include": ["**/*.ts"],
+  "include": ["**/*.ts", "http/service"],
   "exclude": ["node_modules/*"]
 }

@@ -1,8 +1,8 @@
 import {Readable} from 'stream';
-import {isNumber} from '../../external';
+import {isNumber} from '../../../external';
 import {Socket} from 'net';
-import {HttpRequestHeaderPartInfo} from '../../types';
-import {getOneLineFromBuffer} from '../../stream';
+import {HttpRequestHeaderPartInfo} from '../../../types';
+import {getOneLineFromBuffer} from '../../../stream';
 import {tryParseHttpHeaderPart} from './parse-header-part';
 
 export class HttpIncomingMessage extends Readable {

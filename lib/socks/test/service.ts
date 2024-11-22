@@ -11,7 +11,7 @@ import {
   responseHttpConnection,
   getUpgradeProtocol,
   getUpgradeResponse,
-  responseInfoToBuffer,
+  httpRequestInfoToBuffer,
   logColorful,
 } from '../service/external';
 import {basicAuth} from '../service';
@@ -158,7 +158,7 @@ export async function startHttpServerForSocks(allSocksServerConfig: Partial<Sock
             return abortRequest(socket, protocol);
           }
         }
-        socket.write(responseInfoToBuffer(getUpgradeResponse(protocol)));
+        socket.write(httpRequestInfoToBuffer(getUpgradeResponse(protocol)));
         if (!socksServerConfig) {
           const bufferOfFirstLine = await getOneLineFromReader(socket, {firstChunkOnly: true});
           const firstByte = bufferOfFirstLine[0];

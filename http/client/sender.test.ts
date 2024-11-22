@@ -1,21 +1,20 @@
-import {logWithColor} from '../log';
-import {handleSocketEvents, watchSocketState, writeDataByInterval} from '../net';
-import {toBuffer} from '../transform';
+import {logWithColor} from '../../log';
+import {handleSocketEvents, watchSocketState, writeDataByInterval} from '../../net';
 import {
-  getHttpResponseInfo,
   requestAndGetConnectInfo,
   requestAndGetResponseInfo,
   requestAndGetUpgradeInfo,
   upgradeToWebsocket,
-} from './client';
-import {responseInfoToBuffer} from './common';
+} from './sender';
+import {getHttpResponseInfo} from './receiver';
+import {httpResponseInfoToBuffer} from '../tcp/service';
 import {
   getHttpRequestInfo,
   handleConnectEvent,
   handleWebsocketUpgrade,
   responseHttpRequestInfo,
   startHttpServer,
-} from './server';
+} from '../server';
 
 export async function testRequestAndGetResponseInfo() {
   const {statusCode, data, headers} = await requestAndGetResponseInfo({
@@ -46,7 +45,7 @@ export async function testUpgradeToWebsocket() {
     },
     upgrade(req, socket, head) {
       const responseInfo = handleWebsocketUpgrade(req, socket, head);
-      socket.write(responseInfoToBuffer(responseInfo));
+      socket.write(httpResponseInfoToBuffer(responseInfo));
       // handleSocketEvents(socket, {isServer: true, color: 'red'});
       socket.on('data', chunk => {
         socket.write(chunk);
@@ -75,7 +74,7 @@ export async function getSocketByConnect() {
     },
     connect(req, socket, head) {
       const {responseInfo} = handleConnectEvent(req);
-      socket.write(responseInfoToBuffer(responseInfo));
+      socket.write(httpResponseInfoToBuffer(responseInfo));
       handleSocketEvents(socket, {isServer: true, color: 'red'});
       socket.on('end', () => {
         socket.end();

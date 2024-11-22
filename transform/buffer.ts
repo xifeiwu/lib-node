@@ -2,6 +2,7 @@ import {base64Chars, filesize, isNumber, isPlainObject, isString} from '../exter
 import {BufferGeneratorConfig, CanConvertToBuffer} from '../types';
 
 /**
+ * @deprecated by convertToBuffer as array params is confusing
  * Should take care of number: toBuffer(1) is totally different from toBuffer('1')
  */
 export function toBuffer(data: CanConvertToBuffer | Array<CanConvertToBuffer>, level = 0): Buffer {
@@ -32,7 +33,7 @@ export function toBuffer(data: CanConvertToBuffer | Array<CanConvertToBuffer>, l
   return buffer;
 }
 
-export function convertToBuffer(...args: Array<CanConvertToBuffer | Array<CanConvertToBuffer>>) {
+export function convertToBuffer(...args: Array<CanConvertToBuffer>) {
   const bufList: Buffer[] = [];
   for (const data of args) {
     let buffer: Buffer = data as Buffer;
@@ -151,7 +152,6 @@ export function getBufferGenerator(config?: BufferGeneratorConfig) {
           }
           indexOfSourceBuffer = diff;
         }
-
       }
     }
     generateCount++;

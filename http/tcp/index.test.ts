@@ -3,18 +3,22 @@
  */
 
 import {
-  HttpIncomingMessage,
-  httpOptionsToTcpConfig,
+  getDataFromReadable,
+  logColorful,
   startSocketClient,
   startSocketServer,
-  tcpRequestPropsToBuffer,
   watchSocketState,
+} from '../../index';
+import {
+  httpOptionsToTcpConfig,
+  sendHttpRequest,
+  startHttpDebugServer,
+  tcpRequestPropsToBuffer,
 } from '../index';
-import {responseInfoToBuffer, sendHttpRequest, startHttpDebugServer} from '../http';
-import {HttpRequestOptions} from '../types';
-import {getDataFromReadable} from '../stream';
-import {logColorful} from '../log';
+import {HttpRequestOptions} from '../../types';
 import {Socket} from 'net';
+import {HttpIncomingMessage} from './components';
+import {responseInfoToBuffer} from './components/common';
 
 export async function getHttpIncomingMessage(socket: Socket, options?: {}) {
   const incomingMessage = new HttpIncomingMessage(socket);

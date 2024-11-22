@@ -4,7 +4,7 @@ import {requestAndGetResponseInfo} from './client';
 import {watchSocketState} from '../net';
 import {getDataFromReadable} from '../stream';
 import {startHttpDebugServer} from './server';
-import {sendHttpRequestByTcp} from '../tcp-http';
+import { sendHttpRequestByTcp } from './tcp';
 
 export async function getFormData() {
   const formData: NodeFormData = {

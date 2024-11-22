@@ -1,9 +1,9 @@
 import assert from 'assert';
 import {Readable} from 'stream';
 import {tryParseHttpFirstLine, tryParseHttpHeaderPart} from './parse-header-part';
-import {tcpRequestPropsToBuffer} from './client';
-import {getDataFromReadable} from '../../stream';
-import {TcpHttpRequestOptions} from '../../types';
+import {tcpRequestPropsToBuffer} from '../client';
+import {getDataFromReadable} from '../../../index';
+import {TcpHttpRequestOptions} from '../../../types';
 
 const requestProps: TcpHttpRequestOptions = {
   method: 'post',

@@ -1,5 +1,5 @@
 import {tcpRequestPropsToBuffer} from './client';
-import {handleSocketEvents, startSocketClient} from '../../net';
+import {handleSocketEvents, startSocketClient} from '../../index';
 
 export async function testGetRequestData() {
   const socket = await startSocketClient({

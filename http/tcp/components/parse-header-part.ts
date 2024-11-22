@@ -1,8 +1,7 @@
-import {Socket} from 'net';
 import {Readable} from 'stream';
-import {HttpRequestHeaderPartInfo, HttpRequestFirstLineInfo} from '../../types';
-import {httpFirstLineReg, httpHeaderLineReg} from '../../constants';
-import {getDataFromReadable, getOneLineFromBuffer, getOneLineFromReader} from '../../stream';
+import {HttpRequestHeaderPartInfo, HttpRequestFirstLineInfo} from '../../../types';
+import {httpFirstLineReg, httpHeaderLineReg} from '../../../constants';
+import {getOneLineFromReader} from '../../../index';
 
 interface ParseFirstLineResults {
   firstLineInfo?: HttpRequestFirstLineInfo;

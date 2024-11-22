@@ -42,5 +42,8 @@ export interface HttpResponseInfo<DataType = any, Role extends ConnectionRole = 
   data?: DataType;
 }
 
+/**
+ * @deprecated by HttpRequestInfo
+ */
 export type TcpHttpRequestOptions = Omit<HttpRequestInfo, 'method' | 'url' | 'httpVersion' | 'headers'> &
   Partial<Pick<HttpRequestInfo, 'method' | 'url' | 'httpVersion' | 'headers'>>;

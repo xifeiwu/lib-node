@@ -38,7 +38,7 @@ export {
   responseHttpConnection,
   getUpgradeProtocol,
   getUpgradeResponse,
-  responseInfoToBuffer,
+  httpRequestInfoToBuffer,
   getDataFromReadable,
   getIv,
   xorData,
