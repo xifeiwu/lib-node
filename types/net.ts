@@ -2,6 +2,8 @@ import {Socket, TcpNetConnectOpts, SocketReadyState, Server} from 'net';
 import {CanConvertToBuffer} from './transform';
 import {HttpUpgradeConfig} from './http';
 import {SocksVersion} from './socks';
+import {ServerOpts} from 'net';
+import {Readable} from 'stream';
 
 export type GetSocketOptions = TcpNetConnectOpts | HttpUpgradeConfig | Socket;
 
@@ -41,3 +43,15 @@ export type TcpHandler = (
   info: {protocol: Protocol; firstChunk: Buffer}
 ) => Promise<boolean | void>;
 export type HttpHandler = (socket: Socket, info: {firstChunk}) => Promise<boolean | void>;
+
+export type ConnectionEnd = 'client' | 'server';
+export type ConnectionRole = 'sender' | 'receiver';
+export type ConnectionPayload = CanConvertToBuffer | Readable;
+
+export interface TcpServerConfig {
+  host?: string;
+  /** support string for more compatible */
+  port?: number | string;
+  path?: string;
+  options?: ServerOpts;
+}

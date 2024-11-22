@@ -1,6 +1,6 @@
 import {convertToBuffer} from '../../transform';
 import querystring, {ParsedUrlQueryInput} from 'querystring';
-import {HttpResponseInfo, HttpRequestInfo, HttpCommonInfo, HttpRequestPayload} from '../../types';
+import {HttpResponseInfo, HttpRequestInfo, HttpCommonInfo, ConnectionPayload} from '../../types';
 import {convertKeyToLowerCase, getContentTypeByData} from '../service';
 import {isReadable, Readable} from 'stream';
 import {isObject} from '../../external';
@@ -26,7 +26,7 @@ export function updateHeadersByHttpInfo(info: HttpCommonInfo) {
   // if (!headers['content-type']) {
   //   headers['content-type'] = getContentTypeByData(data);
   // }
-  let finalData: HttpRequestPayload = data;
+  let finalData: ConnectionPayload = data;
   const dataIsReadable = isReadable(finalData as Readable);
   if (dataIsReadable) {
     if (!headers['transfer-encoding']) {

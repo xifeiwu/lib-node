@@ -1,4 +1,3 @@
-export * from './tcp';
 export * from './http';
 export * from './net';
 export * from './log';

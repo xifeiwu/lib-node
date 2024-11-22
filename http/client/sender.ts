@@ -12,7 +12,7 @@ import {
   isObject,
   getRandomBase64String,
 } from '../../external';
-import {HttpRequestOptions, HttpResponseInfo, HttpRequestPayload, ValidateStatus} from '../../types';
+import {HttpRequestOptions, HttpResponseInfo, ConnectionPayload, ValidateStatus} from '../../types';
 import {Readable, isReadable} from 'stream';
 import {getHttpResponseInfo} from './receiver';
 
@@ -40,13 +40,13 @@ export function mergeHttpRequestOptions(
  * @param options
  * @returns
  */
-export function sendHttpRequest<Payload extends HttpRequestPayload = any>(
+export function sendHttpRequest<Payload extends ConnectionPayload = any>(
   options: HttpRequestOptions<Payload>
 ) {
   const {urlProps, restProps} = getUrlPropsFromConfig(options);
   const {data, headers: _headers = {}, ...requestOptions} = restProps;
   const headers = convertKeyToLowerCase(_headers);
-  let finalData: HttpRequestPayload = data;
+  let finalData: ConnectionPayload = data;
   const dataIsUndefined = data === undefined;
   const dataIsReadable = isReadable(finalData as Readable);
   if (!dataIsUndefined && !dataIsReadable) {
@@ -89,7 +89,7 @@ export class ResponseError extends Error {
   }
 }
 
-export async function requestAndGetResponse<Payload extends HttpRequestPayload = any>(
+export async function requestAndGetResponse<Payload extends ConnectionPayload = any>(
   options: HttpRequestOptions<Payload>
 ): Promise<http.IncomingMessage> {
   const clientRequest = sendHttpRequest(options);
@@ -120,7 +120,7 @@ export const validateStatusCode: ValidateStatus = info => {
 };
 
 export type RequestAndGetResponseInfoFunc = typeof requestAndGetResponseInfo;
-export async function requestAndGetResponseInfo<ResData = any, Payload extends HttpRequestPayload = any>(
+export async function requestAndGetResponseInfo<ResData = any, Payload extends ConnectionPayload = any>(
   requestOptions: HttpRequestOptions<Payload>,
   responseConfig?: Parameters<typeof getHttpResponseInfo>[1] & {
     validateStatus?: ValidateStatus | boolean;
@@ -143,7 +143,7 @@ export async function requestAndGetResponseInfo<ResData = any, Payload extends H
 }
 
 export type RequestAndGetRelatedInfoFunc = typeof requestAndGetRelatedInfo;
-export async function requestAndGetRelatedInfo<ResData = any, Payload extends HttpRequestPayload = any>(
+export async function requestAndGetRelatedInfo<ResData = any, Payload extends ConnectionPayload = any>(
   requestOptions: HttpRequestOptions<Payload>,
   responseConfig?: Parameters<typeof getHttpResponseInfo>[1] & {
     validateStatus?: ValidateStatus | boolean;
@@ -153,7 +153,7 @@ export async function requestAndGetRelatedInfo<ResData = any, Payload extends Ht
   return {requestOptions, responseInfo};
 }
 
-export async function requestAndGetUpgradeInfo<Payload extends HttpRequestPayload = any>(
+export async function requestAndGetUpgradeInfo<Payload extends ConnectionPayload = any>(
   config: HttpRequestOptions<Payload>
 ): Promise<{response: http.IncomingMessage; socket: Socket; head: Buffer}> {
   const {} = config;
@@ -206,7 +206,7 @@ export async function upgradeToWebsocket(options: HttpRequestOptions) {
   };
 }
 
-export async function requestAndGetConnectInfo<Payload extends HttpRequestPayload = any>(
+export async function requestAndGetConnectInfo<Payload extends ConnectionPayload = any>(
   config: HttpRequestOptions<Payload>
 ): Promise<{response: http.IncomingMessage; socket: Socket; head: Buffer}> {
   const {urlProps, restProps} = getUrlPropsFromConfig(config);
