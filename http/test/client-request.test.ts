@@ -5,8 +5,8 @@ import {
   requestAndGetResponseInfo,
   requestAndGetUpgradeInfo,
   upgradeToWebsocket,
-} from './sender';
-import {getHttpResponseInfo} from './receiver';
+  getHttpResponseInfo
+} from '../client';
 import {httpResponseInfoToBuffer} from '../tcp/service';
 import {
   getHttpRequestInfo,
@@ -18,9 +18,9 @@ import {
 } from '../server';
 
 export async function testRequestAndGetResponseInfo() {
-  const d = await startHttpDebugServer();
+  const {origin, server} = await startHttpDebugServer();
   const {statusCode, data, headers} = await requestAndGetResponseInfo({
-    url: 'http://elif.site/api/debug/:action',
+    url: `${origin}/api/debug/echo`,
     pathnameParams: {
       action: 'echo',
     },
