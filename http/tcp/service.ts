@@ -1,7 +1,7 @@
 import {convertToBuffer} from '../../transform';
 import querystring, {ParsedUrlQueryInput} from 'querystring';
 import {HttpResponseInfo, HttpRequestInfo, HttpCommonInfo, ConnectionPayload} from '../../types';
-import {convertKeyToLowerCase, getContentTypeByData} from '../service';
+import {convertKeyToLowerCase} from '../service/common';
 import {isReadable, Readable} from 'stream';
 import {isObject} from '../../external';
 
@@ -16,12 +16,12 @@ export function tcpResponsePropsToBuffer(info: HttpResponseInfo) {}
  * @param info
  * @returns
  */
-export function updateHeadersByHttpInfo(info: HttpCommonInfo) {
+function updateHeadersByHttpInfo(info: HttpCommonInfo) {
   const {headers: _headers, data} = info;
 
   const headers = convertKeyToLowerCase(_headers);
   if (!data) {
-    return headers;
+    return info;
   }
   // if (!headers['content-type']) {
   //   headers['content-type'] = getContentTypeByData(data);
