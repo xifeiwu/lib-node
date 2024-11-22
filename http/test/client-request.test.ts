@@ -37,6 +37,7 @@ export async function testRequestAndGetResponseInfo() {
     },
   });
   console.log({statusCode, data, headers});
+  server.close();
 }
 
 export async function testUpgradeToWebsocket() {

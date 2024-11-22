@@ -1,9 +1,7 @@
 import http from 'http';
 import https from 'https';
-import querystring, {ParsedUrlQueryInput} from 'querystring';
-import {convertToBuffer, fromBuffer, toBuffer} from '../../transform';
+import {convertToBuffer, toBuffer} from '../../transform';
 import {Socket} from 'net';
-import {getContentTypeByData, getIncomingMessageData, convertKeyToLowerCase} from '../service';
 import {
   toUrlInstance,
   getUrlPropsFromConfig,
@@ -15,6 +13,7 @@ import {
 import {HttpRequestOptions, HttpResponseInfo, ConnectionPayload, ValidateStatus} from '../../types';
 import {Readable, isReadable} from 'stream';
 import {getHttpResponseInfo} from './receiver';
+import {updateHeadersByHttpInfo} from '../service/internal';
 
 process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
 
@@ -44,32 +43,22 @@ export function sendHttpRequest<Payload extends ConnectionPayload = any>(
   options: HttpRequestOptions<Payload>
 ) {
   const {urlProps, restProps} = getUrlPropsFromConfig(options);
-  const {data, headers: _headers = {}, ...requestOptions} = restProps;
-  const headers = convertKeyToLowerCase(_headers);
-  let finalData: ConnectionPayload = data;
-  const dataIsUndefined = data === undefined;
-  const dataIsReadable = isReadable(finalData as Readable);
-  if (!dataIsUndefined && !dataIsReadable) {
-    const contentType = headers['content-type'];
-    if (typeof contentType === 'string' && contentType.includes('x-www-form-urlencoded') && isObject(data)) {
-      finalData = querystring.stringify(finalData as ParsedUrlQueryInput);
-    }
-  }
-  finalData = convertToBuffer(finalData);
-  /** As we try to avoid close connection on client side, so must append content-length on headers */
-  if (!headers['content-length']) {
-    headers['content-length'] = (finalData as Buffer).byteLength;
-  }
+  const {data, headers = {}, ...requestOptions} = restProps;
+  const {
+    headers: finalHeaders,
+    data: finalData,
+    dataIsReadable,
+    dataIsUndefined,
+  } = updateHeadersByHttpInfo({headers, data});
   let clientRequest: http.ClientRequest | null = null;
   const {protocol, href} = toUrlInstance(urlProps);
-  const mergedRequestOptions = {...requestOptions, headers};
+  const mergedRequestOptions = {...requestOptions, headers: finalHeaders};
   clientRequest = (protocol === 'https:' ? https : http).request(href, mergedRequestOptions);
-
   if (dataIsUndefined) {
     clientRequest.end();
   } else {
     if (dataIsReadable) {
-      (finalData as unknown as Readable).pipe(clientRequest);
+      (finalData as Readable).pipe(clientRequest);
     } else {
       clientRequest.write(finalData);
     }
