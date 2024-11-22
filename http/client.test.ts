@@ -2,12 +2,13 @@ import {logWithColor} from '../log';
 import {handleSocketEvents, watchSocketState, writeDataByInterval} from '../net';
 import {toBuffer} from '../transform';
 import {
+  getHttpResponseInfo,
   requestAndGetConnectInfo,
   requestAndGetResponseInfo,
   requestAndGetUpgradeInfo,
   upgradeToWebsocket,
 } from './client';
-import {getResponseInfo, responseInfoToBuffer} from './common';
+import {responseInfoToBuffer} from './common';
 import {
   getHttpRequestInfo,
   handleConnectEvent,
@@ -90,7 +91,7 @@ export async function getSocketByConnect() {
       b: 2,
     },
   });
-  const resInfo = await getResponseInfo(response);
+  const resInfo = await getHttpResponseInfo(response);
   console.log(resInfo, head.toString());
   handleSocketEvents(socket, {color: 'green'});
   setTimeout(() => {

@@ -56,19 +56,31 @@ export async function startHttpServer(
   });
 }
 
-export const getHttpRequestHeaderPartInfo: GetIncomingMessageHeader<'server'> = (request: IncomingMessage) => {
+export const getHttpRequestHeaderPartInfo: GetIncomingMessageHeader<'server'> = (
+  request: IncomingMessage
+) => {
   const {method, url, httpVersion, headers} = request;
   return {method, url, httpVersion, headers};
 };
 
-export async function getHttpRequestInfo(request: http.IncomingMessage): Promise<HttpRequestInfo> {
-  const data = fromBuffer(await getIncomingMessageData(request), 'json');
+export async function getHttpRequestInfo<DataType = any>(
+  incomingMessage: http.IncomingMessage,
+  options?: {
+    maxLength?: number;
+    dataType?: 'buffer' | 'string' | 'json';
+  }
+): Promise<HttpRequestInfo<DataType>> {
+  const {maxLength = 32 * 1024 * 1024, dataType = 'json'} = options;
+  let buffer = await getIncomingMessageData(incomingMessage);
+  if (buffer.byteLength > maxLength) {
+    buffer = buffer.subarray(0, maxLength);
+  }
+  const data = fromBuffer(buffer, dataType) as DataType;
   return {
-    ...getHttpRequestHeaderPartInfo(request),
+    ...getHttpRequestHeaderPartInfo(incomingMessage),
     data,
   };
 }
-
 /**
  * response/echo requestInfo
  */
@@ -147,7 +159,11 @@ export async function startHttpDebugServer(
     {
       request(request, response) {
         logRequestHeaderInfo &&
-          logColorful({color: logRequestHeaderInfo}, 'headerPart Info:', getHttpRequestHeaderPartInfo(request));
+          logColorful(
+            {color: logRequestHeaderInfo},
+            'headerPart Info:',
+            getHttpRequestHeaderPartInfo(request)
+          );
         logSocketState && watchSocketState(request.socket, {colorStyle: {color: 'yellow'}});
         responseHttpRequestInfo(request, response);
       },

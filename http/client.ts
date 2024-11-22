@@ -1,9 +1,9 @@
 import http from 'http';
 import https from 'https';
 import querystring, {ParsedUrlQueryInput} from 'querystring';
-import {toBuffer} from '../transform';
+import {fromBuffer, toBuffer} from '../transform';
 import {Socket} from 'net';
-import {getContentTypeByData, getResponseInfo} from './common';
+import {getContentTypeByData, getIncomingMessageData} from './common';
 import {
   toUrlInstance,
   getUrlPropsFromConfig,
@@ -12,7 +12,13 @@ import {
   isObject,
   getRandomBase64String,
 } from '../external';
-import {HttpRequestOptions, HttpResponseInfo, HttpRequestPayload, ValidateStatus} from '../types';
+import {
+  HttpRequestOptions,
+  HttpResponseInfo,
+  HttpRequestPayload,
+  ValidateStatus,
+  GetIncomingMessageHeader,
+} from '../types';
 import {Readable, isReadable} from 'stream';
 
 process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
@@ -136,13 +142,13 @@ export const validateStatusCode: ValidateStatus = info => {
 export type RequestAndGetResponseInfoFunc = typeof requestAndGetResponseInfo;
 export async function requestAndGetResponseInfo<ResData = any, Payload extends HttpRequestPayload = any>(
   requestOptions: HttpRequestOptions<Payload>,
-  responseConfig?: Parameters<typeof getResponseInfo>[1] & {
+  responseConfig?: Parameters<typeof getHttpResponseInfo>[1] & {
     validateStatus?: ValidateStatus | boolean;
   }
 ): Promise<HttpResponseInfo<ResData>> {
   const response = await requestAndGetResponse<Payload>(requestOptions);
   let {validateStatus, ...resConfig} = responseConfig ?? {};
-  const responseInfo = await getResponseInfo<ResData>(response, resConfig);
+  const responseInfo = await getHttpResponseInfo<ResData>(response, resConfig);
 
   if (validateStatus) {
     if (validateStatus === true) {
@@ -159,7 +165,7 @@ export async function requestAndGetResponseInfo<ResData = any, Payload extends H
 export type RequestAndGetRelatedInfoFunc = typeof requestAndGetRelatedInfo;
 export async function requestAndGetRelatedInfo<ResData = any, Payload extends HttpRequestPayload = any>(
   requestOptions: HttpRequestOptions<Payload>,
-  responseConfig?: Parameters<typeof getResponseInfo>[1] & {
+  responseConfig?: Parameters<typeof getHttpResponseInfo>[1] & {
     validateStatus?: ValidateStatus | boolean;
   }
 ): Promise<{requestOptions: HttpRequestOptions<Payload>; responseInfo: HttpResponseInfo<ResData>}> {
@@ -243,6 +249,32 @@ export async function requestAndGetConnectInfo<Payload extends HttpRequestPayloa
       rej(error);
     });
   });
+}
+
+export const getHttpResponseHeaderPartInfo: GetIncomingMessageHeader<'client'> = (
+  response: http.IncomingMessage
+) => {
+  const {httpVersion, statusCode, statusMessage, headers} = response;
+  return {statusCode, statusMessage, httpVersion, headers};
+};
+
+export async function getHttpResponseInfo<DataType = any>(
+  incomingMessage: http.IncomingMessage,
+  options?: {
+    maxLength?: number;
+    dataType?: 'buffer' | 'string' | 'json';
+  }
+): Promise<HttpResponseInfo<DataType>> {
+  const {maxLength = 32 * 1024 * 1024, dataType = 'json'} = options;
+  let buffer = await getIncomingMessageData(incomingMessage);
+  if (buffer.byteLength > maxLength) {
+    buffer = buffer.subarray(0, maxLength);
+  }
+  const data = fromBuffer(buffer, dataType) as DataType;
+  return {
+    ...getHttpResponseHeaderPartInfo(incomingMessage),
+    data,
+  };
 }
 
 export function httpRequestOptionsToCurlCommand(options: HttpRequestOptions) {

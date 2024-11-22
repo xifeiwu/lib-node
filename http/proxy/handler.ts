@@ -1,18 +1,18 @@
 import https from 'https';
 import http, {IncomingMessage, ServerResponse} from 'http';
-import {getResponseHeaderInfo} from '../common';
 import {toUrlInstance, deepClone, deepMerge, getUrlPropsFromConfig} from '../../external';
 import {HttpProxyConfig, ProxyStatus} from './types';
 import {toReadable, getDataByTransform} from '../../stream';
 import {toBuffer} from '../../transform';
 import {
+  getHttpResponseHeaderPartInfo,
   httpRequestOptionsToCurlCommand,
   makeSureHttpRequestOptionsSerializable,
   validateStatusCode,
 } from '../client';
 import {logColorful} from '../../log';
 import {HttpRequestOptions, HttpResponseInfo} from '../../types';
-import { getHttpRequestHeaderPartInfo } from '../server';
+import {getHttpRequestHeaderPartInfo} from '../server';
 
 /**
  * On response to proxy: print more info when http status code is invalid.
@@ -94,7 +94,7 @@ export async function proxyRequest(req: IncomingMessage, res: ServerResponse, co
       });
       proxyReq.on('response', res2Proxy => res(res2Proxy));
     });
-    const infoOfRes2Proxy = getResponseHeaderInfo(res2Proxy);
+    const infoOfRes2Proxy = getHttpResponseHeaderPartInfo(res2Proxy);
     onRes2Proxy && onRes2Proxy(infoOfRes2Proxy, proxyReqInfo, res2Proxy);
     let infoOfRes2Origin = deepClone(infoOfRes2Proxy);
     /** Rewrite cookie info */

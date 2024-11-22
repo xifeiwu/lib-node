@@ -1,6 +1,5 @@
-import http, {IncomingMessage} from 'http';
-import {getDataFromReadable} from '../stream';
-import {fromBuffer, toBuffer} from '../transform';
+import {IncomingMessage} from 'http';
+import {toBuffer} from '../transform';
 import {CanConvertToBuffer, HttpResponseInfo} from '../types';
 import {isPlainObject} from '../external';
 import {Readable} from 'stream';
@@ -33,28 +32,6 @@ export async function getIncomingMessageData(incomingMessage: IncomingMessage) {
       rej(err);
     });
   });
-}
-
-export function getResponseHeaderInfo(response: http.IncomingMessage): HttpResponseInfo {
-  const {httpVersion, statusCode, statusMessage, headers} = response;
-  return {statusCode, statusMessage, httpVersion, headers};
-}
-export async function getResponseInfo<T>(
-  response: http.IncomingMessage,
-  options: {
-    maxLength?: number;
-    dataType?: 'buffer' | 'string' | 'json';
-  } = {}
-): Promise<HttpResponseInfo<T>> {
-  const {maxLength = 32 * 1024 * 1024, dataType = 'json'} = options;
-  const data = await getDataFromReadable(response);
-  const slicedData = data.subarray(0, maxLength);
-  const finalData = fromBuffer(slicedData, dataType);
-  const responseInfo = {
-    ...getResponseHeaderInfo(response),
-    data: finalData as T,
-  };
-  return responseInfo;
 }
 
 export function getContentTypeByData(data: CanConvertToBuffer | Readable) {
