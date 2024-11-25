@@ -1,6 +1,5 @@
 import {SpawnAndTryIpcConfig, SpawnAndTryIpcResponse} from './common';
-import {TcpServerConfig} from '../tcp';
-import {SocketServerInfo} from '../net';
+import {SocketServerInfo, TcpServerConfig} from '../net';
 
 /**
  * Types for child process of Daemon

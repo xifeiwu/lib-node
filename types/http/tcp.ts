@@ -2,7 +2,7 @@
  * Http related interface on tcp level
  */
 import {IncomingHttpHeaders, OutgoingHttpHeaders} from 'http';
-import {ConnectionRole} from '../tcp';
+import {ConnectionRole} from '../net';
 
 interface HttpHeadersTypByConnectionRole {
   sender: OutgoingHttpHeaders;

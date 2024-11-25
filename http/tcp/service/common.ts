@@ -1,9 +1,12 @@
-import {convertToBuffer} from '../../transform';
+/**
+ * Logic that can be used on both client and server
+ */
+import {convertToBuffer} from '../../../transform';
 import querystring, {ParsedUrlQueryInput} from 'querystring';
-import {HttpResponseInfo, HttpRequestInfo, HttpCommonInfo, ConnectionPayload} from '../../types';
-import {convertKeyToLowerCase} from '../service/common';
+import {HttpResponseInfo, HttpRequestInfo, HttpCommonInfo, ConnectionPayload} from '../../../types';
+import {convertKeyToLowerCase} from '../../service/common';
 import {isReadable, Readable} from 'stream';
-import {isObject} from '../../external';
+import {isObject} from '../../../external';
 
 /**
  * @deprecated by httpResponseInfoToBuffer
