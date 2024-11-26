@@ -18,11 +18,11 @@ export async function getHttpResponseInfo<DataType = any>(
   }
 ): Promise<HttpResponseInfo<DataType>> {
   const {maxLength = 32 * 1024 * 1024, dataType = 'json'} = options ?? {};
-  let buffer = await getIncomingMessageData(incomingMessage);
-  if (buffer.byteLength > maxLength) {
-    buffer = buffer.subarray(0, maxLength);
+  const buffer = await getIncomingMessageData(incomingMessage);
+  let data;
+  if (buffer) {
+    data = fromBuffer(buffer.subarray(0, maxLength), dataType) as DataType;
   }
-  const data = fromBuffer(buffer, dataType) as DataType;
   return {
     ...getHttpResponseHeaderPartInfo(incomingMessage),
     data,
