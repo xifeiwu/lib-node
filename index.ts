@@ -14,7 +14,7 @@ export * from './child-process';
 export * from './crypto';
 export * from './mime';
 export * from './types';
-export * from './external';
+// export * from './external';
 export * from './test';
 export * from './lib/parse-body';
 export * from './lib/socks';
