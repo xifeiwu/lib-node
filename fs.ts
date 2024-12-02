@@ -100,9 +100,9 @@ export function goThroughDir<T = any>(
     return null;
   }
   const fullpath = path.join(root, relativePath);
-  // if (!fs.existsSync(fullpath)) {
-  // return cb(new Error(`File not exist: ${fullpath}`), {pathInfo});
-  // }
+  if (!fs.existsSync(fullpath)) {
+    return cb(new Error(`File not exist: ${fullpath}`), {pathInfo});
+  }
   if (fs.statSync(fullpath).isDirectory()) {
     if (dirFilter(pathInfo)) {
       let error = null;
