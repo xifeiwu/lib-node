@@ -33,6 +33,7 @@ export {
   normalizeUrlProps,
   uuid,
   base64Chars,
+  base64url,
   getRandomBase64String,
   toInteger,
 } from '../../fe/common';

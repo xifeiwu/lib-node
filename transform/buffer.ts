@@ -1,4 +1,4 @@
-import {base64Chars, filesize, isNumber, isPlainObject, isString} from '../external';
+import {base64url, filesize, isNumber, isPlainObject, isString} from '../external';
 import {BufferGeneratorConfig, CanConvertToBuffer} from '../types';
 
 /**
@@ -101,13 +101,13 @@ export function largeDataToString(
 const G = Math.pow(1024, 3);
 export function getBufferGenerator(config?: BufferGeneratorConfig) {
   const {source, sameItemPerGenerate = true, chunkSize = 1, count: maxGenerateCount = 3} = config ?? {};
-  if (maxGenerateCount > 100000) {
+  if (maxGenerateCount > 10000) {
     throw new Error(`value of countOfGenerate is too large`);
   }
   if (chunkSize > G) {
     throw new Error(`value of chunkSize is too large`);
   }
-  let sourceBuffer = toBuffer(source ?? base64Chars);
+  let sourceBuffer = convertToBuffer(source ?? base64url);
   if (sourceBuffer.byteLength === 1) {
     // sameItemMode = true;
     const startCode = sourceBuffer[0];
