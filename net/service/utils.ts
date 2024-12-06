@@ -1,16 +1,8 @@
 import os from 'os';
 import {Writable} from 'stream';
 import net, {Socket} from 'net';
-import {
-  isString,
-  isNumber,
-  formatDate,
-  httpFirstLineReg,
-  ColorStyle,
-  HttpRequestFirstLineInfo,
-  SocketInfo,
-  logColorful,
-} from '../../index';
+import {httpFirstLineReg, ColorStyle, HttpRequestFirstLineInfo, SocketInfo, logColorful} from '../../index';
+import {isString, isNumber, formatDate} from '../../external';
 
 export function getLocalIpAddress() {
   let localIP = null;

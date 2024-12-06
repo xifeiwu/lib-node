@@ -8,7 +8,7 @@ import {
   urlPropsToHref,
   concatOriginWithPathname,
   normalizeUrlProps,
-} from '../../index';
+} from '../../external';
 
 /**
  * Convert HttpRequestOptions to

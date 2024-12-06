@@ -7,6 +7,10 @@ export {
   matchFilters,
   isNumber,
   isRegExp,
+  toUrlInstance,
+  PORT,
+  toUrlProps,
+  isFunction,
 } from '../../../external';
 
 export {
@@ -17,12 +21,10 @@ export {
   requestAndGetUpgradeInfo,
   startHttpDebugServer,
   startSocketServer,
-  toUrlInstance,
   tcpRequestPropsToBuffer,
   CanConvertToBuffer,
   getSocketInfo,
   SocketInfo,
-  PORT,
   HttpRequestOptions,
   requestAndGetResponseInfo,
   toReadable,
@@ -32,7 +34,6 @@ export {
   startTcpProxyServer,
   ulItems as toUl,
   toHtml,
-  toUrlProps,
   fromBuffer,
   getOneLineFromReader,
   responseHttpConnection,
@@ -42,5 +43,4 @@ export {
   getDataFromReadable,
   getIv,
   xorData,
-  isFunction,
 } from '../../../index';

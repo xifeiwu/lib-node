@@ -63,7 +63,7 @@ export function fromBuffer(
   dataType: TargetDataTypeFromBuffer
 ): DataTypeFromBuffer {
   if (!Buffer.isBuffer(buffer)) {
-    buffer = toBuffer(buffer);
+    buffer = convertToBuffer(buffer);
   }
   let finalData: DataTypeFromBuffer = buffer;
   if (dataType === 'json') {

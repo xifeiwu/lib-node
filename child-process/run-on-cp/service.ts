@@ -2,14 +2,13 @@ import path from 'path';
 import {
   getFileList,
   getCpConfigByScriptPath,
-  isNumber,
   spawnAndTryIpc,
   SpawnAndTryIpcConfig,
   SpawnConfig,
   toConsole,
-  waitFor,
   SpawnTsFileOptions,
 } from '../../index';
+import {isNumber, waitFor} from '../../external';
 import {CP, IpcConfig} from '../../types';
 import {SpawnAndTryIpcResponse} from '../../index';
 

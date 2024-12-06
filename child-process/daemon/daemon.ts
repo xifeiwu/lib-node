@@ -1,15 +1,6 @@
 import {Daemon, SocketServerInfo} from '../../types';
-import {
-  fromBuffer,
-  isNumber,
-  isObject,
-  killProcessByPid,
-  spawnAndTryIpc,
-  startOneChatSocketServer,
-  isPlainObject,
-  isString,
-  waitFor,
-} from '../../index';
+import {fromBuffer, killProcessByPid, spawnAndTryIpc, startOneChatSocketServer} from '../../index';
+import {isNumber, isObject, isPlainObject, isString, waitFor} from '../../external';
 import {get} from '../../fe/utils';
 
 const statusConvertRule: Partial<{
