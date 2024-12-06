@@ -14,7 +14,7 @@ import {
   httpRequestInfoToBuffer,
   logColorful,
 } from '../service/external';
-import {basicAuth} from '../service';
+import {SOCKS_AUTH_USER_PASS} from '../service';
 import {handleSocksConnection} from '../server';
 import {
   SocksServerConfigPerVersion,
@@ -32,7 +32,7 @@ import {htmlUlItems} from '../../..';
 export function getSocksClientConfigV5(socksServer: TargetSocksServer, requestTarget: RequestTarget) {
   const info: SocksClientConfig<5> = {
     socksVersion: 5,
-    methodList: [{method: EMethod.NoAuth}, {method: EMethod.UserPass, info: basicAuth}],
+    methodList: [{method: EMethod.NoAuth}, {method: EMethod.UserPass, info: SOCKS_AUTH_USER_PASS}],
     socksServer,
     requestTarget,
   };
@@ -42,7 +42,7 @@ export function getSocksClientConfigV5(socksServer: TargetSocksServer, requestTa
 export function getSocksClientConfigVc1(socksServer: TargetSocksServer, requestTarget: RequestTarget) {
   const info: SocksClientConfig<1> = {
     socksVersion: 1,
-    auth: basicAuth,
+    auth: SOCKS_AUTH_USER_PASS,
     socksServer,
     requestTarget,
   };
@@ -65,7 +65,7 @@ export function getSocksServerConfigV5(config?: Partial<SocksServerConfig<5>>) {
 }
 
 export function getSocksServerConfigVc1(config?: Partial<SocksServerConfig<1>>) {
-  const socksServerConfig: SocksServerConfig<1> = {socksVersion: 1, auth: basicAuth, ...(config ?? {})};
+  const socksServerConfig: SocksServerConfig<1> = {socksVersion: 1, auth: SOCKS_AUTH_USER_PASS, ...(config ?? {})};
   return socksServerConfig;
 }
 

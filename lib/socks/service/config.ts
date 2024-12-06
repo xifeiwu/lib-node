@@ -3,7 +3,7 @@ import {ECommand, UserPassInfo} from '../types/v5';
 /**
  * global basic auth config
  */
-export const basicAuth: UserPassInfo = {
+export const SOCKS_AUTH_USER_PASS: UserPassInfo = {
   username: 'abc',
   password: 'dddd',
 };
