@@ -1,12 +1,18 @@
 import {BinaryToTextEncoding, createHash} from 'crypto';
-import {Readable} from 'stream';
+import {isReadable, Readable} from 'stream';
+import {toReadable} from '../stream';
+import {CanConvertToBuffer} from '../types';
+import {convertToBuffer} from '../transform';
+
+type hashAlgorithm = 'sha1' | 'md5' | 'sha256';
 
 export async function hashStream(
-  readable: Readable,
-  config: {algorithm: 'sha1' | 'md5' | 'sha256'; encode?: BinaryToTextEncoding}
+  data: Readable | CanConvertToBuffer,
+  config: {algorithm: hashAlgorithm; encode?: BinaryToTextEncoding}
 ) {
   const {algorithm, encode = 'hex'} = config;
   const hash = createHash(algorithm);
+  const readable: Readable = isReadable(data as Readable) ? (data as Readable) : toReadable(data);
   return new Promise<string>(res => {
     readable.on('data', (chunk: Buffer) => {
       hash.update(chunk);
@@ -15,4 +21,14 @@ export async function hashStream(
       res(hash.digest(encode));
     });
   });
+}
+
+export function getHashDigest(
+  data: CanConvertToBuffer,
+  config: {algorithm: hashAlgorithm; encode?: BinaryToTextEncoding}
+) {
+  const {algorithm, encode = 'hex'} = config;
+  const hash = createHash(algorithm);
+  hash.update(convertToBuffer(data));
+  return hash.digest(encode);
 }
