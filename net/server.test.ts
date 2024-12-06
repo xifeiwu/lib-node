@@ -1,7 +1,7 @@
 import assert from 'assert';
 import {requestAndGetResponseInfo, startHttpDebugServer} from '../http';
 import {startSocketClient} from '../net';
-import {startTcpProxyServer} from './server';
+import {startTcpGateWay} from './server';
 import {Socket} from 'net';
 import {TcpHandler} from '../index';
 
@@ -19,7 +19,7 @@ const tcpHandler: TcpHandler = async (socket: Socket) => {
   });
 };
 export async function testStartProxyableTcpServer() {
-  const {host, port, server} = await startTcpProxyServer({
+  const {host, port, server} = await startTcpGateWay({
     httpHandler: await getHttpHandler(),
     tcpHandler,
   });
