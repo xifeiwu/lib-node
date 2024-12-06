@@ -1,11 +1,11 @@
 /**
- * Client request connection, send a command(in any format, such as object, string)
+ * Client request connection, send a command(in any format, such as object, string) and wait for response data.
  * Server wait socket connection, listen data from socket, and end connection with response.
  * Notice: Server should end data first
  */
 import {NetConnectOpts} from 'net';
 import {startSocketClient, startSocketServer} from './service';
-import {fromBuffer, toBuffer} from '../transform';
+import {fromBuffer, convertToBuffer} from '../transform';
 import {CanConvertToBuffer, OneChatHandler, TcpServerConfig} from '../types';
 
 export async function oneChatFromSocketClient<Payload extends CanConvertToBuffer = any, Response = any>(
@@ -13,13 +13,21 @@ export async function oneChatFromSocketClient<Payload extends CanConvertToBuffer
   connectOpts: NetConnectOpts
 ) {
   const client = await startSocketClient(connectOpts);
-  client.write(toBuffer(payload));
+  client.write(convertToBuffer(payload));
   const response = await new Promise<Response>((res, rej) => {
-    client.once('data', chunk => {
-      res(fromBuffer(chunk, 'json') as Response);
+    const chunkList: Buffer[] = [];
+    const concatAndConvert = () => fromBuffer(Buffer.concat(chunkList), 'json') as Response;
+    client.on('data', chunk => {
+      chunkList.push(chunk);
     });
-    client.once('close', hadError => {
-      res(null);
+    client.on('end', chunk => {
+      res(concatAndConvert());
+    });
+    client.on('close', hadError => {
+      res(concatAndConvert());
+    });
+    client.on('error', err => {
+      rej(err);
     });
   });
   client.destroy();
@@ -31,7 +39,7 @@ export async function startOneChatSocketServer(handlePayload: OneChatHandler, co
     socket.on('data', async chunk => {
       const response = await handlePayload(chunk);
       if (socket.writable) {
-        socket.end(toBuffer(response));
+        socket.end(convertToBuffer(response));
       }
     });
   }, config);
