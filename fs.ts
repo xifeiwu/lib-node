@@ -147,7 +147,7 @@ export function getFileInfoTree(root: string, options?: GoThroughDirOptions): Fi
     root,
     (err, {pathInfo, children}) => {
       if (err) {
-        throw err;
+        return null;
       }
       const {relativePath} = pathInfo;
       // const isDir = Array.isArray(children);
