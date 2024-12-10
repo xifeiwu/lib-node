@@ -8,13 +8,12 @@ import cp from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import {logColorful, GitRepoInfo} from '../..';
-import {isString} from '../../fe';
+import {isString} from '../../external';
 
 function execSyncAndLog(cmd: string, options?: {throwError?: boolean}) {
   const {throwError = true} = options ?? {};
   logColorful({color: 'black'}, cmd);
   try {
-    cp.exec(cmd);
     const result = cp.execSync(cmd);
     return result;
   } catch (err) {
