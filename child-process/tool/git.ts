@@ -65,7 +65,7 @@ export async function syncUpGitRepos(gitRepos: {[key: string]: GitRepoInfo}, con
     }
     process.chdir(fullPath);
     /**
-     * 2. Check branch, checkout to target branch
+     * 2. Check branch, make sure in target branch
      */
     const curBranch = getCurrentBranch();
     if (curBranch !== branch) {
@@ -78,23 +78,28 @@ export async function syncUpGitRepos(gitRepos: {[key: string]: GitRepoInfo}, con
       }
     }
     /**
-     * 3. Check current commit id, fetch origin if commit id not exist.
+     * 3. Align with target commit id if provided, else make sure target branch is not stale
      */
     const curCommitId = getCurrentCommitId();
-    /** If current commit id is not the same as commit(if exist) in config, change to target commit */
     if (commit !== undefined && commit !== curCommitId) {
       /** check whether target commit is in current branch */
       try {
+        /** List branches that contain the commit */
         execSyncAndLog(`git branch --contain=${commit}`);
       } catch (err) {
         execSyncAndLog(`git fetch ${remote}`);
-        execSyncAndLog(`git reset --hard ${remote}/${branch}`);
+        // execSyncAndLog(`git reset --hard ${remote}/${branch}`);
       }
+      /** Align with target commit */
       try {
         execSyncAndLog(`git reset --hard ${commit}`);
       } catch (err) {
         throw new Error(`commit id: ${commit} not contained in branch ${branch}`);
       }
+    } else {
+      /** Align target branch with remote */
+      execSyncAndLog(`git fetch ${remote}`);
+      execSyncAndLog(`git reset --hard ${remote}/${branch}`);
     }
     for (const command of postPullCmds) {
       if (isString(command)) {
@@ -111,7 +116,7 @@ export async function syncUpGitRepos(gitRepos: {[key: string]: GitRepoInfo}, con
 export function writeGitIgnoreFile(gitRepos: {[key: string]: GitRepoInfo}, config: SyncupGitRepoConfig) {
   const {hostDir, repoDir} = config;
   process.chdir(hostDir);
-  const rules = ['.DS_Store', 'node_modules/', 'vendor/']
+  const rules = ['.DS_Store', 'node_modules/']
     .concat(
       Object.entries(gitRepos).map(([repoName, repoConfig]) => {
         const {relativePath = path.join(repoDir, repoName)} = repoConfig;
