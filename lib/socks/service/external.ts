@@ -31,7 +31,7 @@ export {
   getHttpRequestInfo,
   startHttpServer,
   watchSocketState,
-  startTcpGateWay,
+  startTcpGateway,
   ulItems,
   toHtml,
   fromBuffer,

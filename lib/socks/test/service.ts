@@ -1,6 +1,6 @@
 import {
   startHttpServer,
-  startTcpGateWay,
+  startTcpGateway,
   startSocketClient,
   tcpRequestPropsToBuffer,
   toBuffer,
@@ -122,7 +122,7 @@ export async function startTcpServerForSocks(socksServerConfig: Partial<SocksSer
     const proxyClient = await startSocketClient({host, port});
     socket.pipe(proxyClient).pipe(socket);
   };
-  const tcpServerInfo = await startTcpGateWay({
+  const tcpServerInfo = await startTcpGateway({
     tcpHandler,
     httpHandler,
   });

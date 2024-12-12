@@ -37,7 +37,7 @@ async function getConnectionProtocol(
  * @param tcpServerConfig
  * @returns
  */
-export async function startTcpGateWay(
+export async function startTcpGateway(
   config: {
     onConnection?: (socket: Socket) => Promise<boolean | void>;
     /**
