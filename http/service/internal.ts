@@ -3,7 +3,7 @@ import querystring, {ParsedUrlQueryInput} from 'querystring';
 import {ConnectionPayload, HttpCommonInfo} from '../../types';
 import {isObject} from '../../external';
 import {convertToBuffer} from '../../transform';
-import {convertKeyToLowerCase} from './common';
+import {convertKeyToLowerCase, getContentTypeByData} from './common';
 
 export function updateHeadersByHttpInfo(info: HttpCommonInfo) {
   const {headers: _headers, data} = info;
@@ -25,6 +25,9 @@ export function updateHeadersByHttpInfo(info: HttpCommonInfo) {
     /** As we try to avoid close connection on client side, so must append content-length on headers */
     if (!headers['content-length']) {
       headers['content-length'] = (finalData as Buffer).byteLength;
+    }
+    if (!headers['content-type']) {
+      headers['content-type'] = getContentTypeByData(data);
     }
   }
   return {

@@ -36,6 +36,7 @@ export function mergeHttpRequestOptions(
 
 /**
  * Should set content-length if clientRequest.write(no need when call clientRequest.end)
+ * Transfer-Encoding, Content-Length can set by http module automatically
  * @param options
  * @returns
  */
