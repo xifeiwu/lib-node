@@ -4,6 +4,14 @@ import childProcess from 'child_process';
 import {selectOption} from './general';
 import {isNumber} from './external';
 import {getFilePathInfo} from './path';
+import {
+  PathInfoForRecur,
+  FileFilter,
+  FilePathInfo,
+  GetFileListInfo,
+  GetFileListOption,
+  GoThroughDirOptions,
+} from './types';
 
 const HOME_PATH = process.env.HOME;
 
@@ -44,28 +52,6 @@ export function findFileListByNameUpward(dir: string, name: string) {
   return results;
 }
 
-interface PathInfo {
-  /** filename */
-  basename: string;
-  /** relativePath to root dir */
-  relativePath: string;
-  depth: number;
-}
-/**
- * relativePath: path relative to root
- * baseName: one level filename, not include any child dir. like value return from path.basename
- */
-export type FileFilter = (pathInfo: PathInfo) => boolean;
-export interface GoThroughDirOptions {
-  /** Whether Go through/Ignore this dir or not */
-  dirFilter?: FileFilter;
-  /** Whether Ignore this dir or not */
-  fileFilter?: FileFilter;
-  /** max depth for dir. root dir is level 0 */
-  maxDepth?: number;
-  /** throw Error or not */
-  ignoreError?: boolean;
-}
 /**
  * @returns go through dir, and return value returned from cb function
  */
@@ -75,11 +61,11 @@ export function goThroughDir<T = any>(
    * Should take care about return value of cb function if want to get a correct structure by goThroughDir
    * Should return null if not want the item to be part of children list of parent dir
    */
-  cb: (err: Error | null, res: {pathInfo: PathInfo; children?: T[]}) => T | null,
+  cb: (err: Error | null, res: {pathInfo: PathInfoForRecur; children?: T[]}) => T | null,
   /** option passed through each recursive without any change */
   options?: GoThroughDirOptions,
   /** use for recursive: pass path related info */
-  pathInfo?: PathInfo
+  pathInfo?: PathInfoForRecur
 ) {
   pathInfo = pathInfo || {
     basename: '',
@@ -172,41 +158,6 @@ export function getFileInfoTree(root: string, options?: GoThroughDirOptions): Fi
   );
 }
 
-// interface FileSize {
-//   relativePath: string;
-//   size: number;
-//   children?: FileSize[];
-// }
-// export function getFileSizeTree(
-//   root: string,
-//   options?: {
-//     sortChildren?: FlatChildrenOptions<FileSize>['sortChildren'];
-//   }
-// ) {
-//   const {sortChildren = () => 0} = options ?? {};
-//   const fileInfoTree = getFileInfoTree(root);
-//   function toFileSize(fileInfo: FileInfoTreeItem): FileSize {
-//     const {relativePath, stat, children} = fileInfo;
-//     if (Array.isArray(children)) {
-//       const childrenFileSize = children.map(toFileSize).sort(sortChildren);
-//       const totalSize = childrenFileSize.reduce<number>((sum, it) => {
-//         return sum + it.size;
-//       }, 0);
-//       return {
-//         relativePath,
-//         size: totalSize,
-//         children: childrenFileSize,
-//       };
-//     } else {
-//       return {
-//         relativePath,
-//         size: stat.size,
-//       };
-//     }
-//   }
-//   return toFileSize(fileInfoTree);
-// }
-
 interface LineCountMapItem {
   relativePath: string;
   lineCount: number;
@@ -285,9 +236,6 @@ export function getFileInfoList(
   return fileInfoList;
 }
 
-export interface GetFileListOption extends GoThroughDirOptions {
-  includeDir?: boolean;
-}
 /**
  * @param root
  * @param options
@@ -313,26 +261,22 @@ export function getFileList(root: string, options?: GetFileListOption) {
   return fileList;
 }
 
-export function getMultipleDirFileList(
-  targetList: Array<{
-    targetDir: string;
-    options?: GetFileListOption;
-  }>
-): Array<{relativePath: string; fullPath: string}> {
-  const allFiles = targetList.reduce<
-    Array<{
-      fullPath: string;
-      relativePath: string;
-    }>
-  >((sum, it) => {
-    const {targetDir, options} = it;
+function getLabelDefault(pathInfo: Omit<FilePathInfo, 'label'>) {
+  const {relativePath} = pathInfo;
+  return relativePath;
+}
+export function getMultipleDirFileList(targetDirInfoList: Array<GetFileListInfo>): Array<FilePathInfo> {
+  const allFiles = targetDirInfoList.reduce<Array<FilePathInfo>>((sum, it) => {
+    const {targetDir, options, getLabel = getLabelDefault} = it;
     const fileList = getFileList(targetDir, options);
     return [
       ...sum,
       ...fileList.map(relativePath => {
+        const fullPath = path.join(targetDir, relativePath);
         return {
           relativePath,
-          fullPath: path.join(targetDir, relativePath),
+          label: getLabel({relativePath, fullPath}),
+          fullPath,
         };
       }),
     ];
@@ -340,23 +284,19 @@ export function getMultipleDirFileList(
   return allFiles;
 }
 
-export async function selectFileOfDir(
-  targetList: Array<{
-    targetDir: string;
-    options?: GetFileListOption;
-  }>
+export async function selectFileFromDir(
+  targetDirInfoList: Array<GetFileListInfo>,
+  options?: {
+    /** sort file list before display */
+    handleFileList?: (fileList: FilePathInfo[]) => FilePathInfo[];
+  }
 ) {
-  const fileList = getMultipleDirFileList(targetList);
-  const {relativePath, fullPath} = await selectOption(
-    fileList.map(it => {
-      const {relativePath} = it;
-      return {
-        ...it,
-        label: relativePath,
-      };
-    })
-  );
-  return {relativePath, fullPath};
+  const {handleFileList = items => items} = options ?? {};
+  const fileList = getMultipleDirFileList(targetDirInfoList);
+  const selectedFileInfo = await selectOption<FilePathInfo>(handleFileList(fileList), {
+    tip: 'Please select target file:',
+  });
+  return selectedFileInfo;
 }
 
 export function recursiveDeleteFile(path: string) {
