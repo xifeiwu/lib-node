@@ -103,9 +103,9 @@ export async function syncUpGitRepos(gitRepos: {[key: string]: GitRepoInfo}, con
     }
     for (const command of postPullCmds) {
       if (isString(command)) {
-        execSyncAndLog(command);
+        execSyncAndLog(command as string);
       } else {
-        const {cmd, throwError} = command;
+        const {cmd, throwError} = command as {cmd: string; throwError?: boolean};
         execSyncAndLog(cmd, {throwError});
       }
     }
