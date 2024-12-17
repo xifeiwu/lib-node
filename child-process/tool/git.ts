@@ -7,7 +7,7 @@
 import cp from 'child_process';
 import fs from 'fs';
 import path from 'path';
-import {logColorful, GitRepoInfo} from '../..';
+import {logColorful, GitRepoInfo, GitRepoInfoTree} from '../..';
 import {isString} from '../../external';
 
 function execSyncAndLog(cmd: string, options?: {throwError?: boolean}) {
@@ -39,22 +39,36 @@ function getAllLocalBranches() {
 function getCurrentCommitId() {
   return execSyncAndLog('git rev-parse HEAD').toString().trim();
 }
+
+function isGitRepoInfo(info: GitRepoInfo | GitRepoInfoTree) {
+  return (info as GitRepoInfo).source !== undefined;
+}
+function toGitRepoInfo(info: GitRepoInfo | GitRepoInfoTree) {
+  return info as GitRepoInfo;
+}
 interface SyncupGitRepoConfig {
   hostDir: string;
   /** which dir of hostDir used to locate git repo */
   repoDir: string;
 }
-export async function syncUpGitRepos(gitRepos: {[key: string]: GitRepoInfo}, config: SyncupGitRepoConfig) {
+export async function syncUpGitRepos(gitRepos: GitRepoInfoTree, config: SyncupGitRepoConfig) {
   const {hostDir, repoDir = ''} = config;
   let index = 0;
-  for (const [repoName, config] of Object.entries(gitRepos)) {
-    logColorful({color: 'yellow'}, `${++index}. handing repo ${repoName}`);
+  for (const [repoOrCategoryName, info] of Object.entries(gitRepos)) {
+    logColorful({color: 'yellow'}, `${++index}. handing repo ${repoDir}/${repoOrCategoryName}`);
     process.chdir(hostDir);
+    if (!isGitRepoInfo(info)) {
+      await syncUpGitRepos(info as GitRepoInfoTree, {
+        hostDir,
+        repoDir: path.join(repoDir, repoOrCategoryName),
+      });
+      continue;
+    }
     const {
       source: [{url, remote = 'origin', branch, commit}],
-      relativePath = path.join(repoDir, repoName),
+      relativePath = path.join(repoDir, repoOrCategoryName),
       postPullCmds = [],
-    } = config;
+    } = toGitRepoInfo(info);
     const fullPath = path.resolve(hostDir, relativePath);
     /**
      * 1. Check repo dir, clone repo if not exist
@@ -81,20 +95,22 @@ export async function syncUpGitRepos(gitRepos: {[key: string]: GitRepoInfo}, con
      * 3. Align with target commit id if provided, else make sure target branch is not stale
      */
     const curCommitId = getCurrentCommitId();
-    if (commit !== undefined && commit !== curCommitId) {
-      /** check whether target commit is in current branch */
-      try {
-        /** List branches that contain the commit */
-        execSyncAndLog(`git branch --contain=${commit}`);
-      } catch (err) {
-        execSyncAndLog(`git fetch ${remote}`);
-        // execSyncAndLog(`git reset --hard ${remote}/${branch}`);
-      }
-      /** Align with target commit */
-      try {
-        execSyncAndLog(`git reset --hard ${commit}`);
-      } catch (err) {
-        throw new Error(`commit id: ${commit} not contained in branch ${branch}`);
+    if (commit !== undefined) {
+      if (commit !== curCommitId) {
+        /** check whether target commit is in current branch */
+        try {
+          /** List branches that contain the commit */
+          execSyncAndLog(`git branch --contain=${commit}`);
+        } catch (err) {
+          execSyncAndLog(`git fetch ${remote}`);
+          // execSyncAndLog(`git reset --hard ${remote}/${branch}`);
+        }
+        /** Align with target commit */
+        try {
+          execSyncAndLog(`git reset --hard ${commit}`);
+        } catch (err) {
+          throw new Error(`commit id: ${commit} not contained in branch ${branch}`);
+        }
       }
     } else {
       /** Align target branch with remote */
@@ -113,16 +129,26 @@ export async function syncUpGitRepos(gitRepos: {[key: string]: GitRepoInfo}, con
   }
 }
 
-export function writeGitIgnoreFile(gitRepos: {[key: string]: GitRepoInfo}, config: SyncupGitRepoConfig) {
+export function writeGitIgnoreFile(gitRepos: GitRepoInfoTree, config: SyncupGitRepoConfig) {
   const {hostDir, repoDir} = config;
+  function getRepoRelativePath(infoTree: GitRepoInfoTree, config: Pick<SyncupGitRepoConfig, 'repoDir'>) {
+    const {repoDir} = config;
+    const results: string[] = [];
+    for (const [repoOrCategoryName, info] of Object.entries(infoTree)) {
+      if (isGitRepoInfo(info)) {
+        const {relativePath = path.join(repoDir, repoOrCategoryName)} = toGitRepoInfo(info);
+        results.push(relativePath);
+      } else {
+        results.push(
+          ...getRepoRelativePath(info as GitRepoInfoTree, {
+            repoDir: path.join(repoDir, repoOrCategoryName),
+          })
+        );
+      }
+    }
+    return results;
+  }
+  const rules = ['.DS_Store', 'node_modules/', ...getRepoRelativePath(gitRepos, {repoDir})].join('\n');
   process.chdir(hostDir);
-  const rules = ['.DS_Store', 'node_modules/']
-    .concat(
-      Object.entries(gitRepos).map(([repoName, repoConfig]) => {
-        const {relativePath = path.join(repoDir, repoName)} = repoConfig;
-        return relativePath;
-      })
-    )
-    .join('\n');
   fs.writeFileSync(path.resolve(hostDir, '.gitignore'), rules);
 }

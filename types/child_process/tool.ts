@@ -2,11 +2,14 @@ export interface GitRepoInfo {
   source: Array<{
     /** git address */
     url: string;
-    /** default orign */
+    /** the remote name of current source */
     remote?: string;
     /** git branch */
     branch: string;
-    /** the commit should be used */
+    /**
+     * the commit should be used
+     * if commit is provided, action of `git fetch ${remote}` can be avoided, and speed up the whole process.
+     */
     commit?: string;
   }>;
   /** path relative to project dir, default value is vendor${vendorKey} */
@@ -15,6 +18,8 @@ export interface GitRepoInfo {
   postPullCmds?: Array<string | {cmd: string; throwError?: boolean}>;
   /** some comment on this repo */
   description?: string[];
-  /** It is a sub module of another vendor */
-  moduleOf?: string[];
+}
+
+export interface GitRepoInfoTree {
+  [repoOrCategoryName: string]: GitRepoInfo | GitRepoInfoTree;
 }
