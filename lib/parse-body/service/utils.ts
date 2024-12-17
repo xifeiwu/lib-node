@@ -6,7 +6,8 @@ export const defaultParseOptions: Required<ParserOptions> = {
   // maxFileSizeinKb?: number;
   uploadDir: undefined,
   encoding: 'utf-8',
-  wayOfHandleFile: 'save',
+  // wayOfHandleFile: 'save',
+  wayOfHandleFile: 'cache',
   hash: {
     algorithm: 'sha1',
     encoding: 'base64url',
