@@ -16,11 +16,14 @@ type WayOfHandleFile = 'cache' | 'save' | 'cacheAndSave';
 export interface ParserOptions {
   // maxPayloadSizeinKb?: number;
   // maxFileSizeinKb?: number;
+  /** encoding of incoming data */
   encoding?: BufferEncoding;
   uploadDir?: string;
   wayOfHandleFile?: WayOfHandleFile;
-  hashAlgorithm?: string;
-  hashEncoding?: BinaryToTextEncoding;
+  hash?: {
+    algorithm?: string;
+    encoding?: BinaryToTextEncoding;
+  }
 }
 
 export interface ParsedFileInfo {

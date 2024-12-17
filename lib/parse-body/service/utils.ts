@@ -7,9 +7,10 @@ export const defaultParseOptions: Required<ParserOptions> = {
   uploadDir: undefined,
   encoding: 'utf-8',
   wayOfHandleFile: 'save',
-  hashAlgorithm: 'sha1',
-  hashEncoding: 'base64url',
-  // hashEncoding: 'hex',
+  hash: {
+    algorithm: 'sha1',
+    encoding: 'base64url',
+  }
 };
 
 /**

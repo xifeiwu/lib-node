@@ -12,10 +12,7 @@ interface Meta {
   contentTransferEncoding?: string;
 }
 
-type FileRelatedParserOptions = Pick<
-  Required<ParserOptions>,
-  'uploadDir' | 'wayOfHandleFile' | 'hashAlgorithm' | 'hashEncoding'
->;
+type FileRelatedParserOptions = Pick<Required<ParserOptions>, 'uploadDir' | 'wayOfHandleFile' | 'hash'>;
 
 /**
  * Parser for Binary data. such as Form Part or data with content-type of octet-stream
@@ -29,8 +26,8 @@ export class FileParser {
   hash: Hash;
   buffer: Buffer = Buffer.alloc(0);
   constructor(options: FileRelatedParserOptions) {
-    const {uploadDir, wayOfHandleFile, hashAlgorithm, hashEncoding} = options;
-    this.options = {uploadDir, wayOfHandleFile, hashAlgorithm, hashEncoding};
+    const {uploadDir, wayOfHandleFile, hash} = options;
+    this.options = {uploadDir, wayOfHandleFile, hash};
     this.meta = {};
     this.file = {};
     this.updateMeta({contentTransferEncoding: 'utf-8'});
@@ -68,7 +65,7 @@ export class FileParser {
   /** Create hash object if not exist */
   checkHash() {
     if (!this.hash) {
-      this.hash = createHash(this.options.hashAlgorithm);
+      this.hash = createHash(this.options.hash.algorithm);
     }
   }
   write(chunk: Buffer) {
@@ -87,7 +84,7 @@ export class FileParser {
       const result: ParsedResult = {};
       this.checkHash();
       chunk && this.hash.update(chunk);
-      const hashValue = this.hash.digest(this.options.hashEncoding);
+      const hashValue = this.hash.digest(this.options.hash.encoding);
       this.updateFileInfo({
         byteLength: this.buffer.byteLength,
         wayOfHandleFile: this.options.wayOfHandleFile,

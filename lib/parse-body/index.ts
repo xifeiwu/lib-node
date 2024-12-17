@@ -6,7 +6,7 @@ import {IncomingMessage} from 'http';
 import {ParserOptions} from './service/types';
 import {getJsonParser, getMultpartParser, getOctetParser} from './parser';
 import {defaultParseOptions, getCacheWriter} from './service/utils';
-import {getRequestHeaderInfo, getIncomingMessageData} from './service/external';
+import {getIncomingMessageData} from './service/external';
 
 /**
  * Parse http body by params provided on http header part
@@ -35,7 +35,7 @@ export async function parseBody(request: IncomingMessage, parserOptions?: Parser
       }
     }
   }
-  const {headers: reqHeaders} = getRequestHeaderInfo(request);
+  const {headers: reqHeaders} = request;
   let parserTransforms: Transform[];
   for (const getParser of [getJsonParser, getOctetParser, getMultpartParser]) {
     const result = getParser(reqHeaders, mregedParserOptions);
