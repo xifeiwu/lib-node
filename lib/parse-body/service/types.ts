@@ -2,7 +2,10 @@ import {BinaryToTextEncoding} from 'crypto';
 import {IncomingHttpHeaders} from 'http';
 import {Transform} from 'stream';
 
-export type GetParserFunc = (headers: IncomingHttpHeaders, parseOptions: Required<ParserOptions>) => Array<Transform>;
+export type GetParserFunc = (
+  headers: IncomingHttpHeaders,
+  parseOptions: Required<ParserOptions>
+) => Array<Transform>;
 
 /**
  * save means save data to uploadDir directly after end of file, and release the buffer after save success.
@@ -24,6 +27,7 @@ export interface ParsedFileInfo {
   name?: string;
   byteLength?: number;
   wayOfHandleFile?: ParserOptions['wayOfHandleFile'];
+  /** Use hash value as id of as file to avoid duplicate filename, and identify whether file exist */
   id?: string;
   hashValue?: string;
   encoding?: BufferEncoding;

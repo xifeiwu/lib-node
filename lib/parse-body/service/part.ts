@@ -7,7 +7,7 @@ import {ParsedFileInfo, ParsedResult, ParserOptions} from '../service/types';
 interface Meta {
   name?: string;
   filename?: string;
-  /** if contentType is not undefine, the type is file, or is field */
+  /** if contentType is not undefine, then the type is file, or is field */
   contentType?: string;
   contentTransferEncoding?: string;
 }
@@ -17,6 +17,10 @@ type FileRelatedParserOptions = Pick<
   'uploadDir' | 'wayOfHandleFile' | 'hashAlgorithm' | 'hashEncoding'
 >;
 
+/**
+ * Parser for Binary data. such as Form Part or data with content-type of octet-stream
+ * Emit an object, name as key, a ParsedFileInfo as value
+ */
 export class Part {
   options: Required<FileRelatedParserOptions>;
   meta: Meta;
@@ -54,6 +58,7 @@ export class Part {
   getMetaValue(key: keyof Meta) {
     return this.meta[key];
   }
+  /** Update partial or full info fo this.file */
   updateFileInfo(info: ParsedFileInfo) {
     for (const [key, value] of Object.entries(info)) {
       this.file[key] = value;
