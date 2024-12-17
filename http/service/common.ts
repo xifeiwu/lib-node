@@ -1,5 +1,4 @@
-import {IncomingMessage} from 'http';
-import {CanConvertToBuffer} from '../../types';
+import {CanConvertToBuffer, ReadableWithMeta} from '../../types';
 import {isPlainObject} from '../../external';
 import {Readable} from 'stream';
 
@@ -15,7 +14,7 @@ export function convertKeyToLowerCase<T extends object>(obj: T) {
   }, {} as T);
 }
 
-export async function getIncomingMessageData(incomingMessage: IncomingMessage) {
+export async function getIncomingMessageData(incomingMessage: ReadableWithMeta) {
   const {headers} = incomingMessage;
   const contentLength = parseInt(headers['content-length']);
   let resolved = false;
@@ -56,4 +55,9 @@ export function getContentTypeByData(data: CanConvertToBuffer | Readable) {
   } else {
     return 'text/plain';
   }
+}
+
+export function parseContentType(contentType: string) {
+  const [type, ...props] = contentType.split(';').map(it => it.trim());
+  return [type];
 }

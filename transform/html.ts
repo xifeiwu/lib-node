@@ -1,9 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import {Readable} from 'stream';
-import {GoThroughDirOptions, getFileInfoTree} from '../fs';
+import {getFileInfoTree} from '../fs';
 import {filesize} from '../external';
-import {HtmlProps, LiProps} from '../types';
+import {GoThroughDirOptions, HtmlProps, LiProps} from '../types';
 
 export function liItem(item: LiProps) {
   const {href, label, style = {}} = item;

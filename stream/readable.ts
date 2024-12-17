@@ -6,7 +6,7 @@ import {
   TargetDataTypeFromBuffer,
   fromBuffer,
   logColorful,
-  toBuffer,
+  convertToBuffer,
 } from '../index';
 import {getBufferMatcher} from '../general';
 import {CanConvertToBuffer, WatchStreamOptions} from '../types';
@@ -37,7 +37,7 @@ export function toReadable(data: CanConvertToBuffer) {
   return new stream.Readable({
     read() {
       if (data !== null) {
-        this.push(toBuffer(data));
+        this.push(convertToBuffer(data));
       }
       this.push(null);
     },

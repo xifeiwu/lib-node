@@ -2,6 +2,7 @@ import http from 'http';
 import {fromBuffer} from '../../transform';
 import {getIncomingMessageData} from '../service';
 import {HttpResponseInfo, GetIncomingMessageHeader} from '../../types';
+import {parseBody, ParserOptions} from '../../index';
 
 export const getHttpResponseHeaderPartInfo: GetIncomingMessageHeader<'client'> = (
   response: http.IncomingMessage
@@ -10,18 +11,28 @@ export const getHttpResponseHeaderPartInfo: GetIncomingMessageHeader<'client'> =
   return {statusCode, statusMessage, httpVersion, headers};
 };
 
+/**
+ * If dataType is provided, transform response data to dataType
+ * else transform response data by response header(recommanded)
+ * @param incomingMessage
+ * @param options
+ * @returns
+ */
 export async function getHttpResponseInfo<DataType = any>(
   incomingMessage: http.IncomingMessage,
   options?: {
     maxLength?: number;
     dataType?: 'buffer' | 'string' | 'json';
+    parserOptions?: ParserOptions;
   }
 ): Promise<HttpResponseInfo<DataType>> {
-  const {maxLength = 32 * 1024 * 1024, dataType = 'json'} = options ?? {};
-  const buffer = await getIncomingMessageData(incomingMessage);
-  let data;
-  if (buffer) {
+  const {maxLength = 64 * 1024 * 1024, dataType, parserOptions} = options ?? {};
+  let data: DataType;
+  if (dataType) {
+    const buffer = await getIncomingMessageData(incomingMessage);
     data = fromBuffer(buffer.subarray(0, maxLength), dataType) as DataType;
+  } else {
+    data = await parseBody<DataType>(incomingMessage, parserOptions);
   }
   return {
     ...getHttpResponseHeaderPartInfo(incomingMessage),
