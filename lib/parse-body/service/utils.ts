@@ -8,8 +8,8 @@ export const defaultParseOptions: Required<ParserOptions> = {
   encoding: 'utf-8',
   wayOfHandleFile: 'save',
   hashAlgorithm: 'sha1',
-  // hashEncoding: 'base64url',
-  hashEncoding: 'hex',
+  hashEncoding: 'base64url',
+  // hashEncoding: 'hex',
 };
 
 /**
