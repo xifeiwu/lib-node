@@ -3,9 +3,15 @@ import path from 'path';
 import {isReadable, Readable, Transform} from 'stream';
 import {pipeline} from 'stream/promises';
 import {ParserOptions} from './service/types';
-import {getJsonParser, getMultpartParser, getOctetParser} from './parser';
+import {getMultpartParser, getOctetParser} from './parser';
 import {defaultParseOptions, getCacheWriter} from './service/utils';
-import {CanConvertToBuffer, getIncomingMessageData, ReadableWithMeta, toReadable} from './service/external';
+import {
+  CanConvertToBuffer,
+  getIncomingMessageData,
+  parseContentType,
+  ReadableWithMeta,
+  toReadable,
+} from './service/external';
 
 /**
  * @deprecated by parseHttpBody
@@ -37,34 +43,36 @@ export async function parseBody<DataType = any>(request: ReadableWithMeta, optio
   }
   const {headers: reqHeaders} = request;
   let parserTransforms: Transform[];
-  for (const getParser of [getJsonParser, getOctetParser, getMultpartParser]) {
+  for (const getParser of [getOctetParser, getMultpartParser]) {
     const result = getParser(reqHeaders, mregedOptions);
     if (result) {
       parserTransforms = result;
       break;
     }
   }
-  if (!parserTransforms) {
-    /**
-     * For request with method get, there will be not content-type on header part,
-     * just return undefined other than throw Error
-     */
-    // throw new Error(`Parser is not found for content-type: ${reqHeaders['content-type']}`);
+  if (parserTransforms) {
+    const {writer, waitCacheData} = getCacheWriter(mregedOptions);
+    await pipeline([request, ...parserTransforms, writer]);
+    const cacheData = await waitCacheData;
+    return cacheData as DataType;
+  } else {
     const buffer = await getIncomingMessageData(request);
-    const {'content-type': contentType} = reqHeaders;
-
-    if (buffer.byteLength > 0) {
-      if (contentType.startsWith('text')) {
-        return buffer.toString() as DataType;
-      }
-      return buffer as DataType;
+    if (buffer.byteLength === 0) {
+      return;
     }
-    return;
+    const [mimeType] = parseContentType(reqHeaders['content-type']);
+    if (mimeType.startsWith('text')) {
+      return buffer.toString() as DataType;
+    } else if (/json/i.test(mimeType)) {
+      try {
+        return JSON.parse(buffer.toString()) as DataType;
+      } catch (err) {
+        /** Ignore */
+      }
+    }
+    /** return original data if content-type is not matched */
+    return buffer as DataType;
   }
-  const {writer, waitCacheData} = getCacheWriter(mregedOptions);
-  await pipeline([request, ...parserTransforms, writer]);
-  const cacheData = await waitCacheData;
-  return cacheData as DataType;
 }
 
 export async function parseHttpBody<DataType = any>(request: ReadableWithMeta, options?: ParserOptions) {

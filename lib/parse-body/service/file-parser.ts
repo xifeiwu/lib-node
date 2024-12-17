@@ -123,7 +123,7 @@ export class FileParser {
       return result;
     } else {
       return {
-        [key]: this.buffer,
+        [key]: this.buffer.toString(this.getMetaValue('contentTransferEncoding') as BufferEncoding),
       };
     }
   }

@@ -14,6 +14,7 @@ import {HttpRequestOptions, HttpResponseInfo, ConnectionPayload, ValidateStatus}
 import {Readable, isReadable} from 'stream';
 import {getHttpResponseInfo} from './receiver';
 import {updateHeadersByHttpInfo} from '../service/internal';
+import {convertKeyToLowerCase} from '../service';
 
 process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
 
@@ -147,7 +148,7 @@ export async function requestAndGetUpgradeInfo<Payload extends ConnectionPayload
   config: HttpRequestOptions<Payload>
 ): Promise<{response: http.IncomingMessage; socket: Socket; head: Buffer}> {
   const {} = config;
-  const headers = {...(config.headers ?? {})};
+  const headers = convertKeyToLowerCase({...(config.headers ?? {})});
   const {connection, upgrade} = headers;
   if (upgrade === undefined) {
     throw new Error(`upgrade property should be set on headers`);

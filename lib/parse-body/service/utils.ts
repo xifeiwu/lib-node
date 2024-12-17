@@ -44,9 +44,9 @@ export function getCacheWriter(parserOptions: ParserOptions) {
     write(item: ParsedItem, _enc, cb) {
       for (const [key, value] of Object.entries(item)) {
         let finalValue: ParsedValue = value;
-        if (Buffer.isBuffer(value)) {
-          finalValue = value.toString(encoding);
-        }
+        // if (Buffer.isBuffer(value)) {
+        //   finalValue = value.toString(encoding);
+        // }
         if (Object.prototype.hasOwnProperty.call(result, key) && !Array.isArray(result[key])) {
           result[key] = [result[key] as ParsedValue];
         }
