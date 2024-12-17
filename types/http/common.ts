@@ -1,9 +1,10 @@
 /**
  * Include types for both client and server
  */
-import {IncomingMessage} from 'http';
+import {IncomingHttpHeaders, IncomingMessage} from 'http';
 import {ConnectionEnd} from '../../types';
 import {HttpRequestHeaderPartInfo, HttpResponseHeaderPartInfo} from './tcp';
+import {Readable} from 'stream';
 
 interface ConnectionEndToHeaderPart {
   client: HttpResponseHeaderPartInfo<'receiver'>;
@@ -12,3 +13,10 @@ interface ConnectionEndToHeaderPart {
 export type GetIncomingMessageHeader<End extends ConnectionEnd> = (
   incomingMessage: IncomingMessage
 ) => ConnectionEndToHeaderPart[End];
+
+/**
+ * A simplified IncomingHttpHeaders that only contain properties for parse body
+ */
+export class ReadableWithMeta extends Readable {
+  headers: IncomingHttpHeaders;
+}
