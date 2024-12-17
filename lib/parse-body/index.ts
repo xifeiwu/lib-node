@@ -62,5 +62,4 @@ export async function parseBody(request: IncomingMessage, parserOptions?: Parser
   return cacheData;
 }
 
-export {ParserOptions};
 export * from './service/types';
