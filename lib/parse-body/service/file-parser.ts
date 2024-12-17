@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import {Hash, createHash} from 'crypto';
-import {toBuffer} from '../service/external';
-import {ParsedFileInfo, ParsedResult, ParserOptions} from '../service/types';
+import {toBuffer} from './external';
+import {ParsedFileInfo, ParsedResult, ParserOptions} from './types';
 
 interface Meta {
   name?: string;
@@ -21,8 +21,9 @@ type FileRelatedParserOptions = Pick<
  * Parser for Binary data. such as Form Part or data with content-type of octet-stream
  * Emit an object, name as key, a ParsedFileInfo as value
  */
-export class Part {
+export class FileParser {
   options: Required<FileRelatedParserOptions>;
+  /** meta for thie Parser */
   meta: Meta;
   file: ParsedFileInfo;
   hash: Hash;

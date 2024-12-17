@@ -86,7 +86,7 @@
 import {Transform} from 'stream';
 import {GetParserFunc, ParserOptions} from '../service/types';
 import {IncomingHttpHeaders} from 'http';
-import {Part} from '../service/part';
+import {FileParser} from '../service/file-parser';
 
 export const getOctetParser: GetParserFunc = (
   headers: IncomingHttpHeaders,
@@ -100,7 +100,7 @@ export const getOctetParser: GetParserFunc = (
   if (contentType === undefined || filename === undefined) {
     throw new Error(`both content-type and x-file-name should be set for octet-stream request`);
   }
-  const part = new Part(parseOptions);
+  const part = new FileParser(parseOptions);
   /** pass contentType to make sure type of Part is file */
   part.updateMeta({
     filename: filename as string,

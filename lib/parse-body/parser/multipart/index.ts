@@ -4,18 +4,18 @@ import FormidableError, {internalCode} from '../../service/error';
 import {getFileName} from '../../service/utils';
 import {GetParserFunc, ParserOptions} from '../../service/types';
 import {MultipartParser} from './parser';
-import {Part} from '../../service/part';
+import {FileParser} from '../../service/file-parser';
 
 function getTransformForParser(parseOptions: Required<ParserOptions>) {
   const {encoding = 'utf-8'} = parseOptions;
   let headerField: string;
   let headerValue: string;
-  let part: Part;
+  let part: FileParser;
   const transformParserData = new Transform({
     objectMode: true,
     async transform({name, buffer, start, end}, _enc, cb) {
       if (name === 'partBegin') {
-        part = new Part(parseOptions);
+        part = new FileParser(parseOptions);
         headerField = '';
         headerValue = '';
       } else if (name === 'headerField') {
