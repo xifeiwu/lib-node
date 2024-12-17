@@ -130,7 +130,7 @@ export async function syncUpGitRepos(gitRepos: GitRepoInfoTree, config: SyncupGi
 }
 
 export function writeGitIgnoreFile(gitRepos: GitRepoInfoTree, config: SyncupGitRepoConfig) {
-  const {hostDir, repoDir} = config;
+  const {hostDir, repoDir = ''} = config;
   function getRepoRelativePath(infoTree: GitRepoInfoTree, config: Pick<SyncupGitRepoConfig, 'repoDir'>) {
     const {repoDir} = config;
     const results: string[] = [];
@@ -148,7 +148,7 @@ export function writeGitIgnoreFile(gitRepos: GitRepoInfoTree, config: SyncupGitR
     }
     return results;
   }
-  const rules = ['.DS_Store', 'node_modules/', ...getRepoRelativePath(gitRepos, {repoDir})].join('\n');
+  const rules = ['.DS_Store', 'node_modules/', repoDir, ...getRepoRelativePath(gitRepos, {repoDir})].filter(Boolean).join('\n');
   process.chdir(hostDir);
   fs.writeFileSync(path.resolve(hostDir, '.gitignore'), rules);
 }
