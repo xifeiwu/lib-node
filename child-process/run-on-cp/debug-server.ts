@@ -4,12 +4,10 @@ import {
   InfoToCp,
   getAFreePort,
   toBuffer,
-  toHtml,
-  ulItems,
-  toUrlProps,
   htmlUlItems,
 } from '../../index';
-import {handleCpCustomization, out, runAllCpCustomization} from './service';
+import {toUrlProps} from '../../external';
+import {handleCpCustomization, out} from './service';
 import {CP} from '../../types';
 
 const allPathname = {

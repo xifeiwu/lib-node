@@ -3,7 +3,7 @@ import {isNumber} from '../../../external';
 import {Socket} from 'net';
 import {HttpRequestHeaderPartInfo} from '../../../types';
 import {getOneLineFromBuffer} from '../../../stream';
-import {tryParseHttpHeaderPart} from './parse-header-part';
+import {tryParseHttpHeaderPart} from '../service';
 
 export class HttpIncomingMessage extends Readable {
   socket: Socket;
