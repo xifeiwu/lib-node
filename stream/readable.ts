@@ -33,7 +33,10 @@ export function getDataFromReadable(reader: Readable): Promise<Buffer> {
  * @param {data}, null stands for end the reader immediately
  * TODO: use toBuffer
  */
-export function toReadable(data: CanConvertToBuffer) {
+export function toReadable(data: CanConvertToBuffer | Readable) {
+  if (data instanceof Readable) {
+    return data;
+  }
   return new stream.Readable({
     read() {
       if (data !== null) {
