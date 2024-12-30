@@ -3,9 +3,8 @@ import https from 'https';
 import {getDataFromReadable} from '../../stream';
 // import {getAFreePort} from '../../net/http';
 import {proxyRequest} from './handler';
-import {getHttpRequestHeaderPartInfo} from '../server';
-import {requestAndGetResponseInfo} from '../client';
-import { getAFreePort } from '../../net';
+import {getHttpRequestHeaderPartInfo, requestAndGetResponseInfo} from './external';
+import {getAFreePort} from '../../net';
 
 /**
  * For handler2, req.readable is false

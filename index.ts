@@ -18,5 +18,6 @@ export * from './types';
 export * from './test';
 export * from './lib/parse-body';
 export * from './lib/socks';
-export * from './lib/cookies'
+export * from './lib/cookies';
+export * from './lib/http-proxy';
 // export * from './lib/memcached';

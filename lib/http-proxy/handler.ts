@@ -9,10 +9,10 @@ import {
   httpRequestOptionsToCurlCommand,
   makeSureHttpRequestOptionsSerializable,
   validateStatusCode,
-} from '../client';
+  getHttpRequestHeaderPartInfo,
+} from './external';
 import {logColorful} from '../../log';
 import {HttpRequestOptions, HttpResponseInfo} from '../../types';
-import {getHttpRequestHeaderPartInfo} from '../server';
 
 /**
  * On response to proxy: print more info when http status code is invalid.

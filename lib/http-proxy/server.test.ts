@@ -1,7 +1,6 @@
 import {PATHNAME_PROXY_STATUS, startProxyServer} from '.';
 import {HttpProxyConfig} from './types';
-import {requestAndGetResponseInfo} from '../client';
-import {waitFor} from '../../external';
+import {requestAndGetResponseInfo, waitFor} from './external';
 
 // https://pulse.conviva.com/
 export async function proxyToBaidu() {
