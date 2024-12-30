@@ -100,8 +100,8 @@ export function largeDataToString(
 
 const G = Math.pow(1024, 3);
 export function getBufferGenerator(config?: BufferGeneratorConfig) {
-  const {source = base64url, sameItemPerGenerate = true, chunkSize = 1, count: maxGenerateCount = 3} = config ?? {};
-  if (maxGenerateCount > 10000) {
+  const {source = base64url, sameItemPerGenerate = true, chunkSize = 1, generateCount = 3} = config ?? {};
+  if (generateCount > 10000) {
     throw new Error(`value of countOfGenerate is too large`);
   }
   if (chunkSize > G) {
@@ -115,7 +115,7 @@ export function getBufferGenerator(config?: BufferGeneratorConfig) {
     const startCode = sourceBuffer[0];
     const items: number[] = [];
     let index = 0;
-    while (index < maxGenerateCount) {
+    while (index < generateCount) {
       items.push((startCode + index) % 255);
       index++;
     }
@@ -124,17 +124,17 @@ export function getBufferGenerator(config?: BufferGeneratorConfig) {
   const sourceBufferLength = sourceBuffer.byteLength;
 
   let indexOfSourceBuffer = 0;
-  let generateCount = 0;
+  let count = 0;
   /**
    * return a chunk of buffer per call, and return null when count reach maxGenerateCount.
    */
   function generator(): Buffer | null {
     let result: Buffer;
-    if (generateCount >= maxGenerateCount) {
+    if (count >= generateCount) {
       return null;
     }
     if (sameItemPerGenerate) {
-      result = Buffer.alloc(chunkSize).fill(sourceBuffer[generateCount % sourceBufferLength]);
+      result = Buffer.alloc(chunkSize).fill(sourceBuffer[count % sourceBufferLength]);
     } else {
       indexOfSourceBuffer = indexOfSourceBuffer % sourceBufferLength;
       const remainingLength = sourceBufferLength - indexOfSourceBuffer;
@@ -155,7 +155,7 @@ export function getBufferGenerator(config?: BufferGeneratorConfig) {
         }
       }
     }
-    generateCount++;
+    count++;
     return result;
   }
   return generator;

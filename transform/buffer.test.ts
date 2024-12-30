@@ -86,7 +86,7 @@ export function testGetBufferGenerator() {
   {
     const generator = getBufferGenerator({
       chunkSize: 2,
-      count: 5,
+      generateCount: 5,
     });
     let data: Buffer | null;
     const results: Buffer[] = [];
@@ -107,7 +107,7 @@ export function testGetBufferGenerator() {
     const generator = getBufferGenerator({
       source: 'abc',
       chunkSize: 2,
-      count: 5,
+      generateCount: 5,
     });
     let data: Buffer | null;
     const results: Buffer[] = [];
@@ -125,7 +125,7 @@ export function testGetBufferGenerator() {
     const generator = getBufferGenerator({
       source: 'abc',
       chunkSize: 2,
-      count: 5,
+      generateCount: 5,
       sameItemPerGenerate: false,
     });
     let data: Buffer | null;
