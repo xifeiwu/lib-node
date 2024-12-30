@@ -16,7 +16,10 @@ export interface HttpProxyConfig {
   originData?: Parameters<typeof toReadable>[0];
   /** Default options for http.request of proxy */
   defaultRequestOptions?: Pick<RequestOptions, 'auth'>;
-  /** Handle info of proxy request before request in sent */
+  /**
+   * Handle info of proxy request before request in sent
+   * The value returned will be set as new HttpRequestOptions of proxy
+   */
   handleInfoForProxyReq?: (
     info: HttpRequestOptions
   ) => Promise<HttpRequestOptions | void> | HttpRequestOptions | void;
@@ -25,14 +28,10 @@ export interface HttpProxyConfig {
    * 1. To collect proxyStatus
    * 1. To print proxy info
    */
-  preProxyReq?: (proxyStatus: ProxyStatus) => void;
+  preProxyReq?: (proxyStatus: ProxyStatus, moreInfo: {href: string}) => void;
 
   /** Just on response to proxy */
-  onRes2Proxy?: (
-    info: HttpResponseInfo,
-    proxyReqInfo: HttpRequestOptions,
-    response: IncomingMessage
-  ) => void;
+  onRes2Proxy?: (info: HttpResponseInfo, proxyReqInfo: HttpRequestOptions, response: IncomingMessage) => void;
   /** Handle info of response to proxy */
   handleInfoOfRes2Origin?: (
     info: HttpResponseInfo

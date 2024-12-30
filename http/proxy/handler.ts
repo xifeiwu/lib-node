@@ -67,11 +67,10 @@ export async function proxyRequest(req: IncomingMessage, res: ServerResponse, co
   }
   proxyStatus.requestInfo = {origin: originReqInfo, proxy: proxyReqInfo};
 
-  preProxyReq && preProxyReq(proxyStatus);
-
   const {urlProps, restProps} = getUrlPropsFromConfig(proxyReqInfo);
   const {data, ...requestOptions} = restProps;
   const {protocol, href} = toUrlInstance(urlProps);
+  preProxyReq && preProxyReq(proxyStatus, {href});
   const proxyReq = (protocol === 'https:' ? https : http).request(href, requestOptions);
 
   (originData ? toReadable(originData) : req)

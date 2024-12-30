@@ -1,7 +1,7 @@
 import {formatDate, isNumber} from '../../external';
-import {logWithColor} from '../../log';
-import {LogColors} from '../../types';
+import {logColorful} from '../../log';
 import {ProxyStatus} from './types';
+import {ColorStyle} from './external';
 
 const MAX_RROXY_STATUS_LENGTH = 100;
 
@@ -9,10 +9,11 @@ export function getPreRequestCb(config: {
   statusList: ProxyStatus[];
   maxSize?: number;
   maxAge?: number;
-  color?: LogColors;
+  logTheme?: ColorStyle;
 }) {
-  const {statusList, maxSize = MAX_RROXY_STATUS_LENGTH, maxAge, color} = config;
-  return (proxyStatus: ProxyStatus) => {
+  const {statusList, maxSize = MAX_RROXY_STATUS_LENGTH, maxAge, logTheme} = config;
+  return (proxyStatus: ProxyStatus, proxyInfo) => {
+    const {href: targetHref} = proxyInfo;
     const {ts, requestInfo: reqInfo} = proxyStatus;
     const dt = formatDate(ts, 'MM-ddThh:mm:ss.SSS');
     let id = dt;
@@ -26,7 +27,7 @@ export function getPreRequestCb(config: {
       origin: {method, url},
       proxy,
     } = reqInfo;
-    logWithColor(color ?? 'yellow', `[${id}]: ${method.toUpperCase()} ${url} -> ${proxy.origin + proxy.url}`);
+    logColorful(logTheme ?? {color: 'yellow'}, `[${id}]: ${method.toUpperCase()} ${url} -> ${targetHref}`);
     if (isNumber(maxAge) && maxAge > 0) {
       const now = Date.now();
       for (let i = statusList.length; i >= 0; i--) {
