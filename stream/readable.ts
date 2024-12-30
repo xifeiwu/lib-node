@@ -12,6 +12,10 @@ import {getBufferMatcher} from '../general';
 import {CanConvertToBuffer, WatchStreamOptions} from '../types';
 
 export function getDataFromReadable(reader: Readable): Promise<Buffer> {
+  const {readable} = reader;
+  if (!readable) {
+    return null;
+  }
   return new Promise((resolve, reject) => {
     const bufferList: Buffer[] = [];
     reader.on('data', (chunk: Buffer) => {

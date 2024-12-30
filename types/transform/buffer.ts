@@ -9,6 +9,7 @@ export interface BufferGeneratorConfig {
   sameItemPerGenerate?: boolean;
   /** full chunk data to target size by existing data */
   chunkSize?: number;
+  // count?: number;
   /** how many chunk can be genereated by calling function generator */
-  count?: number;
+  generateCount?: number;
 }

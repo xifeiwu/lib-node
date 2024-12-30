@@ -15,12 +15,15 @@ import {
 
 /**
  * @deprecated by parseHttpBody
- * Parse http body by params provided on http header part
+ * Parse http body by http protocol
  * @param request
  * @param options
  * @returns undefined/null when there is no data part
  */
 export async function parseBody<DataType = any>(request: ReadableWithMeta, options?: ParserOptions) {
+  if (!request.readable) {
+    return null;
+  }
   const mregedOptions: Required<ParserOptions> = {
     ...defaultParseOptions,
     ...(options ?? {}),
@@ -58,7 +61,7 @@ export async function parseBody<DataType = any>(request: ReadableWithMeta, optio
   } else {
     const buffer = await getIncomingMessageData(request);
     if (buffer.byteLength === 0) {
-      return;
+      return null;
     }
     const [mimeType] = parseContentType(reqHeaders['content-type']);
     if (mimeType.startsWith('text')) {
