@@ -2,7 +2,7 @@ import assert from 'assert';
 import {toBuffer, convertToBuffer, getBufferGenerator} from './buffer';
 import {logColorful} from '../log';
 import {CanConvertToBuffer} from '../types';
-import {base64Chars} from '../external';
+import {base64url} from '../external';
 
 export async function testToBuffer() {
   console.log(toBuffer(1));
@@ -82,7 +82,7 @@ export async function bufferConvert() {
 }
 
 export function testGetBufferGenerator() {
-  /** the case source is not set, use base64Chars as default source */
+  /** if the case source is not set, use base64url as default source */
   {
     const generator = getBufferGenerator({
       chunkSize: 2,
@@ -96,7 +96,7 @@ export function testGetBufferGenerator() {
     assert.equal(results.length, 5);
     assert.deepEqual(
       results.map(it => it.toString()),
-      base64Chars
+      base64url
         .substring(0, 5)
         .split('')
         .map(it => it + it)

@@ -100,16 +100,18 @@ export function largeDataToString(
 
 const G = Math.pow(1024, 3);
 export function getBufferGenerator(config?: BufferGeneratorConfig) {
-  const {source, sameItemPerGenerate = true, chunkSize = 1, count: maxGenerateCount = 3} = config ?? {};
+  const {source = base64url, sameItemPerGenerate = true, chunkSize = 1, count: maxGenerateCount = 3} = config ?? {};
   if (maxGenerateCount > 10000) {
     throw new Error(`value of countOfGenerate is too large`);
   }
   if (chunkSize > G) {
     throw new Error(`value of chunkSize is too large`);
   }
-  let sourceBuffer = convertToBuffer(source ?? base64url);
+  let sourceBuffer = convertToBuffer(source);
+  /**
+   * Try to get more different char when the length is 1
+   */
   if (sourceBuffer.byteLength === 1) {
-    // sameItemMode = true;
     const startCode = sourceBuffer[0];
     const items: number[] = [];
     let index = 0;
@@ -123,6 +125,9 @@ export function getBufferGenerator(config?: BufferGeneratorConfig) {
 
   let indexOfSourceBuffer = 0;
   let generateCount = 0;
+  /**
+   * return a chunk of buffer per call, and return null when count reach maxGenerateCount.
+   */
   function generator(): Buffer | null {
     let result: Buffer;
     if (generateCount >= maxGenerateCount) {
@@ -132,25 +137,21 @@ export function getBufferGenerator(config?: BufferGeneratorConfig) {
       result = Buffer.alloc(chunkSize).fill(sourceBuffer[generateCount % sourceBufferLength]);
     } else {
       indexOfSourceBuffer = indexOfSourceBuffer % sourceBufferLength;
-      const sourceRemaining = sourceBuffer.subarray(indexOfSourceBuffer);
-      if (sourceRemaining.byteLength > chunkSize) {
+      const remainingLength = sourceBufferLength - indexOfSourceBuffer;
+      if (remainingLength >= chunkSize) {
         result = sourceBuffer.subarray(indexOfSourceBuffer, indexOfSourceBuffer + chunkSize);
         indexOfSourceBuffer += chunkSize;
       } else {
-        result = sourceRemaining;
-        if (result.byteLength === chunkSize) {
-          indexOfSourceBuffer = 0;
-        }
+        result = sourceBuffer.subarray(indexOfSourceBuffer);
         while (result.byteLength < chunkSize) {
           let diff = chunkSize - result.byteLength;
-          while (diff >= sourceBufferLength) {
-            result = Buffer.concat([result, sourceBuffer]);
-            diff = chunkSize - result.byteLength;
-          }
-          if (diff > 0) {
+          if (diff <= sourceBufferLength) {
             result = Buffer.concat([result, sourceBuffer.subarray(0, diff)]);
+            indexOfSourceBuffer = diff;
+            break;
+          } else {
+            result = Buffer.concat([result, sourceBuffer]);
           }
-          indexOfSourceBuffer = diff;
         }
       }
     }
