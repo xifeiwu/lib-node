@@ -60,7 +60,7 @@ export async function parseBody<DataType = any>(request: ReadableWithMeta, optio
     return cacheData as DataType;
   } else {
     const buffer = await getIncomingMessageData(request);
-    if (buffer.byteLength === 0) {
+    if (!buffer || buffer.byteLength === 0) {
       return null;
     }
     const [mimeType] = parseContentType(reqHeaders['content-type']);
