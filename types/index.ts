@@ -9,4 +9,4 @@ export * from './test';
 export * from './process';
 export * from './child_process';
 export {FormFile, FormValue, NodeFormData} from '../http/form-data';
-export * from '../lib/parse-body/service/types';
+export * from '../lib/http-body-parser/service/types';

@@ -2,7 +2,7 @@ import {IncomingHttpHeaders, OutgoingHttpHeaders, RequestOptions} from 'http';
 import {UrlProps} from '../../external';
 import {HttpResponseInfo} from './tcp';
 import {ConnectionPayload} from '../net';
-import {ParserOptions} from '../../lib/parse-body';
+import {ParserOptions} from '../../lib/http-body-parser';
 
 /**
  * @deprecated by ConnectionPayload
