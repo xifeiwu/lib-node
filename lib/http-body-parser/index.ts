@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import {isReadable, Readable, Transform} from 'stream';
 import {pipeline} from 'stream/promises';
-import {ParserOptions} from './service/types';
+import {HttpBodyParserOptions} from './service/types';
 import {getMultpartParser, getOctetParser} from './parser';
 import {defaultParseOptions, getCacheWriter} from './service/utils';
 import {
@@ -20,11 +20,11 @@ import {
  * @param options
  * @returns undefined/null when there is no data part
  */
-export async function parseBody<DataType = any>(request: ReadableWithMeta, options?: ParserOptions) {
+export async function parseBody<DataType = any>(request: ReadableWithMeta, options?: HttpBodyParserOptions) {
   if (!request.readable) {
     return null;
   }
-  const mregedOptions: Required<ParserOptions> = {
+  const mregedOptions: Required<HttpBodyParserOptions> = {
     ...defaultParseOptions,
     ...(options ?? {}),
   };
@@ -78,7 +78,7 @@ export async function parseBody<DataType = any>(request: ReadableWithMeta, optio
   }
 }
 
-export async function parseHttpBody<DataType = any>(request: ReadableWithMeta, options?: ParserOptions) {
+export async function parseHttpBody<DataType = any>(request: ReadableWithMeta, options?: HttpBodyParserOptions) {
   return await parseBody<DataType>(request, options);
 }
 /**
@@ -89,7 +89,7 @@ export async function parseHttpBody<DataType = any>(request: ReadableWithMeta, o
  */
 export async function parseHttpData<DataType = any>(
   incomingMessage: {meta: ReadableWithMeta['headers']; data: CanConvertToBuffer},
-  options?: ParserOptions
+  options?: HttpBodyParserOptions
 ) {
   const {meta, data} = incomingMessage;
   let reader: Readable;
@@ -104,4 +104,4 @@ export async function parseHttpData<DataType = any>(
   return await parseHttpBody<DataType>(reader as ReadableWithMeta, options);
 }
 
-export * from './service/types';
+export {HttpBodyParserOptions} from './service/types';

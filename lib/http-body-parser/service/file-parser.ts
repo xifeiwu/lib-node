@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import {Hash, createHash} from 'crypto';
 import {toBuffer} from './external';
-import {ParsedFileInfo, ParsedResult, ParserOptions} from './types';
+import {ParsedFileInfo, ParsedResult, HttpBodyParserOptions} from './types';
 
 interface Meta {
   name?: string;
@@ -12,7 +12,7 @@ interface Meta {
   contentTransferEncoding?: string;
 }
 
-type FileRelatedParserOptions = Pick<Required<ParserOptions>, 'uploadDir' | 'wayOfHandleFile' | 'hash'>;
+type FileRelatedParserOptions = Pick<Required<HttpBodyParserOptions>, 'uploadDir' | 'wayOfHandleFile' | 'hash'>;
 
 /**
  * Parser for Binary data. such as Form Part or data with content-type of octet-stream

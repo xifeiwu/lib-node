@@ -84,13 +84,13 @@
 // }
 
 import {Transform} from 'stream';
-import {GetParserFunc, ParserOptions} from '../service/types';
+import {GetParserFunc, HttpBodyParserOptions} from '../service/types';
 import {IncomingHttpHeaders} from 'http';
 import {FileParser} from '../service/file-parser';
 
 export const getOctetParser: GetParserFunc = (
   headers: IncomingHttpHeaders,
-  parseOptions: Required<ParserOptions>
+  parseOptions: Required<HttpBodyParserOptions>
 ) => {
   const {'content-type': contentType, 'x-file-name': filename} = headers;
   const octetStream = /octet-stream/i.test(contentType);

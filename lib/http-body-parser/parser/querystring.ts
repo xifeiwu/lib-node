@@ -1,5 +1,5 @@
 import {Transform} from 'stream';
-import {GetParserFunc, ParserOptions} from '../service/types';
+import {GetParserFunc, HttpBodyParserOptions} from '../service/types';
 import {IncomingHttpHeaders} from 'http';
 
 /**
@@ -10,7 +10,7 @@ import {IncomingHttpHeaders} from 'http';
  */
 export const getQuerystringParser: GetParserFunc = (
   headers: IncomingHttpHeaders,
-  parseOptions: ParserOptions
+  parseOptions: HttpBodyParserOptions
 ) => {
   const {'content-type': contentType} = headers;
   const urlencoded = /urlencoded/i.test(contentType);

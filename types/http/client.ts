@@ -2,7 +2,7 @@ import {IncomingHttpHeaders, OutgoingHttpHeaders, RequestOptions} from 'http';
 import {UrlProps} from '../../external';
 import {HttpResponseInfo} from './tcp';
 import {ConnectionPayload} from '../net';
-import {ParserOptions} from '../../lib/http-body-parser';
+import {HttpBodyParserOptions} from '../../lib/http-body-parser';
 
 /**
  * @deprecated by ConnectionPayload
@@ -42,7 +42,7 @@ export interface HttpUpgradeConfig {
 export interface ParseHttpResponseBodyOptions {
   maxLength?: number;
   dataType?: 'buffer' | 'string' | 'json';
-  parserOptions?: ParserOptions;
+  parserOptions?: HttpBodyParserOptions;
 }
 export interface ParseHttpResponseOptions extends ParseHttpResponseBodyOptions {
   validateStatus?: ValidateStatus | boolean;

@@ -2,11 +2,11 @@ import {IncomingHttpHeaders} from 'http';
 import {Transform} from 'stream';
 import FormidableError, {internalCode} from '../../service/error';
 import {getFileName} from '../../service/utils';
-import {GetParserFunc, ParserOptions} from '../../service/types';
+import {GetParserFunc, HttpBodyParserOptions} from '../../service/types';
 import {MultipartParser} from './parser';
 import {FileParser} from '../../service/file-parser';
 
-function getTransformForParser(parseOptions: Required<ParserOptions>) {
+function getTransformForParser(parseOptions: Required<HttpBodyParserOptions>) {
   const {encoding = 'utf-8'} = parseOptions;
   let headerField: string;
   let headerValue: string;
@@ -76,7 +76,7 @@ function getTransformForParser(parseOptions: Required<ParserOptions>) {
 
 export const getMultpartParser: GetParserFunc = (
   headers: IncomingHttpHeaders,
-  parseOptions: Required<ParserOptions>
+  parseOptions: Required<HttpBodyParserOptions>
 ) => {
   /** content-type:multipart/form-data; boundary=----WebKitFormBoundaryE7DpP5ncpQWn8RRu */
   const {'content-type': contentType} = headers;

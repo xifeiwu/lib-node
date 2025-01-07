@@ -1,7 +1,7 @@
 import {Writable} from 'stream';
-import {ParsedItem, ParsedResult, ParsedValue, ParserOptions} from './types';
+import {ParsedItem, ParsedResult, ParsedValue, HttpBodyParserOptions} from './types';
 
-export const defaultParseOptions: Required<ParserOptions> = {
+export const defaultParseOptions: Required<HttpBodyParserOptions> = {
   // maxPayloadSizeinKb?: number;
   // maxFileSizeinKb?: number;
   uploadDir: undefined,
@@ -36,7 +36,7 @@ export function getFileName(headerValue: string) {
  * @param parserOptions
  * @returns
  */
-export function getCacheWriter(parserOptions: ParserOptions) {
+export function getCacheWriter(parserOptions: HttpBodyParserOptions) {
   const {encoding = 'utf-8'} = parserOptions;
   const result: ParsedResult = {};
   const writer = new Writable({

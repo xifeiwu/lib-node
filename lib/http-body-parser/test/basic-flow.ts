@@ -7,9 +7,9 @@ import {FormFile, NodeFormData} from '../../../types';
 import {formDataToBuffer} from '../../../http/form-data';
 import {requestAndGetResponseInfo} from '../../../http/client';
 import {logColorful} from '../../../log';
-import {ParserOptions} from '../service/types';
+import {HttpBodyParserOptions} from '../service/types';
 
-async function startServer(parseOptions?: Partial<ParserOptions>) {
+async function startServer(parseOptions?: Partial<HttpBodyParserOptions>) {
   return await startHttpServer({
     request: async (request, response) => {
       try {
@@ -32,7 +32,7 @@ async function startServer(parseOptions?: Partial<ParserOptions>) {
   });
 }
 
-export async function formData(parseOptions?: Partial<ParserOptions>) {
+export async function formData(parseOptions?: Partial<HttpBodyParserOptions>) {
   const {origin, host, port, server} = await startServer(parseOptions);
   const formData: NodeFormData = {
     a: 1,
@@ -49,7 +49,7 @@ export async function formData(parseOptions?: Partial<ParserOptions>) {
   console.log(responseInfo);
 }
 
-export async function json(parseOptions?: Partial<ParserOptions>) {
+export async function json(parseOptions?: Partial<HttpBodyParserOptions>) {
   const {origin, host, port, server} = await startServer(parseOptions);
   const data = {
     a: 1,
@@ -72,7 +72,7 @@ export async function json(parseOptions?: Partial<ParserOptions>) {
   logColorful({}, responseInfo);
 }
 
-export async function octet(parseOptions?: Partial<ParserOptions>) {
+export async function octet(parseOptions?: Partial<HttpBodyParserOptions>) {
   const {origin, host, port, server} = await startServer(parseOptions);
   const data = {
     a: 1,
@@ -96,7 +96,7 @@ export async function octet(parseOptions?: Partial<ParserOptions>) {
   logColorful({}, responseInfo);
 }
 
-export async function octetReadable(parseOptions?: Partial<ParserOptions>) {
+export async function octetReadable(parseOptions?: Partial<HttpBodyParserOptions>) {
   const {origin, host, port, server} = await startServer(parseOptions);
   const data = fs.createReadStream(path.resolve(__dirname, 'basic-flow.ts'));
   const responseInfo = await requestAndGetResponseInfo({

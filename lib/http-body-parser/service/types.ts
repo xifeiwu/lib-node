@@ -4,7 +4,7 @@ import {Transform} from 'stream';
 
 export type GetParserFunc = (
   headers: IncomingHttpHeaders,
-  parseOptions: Required<ParserOptions>
+  parseOptions: Required<HttpBodyParserOptions>
 ) => Array<Transform>;
 
 /**
@@ -13,7 +13,7 @@ export type GetParserFunc = (
  */
 type WayOfHandleFile = 'cache' | 'save' | 'cacheAndSave';
 
-export interface ParserOptions {
+export interface HttpBodyParserOptions {
   // maxPayloadSizeinKb?: number;
   // maxFileSizeinKb?: number;
   /** encoding of incoming data */
@@ -29,7 +29,7 @@ export interface ParserOptions {
 export interface ParsedFileInfo {
   name?: string;
   byteLength?: number;
-  wayOfHandleFile?: ParserOptions['wayOfHandleFile'];
+  wayOfHandleFile?: HttpBodyParserOptions['wayOfHandleFile'];
   /** Use hash value as id of as file to avoid duplicate filename, and identify whether file exist */
   id?: string;
   hashValue?: string;
