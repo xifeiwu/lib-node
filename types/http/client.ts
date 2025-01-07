@@ -2,6 +2,7 @@ import {IncomingHttpHeaders, OutgoingHttpHeaders, RequestOptions} from 'http';
 import {UrlProps} from '../../external';
 import {HttpResponseInfo} from './tcp';
 import {ConnectionPayload} from '../net';
+import {ParserOptions} from '../../lib/parse-body';
 
 /**
  * @deprecated by ConnectionPayload
@@ -36,4 +37,14 @@ export interface ResponseSideToHeaderType {
 export interface HttpUpgradeConfig {
   href: HttpRequestOptions['href'];
   upgrade: HttpRequestOptions['headers']['upgrade'];
+}
+
+export interface ParseHttpResponseBodyOptions {
+  maxLength?: number;
+  dataType?: 'buffer' | 'string' | 'json';
+  parserOptions?: ParserOptions;
+}
+export interface ParseHttpResponseOptions extends ParseHttpResponseBodyOptions {
+  validateStatus?: ValidateStatus | boolean;
+  printCurlCommandOnError?: boolean;
 }

@@ -10,11 +10,18 @@ import {
   isObject,
   getRandomBase64String,
 } from '../../external';
-import {HttpRequestOptions, HttpResponseInfo, ConnectionPayload, ValidateStatus} from '../../types';
+import {
+  HttpRequestOptions,
+  HttpResponseInfo,
+  ConnectionPayload,
+  ValidateStatus,
+  ParseHttpResponseOptions,
+} from '../../types';
 import {Readable, isReadable} from 'stream';
 import {getHttpResponseInfo} from './receiver';
 import {updateHeadersByHttpInfo} from '../service/internal';
 import {convertKeyToLowerCase} from '../service';
+import {logColorful} from '../../log';
 
 process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
 
@@ -113,12 +120,10 @@ export const validateStatusCode: ValidateStatus = info => {
 export type RequestAndGetResponseInfoFunc = typeof requestAndGetResponseInfo;
 export async function requestAndGetResponseInfo<ResData = any, Payload extends ConnectionPayload = any>(
   requestOptions: HttpRequestOptions<Payload>,
-  responseConfig?: Parameters<typeof getHttpResponseInfo>[1] & {
-    validateStatus?: ValidateStatus | boolean;
-  }
+  responseConfig?: ParseHttpResponseOptions
 ): Promise<HttpResponseInfo<ResData>> {
   const response = await requestAndGetResponse<Payload>(requestOptions);
-  let {validateStatus, ...resConfig} = responseConfig ?? {};
+  let {validateStatus, printCurlCommandOnError, ...resConfig} = responseConfig ?? {};
   const responseInfo = await getHttpResponseInfo<ResData>(response, resConfig);
 
   if (validateStatus) {
@@ -127,6 +132,9 @@ export async function requestAndGetResponseInfo<ResData = any, Payload extends C
     }
 
     if (!validateStatus(responseInfo)) {
+      if (printCurlCommandOnError) {
+        logColorful({color: 'yellow'}, httpRequestOptionsToCurlCommand(requestOptions));
+      }
       throw new ResponseError(requestOptions, responseInfo);
     }
   }
@@ -136,9 +144,7 @@ export async function requestAndGetResponseInfo<ResData = any, Payload extends C
 export type RequestAndGetRelatedInfoFunc = typeof requestAndGetRelatedInfo;
 export async function requestAndGetRelatedInfo<ResData = any, Payload extends ConnectionPayload = any>(
   requestOptions: HttpRequestOptions<Payload>,
-  responseConfig?: Parameters<typeof getHttpResponseInfo>[1] & {
-    validateStatus?: ValidateStatus | boolean;
-  }
+  responseConfig?: ParseHttpResponseOptions
 ): Promise<{requestOptions: HttpRequestOptions<Payload>; responseInfo: HttpResponseInfo<ResData>}> {
   const responseInfo = await requestAndGetResponseInfo(requestOptions, responseConfig);
   return {requestOptions, responseInfo};
