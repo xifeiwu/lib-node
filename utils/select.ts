@@ -30,11 +30,12 @@ export async function selectSourceFile(targetList: Array<GetFileListInfo>): Prom
   return selectedFile;
 }
 
-export async function selectPayload<T = any>(targetList: Array<GetFileListInfo>) {
+export async function selectRequestInfo<T extends {payload: any} = any>(targetList: Array<GetFileListInfo>) {
   const {fullPath} = await selectSourceFile(targetList);
-  const {payload} = require(fullPath) as {payload: T};
+  const allExports = require(fullPath) as T;
+  const {payload} = allExports;
   if (!payload) {
     throw new Error(`payload not export in file: ${fullPath}`);
   }
-  return payload;
+  return allExports;
 }
