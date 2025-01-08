@@ -16,6 +16,7 @@ export * from './mime';
 export * from './types';
 // export * from './external';
 export * from './test';
+export * from './utils';
 export * from './lib/http-body-parser';
 export * from './lib/socks';
 export * from './lib/cookies';
