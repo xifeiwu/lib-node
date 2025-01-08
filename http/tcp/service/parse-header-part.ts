@@ -1,6 +1,6 @@
 import {Readable} from 'stream';
 import {HttpRequestHeaderPartInfo, HttpRequestFirstLineInfo} from '../../../types';
-import {httpFirstLineReg, httpHeaderLineReg} from '../../../constants';
+import {httpFirstLineReg, httpHeaderLineReg} from '../../../service';
 import {getOneLineFromReader} from '../../../index';
 
 interface ParseFirstLineResults {

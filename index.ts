@@ -1,4 +1,4 @@
-export * from './constants';
+export * from './service';
 export * from './general';
 export * from './crypto';
 export * from './transform';

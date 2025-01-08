@@ -1,7 +1,7 @@
 import {Socket} from 'net';
 import {startSocketClient, startSocketServer} from '../net';
 import {getOneLineFromReader} from '../stream';
-import {httpFirstLineReg} from '../constants';
+import {httpFirstLineReg} from '../service';
 import {HttpHandler, Protocol, TcpHandler, TcpServerConfig} from '../types';
 import {isSocksProtocol, SocksVersion} from '../lib/socks';
 import {responseHttpConnection} from '../http';

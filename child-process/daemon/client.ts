@@ -7,7 +7,7 @@ import {
 } from '../../index';
 import {NetConnectOpts, Socket} from 'net';
 import {CP, Daemon, InfoToCp} from '../../types';
-import {DAEMON_SOCKET_DIR, SOCKET_FILE_SUFFIX} from '../../constants';
+import {DAEMON_SOCKET_DIR, SOCKET_FILE_SUFFIX} from '../../service';
 
 interface CheckSocketActivityConfig {
   closeActive?: boolean;
