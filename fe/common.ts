@@ -36,4 +36,5 @@ export {
   base64url,
   getRandomBase64String,
   toInteger,
+  NormalizedUrlProps,
 } from '../../fe/common';

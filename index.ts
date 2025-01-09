@@ -21,4 +21,5 @@ export * from './lib/http-body-parser';
 export * from './lib/socks';
 export * from './lib/cookies';
 export * from './lib/http-proxy';
+export * from './lib/http-mock';
 // export * from './lib/memcached';

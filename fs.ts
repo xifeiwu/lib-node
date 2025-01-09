@@ -293,6 +293,9 @@ export async function selectFileFromDir(
 ) {
   const {handleFileList = items => items} = options ?? {};
   const fileList = getMultipleDirFileList(targetDirInfoList);
+  if (fileList.length === 0) {
+    throw new Error(`fileList is empty`);
+  }
   const selectedFileInfo = await selectOption<FilePathInfo>(handleFileList(fileList), {
     tip: 'Please select target file:',
   });
@@ -344,13 +347,35 @@ export function getModulePath(moduleName: string, currentPath: string) {
   return fullPath;
 }
 
-export function makeSureDirExist(dirPath: string) {
-  const fileExist = fs.existsSync(dirPath);
-  if (!fileExist) {
-    const res = fs.mkdirSync(dirPath, {recursive: true});
+export function isDirFormat(fullPath: string) {
+  return fullPath.endsWith('/');
+}
+export function getDir(fullPath: string) {
+  const isDir = isDirFormat(fullPath);
+  return isDir ? fullPath : path.dirname(fullPath);
+}
+
+export function isDirExistForFile(fullPath: string) {
+  const isDir = isDirFormat(fullPath);
+  const dirname = isDir ? fullPath : path.dirname(fullPath);
+  return fs.existsSync(dirname);
+}
+
+/**
+ * Make sure @param fullPath exist
+ */
+export function makeSureDirExist(fullPath: string) {
+  const dir = getDir(fullPath);
+  const dirExist = fs.existsSync(dir);
+  if (!dirExist) {
+    const res = fs.mkdirSync(dir, {recursive: true});
     return res;
   }
 }
+/**
+ * @deprecated by makeSureDirExist
+ * Make sure dirPath of @param filePath exist
+ */
 export function makeSureDirExistForFile(filePath: string) {
   const {dirname} = getFilePathInfo(filePath);
   return makeSureDirExist(dirname);

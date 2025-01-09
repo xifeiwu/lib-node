@@ -50,7 +50,7 @@ export async function getIncomingMessageData(incomingMessage: ReadableWithMeta) 
 }
 
 export function getContentTypeByData(data: CanConvertToBuffer | Readable) {
-  if (isPlainObject(data)) {
+  if (isPlainObject(data) || Array.isArray(data)) {
     return 'application/json;charset=UTF-8';
   } else {
     return 'text/plain';

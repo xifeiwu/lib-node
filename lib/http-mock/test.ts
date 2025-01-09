@@ -1,5 +1,5 @@
 import path from 'path';
-import {requestAndSaveMockInfo} from './generate';
+import {generateMockInfoByRequest} from './generate';
 import {RequestConfig} from './types';
 
 // export async function test() {

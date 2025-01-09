@@ -11,14 +11,15 @@ const filterTsFile: FileFilter = ({relativePath}) => ['.js', '.ts'].includes(pat
  */
 export async function selectSourceFile(targetList: Array<GetFileListInfo>): Promise<FilePathInfo> {
   const selectedFile = await selectFileFromDir(
-    targetList.map(it => {
-      return {
-        options: {
-          fileFilter: filterTsFile,
-        },
-        ...it,
-      };
-    }),
+    targetList,
+    // .map(it => {
+    //   return {
+    //     options: {
+    //       fileFilter: filterTsFile,
+    //     },
+    //     ...it,
+    //   };
+    // }),
     {
       handleFileList(fileList) {
         return fileList.sort((pre, _next) => {
@@ -30,12 +31,12 @@ export async function selectSourceFile(targetList: Array<GetFileListInfo>): Prom
   return selectedFile;
 }
 
-export async function selectRequestInfo<T extends {payload: any} = any>(targetList: Array<GetFileListInfo>) {
-  const {fullPath} = await selectSourceFile(targetList);
-  const allExports = require(fullPath) as T;
-  const {payload} = allExports;
-  if (!payload) {
-    throw new Error(`payload not export in file: ${fullPath}`);
-  }
-  return allExports;
+export async function selectFileAndGetExports<T = any>(targetList: Array<GetFileListInfo>) {
+  const {fullPath, relativePath} = await selectSourceFile(targetList);
+  const allExports = (require(fullPath) ?? {}) as T;
+  // const {payload} = allExports;
+  // if (!payload) {
+  //   throw new Error(`payload not export in file: ${fullPath}`);
+  // }
+  return {allExports, fullPath, relativePath};
 }

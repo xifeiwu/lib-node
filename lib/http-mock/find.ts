@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import {deepEqual, isObject, matchFilters} from '../../external';
 import {getFileList} from '../../fs';
-import {ParamsForFindMockInfoInDir, MockFileContent, RequestConfig, MockFileFinder} from './types';
+import {FindMockInfoInDirOptions, MockFileContent, RequestOptionsForMock, MockFileFinder} from './types';
 
 function unifyObject(value: any) {
   if (isObject(value)) {
@@ -14,10 +14,10 @@ function unifyObject(value: any) {
 }
 
 export function findMockFile(
-  targetRequestConfig: RequestConfig,
+  targetRequestConfig: RequestOptionsForMock,
   mockContentList: MockFileContentWithPathInfo[],
   options?: {
-    debugCompare?: ParamsForFindMockInfoInDir['options']['debugCompare'];
+    debugCompare?: FindMockInfoInDirOptions['debugCompare'];
   }
 ) {
   const {debugCompare = false} = options ?? {};
@@ -31,11 +31,11 @@ export function findMockFile(
     data: targetPayload,
   } = targetRequestConfig;
   const target = mockContentList.find(it => {
-    const {relativePath, ignore, requestConfig, payloadCompare = {}, queryCompare = {}} = it;
-    if (ignore || !requestConfig) {
+    const {relativePath, ignore, requestOptions, payloadCompare = {}, queryCompare = {}} = it;
+    if (ignore || !requestOptions) {
       return false;
     }
-    const {method, pathname, query, data: payload} = requestConfig;
+    const {method, pathname, query, data: payload} = requestOptions;
     if (debugCompare) {
       console.log(`start compare: ${relativePath}`);
     }
@@ -84,21 +84,16 @@ export interface MockFileContentWithPathInfo extends MockFileContent {
   fullPath: string;
   relativePath: string;
 }
-export function getMockFileFinderByDir(config: ParamsForFindMockInfoInDir): {
+export function getMockFileFinderByDir(options: FindMockInfoInDirOptions): {
   mockFileList: Array<MockFileContentWithPathInfo>;
   finder: MockFileFinder;
 } {
-  const {targetDir, options = {}} = config;
+  const {targetDir, includedFileList, excludedFileList, debugCompare, getFileListOptions} = options;
   if (!fs.existsSync(targetDir)) {
     throw new Error(`Error, dir not exist: ${targetDir}`);
   }
-  const relativeFileList = getFileList(targetDir, {
-    fileFilter({relativePath}) {
-      return relativePath.endsWith('.js');
-    },
-  });
+  const relativeFileList = getFileList(targetDir, getFileListOptions);
   let targetFileList: string[] = relativeFileList;
-  const {includedFileList, excludedFileList, debugCompare} = options;
   if (Array.isArray(includedFileList)) {
     targetFileList = relativeFileList.filter(it => matchFilters(includedFileList, it));
   } else if (Array.isArray(excludedFileList)) {
@@ -117,7 +112,7 @@ export function getMockFileFinderByDir(config: ParamsForFindMockInfoInDir): {
       }
     })
     .filter(it => Boolean(it));
-  const finder = (targetRequestConfig: RequestConfig) => {
+  const finder = (targetRequestConfig: RequestOptionsForMock) => {
     if (targetFileList.length === 0) {
       return null;
     }
