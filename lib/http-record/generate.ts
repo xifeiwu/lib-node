@@ -4,7 +4,7 @@ import {isPlainObject} from '../../external';
 import {
   makeSureHttpRequestOptionsSerializable,
   mergeHttpRequestOptions,
-  requestAndGetRelatedInfo,
+  requestAndGetResponseInfo,
 } from '../../http';
 import {
   GenerateMockFileFromDirOptions,
@@ -12,9 +12,8 @@ import {
   MockFileContent,
   RequestOptionsForMock,
 } from './types';
-import {getFileList, getMultipleDirFileList, makeSureDirExist} from '../../fs';
+import {getMultipleDirFileList, makeSureDirExist} from '../../fs';
 import {urlPropsToHref} from '../../../fe/url';
-import {logColorful} from '../../log';
 import {MOCK_FILE_SUFFIX} from './service';
 import {selectFileAndGetExports} from '../../utils';
 
@@ -60,7 +59,8 @@ export async function generateMockInfoByRequest(
   const fullPath = getFullPath(options, mergedOptions);
   const {
     responseInfo: {headers, data: resData},
-  } = await requestAndGetRelatedInfo(mergedOptions, {validateStatus: true, printCurlCommandOnError: true});
+    requestOptions: finalRequestOptions,
+  } = await requestAndGetResponseInfo(mergedOptions, {validateStatus: true, printCurlCommandOnError: true});
   console.log(`writing mock file ${fullPath}`);
   const content: MockFileContent = {
     ignore: false,
@@ -74,7 +74,7 @@ export async function generateMockInfoByRequest(
       includeObjectKeys: null,
       excludeObjectKeys: {},
     },
-    requestOptions: makeSureHttpRequestOptionsSerializable(mergedOptions),
+    requestOptions: makeSureHttpRequestOptionsSerializable(finalRequestOptions),
     resHeaders: headers,
     resData,
     ...(moreMockItems ?? {}),
