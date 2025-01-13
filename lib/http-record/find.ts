@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import {deepEqual, isObject, matchFilters} from '../../external';
 import {getFileList} from '../../fs';
-import {FindMockInfoInDirOptions, MockFileContent, RequestOptionsForMock, MockFileFinder} from './types';
+import {FindRecordInfoInDirOptions, RecordHttpRequestContent, RequestOptionsForMock, RecordFileFinder} from './types';
 
 function unifyObject(value: any) {
   if (isObject(value)) {
@@ -17,7 +17,7 @@ export function findMockFile(
   targetRequestConfig: RequestOptionsForMock,
   mockContentList: MockFileContentWithPathInfo[],
   options?: {
-    debugCompare?: FindMockInfoInDirOptions['debugCompare'];
+    debugCompare?: FindRecordInfoInDirOptions['debugCompare'];
   }
 ) {
   const {debugCompare = false} = options ?? {};
@@ -80,13 +80,13 @@ export function findMockFile(
   return target;
 }
 
-export interface MockFileContentWithPathInfo extends MockFileContent {
+export interface MockFileContentWithPathInfo extends RecordHttpRequestContent {
   fullPath: string;
   relativePath: string;
 }
-export function getMockFileFinderByDir(options: FindMockInfoInDirOptions): {
+export function getMockFileFinderByDir(options: FindRecordInfoInDirOptions): {
   mockFileList: Array<MockFileContentWithPathInfo>;
-  finder: MockFileFinder;
+  finder: RecordFileFinder;
 } {
   const {targetDir, includedFileList, excludedFileList, debugCompare, getFileListOptions} = options;
   if (!fs.existsSync(targetDir)) {
@@ -103,7 +103,7 @@ export function getMockFileFinderByDir(options: FindMockInfoInDirOptions): {
     .map(relativePath => {
       const fullPath = path.resolve(targetDir, relativePath);
       try {
-        const mockFileContent = require(fullPath) as MockFileContent;
+        const mockFileContent = require(fullPath) as RecordHttpRequestContent;
         return {...mockFileContent, relativePath, fullPath};
       } catch (err) {
         console.log(`Error, require mock file: ${fullPath}`);

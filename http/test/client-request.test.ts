@@ -5,7 +5,7 @@ import {
   requestAndGetResponseInfo,
   requestAndGetUpgradeInfo,
   upgradeToWebsocket,
-  getHttpResponseInfo
+  getHttpResponseInfo,
 } from '../client';
 import {httpResponseInfoToBuffer} from '../tcp/service';
 import {
@@ -19,7 +19,9 @@ import {
 
 export async function testRequestAndGetResponseInfo() {
   const {origin, server} = await startHttpDebugServer();
-  const {statusCode, data, headers} = await requestAndGetResponseInfo({
+  const {
+    responseInfo: {statusCode, data, headers},
+  } = await requestAndGetResponseInfo({
     url: `${origin}/api/debug/echo`,
     pathnameParams: {
       action: 'echo',

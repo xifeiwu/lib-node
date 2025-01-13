@@ -10,7 +10,7 @@ export interface RequestOptionsForMock<T = any> extends NormalizedUrlProps {
   data?: T;
 }
 
-export interface GenerateMockFileOptions {
+export interface RecordHttpRequestOptions {
   /** request config for all requestConfig under requestConfigDir */
   defaultRequestOptions?: RequestOptionsForMock;
   /** fullpath have high priority than outputDir + getBasename*/
@@ -18,11 +18,11 @@ export interface GenerateMockFileOptions {
   outputDir?: string;
   getBasename?: (requestOptions: RequestOptionsForMock) => string;
   /** content of mock item passed directly from request config file to mock file */
-  moreMockItems?: Partial<Omit<MockFileContent, 'requestOptions'>>;
+  moreMockItems?: Partial<Omit<RecordHttpRequestContent, 'requestOptions'>>;
   // getBaseName
 }
 
-export interface GenerateMockFileFromDirOptions extends Omit<GenerateMockFileOptions, 'requestOptions'> {
+export interface RecordHttpRequestByConfigsInDirOptions extends Omit<RecordHttpRequestOptions, 'requestOptions'> {
   // targetDir: string;
   targetDirList: Array<GetFileListInfo>;
 }
@@ -32,7 +32,7 @@ interface CompareConfig {
   includeObjectKeys?: DeepEqualConfig['includeObjectKeys'];
   excludeObjectKeys?: DeepEqualConfig['excludeObjectKeys'];
 }
-export interface MockFileContent<ResData = any> {
+export interface RecordHttpRequestContent<ResData = any> {
   /** Ignore this mock file or not */
   requestOptions: RequestOptionsForMock;
   resHeaders: http.IncomingHttpHeaders;
@@ -42,7 +42,7 @@ export interface MockFileContent<ResData = any> {
   payloadCompare?: CompareConfig;
 }
 
-export interface FindMockInfoInDirOptions {
+export interface FindRecordInfoInDirOptions {
   ingore?: boolean;
   targetDir: string;
   /** relative path */
@@ -52,6 +52,6 @@ export interface FindMockInfoInDirOptions {
   getFileListOptions?: GetFileListOption;
 }
 
-export type MockFileFinder = (
+export type RecordFileFinder = (
   targetRequestConfig: RequestOptionsForMock
-) => MockFileContent & {relativePath?: string};
+) => RecordHttpRequestContent & {relativePath?: string};

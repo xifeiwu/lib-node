@@ -23,7 +23,7 @@ export async function testStartProxyableTcpServer() {
     httpHandler: await getHttpHandler(),
     tcpHandler,
   });
-  const responseInfo = await requestAndGetResponseInfo({
+  const {responseInfo} = await requestAndGetResponseInfo({
     origin: `http://${host}:${port}`,
     pathname: '/api/debug/echo',
     method: 'post',

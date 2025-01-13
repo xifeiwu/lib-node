@@ -147,7 +147,10 @@ export async function requestAndGetResponseInfo<ResData = any, Payload extends C
   return {responseInfo, ...result};
 }
 
-// export type RequestAndGetRelatedInfoFunc = typeof requestAndGetRelatedInfo;
+/**
+ * @deprecated
+ */
+export type RequestAndGetRelatedInfoFunc = typeof requestAndGetRelatedInfo;
 /**
  * @deprecated by requestAndGetResponseInfo
  * @param requestOptions

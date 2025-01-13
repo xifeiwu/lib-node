@@ -18,7 +18,9 @@ export async function proxyToBaidu() {
   const {origin, server} = await startProxyServer(config);
   console.log(origin);
   await waitFor(10000);
-  const {data: proxyStatusList} = await requestAndGetResponseInfo({
+  const {
+    responseInfo: {data: proxyStatusList},
+  } = await requestAndGetResponseInfo({
     url: origin + PATHNAME_PROXY_STATUS,
   });
   console.log(proxyStatusList);

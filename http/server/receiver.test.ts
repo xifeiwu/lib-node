@@ -6,7 +6,7 @@ export async function testResponseHttpRequestProps() {
   const {origin, server} = await startHttpServer({
     request: responseHttpRequestInfo,
   });
-  const responseInfo = await requestAndGetResponseInfo<{
+  const {responseInfo} = await requestAndGetResponseInfo<{
     method: string;
     url: string;
     headers: {

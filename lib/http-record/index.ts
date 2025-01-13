@@ -1,7 +1,12 @@
-export {MockFileContent, RequestOptionsForMock, FindMockInfoInDirOptions, MockFileFinder} from './types';
 export {
-  generateMockInfoByRequest,
-  generateMockInfoBySelectConfigFile,
-  generateMockInfoFromDir,
+  RecordHttpRequestContent,
+  RequestOptionsForMock,
+  FindRecordInfoInDirOptions,
+  RecordFileFinder,
+} from './types';
+export {
+  recordHttpRequest,
+  recordHttpRequestBySelectConfigFile,
+  recordHttpRequestOfConfigFilesInDir as recordHttpRequestOfConfigFilesInDir,
 } from './generate';
 export {getMockFileFinderByDir, findMockFile, MockFileContentWithPathInfo} from './find';

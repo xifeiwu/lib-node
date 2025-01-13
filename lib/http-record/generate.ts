@@ -7,9 +7,9 @@ import {
   requestAndGetResponseInfo,
 } from '../../http';
 import {
-  GenerateMockFileFromDirOptions,
-  GenerateMockFileOptions,
-  MockFileContent,
+  RecordHttpRequestByConfigsInDirOptions,
+  RecordHttpRequestOptions,
+  RecordHttpRequestContent,
   RequestOptionsForMock,
 } from './types';
 import {getMultipleDirFileList, makeSureDirExist} from '../../fs';
@@ -17,7 +17,7 @@ import {urlPropsToHref} from '../../../fe/url';
 import {MOCK_FILE_SUFFIX} from './service';
 import {selectFileAndGetExports} from '../../utils';
 
-export function convertObjectToCjsContent<T extends MockFileContent>(info: T) {
+export function convertObjectToCjsContent<T extends RecordHttpRequestContent>(info: T) {
   const lines = Object.entries(info).map(([key, value]) => {
     const line = `module.exports.${key} = ${
       isPlainObject(value) || Array.isArray(value) ? JSON.stringify(value) : value
@@ -34,7 +34,7 @@ export function convertObjectToCjsContent<T extends MockFileContent>(info: T) {
  * @returns
  */
 function getFullPath(
-  info: Pick<GenerateMockFileOptions, 'fullPath' | 'outputDir' | 'getBasename'>,
+  info: Pick<RecordHttpRequestOptions, 'fullPath' | 'outputDir' | 'getBasename'>,
   requestOptions: RequestOptionsForMock
 ) {
   const {fullPath, outputDir, getBasename = getMockFileBaseName} = info;
@@ -50,9 +50,9 @@ function getMockFileBaseName(requestOptions: RequestOptionsForMock) {
   const url = urlPropsToHref({pathname, query});
   return encodeURIComponent(url) + MOCK_FILE_SUFFIX;
 }
-export async function generateMockInfoByRequest(
+export async function recordHttpRequest(
   requestOptions: RequestOptionsForMock,
-  options: GenerateMockFileOptions
+  options: RecordHttpRequestOptions
 ) {
   const {defaultRequestOptions, moreMockItems} = options;
   const mergedOptions = mergeHttpRequestOptions(requestOptions, defaultRequestOptions);
@@ -62,7 +62,7 @@ export async function generateMockInfoByRequest(
     requestOptions: finalRequestOptions,
   } = await requestAndGetResponseInfo(mergedOptions, {validateStatus: true, printCurlCommandOnError: true});
   console.log(`writing mock file ${fullPath}`);
-  const content: MockFileContent = {
+  const content: RecordHttpRequestContent = {
     ignore: false,
     queryCompare: {
       ignore: false,
@@ -83,7 +83,7 @@ export async function generateMockInfoByRequest(
   return {content, fullPath};
 }
 
-export async function generateMockInfoBySelectConfigFile(options: GenerateMockFileFromDirOptions) {
+export async function recordHttpRequestBySelectConfigFile(options: RecordHttpRequestByConfigsInDirOptions) {
   const {targetDirList, moreMockItems = {}, ...restOptions} = options;
   const {
     allExports: {requestOptions, ...restExports},
@@ -91,7 +91,7 @@ export async function generateMockInfoBySelectConfigFile(options: GenerateMockFi
   } = await selectFileAndGetExports<{
     requestOptions: RequestOptionsForMock;
   }>(targetDirList);
-  return await generateMockInfoByRequest(requestOptions, {
+  return await recordHttpRequest(requestOptions, {
     /** User relativePath as mock file name */
     getBasename() {
       return relativePath;
@@ -104,7 +104,7 @@ export async function generateMockInfoBySelectConfigFile(options: GenerateMockFi
   });
 }
 
-export async function generateMockInfoFromDir(options: GenerateMockFileFromDirOptions) {
+export async function recordHttpRequestOfConfigFilesInDir(options: RecordHttpRequestByConfigsInDirOptions) {
   const {targetDirList, moreMockItems = {}, ...restOptions} = options;
   // requestConfigDir: string, options: RequestByDir
   // const {outputDir} = options;
@@ -119,7 +119,7 @@ export async function generateMockInfoFromDir(options: GenerateMockFileFromDirOp
   const fileList = getMultipleDirFileList(targetDirList);
   for (const {fullPath, relativePath} of fileList) {
     console.log(`reqesting using config from file ${fullPath}`);
-    const {requestOptions, ...restExports} = require(fullPath) as MockFileContent;
+    const {requestOptions, ...restExports} = require(fullPath) as RecordHttpRequestContent;
     // await generateMockInfoByRequest(requestOptions, {
     //   ...restOptions,
     //   moreMockItems: {
@@ -127,7 +127,7 @@ export async function generateMockInfoFromDir(options: GenerateMockFileFromDirOp
     //     ...restExports,
     //   },
     // });
-    const result = await generateMockInfoByRequest(requestOptions, {
+    const result = await recordHttpRequest(requestOptions, {
       /** User relativePath as mock file name */
       getBasename() {
         return relativePath;
