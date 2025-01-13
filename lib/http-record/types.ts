@@ -1,6 +1,5 @@
-import http from 'http';
 import {DeepEqualConfig, FilterItem, NormalizedUrlProps} from '../../external';
-import {GetFileListInfo, GetFileListOption} from '../../types';
+import {GetFileListInfo, GetFileListOption, HttpResponseInfo, ParseHttpResponseOptions} from '../../types';
 
 /**
  * The request options must follow NormalizedUrlProps interface for compare
@@ -10,7 +9,7 @@ export interface RequestOptionsForMock<T = any> extends NormalizedUrlProps {
   data?: T;
 }
 
-export interface RecordHttpRequestOptions {
+export interface RecordHttpOptions extends ParseHttpResponseOptions {
   /** request config for all requestConfig under requestConfigDir */
   defaultRequestOptions?: RequestOptionsForMock;
   /** fullpath have high priority than outputDir + getBasename*/
@@ -18,11 +17,11 @@ export interface RecordHttpRequestOptions {
   outputDir?: string;
   getBasename?: (requestOptions: RequestOptionsForMock) => string;
   /** content of mock item passed directly from request config file to mock file */
-  moreMockItems?: Partial<Omit<RecordHttpRequestContent, 'requestOptions'>>;
+  moreMockItems?: Partial<Omit<HttpRecordContent, 'requestOptions'>>;
   // getBaseName
 }
 
-export interface RecordHttpRequestByConfigsInDirOptions extends Omit<RecordHttpRequestOptions, 'requestOptions'> {
+export interface RecordHttpByDirOptions extends Omit<RecordHttpOptions, 'requestOptions'> {
   // targetDir: string;
   targetDirList: Array<GetFileListInfo>;
 }
@@ -32,26 +31,35 @@ interface CompareConfig {
   includeObjectKeys?: DeepEqualConfig['includeObjectKeys'];
   excludeObjectKeys?: DeepEqualConfig['excludeObjectKeys'];
 }
-export interface RecordHttpRequestContent<ResData = any> {
+export interface HttpRecordContent<ResData = any> {
   /** Ignore this mock file or not */
-  requestOptions: RequestOptionsForMock;
-  resHeaders: http.IncomingHttpHeaders;
-  resData: ResData;
   ignore?: boolean;
-  queryCompare?: CompareConfig;
-  payloadCompare?: CompareConfig;
+  requestCompare?: {
+    query?: CompareConfig;
+    payload?: CompareConfig;
+  };
+  requestOptions: RequestOptionsForMock;
+  responseInfo: HttpResponseInfo<ResData>;
 }
 
-export interface FindRecordInfoInDirOptions {
+/**
+ * HttpRecordContent and it's related file info, it's useful when get HttpRecordContent from file or dir.
+ */
+export interface HttpRecordContenttWithPathInfo extends HttpRecordContent {
+  fullPath: string;
+  relativePath: string;
+}
+
+export interface FindRecordFileOptions {
   ingore?: boolean;
   targetDir: string;
+  getFileListOptions?: GetFileListOption;
   /** relative path */
   includedFileList?: FilterItem[];
   excludedFileList?: FilterItem[];
   debugCompare?: boolean;
-  getFileListOptions?: GetFileListOption;
 }
 
 export type RecordFileFinder = (
   targetRequestConfig: RequestOptionsForMock
-) => RecordHttpRequestContent & {relativePath?: string};
+) => HttpRecordContent & {relativePath?: string};

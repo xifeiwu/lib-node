@@ -2,7 +2,13 @@ import fs from 'fs';
 import path from 'path';
 import {deepEqual, isObject, matchFilters} from '../../external';
 import {getFileList} from '../../fs';
-import {FindRecordInfoInDirOptions, RecordHttpRequestContent, RequestOptionsForMock, RecordFileFinder} from './types';
+import {
+  FindRecordFileOptions,
+  HttpRecordContent,
+  RequestOptionsForMock,
+  RecordFileFinder,
+  HttpRecordContenttWithPathInfo,
+} from './types';
 
 function unifyObject(value: any) {
   if (isObject(value)) {
@@ -15,9 +21,9 @@ function unifyObject(value: any) {
 
 export function findMockFile(
   targetRequestConfig: RequestOptionsForMock,
-  mockContentList: MockFileContentWithPathInfo[],
+  mockContentList: HttpRecordContenttWithPathInfo[],
   options?: {
-    debugCompare?: FindRecordInfoInDirOptions['debugCompare'];
+    debugCompare?: FindRecordFileOptions['debugCompare'];
   }
 ) {
   const {debugCompare = false} = options ?? {};
@@ -31,7 +37,12 @@ export function findMockFile(
     data: targetPayload,
   } = targetRequestConfig;
   const target = mockContentList.find(it => {
-    const {relativePath, ignore, requestOptions, payloadCompare = {}, queryCompare = {}} = it;
+    const {
+      relativePath,
+      ignore,
+      requestOptions,
+      requestCompare: {query: queryCompare = {}, payload: payloadCompare = {}} = {},
+    } = it;
     if (ignore || !requestOptions) {
       return false;
     }
@@ -80,12 +91,8 @@ export function findMockFile(
   return target;
 }
 
-export interface MockFileContentWithPathInfo extends RecordHttpRequestContent {
-  fullPath: string;
-  relativePath: string;
-}
-export function getMockFileFinderByDir(options: FindRecordInfoInDirOptions): {
-  mockFileList: Array<MockFileContentWithPathInfo>;
+export function getMockFileFinderByDir(options: FindRecordFileOptions): {
+  mockFileList: Array<HttpRecordContenttWithPathInfo>;
   finder: RecordFileFinder;
 } {
   const {targetDir, includedFileList, excludedFileList, debugCompare, getFileListOptions} = options;
@@ -99,11 +106,11 @@ export function getMockFileFinderByDir(options: FindRecordInfoInDirOptions): {
   } else if (Array.isArray(excludedFileList)) {
     targetFileList = relativeFileList.filter(it => !matchFilters(excludedFileList, it));
   }
-  const mockFileList: MockFileContentWithPathInfo[] = targetFileList
+  const mockFileList: HttpRecordContenttWithPathInfo[] = targetFileList
     .map(relativePath => {
       const fullPath = path.resolve(targetDir, relativePath);
       try {
-        const mockFileContent = require(fullPath) as RecordHttpRequestContent;
+        const mockFileContent = require(fullPath) as HttpRecordContent;
         return {...mockFileContent, relativePath, fullPath};
       } catch (err) {
         console.log(`Error, require mock file: ${fullPath}`);

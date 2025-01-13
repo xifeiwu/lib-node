@@ -6,18 +6,13 @@ import {
   mergeHttpRequestOptions,
   requestAndGetResponseInfo,
 } from '../../http';
-import {
-  RecordHttpRequestByConfigsInDirOptions,
-  RecordHttpRequestOptions,
-  RecordHttpRequestContent,
-  RequestOptionsForMock,
-} from './types';
+import {RecordHttpByDirOptions, RecordHttpOptions, HttpRecordContent, RequestOptionsForMock} from './types';
 import {getMultipleDirFileList, makeSureDirExist} from '../../fs';
 import {urlPropsToHref} from '../../../fe/url';
 import {MOCK_FILE_SUFFIX} from './service';
 import {selectFileAndGetExports} from '../../utils';
 
-export function convertObjectToCjsContent<T extends RecordHttpRequestContent>(info: T) {
+export function convertObjectToCjsContent<T extends HttpRecordContent>(info: T) {
   const lines = Object.entries(info).map(([key, value]) => {
     const line = `module.exports.${key} = ${
       isPlainObject(value) || Array.isArray(value) ? JSON.stringify(value) : value
@@ -34,7 +29,7 @@ export function convertObjectToCjsContent<T extends RecordHttpRequestContent>(in
  * @returns
  */
 function getFullPath(
-  info: Pick<RecordHttpRequestOptions, 'fullPath' | 'outputDir' | 'getBasename'>,
+  info: Pick<RecordHttpOptions, 'fullPath' | 'outputDir' | 'getBasename'>,
   requestOptions: RequestOptionsForMock
 ) {
   const {fullPath, outputDir, getBasename = getMockFileBaseName} = info;
@@ -50,40 +45,53 @@ function getMockFileBaseName(requestOptions: RequestOptionsForMock) {
   const url = urlPropsToHref({pathname, query});
   return encodeURIComponent(url) + MOCK_FILE_SUFFIX;
 }
-export async function recordHttpRequest(
+export async function recordHttpRequest<ResData = any>(
   requestOptions: RequestOptionsForMock,
-  options: RecordHttpRequestOptions
+  options: RecordHttpOptions
 ) {
   const {defaultRequestOptions, moreMockItems} = options;
   const mergedOptions = mergeHttpRequestOptions(requestOptions, defaultRequestOptions);
   const fullPath = getFullPath(options, mergedOptions);
-  const {
-    responseInfo: {headers, data: resData},
-    requestOptions: finalRequestOptions,
-  } = await requestAndGetResponseInfo(mergedOptions, {validateStatus: true, printCurlCommandOnError: true});
+  const {validateStatus, printCurlCommandOnError} = options;
+  const {responseInfo, requestOptions: finalRequestOptions} = await requestAndGetResponseInfo<ResData>(
+    mergedOptions,
+    {
+      validateStatus,
+      printCurlCommandOnError,
+    }
+  );
   console.log(`writing mock file ${fullPath}`);
-  const content: RecordHttpRequestContent = {
+  const content: HttpRecordContent = {
     ignore: false,
-    queryCompare: {
-      ignore: false,
-      includeObjectKeys: null,
-      excludeObjectKeys: {},
-    },
-    payloadCompare: {
-      ignore: false,
-      includeObjectKeys: null,
-      excludeObjectKeys: {},
+    // queryCompare: {
+
+    // },
+    // payloadCompare: {
+    //   ignore: false,
+    //   includeObjectKeys: null,
+    //   excludeObjectKeys: {},
+    // },
+    requestCompare: {
+      query: {
+        ignore: false,
+        includeObjectKeys: null,
+        excludeObjectKeys: {},
+      },
+      payload: {
+        ignore: false,
+        includeObjectKeys: null,
+        excludeObjectKeys: {},
+      },
     },
     requestOptions: makeSureHttpRequestOptionsSerializable(finalRequestOptions),
-    resHeaders: headers,
-    resData,
+    responseInfo,
     ...(moreMockItems ?? {}),
   };
   fs.writeFileSync(fullPath, convertObjectToCjsContent(content));
   return {content, fullPath};
 }
 
-export async function recordHttpRequestBySelectConfigFile(options: RecordHttpRequestByConfigsInDirOptions) {
+export async function recordHttpRequestBySelectConfigFile(options: RecordHttpByDirOptions) {
   const {targetDirList, moreMockItems = {}, ...restOptions} = options;
   const {
     allExports: {requestOptions, ...restExports},
@@ -104,7 +112,7 @@ export async function recordHttpRequestBySelectConfigFile(options: RecordHttpReq
   });
 }
 
-export async function recordHttpRequestOfConfigFilesInDir(options: RecordHttpRequestByConfigsInDirOptions) {
+export async function recordHttpRequestByDir(options: RecordHttpByDirOptions) {
   const {targetDirList, moreMockItems = {}, ...restOptions} = options;
   // requestConfigDir: string, options: RequestByDir
   // const {outputDir} = options;
@@ -119,7 +127,7 @@ export async function recordHttpRequestOfConfigFilesInDir(options: RecordHttpReq
   const fileList = getMultipleDirFileList(targetDirList);
   for (const {fullPath, relativePath} of fileList) {
     console.log(`reqesting using config from file ${fullPath}`);
-    const {requestOptions, ...restExports} = require(fullPath) as RecordHttpRequestContent;
+    const {requestOptions, ...restExports} = require(fullPath) as HttpRecordContent;
     // await generateMockInfoByRequest(requestOptions, {
     //   ...restOptions,
     //   moreMockItems: {

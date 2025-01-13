@@ -64,7 +64,7 @@ export function sendHttpRequest<Payload extends ConnectionPayload = any>(
   } = updateHeadersByHttpInfo({headers, data});
   let request: http.ClientRequest | null = null;
   const {protocol, href} = toUrlInstance(urlProps);
-  const mergedRequestOptions = {...requestOptions, headers: finalHeaders};
+  const mergedRequestOptions = {...options, headers: finalHeaders};
   request = (protocol === 'https:' ? https : http).request(href, mergedRequestOptions);
   if (dataIsUndefined) {
     request.end();
@@ -124,12 +124,12 @@ export const validateStatusCode: ValidateStatus = info => {
 export type RequestAndGetResponseInfoFunc = typeof requestAndGetResponseInfo;
 export async function requestAndGetResponseInfo<ResData = any, Payload extends ConnectionPayload = any>(
   requestOptions: HttpRequestOptions<Payload>,
-  responseConfig?: ParseHttpResponseOptions
+  parseOptions?: ParseHttpResponseOptions
 ): Promise<SendRequestWithResponseInfoResult<ResData>> {
   const result = await requestAndGetResponse<Payload>(requestOptions);
   const {response} = result;
 
-  let {validateStatus, printCurlCommandOnError, ...resConfig} = responseConfig ?? {};
+  let {validateStatus, printCurlCommandOnError, ...resConfig} = parseOptions ?? {};
   const responseInfo = await getHttpResponseInfo<ResData>(response, resConfig);
 
   if (validateStatus) {

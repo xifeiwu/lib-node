@@ -1,12 +1,12 @@
 export {
-  RecordHttpRequestContent,
+  HttpRecordContent,
   RequestOptionsForMock,
-  FindRecordInfoInDirOptions,
+  FindRecordFileOptions,
   RecordFileFinder,
 } from './types';
 export {
   recordHttpRequest,
   recordHttpRequestBySelectConfigFile,
-  recordHttpRequestOfConfigFilesInDir as recordHttpRequestOfConfigFilesInDir,
+  recordHttpRequestByDir,
 } from './generate';
 export {getMockFileFinderByDir, findMockFile, MockFileContentWithPathInfo} from './find';
