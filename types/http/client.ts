@@ -1,4 +1,4 @@
-import {IncomingHttpHeaders, OutgoingHttpHeaders, RequestOptions} from 'http';
+import {ClientRequest, IncomingHttpHeaders, IncomingMessage, OutgoingHttpHeaders, RequestOptions} from 'http';
 import {UrlProps} from '../../external';
 import {HttpResponseInfo} from './tcp';
 import {ConnectionPayload} from '../net';
@@ -47,4 +47,16 @@ export interface ParseHttpResponseBodyOptions {
 export interface ParseHttpResponseOptions extends ParseHttpResponseBodyOptions {
   validateStatus?: ValidateStatus | boolean;
   printCurlCommandOnError?: boolean;
+}
+
+export interface SendHttpRequestResult {
+  request: ClientRequest;
+  href: string;
+  requestOptions: RequestOptions;
+}
+export interface SendRequestWithResponseResult extends SendHttpRequestResult {
+  response: IncomingMessage;
+}
+export interface SendRequestWithResponseInfoResult<ResData = any> extends SendRequestWithResponseResult {
+  responseInfo: HttpResponseInfo<ResData>;
 }

@@ -1,4 +1,4 @@
-import http from 'http';
+import http, {RequestOptions} from 'http';
 import https from 'https';
 import {convertToBuffer, toBuffer} from '../../transform';
 import {Socket} from 'net';
@@ -16,6 +16,9 @@ import {
   ConnectionPayload,
   ValidateStatus,
   ParseHttpResponseOptions,
+  SendHttpRequestResult,
+  SendRequestWithResponseResult,
+  SendRequestWithResponseInfoResult,
 } from '../../types';
 import {Readable, isReadable} from 'stream';
 import {getHttpResponseInfo} from './receiver';
@@ -50,7 +53,7 @@ export function mergeHttpRequestOptions(
  */
 export function sendHttpRequest<Payload extends ConnectionPayload = any>(
   options: HttpRequestOptions<Payload>
-) {
+): SendHttpRequestResult {
   const {urlProps, restProps} = getUrlPropsFromConfig(options);
   const {data, headers = {}, ...requestOptions} = restProps;
   const {
@@ -59,20 +62,20 @@ export function sendHttpRequest<Payload extends ConnectionPayload = any>(
     dataIsReadable,
     dataIsUndefined,
   } = updateHeadersByHttpInfo({headers, data});
-  let clientRequest: http.ClientRequest | null = null;
+  let request: http.ClientRequest | null = null;
   const {protocol, href} = toUrlInstance(urlProps);
   const mergedRequestOptions = {...requestOptions, headers: finalHeaders};
-  clientRequest = (protocol === 'https:' ? https : http).request(href, mergedRequestOptions);
+  request = (protocol === 'https:' ? https : http).request(href, mergedRequestOptions);
   if (dataIsUndefined) {
-    clientRequest.end();
+    request.end();
   } else {
     if (dataIsReadable) {
-      (finalData as Readable).pipe(clientRequest);
+      (finalData as Readable).pipe(request);
     } else {
-      clientRequest.write(finalData);
+      request.write(finalData);
     }
   }
-  return clientRequest;
+  return {request, href, requestOptions: mergedRequestOptions};
 }
 
 export class ResponseError extends Error {
@@ -89,16 +92,17 @@ export class ResponseError extends Error {
 
 export async function requestAndGetResponse<Payload extends ConnectionPayload = any>(
   options: HttpRequestOptions<Payload>
-): Promise<http.IncomingMessage> {
-  const clientRequest = sendHttpRequest(options);
+): Promise<SendRequestWithResponseResult> {
+  const result = sendHttpRequest(options);
+  const {request} = result;
   return new Promise((res, rej) => {
-    clientRequest.on('response', async response => {
-      res(response);
+    request.on('response', async response => {
+      res({response, ...result});
     });
-    clientRequest.on('upgrade', async response => {
+    request.on('upgrade', async response => {
       rej(new Error(`Expect response event, but receive upgrade event.`));
     });
-    clientRequest.on('timeout', () => {
+    request.on('timeout', () => {
       /**
        * timeout will be triggered when time-cost of request larger than timeout setted options
        * But it will not stop request process, or trigger error
@@ -106,7 +110,7 @@ export async function requestAndGetResponse<Payload extends ConnectionPayload = 
       // console.log('timeout');
       // clientRequest.destroy();
     });
-    clientRequest.on('error', error => {
+    request.on('error', error => {
       rej(error);
     });
   });
@@ -121,8 +125,10 @@ export type RequestAndGetResponseInfoFunc = typeof requestAndGetResponseInfo;
 export async function requestAndGetResponseInfo<ResData = any, Payload extends ConnectionPayload = any>(
   requestOptions: HttpRequestOptions<Payload>,
   responseConfig?: ParseHttpResponseOptions
-): Promise<HttpResponseInfo<ResData>> {
-  const response = await requestAndGetResponse<Payload>(requestOptions);
+): Promise<SendRequestWithResponseInfoResult<ResData>> {
+  const result = await requestAndGetResponse<Payload>(requestOptions);
+  const {response} = result;
+
   let {validateStatus, printCurlCommandOnError, ...resConfig} = responseConfig ?? {};
   const responseInfo = await getHttpResponseInfo<ResData>(response, resConfig);
 
@@ -138,16 +144,21 @@ export async function requestAndGetResponseInfo<ResData = any, Payload extends C
       throw new ResponseError(requestOptions, responseInfo);
     }
   }
-  return responseInfo;
+  return {responseInfo, ...result};
 }
 
-export type RequestAndGetRelatedInfoFunc = typeof requestAndGetRelatedInfo;
+// export type RequestAndGetRelatedInfoFunc = typeof requestAndGetRelatedInfo;
+/**
+ * @deprecated by requestAndGetResponseInfo
+ * @param requestOptions
+ * @param responseConfig
+ * @returns
+ */
 export async function requestAndGetRelatedInfo<ResData = any, Payload extends ConnectionPayload = any>(
   requestOptions: HttpRequestOptions<Payload>,
   responseConfig?: ParseHttpResponseOptions
-): Promise<{requestOptions: HttpRequestOptions<Payload>; responseInfo: HttpResponseInfo<ResData>}> {
-  const responseInfo = await requestAndGetResponseInfo(requestOptions, responseConfig);
-  return {requestOptions, responseInfo};
+): Promise<SendRequestWithResponseInfoResult<ResData>> {
+  return await requestAndGetResponseInfo(requestOptions, responseConfig);
 }
 
 export async function requestAndGetUpgradeInfo<Payload extends ConnectionPayload = any>(
@@ -166,7 +177,7 @@ export async function requestAndGetUpgradeInfo<Payload extends ConnectionPayload
     ...config,
     headers,
   };
-  const clientRequest = sendHttpRequest(options);
+  const {request: clientRequest} = sendHttpRequest(options);
   return new Promise<{response: http.IncomingMessage; socket: Socket; head: Buffer}>((res, rej) => {
     clientRequest.on('response', async response => {
       rej(new Error(`Expect upgrade event, but receive response event.`));

@@ -69,7 +69,7 @@ function getRequestOptions(options: Required<Pick<HttpRequestOptions, 'origin'>>
 
 function httpClient(config: {origin: string; watchSocketState?: boolean}) {
   const {origin} = config;
-  const client = sendHttpRequest(getRequestOptions({origin}));
+  const {request: client} = sendHttpRequest(getRequestOptions({origin}));
   client.on('socket', socket => {
     config.watchSocketState && watchSocketState(socket, {colorStyle: {color: 'cyan'}});
     socket.on('data', chunk => {
