@@ -9,6 +9,8 @@ export interface FuncTestCase<FuncType extends (...param: any) => any> {
   params: Parameters<FuncType>;
   expected: ReturnType<FuncType> | ExpectedAsFunc<FuncType>;
   description?: string[];
+  /** Just run function without result comparison */
+  dryRun?: boolean;
 }
 
 export interface InstanceTestCase<

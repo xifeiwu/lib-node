@@ -31,6 +31,10 @@ export interface FilePathInfo {
   /** More accurate description for the file when there are the same relativePath exist in multiple dir */
   label: string;
 }
+
+/**
+ * TODO: rename to GetFileListOptions
+ */
 export interface GetFileListInfo {
   targetDir: string;
   options?: GetFileListOption;
