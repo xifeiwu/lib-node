@@ -1,7 +1,7 @@
 import assert from 'assert';
-import {ExpectedAsFunc, FuncTestCase, InstanceTestCase} from './types';
-import {logColorful} from './log';
-import {isFunction} from './external';
+import {ExpectedAsFunc, FuncTestCase, InstanceTestCase} from '../types';
+import {logColorful} from '../log';
+import {isFunction} from '../external';
 
 /**
  * Run allCases for one func
