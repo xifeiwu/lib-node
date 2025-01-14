@@ -1,7 +1,6 @@
 import {Daemon, SocketServerInfo} from '../../types';
 import {fromBuffer, killProcessByPid, spawnAndTryIpc, startOneChatSocketServer} from '../../index';
-import {isNumber, isObject, isPlainObject, isString, waitFor} from '../../external';
-import {get} from '../../fe/utils';
+import {isNumber, isObject, isPlainObject, isString, waitFor, get} from '../../external';
 
 const statusConvertRule: Partial<{
   [status in Daemon.CpManagerStatus['status']]: Array<Daemon.CpManagerStatus['status']>;

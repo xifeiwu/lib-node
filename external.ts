@@ -38,4 +38,6 @@ export {
   toInteger,
   NormalizedUrlProps,
   isSameUrlTarget,
+  get,
+  set,
 } from '../fe/common';
