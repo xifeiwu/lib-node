@@ -7,4 +7,4 @@ export {
   customDeepMerge,
   isPlainObject,
   overrideObj,
-} from '../../fe/utils';
+} from '../../../fe/service';

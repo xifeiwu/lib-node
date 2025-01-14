@@ -8,9 +8,9 @@ import {
   overrideObj,
   get,
   set,
-} from './service';
-import {CompareFilter} from './service';
-import {runFuncTestCases} from '../test';
+} from './imported';
+import {CompareFilter} from '../service';
+import {runFuncTestCases} from '../../index';
 
 export function testSet() {
   {
@@ -102,7 +102,7 @@ export function testDeepMergeWithConcatArray() {
       params: [undefined, {delay: 3, show: true, engine: ['p1', '3']}],
       expected: '',
       dryRun: true,
-    }
+    },
   ]);
 }
 
