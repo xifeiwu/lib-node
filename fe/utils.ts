@@ -1,1 +1,10 @@
-export {set, get} from '../../fe/utils';
+export {
+  set,
+  get,
+  deepClone,
+  deepEqual,
+  deepMerge,
+  customDeepMerge,
+  isPlainObject,
+  overrideObj,
+} from '../../fe/utils';
