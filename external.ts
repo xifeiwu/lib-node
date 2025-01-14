@@ -40,4 +40,5 @@ export {
   isSameUrlTarget,
   get,
   set,
+  toNormalizedUrlProps,
 } from '../fe/common';

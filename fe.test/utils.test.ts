@@ -10,6 +10,7 @@ import {
   set,
 } from './utils';
 import {CompareFilter} from './service';
+import {runFuncTestCases} from '../test';
 
 export function testSet() {
   {
@@ -67,13 +68,15 @@ async function runCase(options: {desc?: string; func: () => void}) {
 }
 
 export function testDeepMergeWithConcatArray() {
-  const cases: {
-    description?: string;
-    params: any[];
-    expected: any;
-  }[] = [
+  const deepMerge2 = customDeepMerge();
+  // for (const it of cases) {
+  //   const {params, expected} = it;
+  //   const result = deepMerge2(...params);
+  //   assert.deepEqual(expected, result);
+  // }
+  runFuncTestCases(deepMerge2, [
     {
-      description: `get cusotmized deepMerge with config mergeArraySolution = 'concat'`,
+      description: [`get cusotmized deepMerge with config mergeArraySolution = 'concat'`],
       params: [
         {
           path: '/user/:id/:props',
@@ -95,16 +98,12 @@ export function testDeepMergeWithConcatArray() {
         },
       },
     },
-  ];
-
-  const deepMerge2 = customDeepMerge({
-    mergeArraySolution: 'concat',
-  });
-  for (const it of cases) {
-    const {params, expected} = it;
-    const result = deepMerge2(...params);
-    assert.deepEqual(expected, result);
-  }
+    {
+      params: [undefined, {delay: 3, show: true, engine: ['p1', '3']}],
+      expected: '',
+      dryRun: true,
+    }
+  ]);
 }
 
 export function testOverrideObj() {

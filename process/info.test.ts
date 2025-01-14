@@ -2,8 +2,6 @@ import assert from 'assert';
 import {getProcessInfo, getProcessInfoByPort, killProcessByPid} from './info';
 // import {DebugServerResponse, runTsScriptInChildProcess} from './child-process';
 import {logColorful} from '../log';
-import {isNumber} from '../fe';
-import {spawnAndTryIpc} from '../child-process';
 
 // export async function testFilterProcessInfo() {
 //   const {command, params, spawnOptions, pid} = await runTsScriptInChildProcess('debug-server', {

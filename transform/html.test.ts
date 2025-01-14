@@ -1,14 +1,14 @@
 import path from 'path';
 import {sendHttpResponse, startHttpServer} from '../http';
 import {streamFileContent} from './html';
-import {toUrlProps} from '../fe';
+import {toNormalizedUrlProps} from '../external';
 
 export async function testHtmlDirContent() {
   const baseDir = path.resolve(__dirname, '..');
   const {origin, server} = await startHttpServer({
     request(req, res) {
       const {url} = req;
-      const {pathname} = toUrlProps(url);
+      const {pathname} = toNormalizedUrlProps(url);
       sendHttpResponse(res, {
         data: streamFileContent(path.join(baseDir, pathname)),
       });
