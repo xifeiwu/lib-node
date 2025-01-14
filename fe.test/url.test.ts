@@ -1,7 +1,6 @@
 import assert from 'assert';
 import {applyPathnameParams, getUrlPropsFromConfig, urlPropsToHref, isSameUrlTarget} from './url';
-import {UrlProps} from './service';
-import {runFuncTestCases} from '../test';
+import {UrlProps, runFuncTestCases} from './service';
 
 export function testURL() {
   try {
@@ -280,7 +279,7 @@ export async function testUrlPropsFromConfig() {
 }
 
 export async function testIsSameUrlTarget() {
-  const href = 'http://elif.site/api/debug/echo?delay=3&show=true&p1=3&p1=5';
+  const href = 'http://elif.site/api/debug/echo?delay=3&show=true&p1=5&p1=3';
   const standard = {
     origin: 'http://elif.site',
     pathname: '/api/debug/echo',
