@@ -41,4 +41,5 @@ export {
   get,
   set,
   toNormalizedUrlProps,
+  getSubstring,
 } from '../fe/common';
