@@ -1,8 +1,12 @@
-# Intro
+## Intro
 
 Commonly used logic based on native node runtime, and not depend on any third party modules.
 
-# Structure
+## Notice
+
+1. To avoid dependency of `@types/node` on `lib/fe`, unit test case of `lib/fe` is located in dir `fe.test`.
+
+## Structure
 
 Category by node native module
 .
@@ -38,6 +42,6 @@ Category by node native module
 ├── utils                   A group of frequently used logic based on other basic logics
 └── yarn.lock
 
-# Dependencies
+## Dependencies
 
 fe/modules/libs

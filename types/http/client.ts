@@ -51,8 +51,8 @@ export interface ParseHttpResponseOptions extends ParseHttpResponseBodyOptions {
 
 export interface SendHttpRequestResult {
   request: ClientRequest;
-  href: string;
-  requestOptions: RequestOptions;
+  url: URL,
+  requestOptions: HttpRequestOptions;
 }
 export interface SendRequestWithResponseResult extends SendHttpRequestResult {
   response: IncomingMessage;

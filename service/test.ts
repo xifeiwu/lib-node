@@ -1,5 +1,5 @@
 import assert from 'assert';
-import {ExpectedAsFunc, FuncTestCase, InstanceTestCase} from '../types';
+import {ExpectedAsFunc, FuncTestCase, InstanceTestCase, RunFuncOptions} from '../types';
 import {logColorful} from '../log';
 import {isFunction} from '../external';
 
@@ -12,16 +12,20 @@ import {isFunction} from '../external';
 export async function runFuncTestCases<FuncType extends (...param: any) => any>(
   func: FuncType,
   allCases: Array<FuncTestCase<FuncType>>,
-  dryRun?: boolean
+  options?: RunFuncOptions
 ) {
   for (const oneCase of allCases) {
-    const {description, params, expected} = oneCase;
+    const {ignore, description, params, expected, dryRun} = {...(options ?? {}), ...oneCase};
+    if (ignore) {
+      logColorful({color: 'yellow'}, 'Ignore the case', ...description);
+      continue;
+    }
     if (description && description.length > 0) {
       logColorful({color: 'yellow'}, 'Run the case', ...description);
     }
     // @ts-ignore
     const result = await func(...params);
-    if (dryRun || oneCase.dryRun) {
+    if (dryRun) {
       logColorful({}, result);
     } else {
       if (isFunction(expected)) {
