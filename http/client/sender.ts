@@ -63,7 +63,8 @@ export function sendHttpRequest<Payload extends ConnectionPayload = any>(
     dataIsUndefined,
   } = updateHeadersByHttpInfo({headers, data});
   let request: http.ClientRequest | null = null;
-  const {protocol, href} = toUrlInstance(urlProps);
+  const url = toUrlInstance(urlProps);
+  const {protocol, href} = url;
   const mergedRequestOptions = {...options, headers: finalHeaders};
   request = (protocol === 'https:' ? https : http).request(href, mergedRequestOptions);
   if (dataIsUndefined) {
@@ -75,7 +76,7 @@ export function sendHttpRequest<Payload extends ConnectionPayload = any>(
       request.write(finalData);
     }
   }
-  return {request, href, requestOptions: mergedRequestOptions};
+  return {request, url, requestOptions: mergedRequestOptions};
 }
 
 export class ResponseError extends Error {
