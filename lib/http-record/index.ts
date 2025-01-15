@@ -1,12 +1,8 @@
 export {
   HttpRecordContent,
   RequestOptionsForMock,
-  FindRecordFileOptions,
-  RecordFileFinder,
+  FindRecordFileOptions as FindRecordFileOptions,
+  HttpRecordContentWithPathInfo,
 } from './types';
-export {
-  recordHttpRequest,
-  recordHttpRequestBySelectConfigFile,
-  recordHttpRequestByDir,
-} from './generate';
-export {getMockFileFinderByDir, findMockFile, MockFileContentWithPathInfo} from './find';
+export {recordHttpRequest, recordHttpRequestBySelectConfigFile, recordHttpRequestByDir} from './generate';
+export {getHttpRecordFinder as getHttpRecordFinder, findRecordFile} from './find';

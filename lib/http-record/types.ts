@@ -1,21 +1,24 @@
-import {DeepEqualConfig, FilterItem, NormalizedUrlProps} from '../../external';
-import {GetFileListInfo, GetFileListOption, HttpResponseInfo, ParseHttpResponseOptions} from '../../types';
+import {DeepEqualConfig} from '../../external';
+import {
+  GetFileListInfo,
+  HttpRequestOptions,
+  HttpResponseInfo,
+  ParseHttpResponseOptions,
+  SendRequestWithResponseInfoResult,
+} from '../../types';
 
 /**
- * The request options must follow NormalizedUrlProps interface for compare
+ * @deprecated by HttpRequestOptions
  */
-export interface RequestOptionsForMock<T = any> extends NormalizedUrlProps {
-  method?: string;
-  data?: T;
-}
+export type RequestOptionsForMock = HttpRequestOptions;
 
 export interface RecordHttpOptions extends ParseHttpResponseOptions {
   /** request config for all requestConfig under requestConfigDir */
-  defaultRequestOptions?: RequestOptionsForMock;
+  defaultRequestOptions?: HttpRequestOptions;
   /** fullpath have high priority than outputDir + getBasename*/
   fullPath?: string;
   outputDir?: string;
-  getBasename?: (requestOptions: RequestOptionsForMock) => string;
+  getBasename?: (requestOptions: SendRequestWithResponseInfoResult) => string;
   /** content of mock item passed directly from request config file to mock file */
   moreMockItems?: Partial<Omit<HttpRecordContent, 'requestOptions'>>;
   // getBaseName
@@ -38,28 +41,34 @@ export interface HttpRecordContent<ResData = any> {
     query?: CompareConfig;
     payload?: CompareConfig;
   };
-  requestOptions: RequestOptionsForMock;
+  requestOptions: HttpRequestOptions;
   responseInfo: HttpResponseInfo<ResData>;
 }
 
 /**
  * HttpRecordContent and it's related file info, it's useful when get HttpRecordContent from file or dir.
  */
-export interface HttpRecordContenttWithPathInfo extends HttpRecordContent {
+export interface HttpRecordContentWithPathInfo extends HttpRecordContent {
   fullPath: string;
   relativePath: string;
 }
 
+export interface HttpRecordInfoForCompare extends Omit<HttpRecordContentWithPathInfo, 'responseInfo'> {
+  matchCount?: number;
+}
+
 export interface FindRecordFileOptions {
-  ingore?: boolean;
-  targetDir: string;
-  getFileListOptions?: GetFileListOption;
+  ignore?: boolean;
+  getFileListOptions: Array<GetFileListInfo>;
+  // targetDir: string;
+  // getFileListOptions?: GetFileListOption;
   /** relative path */
-  includedFileList?: FilterItem[];
-  excludedFileList?: FilterItem[];
+  // includedFileList?: FilterItem[];
+  // excludedFileList?: FilterItem[];
   debugCompare?: boolean;
 }
 
-export type RecordFileFinder = (
-  targetRequestConfig: RequestOptionsForMock
-) => HttpRecordContent & {relativePath?: string};
+export {HttpRequestOptions};
+// export type HttpRecordFileFinder = (
+//   targetRequestConfig: RequestOptionsForMock
+// ) => HttpRecordContent & {relativePath?: string};

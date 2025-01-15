@@ -6,11 +6,13 @@ import {
   mergeHttpRequestOptions,
   requestAndGetResponseInfo,
 } from '../../http';
-import {RecordHttpByDirOptions, RecordHttpOptions, HttpRecordContent, RequestOptionsForMock} from './types';
+import {RecordHttpByDirOptions, RecordHttpOptions, HttpRecordContent, HttpRequestOptions} from './types';
 import {getMultipleDirFileList, makeSureDirExist} from '../../fs';
-import {urlPropsToHref} from '../../../fe/url';
 import {MOCK_FILE_SUFFIX} from './service';
 import {selectFileAndGetExports} from '../../utils';
+import {SendRequestWithResponseInfoResult} from '../../types';
+import {getHashDigest} from '../../crypto';
+import {convertToBuffer} from '../../transform';
 
 export function convertObjectToCjsContent<T extends HttpRecordContent>(info: T) {
   const lines = Object.entries(info).map(([key, value]) => {
@@ -22,44 +24,54 @@ export function convertObjectToCjsContent<T extends HttpRecordContent>(info: T) 
   return lines.join('\n');
 }
 
+function getMockFileBaseName(requestResult: SendRequestWithResponseInfoResult) {
+  const {
+    url: {pathname, search},
+    requestOptions: {method, data},
+  } = requestResult;
+  const searchKey = search
+    ? search.length > 12
+      ? getHashDigest(convertToBuffer(search), {algorithm: 'md5', maxDigestLength: 8})
+      : encodeURIComponent(search)
+    : '';
+
+  const dataKey = data ? getHashDigest(convertToBuffer(data), {algorithm: 'md5', maxDigestLength: 8}) : '';
+  return (
+    [method ?? '', encodeURIComponent(pathname), searchKey, dataKey].filter(it => it.trim().length > 0).join('-') +
+    MOCK_FILE_SUFFIX
+  );
+}
 /**
  * Create output dir if not exist
  * @param info
- * @param requestOptions
+ * @param requestResult
  * @returns
  */
 function getFullPath(
   info: Pick<RecordHttpOptions, 'fullPath' | 'outputDir' | 'getBasename'>,
-  requestOptions: RequestOptionsForMock
+  requestResult: SendRequestWithResponseInfoResult
 ) {
   const {fullPath, outputDir, getBasename = getMockFileBaseName} = info;
-  const finalPath = fullPath ?? outputDir ? path.join(outputDir, getBasename(requestOptions)) : undefined;
+  const finalPath = fullPath ?? outputDir ? path.join(outputDir, getBasename(requestResult)) : undefined;
   if (!finalPath) {
     throw new Error(`Can not generate full path by options provided`);
   }
   makeSureDirExist(finalPath);
   return finalPath;
 }
-function getMockFileBaseName(requestOptions: RequestOptionsForMock) {
-  const {pathname, query} = requestOptions;
-  const url = urlPropsToHref({pathname, query});
-  return encodeURIComponent(url) + MOCK_FILE_SUFFIX;
-}
 export async function recordHttpRequest<ResData = any>(
-  requestOptions: RequestOptionsForMock,
+  requestOptions: HttpRequestOptions,
   options: RecordHttpOptions
 ) {
   const {defaultRequestOptions, moreMockItems} = options;
   const mergedOptions = mergeHttpRequestOptions(requestOptions, defaultRequestOptions);
-  const fullPath = getFullPath(options, mergedOptions);
   const {validateStatus, printCurlCommandOnError} = options;
-  const {responseInfo, requestOptions: finalRequestOptions} = await requestAndGetResponseInfo<ResData>(
-    mergedOptions,
-    {
-      validateStatus,
-      printCurlCommandOnError,
-    }
-  );
+  const requestResult = await requestAndGetResponseInfo<ResData>(mergedOptions, {
+    validateStatus,
+    printCurlCommandOnError,
+  });
+  const {responseInfo, requestOptions: finalRequestOptions} = requestResult;
+  const fullPath = getFullPath(options, requestResult);
   console.log(`writing mock file ${fullPath}`);
   const content: HttpRecordContent = {
     ignore: false,
@@ -97,7 +109,7 @@ export async function recordHttpRequestBySelectConfigFile(options: RecordHttpByD
     allExports: {requestOptions, ...restExports},
     relativePath,
   } = await selectFileAndGetExports<{
-    requestOptions: RequestOptionsForMock;
+    requestOptions: HttpRequestOptions;
   }>(targetDirList);
   return await recordHttpRequest(requestOptions, {
     /** User relativePath as mock file name */
