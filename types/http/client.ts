@@ -46,12 +46,13 @@ export interface ParseHttpResponseBodyOptions {
 }
 export interface ParseHttpResponseOptions extends ParseHttpResponseBodyOptions {
   validateStatus?: ValidateStatus | boolean;
+  /** Only works when validateStatus is set, or can't aware which condition is error condition */
   printCurlCommandOnError?: boolean;
 }
 
 export interface SendHttpRequestResult {
   request: ClientRequest;
-  url: URL,
+  url: URL;
   requestOptions: HttpRequestOptions;
 }
 export interface SendRequestWithResponseResult extends SendHttpRequestResult {
