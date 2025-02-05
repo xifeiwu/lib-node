@@ -1,12 +1,13 @@
 import {connectToSocksServer} from '../client';
 import {SOCKS_AUTH_USER_PASS, serializeErrorInfo} from '../service';
-import {getDataFromReadable, logColorful, tcpRequestPropsToBuffer} from '../service/external';
+import {getDataFromReadable, httpRequestInfoToBuffer, logColorful, tcpRequestPropsToBuffer} from '../service/external';
 
-const httpBuffer = tcpRequestPropsToBuffer({
+const httpBuffer = httpRequestInfoToBuffer({
   method: 'get',
-  url: '/api/socks/list',
-  // data: {a: 1},
+  url: 'https://www.google.com/chrome/static/images/v2/accordion-timed/themes-poster.webp',
+  httpVersion: 'HTTP/1.1',
 });
+
 export async function bySocketServer() {
   const status = await connectToSocksServer({
     socksVersion: 1,
@@ -16,8 +17,8 @@ export async function bySocketServer() {
     },
     auth: SOCKS_AUTH_USER_PASS,
     requestTarget: {
-      address: 'elif.site',
-      port: 80,
+      address: 'www.google.com',
+      port: 443,
     },
   });
   const {socket} = status;
@@ -44,7 +45,7 @@ export async function byHttpUpgrade() {
   socket.write(httpBuffer);
   socket.on('data', chunk => {
     logColorful({}, chunk.toString());
-  })
+  });
   // const response = await getDataFromReadable(socket);
   // console.log(response.toString());
 }

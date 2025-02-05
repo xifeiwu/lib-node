@@ -1,7 +1,7 @@
 import {Socket, TcpNetConnectOpts} from 'net';
 import {Readable, Transform, isReadable} from 'stream';
-import {toBuffer, getDataFromReadable, startSocketClient} from '../../index';
-import {CanConvertToBuffer, HttpRequestOptions, HttpRequestInfo, TcpHttpRequestOptions} from '../../types';
+import {convertToBuffer, getDataFromReadable, startSocketClient} from '../../index';
+import {CanConvertToBuffer, HttpRequestOptions, HttpRequestInfo} from '../../types';
 import {
   getUrlPropsFromConfig,
   toUrlInstance,
@@ -41,7 +41,12 @@ export function httpOptionsToTcpConfig(httpOption: HttpRequestOptions): {
   };
 }
 
-export function tcpRequestPropsToBuffer(info: TcpHttpRequestOptions): Buffer {
+/**
+ * @deprecated by httpRequestInfoToBuffer
+ * @param info 
+ * @returns 
+ */
+export function tcpRequestPropsToBuffer(info: HttpRequestInfo): Buffer {
   let {method = 'get', url = '/', httpVersion = 'HTTP/1.1', headers = {}, data} = info;
   let bufferArray: CanConvertToBuffer[] = [];
   if (!/^http\//i.test(httpVersion)) {
@@ -51,7 +56,7 @@ export function tcpRequestPropsToBuffer(info: TcpHttpRequestOptions): Buffer {
   if (isReadable(data as Readable)) {
     headers['Transfer-Encoding'] = 'chunked';
   } else {
-    const dataBuffer = toBuffer(data);
+    const dataBuffer = convertToBuffer(data);
     const headerKeys = Object.keys(headers).map(it => it.toLowerCase());
     /** Do not set content-length if it already exist in headers, or it will cause error */
     if (!headerKeys.includes('content-length')) {
@@ -67,7 +72,7 @@ export function tcpRequestPropsToBuffer(info: TcpHttpRequestOptions): Buffer {
     .join('');
   const headerStr = firstLine + headersLine + '\r\n';
   bufferArray.unshift(headerStr);
-  return toBuffer(bufferArray);
+  return convertToBuffer(bufferArray);
 }
 
 export async function sendHttpRequestByTcp(

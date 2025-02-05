@@ -2,18 +2,6 @@ import {CanConvertToBuffer, ReadableWithMeta} from '../../types';
 import {isPlainObject} from '../../external';
 import {Readable} from 'stream';
 
-export function convertKeyToLowerCase<T extends object>(obj: T) {
-  if (!obj) {
-    return obj;
-  }
-  return Object.entries(obj).reduce<T>((sum, [key, value]) => {
-    return {
-      ...sum,
-      [key.toLocaleLowerCase()]: value,
-    };
-  }, {} as T);
-}
-
 export async function getIncomingMessageData(incomingMessage: ReadableWithMeta) {
   const {headers} = incomingMessage;
   const contentLength = parseInt(headers['content-length']);

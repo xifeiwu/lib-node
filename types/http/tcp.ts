@@ -21,7 +21,7 @@ export interface HttpCommonInfo<DataType = any, Role extends ConnectionRole = 's
 export interface HttpRequestFirstLineInfo {
   method: string;
   url: string;
-  httpVersion: string;
+  httpVersion: 'HTTP/1.1' | '1.1';
 }
 
 export interface HttpRequestHeaderPartInfo<Role extends ConnectionRole = 'sender'>

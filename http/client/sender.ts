@@ -9,6 +9,7 @@ import {
   urlPropsToHref,
   isObject,
   getRandomBase64String,
+  convertKeyToLowerCase,
 } from '../../external';
 import {
   HttpRequestOptions,
@@ -20,10 +21,9 @@ import {
   SendRequestWithResponseResult,
   SendRequestWithResponseInfoResult,
 } from '../../types';
-import {Readable, isReadable} from 'stream';
+import {Readable} from 'stream';
 import {getHttpResponseInfo} from './receiver';
 import {updateHeadersByHttpInfo} from '../service/internal';
-import {convertKeyToLowerCase} from '../service';
 import {logColorful} from '../../log';
 
 process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';

@@ -400,7 +400,7 @@ export async function getSocketToSocksServer(target: TargetSocksServer, socksVer
   return socket;
 }
 
-const MAX_WAIT_TIME = 20 * 1000;
+const MAX_WAIT_TIME = 40 * 1000;
 export function listenTimeOut(cb: (err: Error) => void, options?: {waitMs?: number; errMessage?: string}) {
   const {waitMs = MAX_WAIT_TIME, errMessage = 'time out'} = options ?? {};
   const timeoutTag = setTimeout(() => {

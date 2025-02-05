@@ -1,9 +1,9 @@
 import {isReadable, Readable} from 'stream';
 import querystring, {ParsedUrlQueryInput} from 'querystring';
 import {ConnectionPayload, HttpCommonInfo} from '../../types';
-import {isObject} from '../../external';
+import {isObject, convertKeyToLowerCase} from '../../external';
 import {convertToBuffer} from '../../transform';
-import {convertKeyToLowerCase, getContentTypeByData} from './common';
+import {getContentTypeByData} from './common';
 
 export function updateHeadersByHttpInfo(info: HttpCommonInfo) {
   const {headers: _headers, data} = info;
