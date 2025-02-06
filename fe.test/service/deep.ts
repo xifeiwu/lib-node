@@ -1,5 +1,5 @@
 import assert from 'assert';
-import {runFuncTestCases, CompareFilter} from '../service';
+import {runFuncTestCases, CompareFilter} from '../service-test';
 import {customDeepMerge, deepEqual} from './imported';
 
 export function testDefaultDeepMerge() {

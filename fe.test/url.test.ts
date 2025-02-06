@@ -1,6 +1,6 @@
 import assert from 'assert';
 import {applyPathnameParams, getUrlPropsFromConfig, urlPropsToHref, isSameUrlTarget} from './url';
-import {UrlProps, runFuncTestCases} from './service';
+import {UrlProps, runFuncTestCases} from './service-test';
 
 export function testURL() {
   try {

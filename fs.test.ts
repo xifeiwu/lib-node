@@ -8,11 +8,9 @@ import {
   getFileList,
   getLineCountMap,
   makeSureDirExist,
-  recursiveDeleteFile,
 } from './fs';
 import {isString} from './external';
-import {runFuncTestCases} from './test';
-import {FuncTestCase} from './types';
+import {runFuncTestCases} from './service';
 
 export function testGetFileList() {
   const fileList = getFileList(__dirname, {
