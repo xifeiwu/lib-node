@@ -64,6 +64,5 @@ export function testGetFilePathInfo() {
         },
       },
     ],
-    false
   );
 }

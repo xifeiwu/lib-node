@@ -8,7 +8,7 @@ import {HttpRequestInfo} from '../../../types';
 const requestProps: HttpRequestInfo = {
   method: 'post',
   url: '/api/debug/echo',
-  httpVersion: '1.1',
+  httpVersion: 'HTTP/1.1',
   headers: {
     from: 'test',
   },
