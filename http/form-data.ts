@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import {mime} from '../mime';
+import {mime} from '../lib/mime';
 import {toBuffer} from '../transform';
 import {getDataFromReadable} from '../stream';
 import {Readable} from 'stream';

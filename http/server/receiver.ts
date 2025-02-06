@@ -72,7 +72,7 @@ export async function getHttpRequestInfo<DataType = any>(
 ): Promise<HttpRequestInfo<DataType>> {
   const {maxLength = 32 * 1024 * 1024, dataType = 'json'} = options ?? {};
   let buffer = await getIncomingMessageData(incomingMessage);
-  if (buffer.byteLength > maxLength) {
+  if (buffer && buffer.byteLength > maxLength) {
     buffer = buffer.subarray(0, maxLength);
   }
   const data = fromBuffer(buffer, dataType) as DataType;
@@ -87,8 +87,8 @@ export async function getHttpRequestInfo<DataType = any>(
 export async function responseHttpRequestInfo(request: http.IncomingMessage, response: http.ServerResponse) {
   const requestInfo = await getHttpRequestInfo(request);
   const resData = convertToBuffer(requestInfo);
-  response.setHeader['content-length'] = resData.byteLength;
-  response.setHeader['content-type'] = 'application/json';
+  response.setHeader('content-length', resData.byteLength);
+  response.setHeader('content-type', 'application/json');
   response.end(resData);
 }
 

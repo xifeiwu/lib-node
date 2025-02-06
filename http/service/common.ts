@@ -45,7 +45,28 @@ export function getContentTypeByData(data: CanConvertToBuffer | Readable) {
   }
 }
 
-export function parseContentType(contentType: string) {
-  const [type, ...props] = contentType.split(';').map(it => it.trim());
-  return [type];
+export function parseContentType(contentType?: string) {
+  if (!contentType) {
+    return {};
+  }
+  const [type, ...rest] = contentType.split(/; ?/).map(it => it.trim());
+  // charset, boundary
+  const props = rest.reduce<object>((sum, str) => {
+    const index = str.indexOf('=');
+    if (index > 0) {
+      const key = str.substring(0, index);
+      const value = str.substring(index + 1);
+      return {
+        ...sum,
+        [key]: value,
+      };
+    } else {
+      return sum;
+    }
+  }, {});
+  // return [type];
+  return {
+    type,
+    props,
+  };
 }
