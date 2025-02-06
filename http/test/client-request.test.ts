@@ -7,7 +7,7 @@ import {
   upgradeToWebsocket,
   getHttpResponseInfo,
 } from '../client';
-import {httpResponseInfoToBuffer} from '../tcp/service';
+import {httpResponseInfoToBuffer} from '../service';
 import {
   getHttpRequestInfo,
   handleConnectEvent,
@@ -48,9 +48,9 @@ export async function testUpgradeToWebsocket() {
       // console.log(await getRequestInfo(req));
       responseHttpRequestInfo(req, res);
     },
-    upgrade(req, socket, head) {
+    async upgrade(req, socket, head) {
       const responseInfo = handleWebsocketUpgrade(req, socket, head);
-      socket.write(httpResponseInfoToBuffer(responseInfo));
+      socket.write(await httpResponseInfoToBuffer(responseInfo));
       // handleSocketEvents(socket, {isServer: true, color: 'red'});
       socket.on('data', chunk => {
         socket.write(chunk);
@@ -77,9 +77,9 @@ export async function getSocketByConnect() {
     async request(req, rep) {
       throw new Error('should no go here');
     },
-    connect(req, socket, head) {
+    async connect(req, socket, head) {
       const {responseInfo} = handleConnectEvent(req);
-      socket.write(httpResponseInfoToBuffer(responseInfo));
+      socket.write(await httpResponseInfoToBuffer(responseInfo));
       handleSocketEvents(socket, {isServer: true, color: 'red'});
       socket.on('end', () => {
         socket.end();

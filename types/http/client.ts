@@ -9,7 +9,6 @@ import {HttpBodyParserOptions} from '../../lib/http-body-parser';
  */
 export type HttpRequestPayload = ConnectionPayload;
 
-export type HttpReceiverResponseInfo<DataType = any> = HttpResponseInfo<DataType, 'receiver'>;
 /**
  * A very simple request options can be used for both HttpRequest and AxiosRequest
  */
@@ -18,7 +17,6 @@ export interface GeneralRequestOptions<Payload extends ConnectionPayload = any> 
   data?: Payload;
 }
 
-export type ValidateStatus = (responseInfo: HttpReceiverResponseInfo) => boolean;
 /**
  * A custom requestOptions based on http.RequestOptions, and used for requestAndGetResponse function.
  */
@@ -26,18 +24,13 @@ export interface HttpRequestOptions<Payload extends ConnectionPayload = any>
   extends RequestOptions,
     GeneralRequestOptions<Payload> {}
 
-export interface ResponseSideToHeaderType {
-  Server: OutgoingHttpHeaders;
-  Client: IncomingHttpHeaders;
-}
+export type HttpReceiverResponseInfo<DataType = any> = HttpResponseInfo<DataType, 'receiver'>;
 
-/**
- * The least props used to upgrade to other protocol based on http protocol
- */
-export interface HttpUpgradeConfig {
-  href: HttpRequestOptions['href'];
-  upgrade: HttpRequestOptions['headers']['upgrade'];
-}
+export type ValidateStatus = (responseInfo: HttpReceiverResponseInfo) => boolean;
+// export interface ResponseSideToHeaderType {
+//   Server: OutgoingHttpHeaders;
+//   Client: IncomingHttpHeaders;
+// }
 
 export interface ParseHttpResponseBodyOptions {
   maxLength?: number;
@@ -60,4 +53,12 @@ export interface SendRequestWithResponseResult extends SendHttpRequestResult {
 }
 export interface SendRequestWithResponseInfoResult<ResData = any> extends SendRequestWithResponseResult {
   responseInfo: HttpResponseInfo<ResData>;
+}
+
+/**
+ * The least props used to upgrade to other protocol based on http protocol
+ */
+export interface HttpUpgradeConfig {
+  href: HttpRequestOptions['href'];
+  upgrade: HttpRequestOptions['headers']['upgrade'];
 }

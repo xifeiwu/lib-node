@@ -1,6 +1,6 @@
-import {CanConvertToBuffer, ReadableWithMeta} from '../../types';
 import {isPlainObject} from '../../external';
 import {Readable} from 'stream';
+import {ReadableWithMeta, CanConvertToBuffer} from '../../types';
 
 export async function getIncomingMessageData(incomingMessage: ReadableWithMeta) {
   const {headers} = incomingMessage;

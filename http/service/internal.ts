@@ -5,6 +5,13 @@ import {isObject, convertKeyToLowerCase} from '../../external';
 import {convertToBuffer} from '../../transform';
 import {getContentTypeByData} from './common';
 
+export function toFormUrlencoded(data: object) {
+  if (isObject(data)) {
+    return querystring.stringify(data as ParsedUrlQueryInput);
+  }
+  return data;
+}
+
 export function updateHeadersByHttpInfo(info: HttpCommonInfo) {
   const {headers: _headers, data} = info;
   const dataIsUndefined = data === undefined;
@@ -16,8 +23,12 @@ export function updateHeadersByHttpInfo(info: HttpCommonInfo) {
   const headers = convertKeyToLowerCase(_headers);
   let finalData: ConnectionPayload = data;
   dataIsReadable = isReadable(finalData as Readable);
-  if (!dataIsUndefined && !dataIsReadable) {
+  if (!dataIsReadable) {
     const contentType = headers['content-type'];
+    /**
+     * @deprecated by toFormUrlencoded
+     * Fix for the case: content-type is x-www-form-urlencoded, but format of data is json
+     */
     if (typeof contentType === 'string' && contentType.includes('x-www-form-urlencoded') && isObject(data)) {
       finalData = querystring.stringify(finalData as ParsedUrlQueryInput);
     }

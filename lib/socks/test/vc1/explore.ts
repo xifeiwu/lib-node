@@ -7,7 +7,7 @@ import {
   PORT,
   startHttpDebugServer,
   startSocketServer,
-  tcpRequestPropsToBuffer,
+  httpRequestInfoToBuffer,
 } from '../../service/external';
 import {connectToSocksServer} from '../../client';
 import {handleSocksConnection} from '../../server';
@@ -32,7 +32,7 @@ export async function generalProcess() {
   const {socket} = status;
   watchSocketState(socket, {colorStyle: {color: 'blue'}});
   socket.write(
-    tcpRequestPropsToBuffer({
+    httpRequestInfoToBuffer({
       method: 'post',
       url: 'api/test',
       data: {a: 1},
@@ -106,8 +106,9 @@ export async function proxyToOtherSocksServer() {
     });
     const {socket} = status;
     socket.write(
-      tcpRequestPropsToBuffer({
+      httpRequestInfoToBuffer({
         method: 'post',
+        url: '/',
         data: {to: '0.0.0.0'},
       })
     );
@@ -130,8 +131,9 @@ export async function proxyToOtherSocksServer() {
     });
     const {socket} = status;
     socket.write(
-      tcpRequestPropsToBuffer({
+      httpRequestInfoToBuffer({
         method: 'post',
+        url: '/',
         data: {to: '127.0.0.1'},
       })
     );

@@ -1,5 +1,5 @@
 import {getFilePathInfo} from './path';
-import {runFuncTestCases} from './test';
+import {runFuncTestCases} from './service';
 
 export function testGetFilePathInfo() {
   runFuncTestCases(

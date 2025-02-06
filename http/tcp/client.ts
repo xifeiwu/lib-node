@@ -93,12 +93,12 @@ export async function sendHttpRequestByTcp(
     });
   }
   if (isReadable(data as Readable)) {
-    client.write(tcpRequestPropsToBuffer({method, url, headers, data}));
+    client.write(tcpRequestPropsToBuffer({method, url, headers, data, httpVersion: '1.1'}));
     (data as Readable)
       .pipe(
         new Transform({
           transform(chunk, enc, cb) {
-            const buffer = toBuffer(chunk);
+            const buffer = convertToBuffer(chunk);
             const {byteLength} = buffer;
             const hexStr = byteLength.toString(16);
             this.push(hexStr + '\r\n');
@@ -117,7 +117,7 @@ export async function sendHttpRequestByTcp(
       )
       .pipe(client);
   } else {
-    client.end(tcpRequestPropsToBuffer({method, url, headers, data}));
+    client.end(tcpRequestPropsToBuffer({method, url, headers, data, httpVersion: '1.1'}));
   }
   return client;
 }

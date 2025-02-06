@@ -40,7 +40,9 @@ export {
   getUpgradeProtocol,
   getUpgradeResponse,
   httpRequestInfoToBuffer,
+  httpResponseInfoToBuffer,
   getDataFromReadable,
   getIv,
   xorData,
+  htmlUlItems,
 } from '../../../index';

@@ -17,7 +17,7 @@ import {
 import {HttpRequestInfo, CustomHandleRequestOptions, GetIncomingMessageHeader} from '../../types';
 import {getAFreePort} from '../../net';
 import {deepEqual, toUrlProps, isNumber, waitFor, toInteger} from '../../external';
-import {httpResponseInfoToBuffer} from '../tcp';
+import {httpResponseInfoToBuffer} from '../service';
 
 export async function startHttpServer(
   handler: {
@@ -167,9 +167,9 @@ export async function startHttpDebugServer(
         logSocketState && watchSocketState(request.socket, {colorStyle: {color: 'yellow'}});
         responseHttpRequestInfo(request, response);
       },
-      connect(req, socket, head) {
+      async connect(req, socket, head) {
         const {responseInfo} = handleConnectEvent(req);
-        socket.write(httpResponseInfoToBuffer(responseInfo));
+        socket.write(await httpResponseInfoToBuffer(responseInfo));
         // handleSocketEvents(socket, {isServer: true, color: 'red'});
         socket.on('end', () => {
           socket.end();

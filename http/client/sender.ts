@@ -1,7 +1,7 @@
 import http, {RequestOptions} from 'http';
 import https from 'https';
 import {convertToBuffer, toBuffer} from '../../transform';
-import {Socket} from 'net';
+import {Socket, TcpNetConnectOpts} from 'net';
 import {
   toUrlInstance,
   getUrlPropsFromConfig,
@@ -10,6 +10,8 @@ import {
   isObject,
   getRandomBase64String,
   convertKeyToLowerCase,
+  concatOriginWithPathname,
+  normalizeUrlProps,
 } from '../../external';
 import {
   HttpRequestOptions,
@@ -20,6 +22,7 @@ import {
   SendHttpRequestResult,
   SendRequestWithResponseResult,
   SendRequestWithResponseInfoResult,
+  HttpRequestInfo,
 } from '../../types';
 import {Readable} from 'stream';
 import {getHttpResponseInfo} from './receiver';
@@ -268,4 +271,36 @@ export function responseErrorToCurlCommand(err: ResponseError) {
 export function makeSureHttpRequestOptionsSerializable(options: HttpRequestOptions) {
   const {agent, ...restProps} = options;
   return restProps;
+}
+
+/**
+ * Convert HttpRequestOptions to
+ * @param httpOption
+ * @returns
+ */
+export function httpRequestOptionsToHttpInfo(httpOption: HttpRequestOptions): {
+  info: HttpRequestInfo;
+  target: Pick<TcpNetConnectOpts, 'host' | 'port'>;
+} {
+  const {
+    urlProps,
+    restProps: {method, headers, data, port, protocol},
+  } = getUrlPropsFromConfig(httpOption);
+  /** normalize url: otherUrlProps contains tcp url part  */
+  const {origin, ...otherUrlProps} = normalizeUrlProps(urlProps);
+  /** As otherUrlProps not contain origin, url should only contain pathname + query + hash */
+  const urlStr = urlPropsToHref(otherUrlProps);
+  const url = toUrlInstance(concatOriginWithPathname(origin, urlStr));
+  const {hostname} = url;
+  let finalPort = port ?? url.port;
+  if (!finalPort) {
+    finalPort = protocol === 'https:' ? 443 : 80;
+  }
+  return {
+    info: {method, url: urlStr, headers, data, httpVersion: 'HTTP/1.1'},
+    target: {
+      host: hostname,
+      port: Number(finalPort),
+    },
+  };
 }

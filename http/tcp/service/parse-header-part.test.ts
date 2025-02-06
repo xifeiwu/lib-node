@@ -3,11 +3,12 @@ import {Readable} from 'stream';
 import {tryParseHttpFirstLine, tryParseHttpHeaderPart} from './parse-header-part';
 import {tcpRequestPropsToBuffer} from '../client';
 import {getDataFromReadable} from '../../../index';
-import {TcpHttpRequestOptions} from '../../../types';
+import {HttpRequestInfo} from '../../../types';
 
-const requestProps: TcpHttpRequestOptions = {
+const requestProps: HttpRequestInfo = {
   method: 'post',
   url: '/api/debug/echo',
+  httpVersion: '1.1',
   headers: {
     from: 'test',
   },

@@ -1,12 +1,12 @@
-import { logColorful } from '../../../../log';
+import {logColorful} from '../../../../log';
 import {connectToSocksServer} from '../../client';
 import {handleSocksConnection} from '../../server';
-import { SOCKS_AUTH_USER_PASS } from '../../service';
-import {PORT, startHttpDebugServer, startSocketServer, tcpRequestPropsToBuffer} from '../../service/external';
+import {SOCKS_AUTH_USER_PASS} from '../../service';
+import {PORT, startHttpDebugServer, startSocketServer, httpRequestInfoToBuffer} from '../../service/external';
 import {EMethod, MethodUserPass} from '../../types/v5';
 
 export async function generalProcess() {
-  const {origin: httpOrigin, server} = await startHttpDebugServer({port: PORT.fullFeatureHttpServer.port,});
+  const {origin: httpOrigin, server} = await startHttpDebugServer({port: PORT.fullFeatureHttpServer.port});
   const {host, port} = await startSocketServer(socket => {
     handleSocksConnection(socket, {socksVersion: 5, methodList: [{method: EMethod.NoAuth}]});
   });
@@ -23,8 +23,9 @@ export async function generalProcess() {
   let cnt = 0;
   while (cnt++ < 3) {
     socket.write(
-      tcpRequestPropsToBuffer({
+      httpRequestInfoToBuffer({
         method: 'post',
+        url: '/',
         data: {a: cnt},
         headers: {
           connection: 'keep-alive',
@@ -55,8 +56,9 @@ export async function useAuthUserPass() {
   });
   const {socket} = status;
   socket.write(
-    tcpRequestPropsToBuffer({
+    httpRequestInfoToBuffer({
       method: 'post',
+      url: '/',
       data: {a: 1},
     })
   );

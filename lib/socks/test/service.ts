@@ -2,7 +2,6 @@ import {
   startHttpServer,
   startTcpGateway,
   startSocketClient,
-  tcpRequestPropsToBuffer,
   toBuffer,
   toUrlProps,
   ulItems,
@@ -11,8 +10,10 @@ import {
   responseHttpConnection,
   getUpgradeProtocol,
   getUpgradeResponse,
-  httpRequestInfoToBuffer,
+  httpResponseInfoToBuffer,
   logColorful,
+  httpRequestInfoToBuffer,
+  htmlUlItems,
 } from '../service/external';
 import {SOCKS_AUTH_USER_PASS} from '../service';
 import {handleSocksConnection} from '../server';
@@ -27,7 +28,6 @@ import {EMethod, NegotiationInfoClient as NegotiationInfoClientV5} from '../type
 import {RequestTarget} from '../types/base';
 import {Socket} from 'net';
 import {simplifySocksServerInfo, UPGRADE_PROTOCOL_SOCKS_PREFIX} from '..';
-import {htmlUlItems} from '../../..';
 
 export function getSocksClientConfigV5(socksServer: TargetSocksServer, requestTarget: RequestTarget) {
   const info: SocksClientConfig<5> = {
@@ -49,7 +49,7 @@ export function getSocksClientConfigVc1(socksServer: TargetSocksServer, requestT
   return info;
 }
 
-export const httpRequestBuffer = tcpRequestPropsToBuffer({
+export const httpRequestBuffer = httpRequestInfoToBuffer({
   method: 'post',
   url: '/api/debug/echo',
   data: {a: 1},
@@ -65,7 +65,11 @@ export function getSocksServerConfigV5(config?: Partial<SocksServerConfig<5>>) {
 }
 
 export function getSocksServerConfigVc1(config?: Partial<SocksServerConfig<1>>) {
-  const socksServerConfig: SocksServerConfig<1> = {socksVersion: 1, auth: SOCKS_AUTH_USER_PASS, ...(config ?? {})};
+  const socksServerConfig: SocksServerConfig<1> = {
+    socksVersion: 1,
+    auth: SOCKS_AUTH_USER_PASS,
+    ...(config ?? {}),
+  };
   return socksServerConfig;
 }
 
@@ -158,7 +162,7 @@ export async function startHttpServerForSocks(allSocksServerConfig: Partial<Sock
             return abortRequest(socket, protocol);
           }
         }
-        socket.write(httpRequestInfoToBuffer(getUpgradeResponse(protocol)));
+        socket.write(httpResponseInfoToBuffer(getUpgradeResponse(protocol)));
         if (!socksServerConfig) {
           const bufferOfFirstLine = await getOneLineFromReader(socket, {firstChunkOnly: true});
           const firstByte = bufferOfFirstLine[0];

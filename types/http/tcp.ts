@@ -21,7 +21,7 @@ export interface HttpCommonInfo<DataType = any, Role extends ConnectionRole = 's
 export interface HttpRequestFirstLineInfo {
   method: string;
   url: string;
-  httpVersion: 'HTTP/1.1' | '1.1';
+  httpVersion: 'HTTP/1.1' | '1.1' | string;
 }
 
 export interface HttpRequestHeaderPartInfo<Role extends ConnectionRole = 'sender'>
@@ -49,9 +49,3 @@ export interface HttpResponseInfo<DataType = any, Role extends ConnectionRole = 
   extends HttpResponseHeaderPartInfo<Role> {
   data?: DataType;
 }
-
-/**
- * @deprecated by HttpRequestInfo
- */
-export type TcpHttpRequestOptions = Omit<HttpRequestInfo, 'method' | 'url' | 'httpVersion' | 'headers'> &
-  Partial<Pick<HttpRequestInfo, 'method' | 'url' | 'httpVersion' | 'headers'>>;
