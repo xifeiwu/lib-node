@@ -1,5 +1,6 @@
 import {Writable} from 'stream';
 import {ParsedItem, ParsedResult, ParsedValue, HttpBodyParserOptions} from './types';
+import {unifyUndefined} from './external';
 
 export const defaultParseOptions: Required<HttpBodyParserOptions> = {
   // maxPayloadSizeinKb?: number;
@@ -11,7 +12,8 @@ export const defaultParseOptions: Required<HttpBodyParserOptions> = {
   hash: {
     algorithm: 'sha1',
     encoding: 'base64url',
-  }
+  },
+  headers: {},
 };
 
 /**
@@ -64,7 +66,7 @@ export function getCacheWriter(parserOptions: HttpBodyParserOptions) {
   });
   const waitCacheData = new Promise<ParsedResult>((res, rej) => {
     writer.on('finish', () => {
-      res(result);
+      res(unifyUndefined(result));
     });
     writer.on('error', err => {
       rej(err);

@@ -30,8 +30,7 @@ export const getQuerystringParser: GetParserFunc = (
         const fields = new URLSearchParams(str);
         for (const [key, value] of fields) {
           this.push({
-            key,
-            value,
+            [key]: value,
           });
         }
         cb();

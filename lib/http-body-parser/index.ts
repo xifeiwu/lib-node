@@ -3,7 +3,7 @@ import path from 'path';
 import {isReadable, Readable, Transform} from 'stream';
 import {pipeline} from 'stream/promises';
 import {HttpBodyParserOptions} from './service/types';
-import {getMultpartParser, getOctetParser} from './parser';
+import {getMultpartParser, getOctetParser, getQuerystringParser} from './parser';
 import {defaultParseOptions, getCacheWriter} from './service/utils';
 import {
   CanConvertToBuffer,
@@ -49,7 +49,7 @@ export async function parseBody<DataType = any>(request: ReadableWithMeta, optio
     ...(mregedOptions.headers ?? {}),
   };
   let parserTransforms: Transform[];
-  for (const getParser of [getOctetParser, getMultpartParser]) {
+  for (const getParser of [getOctetParser, getMultpartParser, getQuerystringParser]) {
     const result = getParser(mergedHeaders, mregedOptions);
     if (result) {
       parserTransforms = result;
@@ -64,7 +64,7 @@ export async function parseBody<DataType = any>(request: ReadableWithMeta, optio
   } else {
     const buffer = await getIncomingMessageData(request);
     if (!buffer || buffer.byteLength === 0) {
-      return null;
+      return undefined;
     }
     const {type} = parseContentType(mergedHeaders['content-type']);
     if (type) {
