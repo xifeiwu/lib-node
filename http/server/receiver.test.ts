@@ -23,9 +23,6 @@ export async function testResponseHttpRequestProps() {
       },
       data: 'abc',
     },
-    {
-      dataType: 'json',
-    }
   );
   const {data} = responseInfo;
   /** convert to upper case for method name */

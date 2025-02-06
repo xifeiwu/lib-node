@@ -1,6 +1,14 @@
-import {isPlainObject} from '../../external';
+import querystring, {ParsedUrlQueryInput} from 'querystring';
+import {isObject, isPlainObject} from '../../external';
 import {Readable} from 'stream';
 import {ReadableWithMeta, CanConvertToBuffer} from '../../types';
+
+export function toUrlencoded(data: object) {
+  if (isObject(data)) {
+    return querystring.stringify(data as ParsedUrlQueryInput);
+  }
+  return data;
+}
 
 export async function getIncomingMessageData(incomingMessage: ReadableWithMeta) {
   const {headers} = incomingMessage;

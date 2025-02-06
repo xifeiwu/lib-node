@@ -32,15 +32,11 @@ export type ValidateStatus = (responseInfo: HttpReceiverResponseInfo) => boolean
 //   Client: IncomingHttpHeaders;
 // }
 
-export interface ParseHttpResponseBodyOptions {
-  maxLength?: number;
-  dataType?: 'buffer' | 'string' | 'json';
-  parserOptions?: HttpBodyParserOptions;
-}
-export interface ParseHttpResponseOptions extends ParseHttpResponseBodyOptions {
+export interface ParseHttpResponseOptions {
   validateStatus?: ValidateStatus | boolean;
   /** Only works when validateStatus is set, or can't aware which condition is error condition */
   printCurlCommandOnError?: boolean;
+  bodyParserOptions?: HttpBodyParserOptions;
 }
 
 export interface SendHttpRequestResult {

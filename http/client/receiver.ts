@@ -2,7 +2,7 @@ import http from 'http';
 import {fromBuffer} from '../../transform';
 import {getIncomingMessageData} from '../service';
 import {HttpResponseInfo, GetIncomingMessageHeader} from '../../types';
-import {parseHttpBody, ParseHttpResponseBodyOptions} from '../../index';
+import {HttpBodyParserOptions, parseHttpBody} from '../../lib/http-body-parser';
 
 export const getHttpResponseHeaderPartInfo: GetIncomingMessageHeader<'client'> = (
   response: http.IncomingMessage
@@ -20,18 +20,12 @@ export const getHttpResponseHeaderPartInfo: GetIncomingMessageHeader<'client'> =
  */
 export async function getHttpResponseInfo<DataType = any>(
   incomingMessage: http.IncomingMessage,
-  options?: ParseHttpResponseBodyOptions,
+  bodyParserOptions?: HttpBodyParserOptions
 ): Promise<HttpResponseInfo<DataType>> {
-  const {maxLength = 64 * 1024 * 1024, dataType, parserOptions} = options ?? {};
-  let data: DataType;
-  if (dataType) {
-    const buffer = await getIncomingMessageData(incomingMessage);
-    data = fromBuffer(buffer.subarray(0, maxLength), dataType) as DataType;
-  } else {
-    data = await parseHttpBody<DataType>(incomingMessage, parserOptions);
-  }
-  return {
+  const data = await parseHttpBody<DataType>(incomingMessage, bodyParserOptions);
+  const result = {
     ...getHttpResponseHeaderPartInfo(incomingMessage),
     data,
   };
+  return result;
 }

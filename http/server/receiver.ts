@@ -11,9 +11,10 @@ import {
   watchSocketState,
   HttpServerConfig,
   LogColors,
-  HttpRequestHeaderPartInfo,
   getIncomingMessageData,
+  HttpRequestHeaderPartInfo,
 } from '../../index';
+import {parseHttpBody, HttpBodyParserOptions} from '../../lib/http-body-parser';
 import {HttpRequestInfo, CustomHandleRequestOptions, GetIncomingMessageHeader} from '../../types';
 import {getAFreePort} from '../../net';
 import {deepEqual, toUrlProps, isNumber, waitFor, toInteger} from '../../external';
@@ -65,21 +66,14 @@ export const getHttpRequestHeaderPartInfo: GetIncomingMessageHeader<'server'> = 
 
 export async function getHttpRequestInfo<DataType = any>(
   incomingMessage: http.IncomingMessage,
-  options?: {
-    maxLength?: number;
-    dataType?: 'buffer' | 'string' | 'json';
-  }
+  bodyParserOptions?: HttpBodyParserOptions
 ): Promise<HttpRequestInfo<DataType>> {
-  const {maxLength = 32 * 1024 * 1024, dataType = 'json'} = options ?? {};
-  let buffer = await getIncomingMessageData(incomingMessage);
-  if (buffer && buffer.byteLength > maxLength) {
-    buffer = buffer.subarray(0, maxLength);
-  }
-  const data = fromBuffer(buffer, dataType) as DataType;
-  return {
+  const data = await parseHttpBody(incomingMessage, bodyParserOptions);
+  const results = {
     ...getHttpRequestHeaderPartInfo(incomingMessage),
     data,
   };
+  return results;
 }
 /**
  * response/echo requestInfo

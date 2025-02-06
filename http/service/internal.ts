@@ -5,13 +5,6 @@ import {isObject, convertKeyToLowerCase} from '../../external';
 import {convertToBuffer} from '../../transform';
 import {getContentTypeByData} from './common';
 
-export function toFormUrlencoded(data: object) {
-  if (isObject(data)) {
-    return querystring.stringify(data as ParsedUrlQueryInput);
-  }
-  return data;
-}
-
 export function updateHeadersByHttpInfo(info: HttpCommonInfo) {
   const {headers: _headers, data} = info;
   const dataIsUndefined = data === undefined;
