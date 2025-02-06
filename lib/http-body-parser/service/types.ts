@@ -23,7 +23,11 @@ export interface HttpBodyParserOptions {
   hash?: {
     algorithm?: string;
     encoding?: BinaryToTextEncoding;
-  }
+  };
+  /**
+   * headers set in this part will override headers of IncomingMessage
+   */
+  headers?: IncomingHttpHeaders;
 }
 
 export interface ParsedFileInfo {

@@ -44,10 +44,13 @@ export async function parseBody<DataType = any>(request: ReadableWithMeta, optio
       }
     }
   }
-  const {headers: reqHeaders} = request;
+  const mergedHeaders = {
+    ...(request.headers ?? {}),
+    ...(mregedOptions.headers ?? {}),
+  };
   let parserTransforms: Transform[];
   for (const getParser of [getOctetParser, getMultpartParser]) {
-    const result = getParser(reqHeaders, mregedOptions);
+    const result = getParser(mergedHeaders, mregedOptions);
     if (result) {
       parserTransforms = result;
       break;
@@ -63,14 +66,16 @@ export async function parseBody<DataType = any>(request: ReadableWithMeta, optio
     if (!buffer || buffer.byteLength === 0) {
       return null;
     }
-    const [mimeType] = parseContentType(reqHeaders['content-type']);
-    if (mimeType.startsWith('text')) {
-      return buffer.toString() as DataType;
-    } else if (/json/i.test(mimeType)) {
-      try {
-        return JSON.parse(buffer.toString()) as DataType;
-      } catch (err) {
-        /** Ignore */
+    const {type} = parseContentType(mergedHeaders['content-type']);
+    if (type) {
+      if (type.startsWith('text/')) {
+        return buffer.toString() as DataType;
+      } else if (/json/i.test(type)) {
+        try {
+          return JSON.parse(buffer.toString()) as DataType;
+        } catch (err) {
+          /** Ignore */
+        }
       }
     }
     /** return original data if content-type is not matched */
@@ -78,7 +83,10 @@ export async function parseBody<DataType = any>(request: ReadableWithMeta, optio
   }
 }
 
-export async function parseHttpBody<DataType = any>(request: ReadableWithMeta, options?: HttpBodyParserOptions) {
+export async function parseHttpBody<DataType = any>(
+  request: ReadableWithMeta,
+  options?: HttpBodyParserOptions
+) {
   return await parseBody<DataType>(request, options);
 }
 /**
