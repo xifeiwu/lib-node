@@ -10,8 +10,14 @@ import {updateHeadersByHttpInfo} from './internal';
 import {convertToBuffer} from '../../transform';
 import {getDataFromReadable} from '../../stream';
 
-type HttpRequestInfoWithOptionalHttpVersion<DataType = any> = Omit<HttpRequestInfo<DataType>, 'httpVersion'> & Partial<Pick<HttpRequestInfo<DataType>, 'httpVersion'>>
+type HttpRequestInfoWithOptionalHttpVersion<DataType = any> = Omit<HttpRequestInfo<DataType>, 'httpVersion'> &
+  Partial<Pick<HttpRequestInfo<DataType>, 'httpVersion'>>;
 
+type HttpResponseInfoWithOptionalStatusMessage<
+  DataType = any,
+  Role extends ConnectionRole = 'receiver'
+> = Omit<HttpResponseInfo<DataType, ConnectionRole>, 'statusMessage'> &
+  Partial<Pick<HttpResponseInfo<DataType, ConnectionRole>, 'statusMessage'>>;
 
 async function httpCommonInfoToBufferAsync(
   firstLine: string,
@@ -52,6 +58,7 @@ export async function httpResponseInfoToBufferAsync(
 ) {
   const {role = 'sender'} = options ?? {};
   const {httpVersion = 'HTTP/1.1', statusCode = 200, statusMessage = 'OK', headers = {}, data} = responseInfo;
+  // http.STATUS_CODES
   let finalHttpVersion = httpVersion;
   if (!/^http\//i.test(httpVersion)) {
     finalHttpVersion = 'HTTP/' + httpVersion;
