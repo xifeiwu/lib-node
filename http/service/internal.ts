@@ -3,8 +3,15 @@ import querystring, {ParsedUrlQueryInput} from 'querystring';
 import {ConnectionPayload, HttpCommonInfo} from '../../types';
 import {isObject, convertKeyToLowerCase} from '../../external';
 import {convertToBuffer} from '../../transform';
-import {getContentTypeByData} from './common';
+import {inferContentTypeByData} from './common';
 
+/**
+ * For key content-length, transfer-encoding of header part, there are some related logic on node http module
+ * 1. When request.end() is called, http module knows the byteLength of body, and set it as value of content-length
+ * 2. When request.write() called multpile times, `chunk` will be set as value of transfer-encoding
+ * But there is no special logic for content-type, to avoid set headers.content-type on every httpRequestOptions,
+ * if the content-type is not set, it can be referred by function getContentTypeByData
+ */
 export function updateHeadersByHttpInfo(info: HttpCommonInfo) {
   const {headers: _headers, data} = info;
   const dataIsUndefined = data === undefined;
@@ -31,7 +38,7 @@ export function updateHeadersByHttpInfo(info: HttpCommonInfo) {
       headers['content-length'] = (finalData as Buffer).byteLength;
     }
     if (!headers['content-type']) {
-      headers['content-type'] = getContentTypeByData(data);
+      headers['content-type'] = inferContentTypeByData(data);
     }
   }
   return {

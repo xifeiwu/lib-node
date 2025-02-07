@@ -45,9 +45,11 @@ export async function getIncomingMessageData(incomingMessage: ReadableWithMeta) 
   });
 }
 
-export function getContentTypeByData(data: CanConvertToBuffer | Readable) {
+export function inferContentTypeByData(data: CanConvertToBuffer | Readable) {
   if (isPlainObject(data) || Array.isArray(data)) {
     return 'application/json;charset=UTF-8';
+  } else if (Buffer.isBuffer(data)) {
+    return 'application/octet-stream';
   } else {
     return 'text/plain';
   }
