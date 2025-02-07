@@ -1,6 +1,7 @@
 import assert from 'assert';
 import {requestAndGetResponseInfo} from '../client';
-import {responseHttpRequestInfo, startHttpServer} from './receiver';
+import {startHttpServer} from './server';
+import {responseHttpRequestInfo} from './receive';
 
 export async function testResponseHttpRequestProps() {
   const {origin, server} = await startHttpServer({
@@ -13,17 +14,15 @@ export async function testResponseHttpRequestProps() {
       trace_id: string;
     };
     data: string;
-  }>(
-    {
-      method: 'post',
-      origin,
-      pathname: '/Echo',
-      headers: {
-        TRACE_id: '123',
-      },
-      data: 'abc',
+  }>({
+    method: 'post',
+    origin,
+    pathname: '/Echo',
+    headers: {
+      TRACE_id: '123',
     },
-  );
+    data: 'abc',
+  });
   const {data} = responseInfo;
   /** convert to upper case for method name */
   assert.equal(data.method, 'POST');
