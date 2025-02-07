@@ -1,11 +1,11 @@
-import {startHttpDebugServer, requestAndGetResponseInfo, toFormUrlencoded} from '../service/external';
+import {startHttpDebugServer, requestAndGetResponseInfo, toUrlencodedFormat} from '../service/external';
 
 /**
  * http module will not handle payload by content-type setted
  */
 export async function contentType() {
   const {origin, server} = await startHttpDebugServer();
-  const data = toFormUrlencoded({a: 1, b: true});
+  const data = toUrlencodedFormat({a: 1, b: true});
   {
     const responseInfo = await requestAndGetResponseInfo({
       origin,
