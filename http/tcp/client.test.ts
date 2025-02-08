@@ -2,11 +2,9 @@ import {sendHttpRequestByTcp} from './client';
 import {
   DebugServerPathname,
   getDataFromReadable,
-  handleSocketEvents,
   HttpRequestOptions,
   logColorful,
   startHttpDebugServer,
-  startSocketClient,
 } from '../../index';
 
 export async function testSendHttpRequestByTcp() {

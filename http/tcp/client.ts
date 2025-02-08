@@ -100,7 +100,7 @@ export async function sendHttpRequestByTcp(
   return client;
 }
 
-export async function sendHttpRequestByTcpAndGetResponseData(
+export async function sendHttpRequestAndGetResponseDataOnTcpLayer(
   httpOption: HttpRequestOptions,
   tcpOptions?: TcpNetConnectOpts
 ) {
