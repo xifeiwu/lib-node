@@ -52,7 +52,12 @@ export function convertToBuffer(...args: Array<CanConvertToBuffer>) {
       bufList.push(buffer);
     }
   }
-  return Buffer.concat(bufList);
+  /** return undefined when nothing is passed or transfered */
+  if (bufList.length === 0) {
+    return undefined;
+  } else {
+    return Buffer.concat(bufList);
+  }
 }
 
 export type TargetDataTypeFromBuffer = 'json' | 'string' | 'buffer';
