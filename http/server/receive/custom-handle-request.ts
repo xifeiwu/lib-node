@@ -9,6 +9,7 @@ import {
   toInteger,
   isString,
   isObject,
+  isPlainObject,
 } from '../../../external';
 import {getHttpRequestHeaderPartInfo, getHttpRequestInfo} from './utils';
 
@@ -52,9 +53,26 @@ export async function customResponse(response: http.ServerResponse, config?: Cus
   }
   let sentData = false;
   if (data) {
-    response.end(data);
+    response.setHeader('content-type', 'application/json');
+    response.end(convertToBuffer(data));
+    sentData = true;
   }
-  return {sentData};
+  return {sentData, config};
+}
+
+export async function customResponseByRequest(
+  request: http.IncomingMessage,
+  response: http.ServerResponse,
+  config?: CustomResponseOptions
+) {
+  const {url, data} = await getHttpRequestInfo(request);
+  const {query} = toNormalizedUrlProps(url);
+  const finalConfig = {
+    ...(isPlainObject(query) ? query : {}),
+    ...(isPlainObject(data) ? data : {}),
+    ...(config ?? {}),
+  };
+  return customResponse(response, finalConfig);
 }
 
 export interface HttpConditionAndAction {

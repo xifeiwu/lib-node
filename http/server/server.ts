@@ -4,8 +4,15 @@ import {IncomingMessage} from 'http';
 import {HttpServerConfig, LogColors} from '../../types';
 import {getAFreePort, watchSocketState} from '../../net';
 import {httpResponseInfoToBuffer} from '../service';
-import {getHttpRequestHeaderPartInfo, handleConnectEvent, responseHttpRequestInfo} from './receive';
+import {
+  customResponseByRequest,
+  getHttpRequestHeaderPartInfo,
+  handleConnectEvent,
+  responseHttpRequestInfo,
+} from './receive';
 import {logColorful} from '../../log';
+import {toNormalizedUrlProps} from '../../external';
+import {convertToBuffer} from '../../transform';
 
 export async function startHttpServer(
   handler: {
@@ -44,6 +51,10 @@ export async function startHttpServer(
   });
 }
 
+export enum DebugServerPathname {
+  echo = '/api/echo',
+  customResponse = '/api/custom-response',
+}
 /**
  * It is a raw node http debug server, not depend on any third-party(like Koa).
  * Just echo reuqst, mainly for debug
@@ -55,7 +66,7 @@ export async function startHttpDebugServer(
   const {logRequestHeaderInfo, logSocketState} = options ?? {};
   const {host, port, origin, server} = await startHttpServer(
     {
-      request(request, response) {
+      async request(request, response) {
         logRequestHeaderInfo &&
           logColorful(
             {color: logRequestHeaderInfo},
@@ -63,7 +74,19 @@ export async function startHttpDebugServer(
             getHttpRequestHeaderPartInfo(request)
           );
         logSocketState && watchSocketState(request.socket, {colorStyle: {color: 'yellow'}});
-        responseHttpRequestInfo(request, response);
+        const {pathname} = toNormalizedUrlProps(request.url);
+        if (pathname === DebugServerPathname.customResponse) {
+          const {sentData, config} = await customResponseByRequest(request, response);
+          if (!sentData) {
+            let chunk: Buffer = Buffer.alloc(0);
+            if (config) {
+              chunk = convertToBuffer(config);
+            }
+            response.end(chunk);
+          }
+        } else {
+          await responseHttpRequestInfo(request, response);
+        }
       },
       async connect(req, socket, head) {
         const {responseInfo} = handleConnectEvent(req);

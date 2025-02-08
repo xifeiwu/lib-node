@@ -1,5 +1,4 @@
 import http from 'http';
-import {convertToBuffer} from '../../../transform';
 import {createHash} from 'crypto';
 import {IncomingMessage} from 'http';
 import {Duplex} from 'stream';
@@ -28,16 +27,6 @@ export async function getHttpRequestInfo<DataType = any>(
     data,
   };
   return results;
-}
-/**
- * response/echo requestInfo
- */
-export async function responseHttpRequestInfo(request: http.IncomingMessage, response: http.ServerResponse) {
-  const requestInfo = await getHttpRequestInfo(request);
-  const resData = convertToBuffer(requestInfo);
-  response.setHeader('content-length', resData.byteLength);
-  response.setHeader('content-type', 'application/json');
-  response.end(resData);
 }
 
 export function getUpgradeProtocol(req: IncomingMessage) {
