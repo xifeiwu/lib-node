@@ -1,14 +1,68 @@
 import http from 'http';
-import {CustomHandleRequestOptions, HttpRequestOptions} from '../../../types';
-import {deepEqual, toNormalizedUrlProps, isNumber, waitFor, toInteger} from '../../../external';
-import {getHttpRequestHeaderPartInfo} from './utils';
+import {CustomResponseOptions, HttpRequestOptions} from '../../../types';
+import {convertToBuffer} from '../../../transform';
+import {
+  deepEqual,
+  toNormalizedUrlProps,
+  isNumber,
+  waitFor,
+  toInteger,
+  isString,
+  isObject,
+} from '../../../external';
+import {getHttpRequestHeaderPartInfo, getHttpRequestInfo} from './utils';
+
+/**
+ * response/echo requestInfo
+ */
+export async function responseHttpRequestInfo(request: http.IncomingMessage, response: http.ServerResponse) {
+  const requestInfo = await getHttpRequestInfo(request);
+  const resData = convertToBuffer(requestInfo);
+  response.setHeader('content-length', resData.byteLength);
+  response.setHeader('content-type', 'application/json');
+  response.end(resData);
+}
+
+function setHeader(response: http.ServerResponse, key: string, value: string | number) {
+  response.setHeader(key, value);
+}
+export async function customResponse(response: http.ServerResponse, config?: CustomResponseOptions) {
+  const {delayMs, statusCode, statusMessage, headers, data} = config ?? {};
+  if (delayMs) {
+    const delayInMs = parseInt(delayMs as string);
+    !Number.isNaN(delayInMs) && (await waitFor(delayInMs));
+  }
+  if (statusCode) {
+    const code = toInteger(statusCode);
+    if (isNumber(code)) {
+      response.statusCode = code;
+    }
+  }
+  if (isString(statusMessage)) {
+    response.statusMessage = statusMessage;
+  }
+  if (isObject(headers)) {
+    for (const [key, value] of Object.entries(headers)) {
+      if (Array.isArray(value)) {
+        value.forEach(it => setHeader(response, key, it));
+      } else {
+        setHeader(response, key, value);
+      }
+    }
+  }
+  let sentData = false;
+  if (data) {
+    response.end(data);
+  }
+  return {sentData};
+}
 
 export interface HttpConditionAndAction {
   requestConfig: Pick<HttpRequestOptions, 'method' | 'pathname' | 'query'>;
-  action: CustomHandleRequestOptions;
+  action: CustomResponseOptions;
 }
-
 /**
+ * TODO: rename to customHandleIncomingMessages
  * Do some actions by HttpConditionAndAction
  * @returns Whether the request is handled by this function or not
  */
@@ -35,25 +89,6 @@ export async function handleIncomingMessage(
   if (!matchedConfig) {
     return false;
   }
-  await customHandleRequest(httpStream, matchedConfig.action);
+  await customResponse(response, matchedConfig.action);
   return false;
-}
-
-export async function customHandleRequest(
-  httpStream: {request: http.IncomingMessage; response?: http.ServerResponse},
-  config?: CustomHandleRequestOptions
-) {
-  const {response} = httpStream;
-  const {delayMs, responseCode} = config ?? {};
-  if (delayMs) {
-    const delayInMs = parseInt(delayMs as string);
-    !Number.isNaN(delayInMs) && (await waitFor(delayInMs));
-  }
-  if (responseCode) {
-    const code = toInteger(responseCode);
-    if (isNumber(code)) {
-      response.statusCode = code;
-    }
-  }
-  return;
 }

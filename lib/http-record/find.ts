@@ -15,6 +15,14 @@ function isSameMethod(m1?: string, m2?: string) {
   }
   return m1 === m2;
 }
+
+/**
+ * TODO: use common logic isSameRequest of lib/url
+ * @param targetRequestConfig
+ * @param recordFileList
+ * @param options
+ * @returns
+ */
 export function findRecordFile(
   targetRequestConfig: HttpRequestOptions,
   recordFileList: HttpRecordInfoForCompare[],
