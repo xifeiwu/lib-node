@@ -12,6 +12,7 @@ import {
   convertKeyToLowerCase,
   concatOriginWithPathname,
   normalizeUrlProps,
+  urlInstanceToProps,
 } from '../../external';
 import {
   HttpRequestOptions,
@@ -284,15 +285,14 @@ export function httpRequestOptionsToHttpInfo(httpOption: HttpRequestOptions): {
 } {
   const {
     urlProps,
-    restProps: {method = 'get', headers, data, port, protocol},
+    restProps: {method = 'get', headers, data, port},
   } = getUrlPropsFromConfig(httpOption);
-  /** normalize url: otherUrlProps contains tcp url part  */
-  const {origin, ...otherUrlProps} = normalizeUrlProps(urlProps);
+  const urlInst = toUrlInstance(urlProps);
+  const {hostname, protocol} = urlInst;
+  const {origin, ...otherUrlProps} = urlInstanceToProps(urlInst);
   /** As otherUrlProps not contain origin, url should only contain pathname + query + hash */
   const urlStr = urlPropsToHref(otherUrlProps);
-  const url = toUrlInstance(concatOriginWithPathname(origin, urlStr));
-  const {hostname} = url;
-  let finalPort = port ?? url.port;
+  let finalPort = port ?? urlInst.port;
   if (!finalPort) {
     finalPort = protocol === 'https:' ? 443 : 80;
   }
