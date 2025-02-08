@@ -3,7 +3,6 @@ import {GetParserFunc, HttpBodyParserOptions} from '../service/types';
 import {IncomingHttpHeaders} from 'http';
 
 /**
- * @deprecated rarely used
  * @param headers
  * @param parseOptions
  * @returns

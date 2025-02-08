@@ -4,7 +4,7 @@ import {isReadable, Readable, Transform} from 'stream';
 import {pipeline} from 'stream/promises';
 import {HttpBodyParserOptions} from './service/types';
 import {getMultpartParser, getOctetParser, getQuerystringParser} from './parser';
-import {defaultParseOptions, getCacheWriter} from './service/utils';
+import {defaultParseOptions, Empty, getCacheWriter} from './service/utils';
 import {
   CanConvertToBuffer,
   getIncomingMessageData,
@@ -22,7 +22,7 @@ import {
  */
 export async function parseBody<DataType = any>(request: ReadableWithMeta, options?: HttpBodyParserOptions) {
   if (!request.readable) {
-    return null;
+    return Empty;
   }
   const mregedOptions: Required<HttpBodyParserOptions> = {
     ...defaultParseOptions,
@@ -64,16 +64,18 @@ export async function parseBody<DataType = any>(request: ReadableWithMeta, optio
   } else {
     const buffer = await getIncomingMessageData(request);
     if (!buffer || buffer.byteLength === 0) {
-      return undefined;
+      return Empty;
     }
     const {type} = parseContentType(mergedHeaders['content-type']);
     if (type) {
       if (type.startsWith('text/')) {
         return buffer.toString() as DataType;
       } else if (/json/i.test(type)) {
+        const str = buffer.toString();
         try {
-          return JSON.parse(buffer.toString()) as DataType;
+          return JSON.parse(str) as DataType;
         } catch (err) {
+          return str;
           /** Ignore */
         }
       }

@@ -2,6 +2,13 @@ import {Writable} from 'stream';
 import {ParsedItem, ParsedResult, ParsedValue, HttpBodyParserOptions} from './types';
 import {unifyUndefined} from './external';
 
+/**
+ * set Empty as parsed data value for the case:
+ * 1. IncomingMessage is not readable
+ * 2. IncomingMessage is empty
+ */
+export const Empty = undefined;
+
 export const defaultParseOptions: Required<HttpBodyParserOptions> = {
   // maxPayloadSizeinKb?: number;
   // maxFileSizeinKb?: number;
