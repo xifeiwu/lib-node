@@ -11,7 +11,7 @@ import {
   responseHttpRequestInfo,
 } from './receive';
 import {logColorful} from '../../log';
-import {toNormalizedUrlProps} from '../../external';
+import {toNormalizedUrlProps, unifyNull} from '../../external';
 import {convertToBuffer} from '../../transform';
 
 export async function startHttpServer(
@@ -79,7 +79,7 @@ export async function startHttpDebugServer(
           const {sentData, config} = await customResponseByRequest(request, response);
           if (!sentData) {
             let chunk: Buffer = Buffer.alloc(0);
-            if (config) {
+            if (unifyNull(config) !== null) {
               chunk = convertToBuffer(config);
             }
             response.end(chunk);
