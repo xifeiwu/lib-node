@@ -10,10 +10,10 @@ import {
   watchSocketState,
 } from '../../index';
 import {
-  httpOptionsToTcpConfig,
   sendHttpRequest,
   startHttpDebugServer,
-  tcpRequestPropsToBuffer,
+  httpRequestInfoToBuffer,
+  httpRequestOptionsToHttpInfo,
 } from '../index';
 import {HttpRequestOptions} from '../../types';
 import {Socket} from 'net';
@@ -81,14 +81,14 @@ function httpClient(config: {origin: string; watchSocketState?: boolean}) {
 
 async function tcpClient(config: {origin: string; watchSocketState?: boolean}) {
   const {origin} = config;
-  const {props, connectionOptions} = httpOptionsToTcpConfig(
+  const {info, target} = httpRequestOptionsToHttpInfo(
     getRequestOptions({
       origin,
     })
   );
-  const client = await startSocketClient(connectionOptions);
+  const client = await startSocketClient(target);
   config.watchSocketState && watchSocketState(client, {colorStyle: {color: 'cyan'}});
-  client.end(tcpRequestPropsToBuffer(props));
+  client.end(httpRequestInfoToBuffer(info));
   client.on('data', chunk => {
     logColorful({color: 'blue'}, 'onData:');
     console.log(chunk.toString());

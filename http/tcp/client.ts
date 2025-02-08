@@ -1,50 +1,18 @@
 import {Socket, TcpNetConnectOpts} from 'net';
 import {Readable, Transform, isReadable} from 'stream';
-import {convertToBuffer, getDataFromReadable, startSocketClient} from '../../index';
-import {CanConvertToBuffer, HttpRequestOptions, HttpRequestInfo} from '../../types';
 import {
-  getUrlPropsFromConfig,
-  toUrlInstance,
-  urlPropsToHref,
-  concatOriginWithPathname,
-  normalizeUrlProps,
-} from '../../external';
-
-/**
- * Convert HttpRequestOptions to
- * @param httpOption
- * @returns
- */
-export function httpOptionsToTcpConfig(httpOption: HttpRequestOptions): {
-  props: HttpRequestInfo;
-  connectionOptions: Pick<TcpNetConnectOpts, 'host' | 'port'>;
-} {
-  const {
-    urlProps,
-    restProps: {method, headers, data},
-  } = getUrlPropsFromConfig(httpOption);
-  /** normalize url: otherUrlProps contains tcp url part  */
-  const {origin, ...otherUrlProps} = normalizeUrlProps(urlProps);
-  /** As otherUrlProps not contain origin, url should only contain pathname + query + hash */
-  const url = urlPropsToHref(otherUrlProps);
-  const {protocol, hostname, port} = toUrlInstance(concatOriginWithPathname(origin, url));
-  let finalPort: string | number = port;
-  if (!finalPort) {
-    finalPort = protocol === 'https:' ? 443 : 80;
-  }
-  return {
-    props: {method, url, headers, data, httpVersion: 'HTTP/1.1'},
-    connectionOptions: {
-      host: hostname,
-      port: Number(finalPort),
-    },
-  };
-}
+  convertToBuffer,
+  getDataFromReadable,
+  httpRequestInfoToBuffer,
+  httpRequestOptionsToHttpInfo,
+  startSocketClient,
+} from '../../index';
+import {CanConvertToBuffer, HttpRequestOptions, HttpRequestInfo} from '../../types';
 
 /**
  * @deprecated by httpRequestInfoToBuffer
- * @param info 
- * @returns 
+ * @param info
+ * @returns
  */
 export function tcpRequestPropsToBuffer(info: HttpRequestInfo): Buffer {
   let {method = 'get', url = '/', httpVersion = 'HTTP/1.1', headers = {}, data} = info;
@@ -80,20 +48,20 @@ export async function sendHttpRequestByTcp(
   tcpOptions?: Partial<TcpNetConnectOpts> | Socket
 ) {
   const {
-    props: {method, url, headers, data},
-    connectionOptions,
-  } = httpOptionsToTcpConfig(httpOption);
+    info: {method, url, headers, data},
+    target,
+  } = httpRequestOptionsToHttpInfo(httpOption);
   let client: Socket;
   if (tcpOptions instanceof Socket) {
     client = tcpOptions;
   } else {
     client = await startSocketClient({
       ...tcpOptions,
-      ...connectionOptions,
+      ...target,
     });
   }
   if (isReadable(data as Readable)) {
-    client.write(tcpRequestPropsToBuffer({method, url, headers, data, httpVersion: '1.1'}));
+    client.write(httpRequestInfoToBuffer({method, url, headers, data, httpVersion: '1.1'}));
     (data as Readable)
       .pipe(
         new Transform({
