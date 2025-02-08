@@ -1,5 +1,6 @@
 import {ServerOptions} from 'http';
-import {HttpResponseInfo} from '../..';
+import {HttpResponseInfo} from '../../types';
+import {PlainObject} from '../external';
 
 export interface HttpServerConfig {
   host?: string;
@@ -8,10 +9,9 @@ export interface HttpServerConfig {
 }
 
 /**
- * How to handle IncomingMessage fro server side
- * There is no object values to make sure params can be passed by querystring
+ * Custom how to handle response on server side
  */
-export interface CustomResponseOptions<DataType = any> extends HttpResponseInfo<DataType, 'receiver'> {
+export interface CustomResponseOptions extends Partial<HttpResponseInfo<PlainObject, 'receiver'>> {
   delayMs?: number | string;
 }
 
