@@ -9,15 +9,16 @@ import {
 import {updateHeadersByHttpInfo} from './internal';
 import {convertToBuffer} from '../../transform';
 import {getDataFromReadable} from '../../stream';
+import {STATUS_CODES} from 'http';
 
 type HttpRequestInfoWithOptionalHttpVersion<DataType = any> = Omit<HttpRequestInfo<DataType>, 'httpVersion'> &
   Partial<Pick<HttpRequestInfo<DataType>, 'httpVersion'>>;
 
-type HttpResponseInfoWithOptionalStatusMessage<
+type HttpResponseInfoWithOptionalHttpVersionAndStatusMessage<
   DataType = any,
   Role extends ConnectionRole = 'receiver'
-> = Omit<HttpResponseInfo<DataType, ConnectionRole>, 'statusMessage'> &
-  Partial<Pick<HttpResponseInfo<DataType, ConnectionRole>, 'statusMessage'>>;
+> = Omit<HttpResponseInfo<DataType, ConnectionRole>, 'httpVersion' | 'statusMessage'> &
+  Partial<Pick<HttpResponseInfo<DataType, ConnectionRole>, 'httpVersion' | 'statusMessage'>>;
 
 async function httpCommonInfoToBufferAsync(
   firstLine: string,
@@ -107,13 +108,14 @@ function httpCommonInfoToBuffer(
 }
 
 export function httpResponseInfoToBuffer(
-  responseInfo: HttpResponseInfo<CanConvertToBuffer>,
+  responseInfo: HttpResponseInfoWithOptionalHttpVersionAndStatusMessage<CanConvertToBuffer>,
   options?: {
     role?: ConnectionRole;
   }
 ) {
   const {role = 'sender'} = options ?? {};
-  const {httpVersion = 'HTTP/1.1', statusCode = 200, statusMessage = 'OK', headers = {}, data} = responseInfo;
+  const {httpVersion = 'HTTP/1.1', statusCode = 200, headers = {}, data} = responseInfo;
+  const statusMessage = responseInfo.statusMessage ?? STATUS_CODES[statusCode];
   let finalHttpVersion = httpVersion;
   if (!/^http\//i.test(httpVersion)) {
     finalHttpVersion = 'HTTP/' + httpVersion;
@@ -129,7 +131,7 @@ export function httpRequestInfoToBuffer(
   }
 ) {
   const {role = 'sender'} = options ?? {};
-  const {method, url, httpVersion, headers, data} = requestInfo;
+  const {method, url, httpVersion = '1.1', headers, data} = requestInfo;
   let finalHttpVersion = httpVersion;
   if (!/^http\//i.test(httpVersion)) {
     finalHttpVersion = 'HTTP/' + httpVersion;
