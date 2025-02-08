@@ -48,7 +48,7 @@ export async function sendHttpRequestByTcp(
   tcpOptions?: Partial<TcpNetConnectOpts> | Socket
 ) {
   const {
-    info: {method, url, headers, data},
+    info: {method, url, httpVersion, headers, data},
     target,
   } = httpRequestOptionsToHttpInfo(httpOption);
   let client: Socket;
@@ -61,7 +61,17 @@ export async function sendHttpRequestByTcp(
     });
   }
   if (isReadable(data as Readable)) {
-    client.write(httpRequestInfoToBuffer({method, url, headers, data, httpVersion: '1.1'}));
+    client.write(
+      httpRequestInfoToBuffer({
+        method,
+        url,
+        httpVersion,
+        headers: {
+          ...headers,
+          'transfer-encoding': 'chunked',
+        },
+      })
+    );
     (data as Readable)
       .pipe(
         new Transform({
@@ -85,7 +95,7 @@ export async function sendHttpRequestByTcp(
       )
       .pipe(client);
   } else {
-    client.end(tcpRequestPropsToBuffer({method, url, headers, data, httpVersion: '1.1'}));
+    client.end(httpRequestInfoToBuffer({method, url, headers, data}));
   }
   return client;
 }

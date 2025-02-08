@@ -284,7 +284,7 @@ export function httpRequestOptionsToHttpInfo(httpOption: HttpRequestOptions): {
 } {
   const {
     urlProps,
-    restProps: {method, headers, data, port, protocol},
+    restProps: {method = 'get', headers, data, port, protocol},
   } = getUrlPropsFromConfig(httpOption);
   /** normalize url: otherUrlProps contains tcp url part  */
   const {origin, ...otherUrlProps} = normalizeUrlProps(urlProps);

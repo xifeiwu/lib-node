@@ -3,6 +3,8 @@ import {isObject, isPlainObject} from '../../external';
 import {Readable} from 'stream';
 import {ReadableWithMeta, CanConvertToBuffer} from '../../types';
 
+export const LINE_BREAK = '\r\n';
+
 export function toUrlencodedFormat(data: object) {
   if (isObject(data)) {
     return querystring.stringify(data as ParsedUrlQueryInput);

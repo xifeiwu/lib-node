@@ -13,7 +13,7 @@ import {inferContentTypeByData} from './common';
  * if the content-type is not set, it can be referred by function getContentTypeByData
  */
 export function updateHeadersByHttpInfo(info: HttpCommonInfo) {
-  const {headers: _headers, data} = info;
+  const {headers: _headers = {}, data} = info;
   const dataIsUndefined = data === undefined;
   let dataIsReadable = false;
   if (dataIsUndefined) {

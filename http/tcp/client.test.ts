@@ -1,47 +1,21 @@
-import {tcpRequestPropsToBuffer} from './client';
-import {handleSocketEvents, startSocketClient} from '../../index';
+import {sendHttpRequestByTcp} from './client';
+import {
+  DebugServerPathname,
+  getDataFromReadable,
+  handleSocketEvents,
+  HttpRequestOptions,
+  logColorful,
+  startHttpDebugServer,
+  startSocketClient,
+} from '../../index';
 
-// export async function testGetRequestData() {
-//   const socket = await startSocketClient({
-//     host: 'elif.site',
-//     port: 80,
-//   });
-//   handleSocketEvents(socket);
-//   socket.end(
-//     tcpRequestPropsToBuffer({
-//       method: 'post',
-//       url: '/api/debug/echo',
-//       headers: {
-//         from: 'test',
-//       },
-//       data: {
-//         a: 1,
-//         b: 2,
-//       },
-//     })
-//   );
-// }
-
-// export async function sendRequestDataByChunk() {
-//   const socket = await startSocketClient({
-//     host: 'elif.site',
-//     port: 80,
-//   });
-//   const total = tcpRequestPropsToBuffer({
-//     method: 'post',
-//     url: '/api/debug/echo',
-//     headers: {
-//       from: 'test',
-//     },
-//     data: {
-//       a: 1,
-//       b: 2,
-//     },
-//   });
-//   const index = 20;
-//   const firstPart = total.subarray(0, index);
-//   const remainingPart = total.subarray(index);
-//   handleSocketEvents(socket);
-//   socket.write(firstPart);
-//   socket.end(remainingPart);
-// }
+export async function testSendHttpRequestByTcp() {
+  const {origin} = await startHttpDebugServer();
+  const requestOptions: HttpRequestOptions = {
+    origin,
+    pathname: DebugServerPathname.customResponse,
+  };
+  const client = await sendHttpRequestByTcp(requestOptions);
+  const responseData = await getDataFromReadable(client);
+  logColorful({}, responseData);
+}

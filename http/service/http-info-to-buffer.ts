@@ -1,87 +1,47 @@
-import {isReadable} from 'stream';
+import {isReadable, Readable} from 'stream';
 import {
   HttpRequestInfo,
   HttpCommonInfo,
   HttpResponseInfo,
   ConnectionRole,
   CanConvertToBuffer,
+  HttpRequestFirstLineInfo,
+  HttpRequestHeaderPartInfo,
+  HttpResponseFirstLineInfo,
+  HttpResponseHeaderPartInfo,
 } from '../../types';
 import {updateHeadersByHttpInfo} from './internal';
 import {convertToBuffer} from '../../transform';
-import {getDataFromReadable} from '../../stream';
-import {STATUS_CODES} from 'http';
+import {OutgoingHttpHeaders, STATUS_CODES} from 'http';
+import {LINE_BREAK} from './common';
+import {PickPartial} from '../../types/external';
 
-type HttpRequestInfoWithOptionalHttpVersion<DataType = any> = Omit<HttpRequestInfo<DataType>, 'httpVersion'> &
-  Partial<Pick<HttpRequestInfo<DataType>, 'httpVersion'>>;
+function getHttpVersion(httpVersion?: string) {
+  if (!httpVersion) {
+    return 'HTTP/1.1';
+  }
+  if (!/^http\//i.test(httpVersion)) {
+    return 'HTTP/' + httpVersion;
+  }
+  return httpVersion;
+}
 
-type HttpResponseInfoWithOptionalHttpVersionAndStatusMessage<
-  DataType = any,
-  Role extends ConnectionRole = 'receiver'
-> = Omit<HttpResponseInfo<DataType, ConnectionRole>, 'httpVersion' | 'statusMessage'> &
-  Partial<Pick<HttpResponseInfo<DataType, ConnectionRole>, 'httpVersion' | 'statusMessage'>>;
-
-async function httpCommonInfoToBufferAsync(
-  firstLine: string,
-  commonInfo?: HttpCommonInfo,
-  options?: {adaptHeaders?: boolean}
-) {
-  const {adaptHeaders = true} = options ?? {};
-  const {headers: originHeaders, data: originData} = commonInfo;
-  /** Convert data to buffer */
-  let finalData: Buffer;
-  if (originData) {
-    if (isReadable(originData)) {
-      finalData = await getDataFromReadable(originData);
+function httpHeaderToString(key: string, value: string | number) {
+  return key + ': ' + value;
+}
+function headersToString(headers?: OutgoingHttpHeaders) {
+  if (!headers) {
+    return '';
+  }
+  const lines: string[] = [];
+  for (const [key, value] of Object.entries(headers)) {
+    if (Array.isArray(value)) {
+      lines.push(...value.map(it => httpHeaderToString(key, it)));
     } else {
-      finalData = convertToBuffer(originData);
+      lines.push(httpHeaderToString(key, value));
     }
   }
-  const {headers, data} = adaptHeaders
-    ? updateHeadersByHttpInfo({
-        headers: originHeaders,
-        data: finalData,
-      })
-    : commonInfo;
-  const headerLines = Object.entries(headers)
-    .map(([key, value]) => {
-      return key + ': ' + value + '\r\n';
-    })
-    .join('');
-
-  return convertToBuffer(firstLine, '\r\n', headerLines, '\r\n', data);
-}
-
-export async function httpResponseInfoToBufferAsync(
-  responseInfo: HttpResponseInfo,
-  options?: {
-    role?: ConnectionRole;
-  }
-) {
-  const {role = 'sender'} = options ?? {};
-  const {httpVersion = 'HTTP/1.1', statusCode = 200, statusMessage = 'OK', headers = {}, data} = responseInfo;
-  // http.STATUS_CODES
-  let finalHttpVersion = httpVersion;
-  if (!/^http\//i.test(httpVersion)) {
-    finalHttpVersion = 'HTTP/' + httpVersion;
-  }
-  const firstLine = [finalHttpVersion, statusCode, statusMessage].join(' ').toUpperCase();
-  return await httpCommonInfoToBufferAsync(firstLine, {headers, data}, {adaptHeaders: role === 'sender'});
-}
-
-export async function httpRequestInfoToBufferAsync(
-  requestInfo: HttpRequestInfoWithOptionalHttpVersion,
-  options?: {
-    role?: ConnectionRole;
-  }
-) {
-  const {role = 'sender'} = options ?? {};
-  const {method, url, httpVersion, headers, data} = requestInfo;
-  let finalHttpVersion = httpVersion;
-  if (!/^http\//i.test(httpVersion)) {
-    finalHttpVersion = 'HTTP/' + httpVersion;
-  }
-  const firstLine = [method, url, finalHttpVersion].join(' ').toUpperCase();
-  return await httpCommonInfoToBufferAsync(firstLine, {headers, data}, {adaptHeaders: role === 'sender'});
+  return lines.join(LINE_BREAK) + LINE_BREAK;
 }
 
 function httpCommonInfoToBuffer(
@@ -98,45 +58,68 @@ function httpCommonInfoToBuffer(
         data: finalData,
       })
     : commonInfo;
-  const headerLines = Object.entries(headers)
-    .map(([key, value]) => {
-      return key + ': ' + value + '\r\n';
-    })
-    .join('');
-
-  return convertToBuffer(firstLine, '\r\n', headerLines, '\r\n', data);
+  return convertToBuffer(firstLine + '\r\n', headersToString(headers), '\r\n', data);
 }
 
-export function httpResponseInfoToBuffer(
-  responseInfo: HttpResponseInfoWithOptionalHttpVersionAndStatusMessage<CanConvertToBuffer>,
-  options?: {
-    role?: ConnectionRole;
-  }
+function requestFirstLineToString(firstLineInfo: PickPartial<HttpRequestFirstLineInfo, 'httpVersion'>) {
+  const {method = 'get', url = '/', httpVersion} = firstLineInfo;
+  return [method.toUpperCase(), url, getHttpVersion(httpVersion)].join(' ');
+}
+export function httpRequestHeaderPartInfoToBuffer(
+  info: PickPartial<HttpRequestHeaderPartInfo, 'httpVersion'>
 ) {
-  const {role = 'sender'} = options ?? {};
-  const {httpVersion = 'HTTP/1.1', statusCode = 200, headers = {}, data} = responseInfo;
-  const statusMessage = responseInfo.statusMessage ?? STATUS_CODES[statusCode];
-  let finalHttpVersion = httpVersion;
-  if (!/^http\//i.test(httpVersion)) {
-    finalHttpVersion = 'HTTP/' + httpVersion;
-  }
-  const firstLine = [finalHttpVersion, statusCode, statusMessage].join(' ').toUpperCase();
-  return httpCommonInfoToBuffer(firstLine, {headers, data}, {adaptHeaders: role === 'sender'});
+  return convertToBuffer(
+    requestFirstLineToString(info),
+    LINE_BREAK,
+    headersToString(info.headers),
+    LINE_BREAK
+  );
 }
 
 export function httpRequestInfoToBuffer(
-  requestInfo: HttpRequestInfoWithOptionalHttpVersion<CanConvertToBuffer>,
+  requestInfo: PickPartial<HttpRequestInfo<CanConvertToBuffer>, 'httpVersion'>,
   options?: {
     role?: ConnectionRole;
   }
 ) {
   const {role = 'sender'} = options ?? {};
-  const {method, url, httpVersion = '1.1', headers, data} = requestInfo;
-  let finalHttpVersion = httpVersion;
-  if (!/^http\//i.test(httpVersion)) {
-    finalHttpVersion = 'HTTP/' + httpVersion;
-  }
-  const firstLine = [method, url, finalHttpVersion].join(' ').toUpperCase();
-  return httpCommonInfoToBuffer(firstLine, {headers, data}, {adaptHeaders: role === 'sender'});
+  const {headers, data} = requestInfo;
+  return httpCommonInfoToBuffer(
+    requestFirstLineToString(requestInfo),
+    {headers, data},
+    {adaptHeaders: role === 'sender'}
+  );
 }
-// import http2 from 'node:crypto';
+
+function responseFirstLineToString(
+  firstLine: PickPartial<HttpResponseFirstLineInfo, 'httpVersion' | 'statusMessage'>
+) {
+  const {httpVersion, statusCode = 200} = firstLine;
+  const statusMessage = firstLine.statusMessage ?? STATUS_CODES[statusCode];
+  return [getHttpVersion(httpVersion), statusCode, statusMessage].join(' ');
+}
+export function httpResponseHeaderPartInfoToBuffer(
+  info: PickPartial<HttpResponseHeaderPartInfo, 'httpVersion' | 'statusMessage'>
+) {
+  return convertToBuffer(
+    responseFirstLineToString(info),
+    LINE_BREAK,
+    headersToString(info.headers),
+    LINE_BREAK
+  );
+}
+
+export function httpResponseInfoToBuffer(
+  responseInfo: PickPartial<HttpResponseInfo<CanConvertToBuffer>, 'httpVersion' | 'statusMessage'>,
+  options?: {
+    role?: ConnectionRole;
+  }
+) {
+  const {role = 'sender'} = options ?? {};
+  const {headers = {}, data} = responseInfo;
+  return httpCommonInfoToBuffer(
+    responseFirstLineToString(responseInfo),
+    {headers, data},
+    {adaptHeaders: role === 'sender'}
+  );
+}
