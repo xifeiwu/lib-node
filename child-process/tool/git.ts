@@ -50,17 +50,20 @@ interface SyncupGitRepoConfig {
   hostDir: string;
   /** which dir of hostDir used to locate git repo */
   repoDir: string;
+  index?: number;
 }
 export async function syncUpGitRepos(gitRepos: GitRepoInfoTree, config: SyncupGitRepoConfig) {
-  const {hostDir, repoDir = ''} = config;
+  const {hostDir, repoDir = '', index: mainIndex} = config;
+  const indexPrefix = mainIndex !== undefined ? mainIndex + '.' : '';
   let index = 0;
   for (const [repoOrCategoryName, info] of Object.entries(gitRepos)) {
-    logColorful({color: 'yellow'}, `${++index}. handing repo ${repoDir}/${repoOrCategoryName}`);
+    logColorful({color: 'yellow'}, `${indexPrefix}${++index}. handing repo ${repoDir}/${repoOrCategoryName}`);
     process.chdir(hostDir);
     if (!isGitRepoInfo(info)) {
       await syncUpGitRepos(info as GitRepoInfoTree, {
         hostDir,
         repoDir: path.join(repoDir, repoOrCategoryName),
+        index,
       });
       continue;
     }
@@ -148,7 +151,13 @@ export function writeGitIgnoreFile(gitRepos: GitRepoInfoTree, config: SyncupGitR
     }
     return results;
   }
-  const rules = ['.DS_Store', 'node_modules/', repoDir, ...getRepoRelativePath(gitRepos, {repoDir})].filter(Boolean).join('\n');
-  process.chdir(hostDir);
-  fs.writeFileSync(path.resolve(hostDir, '.gitignore'), rules);
+  const gitIgnoreFile = path.resolve(hostDir, '.gitignore');
+  let newRules = ['.DS_Store', 'node_modules/', repoDir, ...getRepoRelativePath(gitRepos, {repoDir})].filter(
+    Boolean
+  );
+  if (fs.existsSync(gitIgnoreFile)) {
+    const lines = fs.readFileSync(gitIgnoreFile).toString().split('\n').filter(Boolean);
+    newRules = Array.from(new Set([...newRules, ...lines]));
+  }
+  fs.writeFileSync(gitIgnoreFile, newRules.join('\n'));
 }
