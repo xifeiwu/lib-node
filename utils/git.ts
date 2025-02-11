@@ -7,8 +7,9 @@
 import cp from 'child_process';
 import fs from 'fs';
 import path from 'path';
-import {logColorful, GitRepoInfo, GitRepoInfoTree} from '../..';
-import {isString} from '../../external';
+import {GitRepoInfo, GitRepoInfoTree} from '../types';
+import {isString} from '../external';
+import {logColorful} from '../log';
 
 function execSyncAndLog(cmd: string, options?: {throwError?: boolean}) {
   const {throwError = true} = options ?? {};
