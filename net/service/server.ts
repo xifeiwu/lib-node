@@ -1,8 +1,16 @@
 import fs from 'fs';
 import path from 'path';
 import net, {Socket} from 'net';
+import tls, {TlsOptions} from 'tls';
 import {isNumber, isString, toNumber} from '../../external';
-import {SocketServerInfo, TcpServerConfig} from '../../types';
+import {
+  TcpServerConfig,
+  NetServerConfig,
+  TlsServerConfig,
+  TcpServerInfo,
+  NetServerInfo,
+  TlsServerInfo,
+} from '../../types';
 import {
   DEFAULT_SOCKET_DIR,
   SOCKET_FILE_SUFFIX,
@@ -57,8 +65,16 @@ export function getSocketPath(socketPath: string) {
 
 export async function startSocketServer(
   handleConnection: (socket: Socket) => void,
+  config?: NetServerConfig
+): Promise<NetServerInfo>;
+export async function startSocketServer(
+  handleConnection: (socket: Socket) => void,
+  config?: TlsServerConfig
+): Promise<TlsServerInfo>;
+export async function startSocketServer(
+  handleConnection: (socket: Socket) => void,
   config?: TcpServerConfig
-) {
+): Promise<TcpServerInfo> {
   let {host, port, path, options} = config ?? {};
   /** if path is not undefined, will listen on path */
   if (path !== undefined) {
@@ -84,8 +100,14 @@ export async function startSocketServer(
       port = await getAFreePort();
     }
   }
-  return new Promise<SocketServerInfo>((res, rej) => {
-    const server = net.createServer(options, handleConnection);
+  function getServer() {
+    if (options && (options as TlsOptions).key && (options as TlsOptions).cert) {
+      return tls.createServer(options, handleConnection);
+    }
+    return net.createServer(options, handleConnection);
+  }
+  return new Promise<TcpServerInfo>((res, rej) => {
+    const server = getServer();
     server.on('listening', () => {
       res({host, port: port as number, path, server});
     });

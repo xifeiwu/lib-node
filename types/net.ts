@@ -2,8 +2,9 @@ import {Socket, TcpNetConnectOpts, SocketReadyState, Server} from 'net';
 import {CanConvertToBuffer} from './transform';
 import {HttpUpgradeConfig} from './http';
 import {SocksVersion} from './socks';
-import {ServerOpts} from 'net';
+import net, {ServerOpts} from 'net';
 import {Readable} from 'stream';
+import tls, {TlsOptions} from 'tls';
 
 export type GetSocketOptions = TcpNetConnectOpts | HttpUpgradeConfig | Socket;
 
@@ -21,13 +22,6 @@ export interface SocketInfo {
   localPort: number;
   remoteAddress: string;
   remotePort: number;
-}
-
-export interface SocketServerInfo {
-  host: string;
-  port: number;
-  path: string;
-  server: Server;
 }
 
 export type OneChatHandler = (data: Buffer) => Promise<CanConvertToBuffer>;
@@ -48,10 +42,29 @@ export type ConnectionEnd = 'client' | 'server';
 export type ConnectionRole = 'sender' | 'receiver';
 export type ConnectionPayload = CanConvertToBuffer | Readable;
 
-export interface TcpServerConfig {
+interface TcpServerConfigCommon {
   host?: string;
   /** support string for more compatible */
   port?: number | string;
   path?: string;
+}
+export interface NetServerConfig extends TcpServerConfigCommon {
   options?: ServerOpts;
 }
+export interface TlsServerConfig extends TcpServerConfigCommon {
+  options?: TlsOptions;
+}
+export type TcpServerConfig = NetServerConfig | TlsServerConfig;
+
+interface NetServerInfoCommon {
+  host: string;
+  port: number;
+  path: string;
+}
+export interface NetServerInfo extends NetServerInfoCommon {
+  server: net.Server;
+}
+export interface TlsServerInfo extends NetServerInfoCommon {
+  server: tls.Server;
+}
+export type TcpServerInfo = NetServerInfo | TlsServerInfo;
