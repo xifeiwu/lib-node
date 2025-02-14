@@ -45,4 +45,5 @@ export {
   getIv,
   xorData,
   htmlUlItems,
+  getIncomingMessageData,
 } from '../../../index';

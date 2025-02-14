@@ -282,6 +282,7 @@ export function makeSureHttpRequestOptionsSerializable(options: HttpRequestOptio
 export function httpRequestOptionsToHttpInfo(httpOption: HttpRequestOptions): {
   info: HttpRequestInfo;
   target: Pick<TcpNetConnectOpts, 'host' | 'port'>;
+  url: URL;
 } {
   const {
     urlProps,
@@ -302,5 +303,6 @@ export function httpRequestOptionsToHttpInfo(httpOption: HttpRequestOptions): {
       host: hostname,
       port: Number(finalPort),
     },
+    url: urlInst,
   };
 }

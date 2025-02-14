@@ -68,3 +68,8 @@ export interface TlsServerInfo extends NetServerInfoCommon {
   server: tls.Server;
 }
 export type TcpServerInfo = NetServerInfo | TlsServerInfo;
+
+/**
+ * @deprecated TcpServerInfo
+ */
+export type SocketServerInfo = TcpServerInfo;
