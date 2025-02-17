@@ -1,13 +1,19 @@
 import assert from 'assert';
 import {requestAndGetResponseInfo} from '../../client';
 import {DebugServerPathname, startHttpDebugServer} from '../server';
-import {CustomResponseOptions} from '../../../types';
+import {CustomResponseOptions, HttpServerConfig} from '../../../types';
 import {getDefaultTlsConfig} from '../../../net';
 
 export async function testResponseHttpRequestProps() {
-  const {origin, server} = await startHttpDebugServer({
-    options: getDefaultTlsConfig(),
-  });
+  const useTls = true;
+  let config: HttpServerConfig;
+  if (useTls) {
+    config = {
+      options: getDefaultTlsConfig(),
+      port: 443,
+    };
+  }
+  const {origin, server} = await startHttpDebugServer(config);
   const payload = {
     a: 'a',
     b: 1,
