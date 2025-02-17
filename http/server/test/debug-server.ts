@@ -1,11 +1,13 @@
 import assert from 'assert';
 import {requestAndGetResponseInfo} from '../../client';
 import {DebugServerPathname, startHttpDebugServer} from '../server';
-import {convertToBuffer} from '../../..';
 import {CustomResponseOptions} from '../../../types';
+import {getDefaultTlsConfig} from '../../../net';
 
 export async function testResponseHttpRequestProps() {
-  const {origin, server} = await startHttpDebugServer();
+  const {origin, server} = await startHttpDebugServer({
+    options: getDefaultTlsConfig(),
+  });
   const payload = {
     a: 'a',
     b: 1,
@@ -38,7 +40,7 @@ export async function testResponseHttpRequestProps() {
   /** payload from server response is deepEqual with data from client side */
   assert.deepEqual(data.data, payload);
   console.log(responseInfo);
-  server.close();
+  // server.close();
 }
 
 export async function testCustomRespnse() {

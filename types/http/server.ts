@@ -1,11 +1,12 @@
-import {ServerOptions} from 'http';
+import https from 'https';
+import http from 'http';
 import {HttpResponseInfo} from '../../types';
 import {PlainObject} from '../external';
 
 export interface HttpServerConfig {
   host?: string;
   port?: number;
-  options?: ServerOptions;
+  options?: http.ServerOptions | https.ServerOptions;
 }
 
 /**

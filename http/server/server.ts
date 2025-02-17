@@ -1,8 +1,9 @@
 import {Socket} from 'net';
-import http, {RequestListener} from 'http';
+import http, {RequestListener, ServerOptions} from 'http';
+import https from 'https';
 import {IncomingMessage} from 'http';
 import {HttpServerConfig, LogColors} from '../../types';
-import {getAFreePort, watchSocketState} from '../../net';
+import {getAFreePort, isOverTls, watchSocketState} from '../../net';
 import {httpResponseInfoToBuffer} from '../service';
 import {
   customResponseByRequest,
@@ -14,6 +15,13 @@ import {logColorful} from '../../log';
 import {toNormalizedUrlProps, unifyNull} from '../../external';
 import {convertToBuffer} from '../../transform';
 
+function createServer(options: HttpServerConfig['options']) {
+  if (isOverTls(options)) {
+    return https.createServer(options);
+  } else {
+    return http.createServer(options as ServerOptions);
+  }
+}
 export async function startHttpServer(
   handler: {
     request?: RequestListener;
@@ -37,7 +45,7 @@ export async function startHttpServer(
     port: number;
     server: http.Server;
   }>((res, rej) => {
-    const server = http.createServer(options).listen(port, host);
+    const server = createServer(options).listen(port, host);
     server.on('listening', () => {
       res({host, port, origin, server});
     });
@@ -106,5 +114,5 @@ export async function startHttpDebugServer(
   //   });
   // });
   console.log(`start http server: ${origin}`);
-  return {host, port, origin, server};
+  return {host, port, origin, server, config};
 }

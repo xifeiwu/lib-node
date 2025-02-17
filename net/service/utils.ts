@@ -1,8 +1,11 @@
 import os from 'os';
+import fs from 'fs';
+import path from 'path';
 import {Writable} from 'stream';
 import net, {Socket} from 'net';
 import {httpFirstLineReg, ColorStyle, HttpRequestFirstLineInfo, SocketInfo, logColorful} from '../../index';
 import {isString, isNumber, formatDate} from '../../external';
+import {TlsOptions} from 'tls';
 
 export function getLocalIpAddress() {
   let localIP = null;
@@ -327,4 +330,31 @@ export function watchSocketState(
     logColorful({color}, `${getPrefix()} on close`);
     printState();
   });
+}
+
+export function isOverTls(options?: Partial<TlsOptions>) {
+  const {key, cert} = options ?? {};
+  return Boolean(key && cert);
+}
+
+export function getDefaultTlsConfig() {
+  const certDir = path.resolve(process.env.HOME, '.ssh/elif.site');
+  if (!fs.existsSync(certDir)) {
+    return {};
+  }
+  const privateKeyFile = path.join(certDir, 'private.key');
+  const certificateFile = path.join(certDir, 'certificate.crt');
+  const caBundleFile = path.join(certDir, 'ca_bundle.crt');
+  if (
+    [privateKeyFile, certificateFile, caBundleFile].some(it => {
+      return !fs.existsSync(path.resolve(certDir, it));
+    })
+  ) {
+    return {};
+  }
+  return {
+    key: fs.readFileSync(privateKeyFile),
+    cert: fs.readFileSync(certificateFile),
+    ca: [fs.readFileSync(caBundleFile)],
+  };
 }
