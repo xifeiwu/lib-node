@@ -1,6 +1,6 @@
 import https from 'https';
 import querystring, {ParsedUrlQueryInput} from 'querystring';
-import {isObject, isPlainObject, Site} from '../../external';
+import {isObject, isPlainObject, Env} from '../../external';
 import {Readable} from 'stream';
 import {ReadableWithMeta, CanConvertToBuffer, HttpServerConfig} from '../../types';
 import {getDefaultTlsConfig} from '../../net';
@@ -85,10 +85,10 @@ export function parseContentType(contentType?: string) {
   };
 }
 
-export function getDefaultHttpsConfig(options?: {env?: Site}): HttpServerConfig {
+export function getDefaultHttpsConfig(options?: {env?: Env}): HttpServerConfig {
   const {env = process.env.NODE_ENV} = options ?? {};
   const tlsOptions = getDefaultTlsConfig();
-  if (env === Site.elif) {
+  if (env === Env.elif) {
     return {
       port: 443,
       options: tlsOptions,
