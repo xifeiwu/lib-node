@@ -1,6 +1,6 @@
-import http, {RequestOptions} from 'http';
+import http from 'http';
 import https from 'https';
-import {convertToBuffer, toBuffer} from '../../transform';
+import {convertToBuffer} from '../../transform';
 import {Socket, TcpNetConnectOpts} from 'net';
 import {
   toUrlInstance,
@@ -10,8 +10,6 @@ import {
   isObject,
   getRandomBase64String,
   convertKeyToLowerCase,
-  concatOriginWithPathname,
-  normalizeUrlProps,
   urlInstanceToProps,
 } from '../../external';
 import {
@@ -233,7 +231,7 @@ export async function requestAndGetConnectInfo<Payload extends ConnectionPayload
     ...requestOptions,
     method: 'connect',
   });
-  clientRequest.end(data ? await toBuffer(data) : undefined);
+  clientRequest.end(data ? await convertToBuffer(data) : undefined);
   return new Promise<{response: http.IncomingMessage; socket: Socket; head: Buffer}>((res, rej) => {
     clientRequest.on('response', async response => {
       rej(new Error(`Expect upgrade event, but receive response event.`));

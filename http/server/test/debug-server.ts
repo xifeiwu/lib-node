@@ -4,6 +4,10 @@ import {DebugServerPathname, startHttpDebugServer} from '../server';
 import {CustomResponseOptions, HttpServerConfig} from '../../../types';
 import {getDefaultTlsConfig} from '../../../net';
 
+process.on('uncaughtException', function (err) {
+  console.log('uncaughtException:');
+  console.log(err.stack);
+});
 export async function testResponseHttpRequestProps() {
   const useTls = true;
   let config: HttpServerConfig;

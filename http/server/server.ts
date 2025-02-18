@@ -38,7 +38,6 @@ export async function startHttpServer(
     connection: handleConnection,
   } = handler;
   const {host = '0.0.0.0', port = await getAFreePort(), options} = config ?? {};
-  const origin = `http://${host}:${port}`;
   return new Promise<{
     origin: string;
     host: string;
@@ -46,6 +45,7 @@ export async function startHttpServer(
     server: http.Server;
   }>((res, rej) => {
     const server = createServer(options).listen(port, host);
+    const origin = `${isOverTls(options) ? 'https' : 'http'}://${host}:${port}`;
     server.on('listening', () => {
       res({host, port, origin, server});
     });
