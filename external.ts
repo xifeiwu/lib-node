@@ -46,5 +46,5 @@ export {
   unifyUndefined,
   convertKeyToLowerCase,
   urlInstanceToProps,
-  Env,
+  Env as Env,
 } from '../fe/common';
