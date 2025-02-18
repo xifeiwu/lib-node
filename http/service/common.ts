@@ -87,7 +87,7 @@ export function parseContentType(contentType?: string) {
 
 export function getDefaultHttpsConfig(): HttpServerConfig {
   const tlsOptions = getDefaultTlsConfig();
-  if ((process.env.NODE_ENV = SITE.elif)) {
+  if ((process.env.NODE_ENV === SITE.elif)) {
     return {
       port: 443,
       options: tlsOptions,
