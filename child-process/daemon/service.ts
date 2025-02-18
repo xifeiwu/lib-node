@@ -30,7 +30,7 @@ export async function startDetachedDaemon(
     infoToCp: {
       config: daemonConfig,
     },
-    maxWaitTime4Ipc: debug ? MAX_WAIT_TIME_DEBUG_MODE : 20,
+    maxWaitTime4Ipc: MAX_WAIT_TIME_DEBUG_MODE,
     spawnOptions: {stdio: debug ? [0, 1, 2, 'ipc'] : ['ignore', 'ignore', 'ignore', 'ipc']},
   });
   const spawnResponse = await spawnAndTryIpc<Daemon.DaemonConfig, Daemon.DaemonResponse>(spawnConfig4Daemon);

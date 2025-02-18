@@ -1,7 +1,9 @@
+import https from 'https';
 import querystring, {ParsedUrlQueryInput} from 'querystring';
-import {isObject, isPlainObject} from '../../external';
+import {isObject, isPlainObject, SITE} from '../../external';
 import {Readable} from 'stream';
-import {ReadableWithMeta, CanConvertToBuffer} from '../../types';
+import {ReadableWithMeta, CanConvertToBuffer, HttpServerConfig} from '../../types';
+import {getDefaultTlsConfig} from '../../net';
 
 export const LINE_BREAK = '\r\n';
 
@@ -81,4 +83,19 @@ export function parseContentType(contentType?: string) {
     type,
     props,
   };
+}
+
+export function getDefaultHttpsConfig(): HttpServerConfig {
+  const tlsOptions = getDefaultTlsConfig();
+  if ((process.env.NODE_ENV = SITE.elif)) {
+    return {
+      port: 443,
+      options: tlsOptions,
+    };
+  } else {
+    return {
+      port: 4443,
+      options: tlsOptions,
+    };
+  }
 }

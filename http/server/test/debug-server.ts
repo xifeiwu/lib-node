@@ -2,7 +2,7 @@ import assert from 'assert';
 import {requestAndGetResponseInfo} from '../../client';
 import {DebugServerPathname, startHttpDebugServer} from '../server';
 import {CustomResponseOptions, HttpServerConfig} from '../../../types';
-import {getDefaultTlsConfig} from '../../../net';
+import {getDefaultHttpsConfig} from '../../service';
 
 process.on('uncaughtException', function (err) {
   console.log('uncaughtException:');
@@ -12,10 +12,7 @@ export async function testResponseHttpRequestProps() {
   const useTls = true;
   let config: HttpServerConfig;
   if (useTls) {
-    config = {
-      options: getDefaultTlsConfig(),
-      port: 443,
-    };
+    config = getDefaultHttpsConfig();
   }
   const {origin, server} = await startHttpDebugServer(config);
   const payload = {

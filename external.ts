@@ -46,4 +46,5 @@ export {
   unifyUndefined,
   convertKeyToLowerCase,
   urlInstanceToProps,
+  SITE,
 } from '../fe/common';
