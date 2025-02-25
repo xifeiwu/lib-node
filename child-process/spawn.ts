@@ -21,6 +21,7 @@ interface TsNodeOptions {
 
 export interface SpawnTsFileOptions {
   tsNodeOptions?: TsNodeOptions;
+  /** param for script */
   params?: string[];
   // spawnOptions?: Parameters<typeof spawn>[2];
   spawnOptions?: SpawnOptions;
@@ -86,12 +87,13 @@ export function getSpawnConfigByScriptPath(scriptPath: string, options?: SpawnTs
   let command = '';
   let args: string[] = [];
   const {tsNodeOptions, params = [], spawnOptions} = options ?? {};
+  /** params should follow after fullPath */
   if (suffix === 'ts') {
     command = 'ts-node';
-    args = [...getTsParams(fullPath, {tsNodeOptions}), ...params, fullPath];
+    args = [...getTsParams(fullPath, {tsNodeOptions}), fullPath, ...params];
   } else if (suffix === 'js') {
     command = 'node';
-    args = [...params, fullPath];
+    args = [fullPath, ...params];
   }
   return {
     command,
