@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
-import {Serializable, spawn, SpawnOptions} from 'child_process';
+import {spawn, SpawnOptions} from 'child_process';
 import {findClosestFile} from '../fs';
-import {isBoolean, isNumber, isObject, isString} from '../external';
+import {isBoolean, isNumber, isString} from '../external';
 import {
   InfoToCp,
   SpawnAndTryIpcConfig,
@@ -10,13 +10,13 @@ import {
   SerializableSpawnInfo,
   IpcConfig,
 } from '../types';
-import {getFilePathInfo} from '../path';
 
 /** Existing key with a null value means should give a default value by program */
 interface TsNodeOptions {
   '-r'?: string | null;
   '--project'?: string | null;
   '--transpileOnly'?: boolean;
+  '--swc'?: boolean;
 }
 
 export interface SpawnTsFileOptions {
@@ -35,19 +35,15 @@ const defaultTsNodeOptions: TsNodeOptions = {
   '-r': null,
   '--project': null,
 };
-export function getTsParams(
-  tsFilePath: string,
-  options?: Pick<SpawnTsFileOptions, 'tsNodeOptions' | 'params'>
-) {
-  const {tsNodeOptions = {}, params = []} = options ?? {};
-  const fullExecPath = tsFilePath.startsWith('/') ? tsFilePath : path.resolve(process.cwd(), tsFilePath);
-  if (!fs.existsSync(fullExecPath)) {
-    throw new Error(`path not exist: ${fullExecPath}`);
+export function getTsParams(tsFilePath: string, options?: Pick<SpawnTsFileOptions, 'tsNodeOptions'>) {
+  const {tsNodeOptions = {}} = options ?? {};
+  const fullPath = path.resolve(process.cwd(), tsFilePath);
+  if (!fs.existsSync(fullPath)) {
+    throw new Error(`path not exist: ${fullPath}`);
   }
-  const mergedOptions = {...defaultSpwanTsFileOptions, ...options};
   const mergedTsNodeOptions = {...defaultTsNodeOptions, ...tsNodeOptions};
 
-  const dirPath = path.dirname(fullExecPath);
+  const dirPath = path.dirname(fullPath);
   if (Object.prototype.hasOwnProperty.call(mergedTsNodeOptions, '-r') && mergedTsNodeOptions['-r'] === null) {
     let tsConfigPathsRegister = findClosestFile(dirPath, 'node_modules/tsconfig-paths/register.js');
     if (!tsConfigPathsRegister) {
@@ -78,14 +74,13 @@ export function getTsParams(
       tsNodeParams.push(key);
     }
   });
-  const fileExecParams = [fullExecPath, ...params];
-  const allParams = [...tsNodeParams, ...fileExecParams];
-  return allParams;
+  return tsNodeParams;
 }
 
-export function getSpawnConfigByScriptPath(fullPath: string, options?: SpawnTsFileOptions) {
+export function getSpawnConfigByScriptPath(scriptPath: string, options?: SpawnTsFileOptions) {
+  const fullPath = path.resolve(process.cwd(), scriptPath);
   if (!fs.existsSync(fullPath)) {
-    throw new Error(`file not exist: ${fullPath}`);
+    throw new Error(`script not exist: ${fullPath}`);
   }
   const suffix = path.basename(fullPath).split('.').pop().toLowerCase();
   let command = '';
@@ -93,10 +88,10 @@ export function getSpawnConfigByScriptPath(fullPath: string, options?: SpawnTsFi
   const {tsNodeOptions, params = [], spawnOptions} = options ?? {};
   if (suffix === 'ts') {
     command = 'ts-node';
-    args = getTsParams(fullPath, {tsNodeOptions, params});
+    args = [...getTsParams(fullPath, {tsNodeOptions}), ...params, fullPath];
   } else if (suffix === 'js') {
     command = 'node';
-    args = [fullPath, ...params];
+    args = [...params, fullPath];
   }
   return {
     command,
