@@ -105,10 +105,7 @@ export function coloringContent(colorStyle: ColorStyle, content: LoggableContent
   const colorInfo = colorMap[color];
   return `${colorInfo.start}${finalStr}${colorInfo.end}`;
 }
-export function logColorful(
-  colorStyle: ColorStyle,
-  ...contentList: Array<object | Buffer | string | number>
-) {
+export function logColorful(colorStyle: ColorStyle, ...contentList: Array<LoggableContent>) {
   for (const content of contentList) {
     const finalStr = coloringContent(colorStyle, content);
     console.log(finalStr);
