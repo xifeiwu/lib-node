@@ -29,7 +29,7 @@ export {
   matchFilters,
   toUrlProps,
   concatOriginWithPathname,
-  filesize,
+  byteToWord,
   normalizeUrlProps,
   uuid,
   base64Chars,
@@ -46,5 +46,7 @@ export {
   unifyUndefined,
   convertKeyToLowerCase,
   urlInstanceToProps,
-  Env as Env,
+  Env,
+  intToWord,
+  wordToByte,
 } from '../fe/common';

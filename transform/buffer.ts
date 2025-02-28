@@ -1,4 +1,4 @@
-import {base64url, filesize, isNumber, isPlainObject, isString} from '../external';
+import {base64url, byteToWord, isNumber, isPlainObject, isString} from '../external';
 import {BufferGeneratorConfig, CanConvertToBuffer} from '../types';
 
 /**
@@ -98,7 +98,7 @@ export function largeDataToString(
   const remainingSize = buf.byteLength - maxPrintSize;
   let str = buf.subarray(0, maxPrintSize).toString();
   if (remainingSize > 0) {
-    str += `...[${filesize(remainingSize)} remaining]`;
+    str += `...[${byteToWord(remainingSize)} remaining]`;
   }
   return str;
 }

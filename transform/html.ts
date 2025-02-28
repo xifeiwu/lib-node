@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import {Readable} from 'stream';
 import {getFileInfoTree} from '../fs';
-import {filesize} from '../external';
+import {byteToWord} from '../external';
 import {GoThroughDirOptions, HtmlProps, LiProps} from '../types';
 
 export function liItem(item: LiProps) {
@@ -73,7 +73,7 @@ export function ulDirContent(dir: string, options?: GoThroughDirOptions) {
         relativePath,
         stat: {size},
       } = it;
-      let label: LiProps['label'] = `${relativePath} [${filesize(size)}]`;
+      let label: LiProps['label'] = `${relativePath} [${byteToWord(size)}]`;
       let href: LiProps['href'] = relativePath;
       let style: LiProps['style'];
       try {
