@@ -46,4 +46,5 @@ export {
   xorData,
   htmlUlItems,
   getIncomingMessageData,
+  httpRequestOptionsToHttpInfo,
 } from '../../../index';
