@@ -6,8 +6,8 @@ interface SpeedInfo {
   speedWord: string;
 }
 
-function getSpeedCal(options?: {maxSampleingCount?: number; minIntervalSize?: number}) {
-  const {maxSampleingCount = 20, minIntervalSize = 1} = options ?? {};
+export function getSpeedCal(options?: {maxSampleingCount?: number; minIntervalSize?: number}) {
+  const {maxSampleingCount = 60, minIntervalSize = 1} = options ?? {};
   let firstTime: number;
   let totalSize = 0;
   const sizeList: {size: number; timestamp: number}[] = [];
@@ -56,7 +56,6 @@ export async function writeability(
 ): Promise<SpeedInfo> {
   const {intervalCb} = options ?? {};
   const maxSize = wordToByte(options?.maxSize ?? '1g');
-
   const chunkSize = 64 * 1024;
 
   const {pushSample, calIntervalSpeed, calTotalSpeed, dataSentSize} = getSpeedCal();
@@ -64,7 +63,7 @@ export async function writeability(
   const callIntervalSppedCb = throttle(
     () => {
       const speedInfo = calIntervalSpeed();
-      if (speedInfo) {
+      if (speedInfo && intervalCb) {
         intervalCb(speedInfo);
       }
     },
