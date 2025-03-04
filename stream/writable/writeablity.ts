@@ -1,12 +1,8 @@
 import {Writable} from 'stream';
 import {byteToWord, throttle, wordToByte} from '../../external';
+import {WriterSpeedInfo, SpeedCalOptions, GetWritabilityOptions} from '../../types';
 
-interface SpeedInfo {
-  bytesPerSecond: number;
-  speedWord: string;
-}
-
-export function getSpeedCal(options?: {maxSampleingCount?: number; minIntervalSize?: number}) {
+export function getSpeedCal(options?: SpeedCalOptions) {
   const {maxSampleingCount = 60, minIntervalSize = 1} = options ?? {};
   let firstTime: number;
   let totalSize = 0;
@@ -49,16 +45,13 @@ export function getSpeedCal(options?: {maxSampleingCount?: number; minIntervalSi
 
 export async function writeability(
   writer: Writable,
-  options?: {
-    maxSize?: number | string;
-    intervalCb?: (results: SpeedInfo) => void;
-  }
-): Promise<SpeedInfo> {
+  options?: GetWritabilityOptions
+): Promise<WriterSpeedInfo> {
   const {intervalCb} = options ?? {};
   const maxSize = wordToByte(options?.maxSize ?? '1g');
   const chunkSize = 64 * 1024;
 
-  const {pushSample, calIntervalSpeed, calTotalSpeed, dataSentSize} = getSpeedCal();
+  const {pushSample, calIntervalSpeed, calTotalSpeed, dataSentSize} = getSpeedCal(options);
 
   const callIntervalSppedCb = throttle(
     () => {
