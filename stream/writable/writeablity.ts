@@ -1,5 +1,5 @@
 import {Writable} from 'stream';
-import {byteToWord, getRandomBase64String, throttle, wordToByte} from '../../external';
+import {byteToWord, throttle, wordToByte} from '../../external';
 
 interface SpeedInfo {
   bytesPerSecond: number;
@@ -22,7 +22,7 @@ function getSpeedCal(options?: {maxSampleingCount?: number; minIntervalSize?: nu
     totalSize += size;
   }
   function calSpeedPerSecond(size: number, msDuration: number) {
-    const bytesPerSecond = (totalSize * 1000) / msDuration;
+    const bytesPerSecond = (size * 1000) / msDuration;
     const speedWord = `${byteToWord(bytesPerSecond)}/s`;
     return {bytesPerSecond, speedWord};
   }
@@ -73,7 +73,7 @@ export async function writeability(
   );
   async function writeUntilFull() {
     while (dataSentSize() < maxSize) {
-      const success = writer.write(getRandomBase64String(chunkSize));
+      const success = writer.write(Buffer.alloc(chunkSize));
       pushSample(chunkSize);
       if (!success) {
         break;
