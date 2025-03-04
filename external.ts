@@ -49,4 +49,5 @@ export {
   Env,
   intToWord,
   wordToByte,
+  throttle,
 } from '../fe/common';
