@@ -1,7 +1,7 @@
 import {Writable} from 'stream';
-import {toBuffer} from '../transform';
-import {WatchStreamOptions} from '../types';
-import {logColorful} from '../log';
+import {toBuffer} from '../../transform';
+import {WatchStreamOptions} from '../../types';
+import {logColorful} from '../../log';
 
 /**
  * Get writer with data write to a buffer
