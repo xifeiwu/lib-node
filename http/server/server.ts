@@ -5,12 +5,8 @@ import {IncomingMessage} from 'http';
 import {HttpServerConfig, LogColors} from '../../types';
 import {getAFreePort, isOverTls, watchSocketState} from '../../net';
 import {httpResponseInfoToBuffer} from '../service';
-import {
-  customResponseByRequest,
-  getHttpRequestHeaderPartInfo,
-  handleConnectEvent,
-  responseHttpRequestInfo,
-} from './receive';
+import {getHttpRequestHeaderPartInfo, handleConnectEvent} from './service';
+import {customResponseByRequest, response404, responseHttpRequestInfo} from './utils';
 import {logColorful} from '../../log';
 import {toNormalizedUrlProps, unifyNull} from '../../external';
 import {convertToBuffer} from '../../transform';
@@ -63,6 +59,13 @@ export enum DebugServerPathname {
   echo = '/api/echo',
   customResponse = '/api/custom-response',
 }
+
+const pathnameToHandler: {
+  [key in DebugServerPathname]: (request: http.IncomingMessage, response: http.ServerResponse) => void;
+} = {
+  [DebugServerPathname.echo]: responseHttpRequestInfo,
+  [DebugServerPathname.customResponse]: customResponseByRequest,
+};
 /**
  * It is a raw node http debug server, not depend on any third-party(like Koa).
  * Just echo reuqst, mainly for debug
@@ -83,18 +86,8 @@ export async function startHttpDebugServer(
           );
         logSocketState && watchSocketState(request.socket, {colorStyle: {color: 'yellow'}});
         const {pathname} = toNormalizedUrlProps(request.url);
-        if (pathname === DebugServerPathname.customResponse) {
-          const {sentData, config} = await customResponseByRequest(request, response);
-          if (!sentData) {
-            let chunk: Buffer = Buffer.alloc(0);
-            if (unifyNull(config) !== null) {
-              chunk = convertToBuffer(config);
-            }
-            response.end(chunk);
-          }
-        } else {
-          await responseHttpRequestInfo(request, response);
-        }
+        const func = pathnameToHandler[pathname] ?? response404;
+        func(request, response);
       },
       async connect(req, socket, head) {
         const {responseInfo} = handleConnectEvent(req);

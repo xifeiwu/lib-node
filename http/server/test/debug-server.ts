@@ -30,7 +30,7 @@ export async function testResponseHttpRequestProps() {
   }>({
     method: 'post',
     origin,
-    pathname: '/Echo',
+    pathname: DebugServerPathname.echo,
     headers: {
       TRACE_id: '123',
     },
@@ -41,13 +41,13 @@ export async function testResponseHttpRequestProps() {
   /** format of method name upper case  */
   assert.equal(data.method, 'POST');
   /** format of url is the same as param of url from client side */
-  assert.equal(data.url, '/Echo');
+  assert.equal(data.url, DebugServerPathname.echo);
   /** format of field name of headers is lower case */
   assert.equal(data.headers['trace_id'], '123');
   /** payload from server response is deepEqual with data from client side */
   assert.deepEqual(data.data, payload);
   console.log(responseInfo);
-  // server.close();
+  server.close();
 }
 
 export async function testCustomRespnse() {

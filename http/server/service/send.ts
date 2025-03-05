@@ -1,6 +1,6 @@
 import http from 'http';
-import {ConnectionPayload, HttpResponseInfo} from '../../types';
-import {updateHeadersByHttpInfo} from '../service/internal';
+import {ConnectionPayload, HttpResponseInfo} from '../../../types';
+import {updateHeadersByHttpInfo} from '../../service/internal';
 import {Readable} from 'stream';
 
 export function sendHttpResponse<Payload extends ConnectionPayload = any>(
