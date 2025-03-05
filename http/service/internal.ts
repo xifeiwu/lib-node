@@ -6,6 +6,9 @@ import {convertToBuffer} from '../../transform';
 import {inferContentTypeByData} from './common';
 
 /**
+ * For consideration of why updateHeaders on httpInfo layer?
+ * For logic general and compatibility, this logic is added in lower layer
+ *
  * For key content-length, transfer-encoding of header part, there are some related logic on node http module
  * 1. When request.end() is called, http module knows the byteLength of body, and set it as value of content-length
  * 2. When request.write() called multpile times, `chunk` will be set as value of transfer-encoding
