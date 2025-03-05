@@ -74,12 +74,13 @@ export function httpRequestInfoToBuffer(
   requestInfo: PickPartial<HttpRequestInfo<CanConvertToBuffer>, 'httpVersion'>,
   options?: {
     /**
-     * if role is sender, will adapt header part by existing info
+     * if role is sender, will adapt header part by existing request info
+     * To avoid confusion, not adaptHeaders as default.
      */
     role?: ConnectionRole;
   }
 ) {
-  const {role = 'sender'} = options ?? {};
+  const {role} = options ?? {};
   const {headers, data} = requestInfo;
   return httpCommonInfoToBuffer(
     requestFirstLineToString(requestInfo),
