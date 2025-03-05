@@ -113,7 +113,7 @@ export function httpResponseInfoToBuffer(
     role?: ConnectionRole;
   }
 ) {
-  const {role = 'sender'} = options ?? {};
+  const {role} = options ?? {};
   const {headers = {}, data} = responseInfo;
   return httpCommonInfoToBuffer(
     responseFirstLineToString(responseInfo),
