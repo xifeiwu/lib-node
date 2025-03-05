@@ -95,7 +95,7 @@ export async function sendHttpRequestByTcp(
       )
       .pipe(client);
   } else {
-    client.end(httpRequestInfoToBuffer({method, url, headers, data}));
+    client.end(httpRequestInfoToBuffer({method, url, headers, data}, {role: 'sender'}));
   }
   return client;
 }

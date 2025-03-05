@@ -7,8 +7,10 @@ import {
   logColorful,
   requestAndGetResponseInfo,
   httpRequestOptionsToHttpInfo,
+  getDataFromReadable,
 } from '../service/external';
 import {Readable} from 'stream';
+import {sendHttpRequestByTcp} from '../../../http';
 
 const googleGet: HttpRequestOptions = {
   method: 'get',
@@ -31,8 +33,8 @@ const githubGet: HttpRequestOptions = {
 };
 const homeBrewInstall: HttpRequestOptions = {
   method: 'get',
-  // url: 'https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh',
-  url: 'https://elif.site/api/debug/echo',
+  url: 'https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh',
+  // url: 'https://elif.site/api/debug/echo',
   headers: {
     accept:
       'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
@@ -90,7 +92,13 @@ export async function bySocketServer() {
   });
 }
 
-export async function httpRequest() {
+export async function requestByTcp() {
+  const client = await sendHttpRequestByTcp(httpRequestOptions);
+  const response = await getDataFromReadable(client);
+  logColorful({}, response);
+}
+
+export async function requestByHttp() {
   const {responseInfo} = await requestAndGetResponseInfo(httpRequestOptions);
   logColorful({}, responseInfo);
 }
