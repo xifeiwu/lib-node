@@ -8,6 +8,7 @@ import {
   HttpRequestHeaderPartInfo,
   HttpResponseFirstLineInfo,
   HttpResponseHeaderPartInfo,
+  HttpRequestOptions,
 } from '../../../types';
 import {updateHeadersByHttpInfo} from '../internal';
 import {convertToBuffer} from '../../../transform';
@@ -49,15 +50,9 @@ function httpCommonInfoToBuffer(
   options?: {adaptHeaders?: boolean}
 ) {
   const {adaptHeaders = true} = options ?? {};
-  const {headers: originHeaders, data: originData} = commonInfo;
-  const finalData = convertToBuffer(originData);
-  const {headers, data} = adaptHeaders
-    ? updateHeadersByHttpInfo({
-        headers: originHeaders,
-        data: finalData,
-      })
-    : commonInfo;
-  return convertToBuffer(firstLine + '\r\n', headersToString(headers), '\r\n', data);
+  const {headers, data} = adaptHeaders ? updateHeadersByHttpInfo(commonInfo) : commonInfo;
+  const finalData = convertToBuffer(data);
+  return convertToBuffer(firstLine + '\r\n', headersToString(headers), '\r\n', finalData);
 }
 
 function requestFirstLineToString(firstLineInfo: PickPartial<HttpRequestFirstLineInfo, 'httpVersion'>) {
@@ -78,6 +73,9 @@ export function httpRequestHeaderPartInfoToBuffer(
 export function httpRequestInfoToBuffer(
   requestInfo: PickPartial<HttpRequestInfo<CanConvertToBuffer>, 'httpVersion'>,
   options?: {
+    /**
+     * if role is sender, will adapt header part by existing info
+     */
     role?: ConnectionRole;
   }
 ) {
