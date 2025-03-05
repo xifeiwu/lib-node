@@ -69,8 +69,9 @@ const pathnameToHandler: {
   [DebugServerPathname.empty]: responseEmpty,
 };
 /**
- * It is a raw node http debug server, not depend on any third-party(like Koa).
- * Just echo reuqst, mainly for debug
+ * It is a raw node http debug server, not depend on any third-party(like Koa), it handle pathname in two ways:
+ * 1. DebugServerPathname.customResponse, can custom response by config from client side.
+ * 2. For other pathname, echo request info.
  */
 export async function startHttpDebugServer(
   config?: HttpServerConfig,

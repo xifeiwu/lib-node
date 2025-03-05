@@ -82,11 +82,12 @@ export function httpRequestInfoToBuffer(
 ) {
   const {role} = options ?? {};
   const {headers, data} = requestInfo;
-  return httpCommonInfoToBuffer(
+  const content = httpCommonInfoToBuffer(
     requestFirstLineToString(requestInfo),
     {headers, data},
     {adaptHeaders: role === 'sender'}
   );
+  return content;
 }
 
 function responseFirstLineToString(

@@ -13,14 +13,19 @@ import {
 } from '../service/external';
 import {Readable} from 'stream';
 
+const elifEcho: HttpRequestOptions = {
+  method: 'get',
+  origin: 'https://elif.site/api/debug/echo',
+  // origin: 'http://elif.site/api/debug/echo',
+};
 const googleGet: HttpRequestOptions = {
   method: 'get',
-  url: 'https://nodejs.org/docs/latest/api/',
+  // url: 'https://nodejs.org/docs/latest/api/',
   headers: {
     'content-length': 0,
   },
   // url: 'https://www.google.com/chrome/static/images/v2/accordion-timed/themes-poster.webp',
-  // url: 'http://elif.site/api/debug/echo',
+  url: 'https://elif.site/api/debug/echo',
   // url: `https://www.google.com/generate_204?5qqoow`,
   // url: 'https://www.google.com/search?q=net&rlz=1C5GCEM_en&oq=net&gs_lcrp=EgZjaHJvbWUqBggAEEUYOzIGCAAQRRg7MgYIARBFGDsyBggCEEUYPTIGCAMQRRg8MgYIBBBFGEEyBggFEEUYQTIGCAYQRRhBMgYIBxBFGDzSAQcyODBqMGo0qAIAsAIB&sourceid=chrome&ie=UTF-8',
 };
@@ -63,7 +68,7 @@ const homeBrewInstall: HttpRequestOptions = {
 const httpRequestOptions = googleGet;
 
 export async function byTcp() {
-  const client = await sendHttpRequestByTcp(homeBrewInstall);
+  const client = await sendHttpRequestByTcp(googleGet);
   const responseData = await getDataFromReadable(client);
   logColorful({}, responseData);
 }
@@ -72,7 +77,7 @@ export async function byTcp() {
  * Should not use getDataFromReadable to get whole response data, as end event will not be triggered.
  */
 export async function bySocketServer() {
-  const {info, url, target} = httpRequestOptionsToHttpInfo(httpRequestOptions);
+  const {info, urlInst: url, target} = httpRequestOptionsToHttpInfo(httpRequestOptions);
   const status = await connectToSocksServer({
     socksVersion: 1,
     socksServer: {
