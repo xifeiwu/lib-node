@@ -8,12 +8,12 @@ import {
   HttpRequestHeaderPartInfo,
   HttpResponseFirstLineInfo,
   HttpResponseHeaderPartInfo,
-} from '../../types';
-import {updateHeadersByHttpInfo} from './internal';
-import {convertToBuffer} from '../../transform';
+} from '../../../types';
+import {updateHeadersByHttpInfo} from '../internal';
+import {convertToBuffer} from '../../../transform';
 import {OutgoingHttpHeaders, STATUS_CODES} from 'http';
-import {LINE_BREAK} from './common';
-import {PickPartial} from '../../types/external';
+import {LINE_BREAK} from '../common';
+import {PickPartial} from '../../../types/external';
 
 function getHttpVersion(httpVersion?: string) {
   if (!httpVersion) {
