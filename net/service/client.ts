@@ -37,7 +37,7 @@ export function startTlsClient(path: string, connectionListener?: () => void): P
 export async function startTlsClient(...args) {
   return new Promise<tls.TLSSocket>((res, rej) => {
     const client = tls.connect(...(args as [number, string]));
-    client.on('ready', () => {
+    client.on('secureConnect', () => {
       res(client);
     });
     client.on('error', err => {
