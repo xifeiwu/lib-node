@@ -1,4 +1,3 @@
-import {isReadable, Readable} from 'stream';
 import {
   HttpRequestInfo,
   HttpCommonInfo,

@@ -1,4 +1,3 @@
-import https from 'https';
 import querystring, {ParsedUrlQueryInput} from 'querystring';
 import {isObject, isPlainObject, Env} from '../../external';
 import {Readable} from 'stream';
