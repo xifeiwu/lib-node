@@ -1,6 +1,7 @@
 import {TcpNetConnectOpts} from 'net';
 import {toUrlInstance, getUrlPropsFromConfig, urlPropsToHref, urlInstanceToProps} from '../../../external';
-import {HttpRequestOptions, HttpRequestInfo} from '../../../types';
+import {HttpRequestOptions, HttpRequestInfo, ConnectionRole} from '../../../types';
+import {httpRequestInfoToBuffer} from './info-to-buffer';
 /**
  * Convert HttpRequestOptions to
  * @param httpOption
@@ -31,5 +32,22 @@ export function httpRequestOptionsToHttpInfo(httpOption: HttpRequestOptions): {
       port: Number(finalPort),
     },
     url: urlInst,
+  };
+}
+
+export function httpRequestOptionsToBuffer(
+  requestOptions: HttpRequestOptions,
+  options?: {
+    /**
+     * if role is sender, will adapt header part by existing info
+     */
+    role?: ConnectionRole;
+  }
+) {
+  const {info, ...rest} = httpRequestOptionsToHttpInfo(requestOptions);
+  const buffer = httpRequestInfoToBuffer(info, options);
+  return {
+    buffer,
+    ...rest,
   };
 }
