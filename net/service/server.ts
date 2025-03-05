@@ -14,11 +14,11 @@ import {
 import {
   DEFAULT_SOCKET_DIR,
   SOCKET_FILE_SUFFIX,
-  getAFreePort,
   getFilePathInfo,
   makeSureDirExist,
   startSocketClient,
 } from '../../index';
+import {getAFreePort} from '../../net'
 
 function checkPermissionBeforeCreateDir(dirname: string) {
   if (dirname.startsWith(process.env.HOME)) {

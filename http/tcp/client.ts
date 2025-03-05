@@ -1,12 +1,8 @@
 import {Socket, TcpNetConnectOpts} from 'net';
 import {Readable, Transform, isReadable} from 'stream';
-import {
-  convertToBuffer,
-  getDataFromReadable,
-  httpRequestInfoToBuffer,
-  httpRequestOptionsToHttpInfo,
-  startSocketClient,
-} from '../../index';
+import {convertToBuffer, httpRequestInfoToBuffer, httpRequestOptionsToHttpInfo} from '../../index';
+import {getDataFromReadable} from '../../stream';
+import {startSocketClient} from '../../net';
 import {CanConvertToBuffer, HttpRequestOptions, HttpRequestInfo} from '../../types';
 
 /**
@@ -100,7 +96,7 @@ export async function sendHttpRequestByTcp(
   return client;
 }
 
-export async function sendHttpRequestAndGetResponseDataOnTcpLayer(
+export async function requestAndGetResponseOnTcp(
   httpOption: HttpRequestOptions,
   tcpOptions?: TcpNetConnectOpts
 ) {

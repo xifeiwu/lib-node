@@ -1,6 +1,11 @@
 import {inferContentTypeByData, toBuffer} from '../../../index';
 import {HttpResponseInfo} from '../../../types';
 
+/**
+ * TODO: remove
+ * @param responseInfo
+ * @returns
+ */
 export function responseInfoToBuffer(responseInfo: Partial<HttpResponseInfo>) {
   const {httpVersion = 'HTTP/1.1', statusCode = 200, statusMessage = 'OK', headers = {}, data} = responseInfo;
   const firstLine = [httpVersion, statusCode, statusMessage].join(' ').toUpperCase();

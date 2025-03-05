@@ -1,6 +1,4 @@
 import http from 'http';
-import {fromBuffer} from '../../transform';
-import {getIncomingMessageData} from '../service';
 import {HttpResponseInfo, GetIncomingMessageHeader} from '../../types';
 import {HttpBodyParserOptions, parseHttpBody} from '../../lib/http-body-parser';
 
