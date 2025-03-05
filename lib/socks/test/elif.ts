@@ -8,16 +8,21 @@ import {
   requestAndGetResponseInfo,
   httpRequestOptionsToHttpInfo,
   getDataFromReadable,
+  httpRequestOptionsToCurlCommand,
+  sendHttpRequestByTcp,
 } from '../service/external';
 import {Readable} from 'stream';
-import {sendHttpRequestByTcp} from '../../../http';
 
 const googleGet: HttpRequestOptions = {
   method: 'get',
+  url: 'https://nodejs.org/docs/latest/api/',
+  headers: {
+    'content-length': 0,
+  },
   // url: 'https://www.google.com/chrome/static/images/v2/accordion-timed/themes-poster.webp',
   // url: 'http://elif.site/api/debug/echo',
   // url: `https://www.google.com/generate_204?5qqoow`,
-  url: 'https://www.google.com/search?q=net&rlz=1C5GCEM_en&oq=net&gs_lcrp=EgZjaHJvbWUqBggAEEUYOzIGCAAQRRg7MgYIARBFGDsyBggCEEUYPTIGCAMQRRg8MgYIBBBFGEEyBggFEEUYQTIGCAYQRRhBMgYIBxBFGDzSAQcyODBqMGo0qAIAsAIB&sourceid=chrome&ie=UTF-8',
+  // url: 'https://www.google.com/search?q=net&rlz=1C5GCEM_en&oq=net&gs_lcrp=EgZjaHJvbWUqBggAEEUYOzIGCAAQRRg7MgYIARBFGDsyBggCEEUYPTIGCAMQRRg8MgYIBBBFGEEyBggFEEUYQTIGCAYQRRhBMgYIBxBFGDzSAQcyODBqMGo0qAIAsAIB&sourceid=chrome&ie=UTF-8',
 };
 
 const googlePost: HttpRequestOptions = {
@@ -55,7 +60,13 @@ const homeBrewInstall: HttpRequestOptions = {
   },
 };
 
-const httpRequestOptions = homeBrewInstall;
+const httpRequestOptions = googleGet;
+
+export async function byTcp() {
+  const client = await sendHttpRequestByTcp(homeBrewInstall);
+  const responseData = await getDataFromReadable(client);
+  logColorful({}, responseData);
+}
 /**
  * Notice:
  * Should not use getDataFromReadable to get whole response data, as end event will not be triggered.
@@ -76,19 +87,23 @@ export async function bySocketServer() {
   });
   const {socket} = status;
   let reader: Readable;
+  const buffer = httpRequestInfoToBuffer(info);
+  logColorful({}, '--start--');
+  logColorful({}, buffer);
+  logColorful({}, '--end--');
   if (url.protocol === 'https:') {
     const tlsSocket = new TLSSocket(socket);
-    tlsSocket.end(httpRequestInfoToBuffer(info));
+    tlsSocket.write(buffer);
     reader = tlsSocket;
   } else {
-    socket.write(httpRequestInfoToBuffer(info));
+    socket.write(buffer);
     reader = socket;
   }
   reader.on('data', chunk => {
     logColorful({}, chunk.toString());
   });
   reader.on('end', chunk => {
-    logColorful({color: 'red'}, chunk.toString());
+    logColorful({color: 'red'}, 'end', chunk ? chunk.toString() : '');
   });
 }
 
@@ -99,6 +114,8 @@ export async function requestByTcp() {
 }
 
 export async function requestByHttp() {
-  const {responseInfo} = await requestAndGetResponseInfo(httpRequestOptions);
+  const {requestOptions, responseInfo} = await requestAndGetResponseInfo(httpRequestOptions);
+  logColorful({}, requestOptions);
+  logColorful({}, httpRequestOptionsToCurlCommand(requestOptions));
   logColorful({}, responseInfo);
 }

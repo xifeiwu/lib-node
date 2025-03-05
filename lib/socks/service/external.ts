@@ -47,4 +47,6 @@ export {
   htmlUlItems,
   getIncomingMessageData,
   httpRequestOptionsToHttpInfo,
+  httpRequestOptionsToCurlCommand,
+  sendHttpRequestByTcp,
 } from '../../../index';
