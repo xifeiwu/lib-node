@@ -3,10 +3,10 @@ import {requestAndGetResponseInfo} from '../client';
 import {DebugServerPathname, startHttpDebugServer} from '../server';
 import {CustomResponseOptions, HttpServerConfig} from '../../types';
 import {getDefaultHttpsConfig} from '../service';
-import {isString} from 'markdown-it/lib/common/utils';
 import {sendHttpRequestByTcp} from '../tcp';
 import {getDataFromReadable} from '../../stream';
 import {logColorful} from '../../log';
+import {isString} from '../../external';
 
 process.on('uncaughtException', function (err) {
   console.log('uncaughtException:');

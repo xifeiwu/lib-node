@@ -2,7 +2,7 @@ import {Socket, TcpNetConnectOpts} from 'net';
 import {Readable, Transform, isReadable} from 'stream';
 import {convertToBuffer, httpRequestInfoToBuffer, httpRequestOptionsToHttpInfo} from '../../index';
 import {getDataFromReadable} from '../../stream';
-import {startSocketClient} from '../../net';
+import {startSocketClient, startTlsClient} from '../../net';
 import {CanConvertToBuffer, HttpRequestOptions, HttpRequestInfo} from '../../types';
 
 /**
@@ -46,15 +46,21 @@ export async function sendHttpRequestByTcp(
   const {
     info: {method, url, httpVersion, headers, data},
     target,
+    urlInst,
   } = httpRequestOptionsToHttpInfo(httpOption);
   let client: Socket;
   if (tcpOptions instanceof Socket) {
     client = tcpOptions;
   } else {
-    client = await startSocketClient({
+    const mergedOptions = {
       ...tcpOptions,
       ...target,
-    });
+    };
+    if (urlInst.protocol === 'https:') {
+      client = await startTlsClient(mergedOptions);
+    } else {
+      client = await startSocketClient(mergedOptions);
+    }
   }
   if (isReadable(data as Readable)) {
     client.write(
