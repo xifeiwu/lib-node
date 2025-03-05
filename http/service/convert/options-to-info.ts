@@ -10,7 +10,7 @@ import {httpRequestInfoToBuffer} from './info-to-buffer';
 export function httpRequestOptionsToHttpInfo(httpOption: HttpRequestOptions): {
   info: HttpRequestInfo;
   target: Pick<TcpNetConnectOpts, 'host' | 'port'>;
-  url: URL;
+  urlInst: URL;
 } {
   const {
     urlProps,
@@ -31,7 +31,7 @@ export function httpRequestOptionsToHttpInfo(httpOption: HttpRequestOptions): {
       host: hostname,
       port: Number(finalPort),
     },
-    url: urlInst,
+    urlInst,
   };
 }
 
