@@ -3,6 +3,7 @@ import {requestAndGetResponseInfo} from '../../client';
 import {DebugServerPathname, startHttpDebugServer} from '../server';
 import {CustomResponseOptions, HttpServerConfig} from '../../../types';
 import {getDefaultHttpsConfig} from '../../service';
+import {isString} from 'markdown-it/lib/common/utils';
 
 process.on('uncaughtException', function (err) {
   console.log('uncaughtException:');
@@ -77,5 +78,16 @@ export async function testCustomRespnse() {
   assert.equal(statusCode, customized.statusCode);
   assert.equal(headers['trace_id'], '123');
   assert.deepEqual(data, customized.data);
+  server.close();
+}
+
+export async function test404() {
+  const {origin, server} = await startHttpDebugServer();
+  const {responseInfo} = await requestAndGetResponseInfo({
+    origin,
+    pathname: '/api/not-exist',
+  });
+  assert.equal(responseInfo.statusCode, 404);
+  assert(isString(responseInfo.data));
   server.close();
 }

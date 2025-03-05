@@ -48,5 +48,6 @@ export async function customResponseByRequest(
 export function response404(request: http.IncomingMessage, response: http.ServerResponse) {
   response.statusCode = 404;
   response.statusMessage = 'Not Found';
+  response.setHeader('content-type', 'text/plain');
   response.end('NOT Found');
 }
