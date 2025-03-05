@@ -6,7 +6,7 @@ import {HttpServerConfig, LogColors} from '../../types';
 import {getAFreePort, isOverTls, watchSocketState} from '../../net';
 import {httpResponseInfoToBuffer} from '../service';
 import {getHttpRequestHeaderPartInfo, handleConnectEvent} from './service';
-import {customResponseByRequest, response404, responseHttpRequestInfo} from './utils';
+import {customResponseByRequest, response404, responseEmpty, responseHttpRequestInfo} from './utils';
 import {logColorful} from '../../log';
 import {toNormalizedUrlProps, unifyNull} from '../../external';
 import {convertToBuffer} from '../../transform';
@@ -58,6 +58,7 @@ export async function startHttpServer(
 export enum DebugServerPathname {
   echo = '/api/echo',
   customResponse = '/api/custom-response',
+  empty = '/api/empty',
 }
 
 const pathnameToHandler: {
@@ -65,6 +66,7 @@ const pathnameToHandler: {
 } = {
   [DebugServerPathname.echo]: responseHttpRequestInfo,
   [DebugServerPathname.customResponse]: customResponseByRequest,
+  [DebugServerPathname.empty]: responseEmpty,
 };
 /**
  * It is a raw node http debug server, not depend on any third-party(like Koa).

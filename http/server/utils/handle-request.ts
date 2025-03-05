@@ -45,6 +45,16 @@ export async function customResponseByRequest(
   return finalConfig;
 }
 
+/**
+ * Test buffer content of empty response
+ */
+export function responseEmpty(request: http.IncomingMessage, response: http.ServerResponse) {
+  response.statusCode = 404;
+  response.statusMessage = 'Not Found';
+  response.setHeader('content-type', 'text/plain');
+  response.end('');
+}
+
 export function response404(request: http.IncomingMessage, response: http.ServerResponse) {
   response.statusCode = 404;
   response.statusMessage = 'Not Found';

@@ -4,6 +4,9 @@ import {DebugServerPathname, startHttpDebugServer} from '../server';
 import {CustomResponseOptions, HttpServerConfig} from '../../../types';
 import {getDefaultHttpsConfig} from '../../service';
 import {isString} from 'markdown-it/lib/common/utils';
+import {sendHttpRequestByTcp} from '../../tcp';
+import {getDataFromReadable} from '../../../stream';
+import {logColorful} from '../../../log';
 
 process.on('uncaughtException', function (err) {
   console.log('uncaughtException:');
@@ -89,5 +92,23 @@ export async function test404() {
   });
   assert.equal(responseInfo.statusCode, 404);
   assert(isString(responseInfo.data));
+  server.close();
+}
+
+/**
+ * Show structure of response when body is empty
+ */
+export async function testEmpty() {
+  const {origin, server} = await startHttpDebugServer();
+  for (const pathname of [DebugServerPathname.empty, DebugServerPathname.echo]) {
+    const client = await sendHttpRequestByTcp({
+      origin,
+      pathname,
+    });
+    const response = await getDataFromReadable(client);
+    logColorful({}, '--start--');
+    logColorful({}, response);
+    logColorful({}, '--end--');
+  }
   server.close();
 }
