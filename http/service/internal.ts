@@ -1,6 +1,6 @@
 import {isReadable, Readable} from 'stream';
 import querystring, {ParsedUrlQueryInput} from 'querystring';
-import {ConnectionPayload, HttpCommonInfo} from '../../types';
+import {ConnectionPayload, HttpRequestInfo, HttpResponseInfo} from '../../types';
 import {isObject, convertKeyToLowerCase} from '../../external';
 import {convertToBuffer} from '../../transform';
 import {inferContentTypeByData} from './common';
@@ -15,7 +15,7 @@ import {inferContentTypeByData} from './common';
  * But there is no special logic for content-type, to avoid set headers.content-type on every httpRequestOptions,
  * if the content-type is not set, it can be referred by function getContentTypeByData
  */
-export function updateHeadersByHttpInfo(info: HttpCommonInfo) {
+export function updateHeadersByHttpInfo(info: Partial<HttpRequestInfo> | Partial<HttpResponseInfo>) {
   const {headers: _headers = {}, data} = info;
   const dataIsUndefined = data === undefined;
   let dataIsReadable = false;
