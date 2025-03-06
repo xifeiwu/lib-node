@@ -1,9 +1,10 @@
 import {isReadable, Readable} from 'stream';
 import querystring, {ParsedUrlQueryInput} from 'querystring';
 import {ConnectionPayload, HttpRequestInfo, HttpResponseInfo} from '../../types';
-import {isObject, convertKeyToLowerCase} from '../../external';
+import {isObject, convertKeyToLowerCase, isPlainObject} from '../../external';
 import {convertToBuffer} from '../../transform';
 import {inferContentTypeByData} from './common';
+import {OutgoingHttpHeaders} from 'http';
 
 /**
  * For consideration of why updateHeaders on httpInfo layer?
@@ -15,8 +16,15 @@ import {inferContentTypeByData} from './common';
  * But there is no special logic for content-type, to avoid set headers.content-type on every httpRequestOptions,
  * if the content-type is not set, it can be referred by function getContentTypeByData
  */
-export function updateHeadersByHttpInfo(info: Partial<HttpRequestInfo> | Partial<HttpResponseInfo>) {
+export function updateHeadersByHttpInfo(
+  info: Partial<HttpRequestInfo> | Partial<HttpResponseInfo>,
+  options?: {
+    /** set header if not exist */
+    supplementHeaders?: OutgoingHttpHeaders;
+  }
+) {
   const {headers: _headers = {}, data} = info;
+  const {supplementHeaders} = options ?? {};
   const dataIsUndefined = data === undefined;
   let dataIsReadable = false;
   if (dataIsUndefined) {
@@ -42,6 +50,13 @@ export function updateHeadersByHttpInfo(info: Partial<HttpRequestInfo> | Partial
     }
     if (!headers['content-type']) {
       headers['content-type'] = inferContentTypeByData(data);
+    }
+  }
+  if (isPlainObject(supplementHeaders)) {
+    for (const [key, value] of Object.entries(supplementHeaders)) {
+      if (!Object.prototype.hasOwnProperty.call(headers, key.toLowerCase())) {
+        headers[key] = value;
+      }
     }
   }
   return {
