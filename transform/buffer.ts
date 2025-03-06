@@ -55,6 +55,9 @@ export function convertToBuffer(...args: Array<CanConvertToBuffer>) {
   /** return undefined when nothing is passed or transfered */
   if (bufList.length === 0) {
     return undefined;
+  } else if (bufList.length === 1) {
+    /** concat will allocate new space */
+    return bufList[0];
   } else {
     return Buffer.concat(bufList);
   }
