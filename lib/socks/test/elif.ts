@@ -12,20 +12,27 @@ import {
   sendHttpRequestByTcp,
 } from '../service/external';
 import {Readable} from 'stream';
+import {startHttpDebugServerOnTcp} from '../../../http';
+import {getDefaultTlsConfig} from '../../../net';
 
 const elifEcho: HttpRequestOptions = {
   method: 'get',
   origin: 'https://elif.site/api/debug/echo',
+  headers: {
+    host: 'elif.site',
+  },
   // origin: 'http://elif.site/api/debug/echo',
 };
-const googleGet: HttpRequestOptions = {
+const nodejsOrg: HttpRequestOptions = {
   method: 'get',
-  // url: 'https://nodejs.org/docs/latest/api/',
+  url: 'https://nodejs.org/docs/latest/api/',
   headers: {
-    'content-length': 0,
+    // 'content-length': 0,
+    // host: 'nodejs.org',
+    // connection: 'close',
   },
   // url: 'https://www.google.com/chrome/static/images/v2/accordion-timed/themes-poster.webp',
-  url: 'https://elif.site/api/debug/echo',
+  // url: 'https://elif.site/api/debug/echo',
   // url: `https://www.google.com/generate_204?5qqoow`,
   // url: 'https://www.google.com/search?q=net&rlz=1C5GCEM_en&oq=net&gs_lcrp=EgZjaHJvbWUqBggAEEUYOzIGCAAQRRg7MgYIARBFGDsyBggCEEUYPTIGCAMQRRg8MgYIBBBFGEEyBggFEEUYQTIGCAYQRRhBMgYIBxBFGDzSAQcyODBqMGo0qAIAsAIB&sourceid=chrome&ie=UTF-8',
 };
@@ -37,15 +44,12 @@ const googlePost: HttpRequestOptions = {
     'content-length': 0,
   },
 };
-const githubGet: HttpRequestOptions = {
-  method: 'get',
-  url: `https://github.com/Conviva-Internal/Instant-Filter-Server/pull/2104`,
-};
 const homeBrewInstall: HttpRequestOptions = {
   method: 'get',
   url: 'https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh',
   // url: 'https://elif.site/api/debug/echo',
   headers: {
+    host: 'raw.githubusercontent.com',
     accept:
       'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
     'accept-language': 'en,zh-CN;q=0.9,zh;q=0.8',
@@ -65,13 +69,8 @@ const homeBrewInstall: HttpRequestOptions = {
   },
 };
 
-const httpRequestOptions = googleGet;
+const httpRequestOptions = nodejsOrg;
 
-export async function byTcp() {
-  const client = await sendHttpRequestByTcp(googleGet);
-  const responseData = await getDataFromReadable(client);
-  logColorful({}, responseData);
-}
 /**
  * Notice:
  * Should not use getDataFromReadable to get whole response data, as end event will not be triggered.
@@ -112,15 +111,29 @@ export async function bySocketServer() {
   });
 }
 
-export async function requestByTcp() {
-  const client = await sendHttpRequestByTcp(httpRequestOptions);
-  const response = await getDataFromReadable(client);
-  logColorful({}, response);
-}
+export async function requestByHttpAndTcp() {
+  const {origin, server} = await startHttpDebugServerOnTcp({options: getDefaultTlsConfig()});
+  // Echo request entity by setting url to origin of debugServer
+  httpRequestOptions.url = origin;
 
-export async function requestByHttp() {
   const {requestOptions, responseInfo} = await requestAndGetResponseInfo(httpRequestOptions);
   logColorful({}, requestOptions);
-  logColorful({}, httpRequestOptionsToCurlCommand(requestOptions));
   logColorful({}, responseInfo);
+  logColorful({}, httpRequestOptionsToCurlCommand(requestOptions));
+
+  const client = (await sendHttpRequestByTcp(httpRequestOptions)) as TLSSocket;
+  const response = await getDataFromReadable(client);
+  logColorful({}, response);
+  server.close();
+}
+
+export async function requestByTcp() {
+  const client = (await sendHttpRequestByTcp(httpRequestOptions)) as TLSSocket;
+  const certificate = client.getPeerCertificate();
+  const publicKey = certificate.pubkey;
+  console.log('Public Key:', publicKey);
+  console.log('Certificate:', certificate);
+
+  const response = await getDataFromReadable(client);
+  logColorful({}, response);
 }
