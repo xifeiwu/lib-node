@@ -2,18 +2,14 @@ import http from 'http';
 import {ConnectionPayload, HttpResponseInfo} from '../../../types';
 import {updateHeadersByHttpInfo} from '../../service/internal';
 import {Readable} from 'stream';
+import {convertToBuffer} from '../../../transform';
 
 export function sendHttpResponse<Payload extends ConnectionPayload = any>(
   response: http.ServerResponse,
   responseInfo: Partial<HttpResponseInfo<Payload>>
 ) {
   const {statusCode, statusMessage, headers = {}, data} = responseInfo;
-  const {
-    dataIsUndefined,
-    dataIsReadable,
-    headers: finalHeaders,
-    data: finalData,
-  } = updateHeadersByHttpInfo({headers, data});
+  const {dataIsUndefined, dataIsReadable, headers: finalHeaders} = updateHeadersByHttpInfo({headers, data});
   for (const [key, value] of Object.entries({statusCode, statusMessage})) {
     if (value !== undefined) {
       response[key] = value;
@@ -32,9 +28,9 @@ export function sendHttpResponse<Payload extends ConnectionPayload = any>(
     response.end();
   } else {
     if (dataIsReadable) {
-      (finalData as Readable).pipe(response);
+      (data as Readable).pipe(response);
     } else {
-      response.write(finalData);
+      response.write(convertToBuffer(data));
     }
   }
   return response;

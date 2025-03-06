@@ -1,8 +1,6 @@
 import {isReadable, Readable} from 'stream';
-import querystring, {ParsedUrlQueryInput} from 'querystring';
-import {ConnectionPayload, HttpRequestInfo, HttpResponseInfo} from '../../types';
-import {isObject, convertKeyToLowerCase, isPlainObject} from '../../external';
-import {convertToBuffer} from '../../transform';
+import {HttpRequestInfo, HttpResponseInfo} from '../../types';
+import {convertKeyToLowerCase, isPlainObject} from '../../external';
 import {inferContentTypeByData} from './common';
 import {OutgoingHttpHeaders} from 'http';
 
@@ -15,6 +13,10 @@ import {OutgoingHttpHeaders} from 'http';
  * 2. When request.write() called multpile times, `chunk` will be set as value of transfer-encoding
  * But there is no special logic for content-type, to avoid set headers.content-type on every httpRequestOptions,
  * if the content-type is not set, it can be referred by function getContentTypeByData
+ *
+ * Change log:
+ * 1. Not do data convert
+ * 2. Not set content-length, as content-length depends on the final expression of data
  */
 export function updateHeadersByHttpInfo(
   info: Partial<HttpRequestInfo> | Partial<HttpResponseInfo>,
@@ -24,34 +26,19 @@ export function updateHeadersByHttpInfo(
   }
 ) {
   const {headers: _headers = {}, data} = info;
+  const headers = convertKeyToLowerCase(_headers);
   const {supplementHeaders} = options ?? {};
   const dataIsUndefined = data === undefined;
   let dataIsReadable = false;
-  if (dataIsUndefined) {
-    return {...info, dataIsUndefined, dataIsReadable};
+  if (!dataIsUndefined) {
+    dataIsReadable = isReadable(data as Readable);
+    if (!dataIsReadable) {
+      if (!headers['content-type']) {
+        headers['content-type'] = inferContentTypeByData(data);
+      }
+    }
   }
 
-  const headers = convertKeyToLowerCase(_headers);
-  let finalData: ConnectionPayload = data;
-  dataIsReadable = isReadable(finalData as Readable);
-  if (!dataIsReadable) {
-    const contentType = headers['content-type'];
-    /**
-     * @deprecated by toFormUrlencoded
-     * Fix for the case: content-type is x-www-form-urlencoded, but format of data is json
-     */
-    if (typeof contentType === 'string' && contentType.includes('x-www-form-urlencoded') && isObject(data)) {
-      finalData = querystring.stringify(finalData as ParsedUrlQueryInput);
-    }
-    finalData = convertToBuffer(finalData);
-    /** As we try to avoid close connection on client side, so must append content-length on headers */
-    if (!headers['content-length']) {
-      headers['content-length'] = (finalData as Buffer).byteLength;
-    }
-    if (!headers['content-type']) {
-      headers['content-type'] = inferContentTypeByData(data);
-    }
-  }
   if (isPlainObject(supplementHeaders)) {
     for (const [key, value] of Object.entries(supplementHeaders)) {
       if (!Object.prototype.hasOwnProperty.call(headers, key.toLowerCase())) {
@@ -63,6 +50,5 @@ export function updateHeadersByHttpInfo(
     dataIsUndefined,
     dataIsReadable,
     headers,
-    data: finalData,
   };
 }

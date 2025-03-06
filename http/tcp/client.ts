@@ -5,6 +5,7 @@ import {getDataFromReadable} from '../../stream';
 import {startSocketClient, startTlsClient} from '../../net';
 import {CanConvertToBuffer, HttpRequestOptions, HttpRequestInfo} from '../../types';
 import {TLSSocket} from 'tls';
+import {OutgoingHttpHeader, OutgoingHttpHeaders} from 'http';
 
 /**
  * @deprecated by httpRequestInfoToBuffer
@@ -63,18 +64,34 @@ export async function sendHttpRequestByTcp(
       client = await startSocketClient(mergedOptions);
     }
   }
-  if (isReadable(data as Readable)) {
-    client.write(
-      httpRequestInfoToBuffer({
-        method,
-        url,
-        httpVersion,
-        headers: {
-          ...headers,
-          'transfer-encoding': 'chunked',
-        },
-      })
-    );
+
+  const dataIsStream = isReadable(data as Readable);
+  const supplementHeaders: OutgoingHttpHeaders = {
+    host: urlInst.host,
+  };
+  let bufferData = Buffer.alloc(0);
+  if (dataIsStream) {
+    supplementHeaders['transfer-encoding'] = 'chunked';
+  } else {
+    if (data !== undefined) {
+      bufferData = convertToBuffer(data);
+    }
+    supplementHeaders['content-length'] = bufferData.byteLength;
+  }
+  const headerPart = httpRequestInfoToBuffer(
+    {
+      method,
+      url,
+      httpVersion,
+      headers,
+    },
+    {
+      role: 'sender',
+      supplementHeaders,
+    }
+  );
+  if (dataIsStream) {
+    client.write(headerPart);
     (data as Readable)
       .pipe(
         new Transform({
@@ -98,7 +115,8 @@ export async function sendHttpRequestByTcp(
       )
       .pipe(client);
   } else {
-    client.end(httpRequestInfoToBuffer({method, url, headers, data}, {role: 'sender'}));
+    client.write(headerPart);
+    client.end(bufferData);
   }
   return client;
 }

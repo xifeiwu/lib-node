@@ -57,25 +57,28 @@ export function sendHttpRequest<Payload extends ConnectionPayload = any>(
   options: HttpRequestOptions<Payload>
 ): SendHttpRequestResult {
   const {urlProps, restProps} = getUrlPropsFromConfig(options);
-  const {data, headers = {}, ...requestOptions} = restProps;
+  const url = toUrlInstance(urlProps);
+  const {protocol, href, host} = url;
+  const {data, headers = {}} = restProps;
   const {
     headers: finalHeaders,
-    data: finalData,
     dataIsReadable,
     dataIsUndefined,
-  } = updateHeadersByHttpInfo({headers, data});
-  let request: http.ClientRequest | null = null;
-  const url = toUrlInstance(urlProps);
-  const {protocol, href} = url;
+  } = updateHeadersByHttpInfo(
+    {headers, data},
+    {
+      supplementHeaders: {host},
+    }
+  );
   const mergedRequestOptions = {...options, headers: finalHeaders};
-  request = (protocol === 'https:' ? https : http).request(href, mergedRequestOptions);
+  const request = (protocol === 'https:' ? https : http).request(href, mergedRequestOptions);
   if (dataIsUndefined) {
     request.end();
   } else {
     if (dataIsReadable) {
-      (finalData as Readable).pipe(request);
+      (data as Readable).pipe(request);
     } else {
-      request.write(finalData);
+      request.end(convertToBuffer(data));
     }
   }
   return {request, url, requestOptions: mergedRequestOptions};

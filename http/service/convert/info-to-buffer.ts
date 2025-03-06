@@ -47,11 +47,11 @@ function headersToString(headers?: OutgoingHttpHeaders) {
 function httpCommonInfoToBuffer(
   firstLine: string,
   commonInfo?: HttpCommonInfo<CanConvertToBuffer>,
-  options?: {adaptHeaders?: boolean}
+  options?: {adaptHeaders?: boolean; supplementHeaders?: OutgoingHttpHeaders}
 ) {
-  const {adaptHeaders = true} = options ?? {};
-  const {headers, data} = adaptHeaders ? updateHeadersByHttpInfo(commonInfo) : commonInfo;
-  const finalData = convertToBuffer(data);
+  const {adaptHeaders, supplementHeaders} = options ?? {};
+  const {headers} = adaptHeaders ? updateHeadersByHttpInfo(commonInfo, {supplementHeaders}) : commonInfo;
+  const finalData = convertToBuffer(commonInfo.data);
   return convertToBuffer(firstLine + '\r\n', headersToString(headers), '\r\n', finalData);
 }
 
@@ -78,14 +78,15 @@ export function httpRequestInfoToBuffer(
      * To avoid confusion, not adaptHeaders as default.
      */
     role?: ConnectionRole;
+    supplementHeaders?: OutgoingHttpHeaders;
   }
 ) {
-  const {role} = options ?? {};
+  const {role, supplementHeaders} = options ?? {};
   const {headers, data} = requestInfo;
   const content = httpCommonInfoToBuffer(
     requestFirstLineToString(requestInfo),
     {headers, data},
-    {adaptHeaders: role === 'sender'}
+    {adaptHeaders: role === 'sender', supplementHeaders}
   );
   return content;
 }
