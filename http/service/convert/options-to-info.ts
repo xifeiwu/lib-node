@@ -9,7 +9,7 @@ import {httpRequestInfoToBuffer} from './info-to-buffer';
  */
 export function httpRequestOptionsToHttpInfo(httpOption: HttpRequestOptions): {
   info: HttpRequestInfo;
-  target: Pick<TcpNetConnectOpts, 'host' | 'port'>;
+  target: Pick<TcpNetConnectOpts, 'host' | 'port'> & {overTls: boolean};
   urlInst: URL;
 } {
   const {
@@ -22,14 +22,16 @@ export function httpRequestOptionsToHttpInfo(httpOption: HttpRequestOptions): {
   /** As otherUrlProps not contain origin, url should only contain pathname + query + hash */
   const urlStr = urlPropsToHref(otherUrlProps);
   let finalPort = port ?? urlInst.port;
+  const overTls = protocol === 'https:';
   if (!finalPort) {
-    finalPort = protocol === 'https:' ? 443 : 80;
+    finalPort = overTls ? 443 : 80;
   }
   return {
     info: {method, url: urlStr, headers, data, httpVersion: 'HTTP/1.1'},
     target: {
       host: hostname,
       port: Number(finalPort),
+      overTls,
     },
     urlInst,
   };
