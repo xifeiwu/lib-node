@@ -1,11 +1,11 @@
 import {startSocketServer} from '../../../net';
-import {getDataFromReadable} from '../../../stream';
 import {getHttpIncomingMessage} from '../utils';
 import {httpResponseInfoToBuffer} from '../../service';
 import {parseHttpBody} from '../../../lib/http-body-parser';
+import {TcpServerConfig} from '../../../types';
 
-export async function startHttpDebugServerOnTcp() {
-  const {host, port, server} = await startSocketServer(async socket => {
+export async function startHttpDebugServerOnTcp(config?: TcpServerConfig) {
+  const {host, port, server, overTls} = await startSocketServer(async socket => {
     const incomingMessage = await getHttpIncomingMessage(socket);
     const data = await parseHttpBody(incomingMessage);
     const requestInfo = {
@@ -21,7 +21,7 @@ export async function startHttpDebugServerOnTcp() {
         {role: 'sender'}
       )
     );
-  });
-  const origin = `http://${host}:${port}`;
+  }, config);
+  const origin = `${overTls ? 'https' : 'http'}://${host}:${port}`;
   return {host, port, origin, server};
 }

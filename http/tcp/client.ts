@@ -4,6 +4,7 @@ import {convertToBuffer, httpRequestInfoToBuffer, httpRequestOptionsToHttpInfo} 
 import {getDataFromReadable} from '../../stream';
 import {startSocketClient, startTlsClient} from '../../net';
 import {CanConvertToBuffer, HttpRequestOptions, HttpRequestInfo} from '../../types';
+import {TLSSocket} from 'tls';
 
 /**
  * @deprecated by httpRequestInfoToBuffer
@@ -48,7 +49,7 @@ export async function sendHttpRequestByTcp(
     target,
     urlInst,
   } = httpRequestOptionsToHttpInfo(httpOption);
-  let client: Socket;
+  let client: Socket | TLSSocket;
   if (tcpOptions instanceof Socket) {
     client = tcpOptions;
   } else {

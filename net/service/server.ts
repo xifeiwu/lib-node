@@ -18,7 +18,7 @@ import {
   makeSureDirExist,
   startSocketClient,
 } from '../../index';
-import {getAFreePort} from '../../net'
+import {getAFreePort, isOverTls} from '../../net';
 
 function checkPermissionBeforeCreateDir(dirname: string) {
   if (dirname.startsWith(process.env.HOME)) {
@@ -101,15 +101,19 @@ export async function startSocketServer(
     }
   }
   function getServer() {
-    if (options && (options as TlsOptions).key && (options as TlsOptions).cert) {
-      return tls.createServer(options, handleConnection);
+    const overTls = isOverTls(options);
+    let server: net.Server | tls.Server;
+    if (overTls) {
+      server = tls.createServer(options, handleConnection);
+    } else {
+      server = net.createServer(options, handleConnection);
     }
-    return net.createServer(options, handleConnection);
+    return {server, overTls};
   }
   return new Promise<TcpServerInfo>((res, rej) => {
-    const server = getServer();
+    const {server, overTls} = getServer();
     server.on('listening', () => {
-      res({host, port: port as number, path, server});
+      res({overTls, host, port: port as number, path, server});
     });
     server.on('error', err => {
       rej(err);

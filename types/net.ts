@@ -60,6 +60,7 @@ interface NetServerInfoCommon {
   host: string;
   port: number;
   path: string;
+  overTls: boolean;
 }
 export interface NetServerInfo extends NetServerInfoCommon {
   server: net.Server;
