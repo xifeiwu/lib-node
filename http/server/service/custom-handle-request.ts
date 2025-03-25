@@ -54,7 +54,7 @@ export interface HttpConditionAndAction {
 }
 /**
  * @deprecated
- * TODO: rename to customHandleIncomingMessages
+ * TODO: rename to handleIncomingMessageByConfig
  * Do some actions by HttpConditionAndAction
  * @returns Whether the request is handled by this function or not
  */
@@ -83,4 +83,31 @@ export async function handleIncomingMessage(
   }
   await customResponseByConfig(response, matchedConfig.action);
   return false;
+}
+
+export async function handleIncomingMessageByConfig(
+  httpStream: {request: http.IncomingMessage; response: http.ServerResponse},
+  configList?: HttpConditionAndAction[]
+) {
+  const {request, response} = httpStream;
+  const {method, url} = getHttpRequestHeaderPartInfo(request);
+  const {pathname, query} = toNormalizedUrlProps(url);
+  if (!Array.isArray(configList)) {
+    return {sentData: false};
+  }
+  const matchedConfig = configList.find(config => {
+    const {requestConfig} = config;
+    if (requestConfig.method.toLowerCase() !== method.toLowerCase() || requestConfig.pathname !== pathname) {
+      return false;
+    }
+    if (requestConfig.query) {
+      return deepEqual(requestConfig.query, query);
+    }
+    return true;
+  });
+  if (!matchedConfig) {
+    return {sentData: false};
+  }
+  response.setHeader('z-customer', JSON.stringify(matchedConfig));
+  return await customResponseByConfig(response, matchedConfig.action);
 }
