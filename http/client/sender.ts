@@ -133,7 +133,7 @@ export async function requestAndGetResponseInfo<ResData = any, Payload extends C
   parseOptions?: ParseHttpResponseOptions
 ): Promise<SendRequestWithResponseInfoResult<ResData>> {
   const result = await requestAndGetResponse<Payload>(requestOptions);
-  const {response} = result;
+  const {response, requestOptions: finalRequestOptions} = result;
 
   let {validateStatus, printCurlCommandOnError, bodyParserOptions} = parseOptions ?? {};
   const responseInfo = await getHttpResponseInfo<ResData>(response, bodyParserOptions);
@@ -145,7 +145,7 @@ export async function requestAndGetResponseInfo<ResData = any, Payload extends C
 
     if (!validateStatus(responseInfo)) {
       if (printCurlCommandOnError) {
-        logColorful({color: 'yellow'}, httpRequestOptionsToCurlCommand(requestOptions));
+        logColorful({color: 'yellow'}, httpRequestOptionsToCurlCommand(finalRequestOptions));
       }
       throw new ResponseError(requestOptions, responseInfo);
     }
