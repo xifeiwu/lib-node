@@ -1,4 +1,4 @@
 export * from './spawn';
-export * from './run-on-cp';
+export * from './cp-script';
 export * from './daemon';
 export * from './service';

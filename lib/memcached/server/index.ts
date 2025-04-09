@@ -7,7 +7,7 @@ import {AfterReceiveDataStatus, tryConsumeData} from '../service/convert';
 
 export {Store};
 
-export function getConnectionHandler(store: StoreApi) {
+export function getConnectionHandlerToMemcached(store: StoreApi) {
   return async function handleConnection(socket: Socket, firstChunk?: Buffer) {
     let commandInfo: GeneralCommandInfo | null = null;
     /** whether current command need to consume more data */
@@ -66,7 +66,7 @@ export async function startServer(config?: {
   store?: StoreApi;
 }) {
   const {host = '0.0.0.0', port = await getAFreePort(), options, store = new Store()} = config ?? {};
-  const connectionHandler = getConnectionHandler(store);
+  const connectionHandler = getConnectionHandlerToMemcached(store);
   return new Promise<{host: string; port: number}>((res, rej) => {
     const server = net.createServer(options, connectionHandler);
     server.on('listening', () => {

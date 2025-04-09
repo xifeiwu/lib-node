@@ -1,4 +1,4 @@
-import {getScriptFullpath} from '../../run-on-cp';
+import {getScriptFullpath} from '../../cp-script';
 import {logColorful, CP, getSocketPath, Daemon, getCpConfigByScriptPath} from '../../../index';
 import {startDetachedDaemon} from '../service';
 import {SocketClientToDaemon} from '../client';
