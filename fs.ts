@@ -363,9 +363,16 @@ export function isDirExistForFile(fullPath: string) {
 
 /**
  * Make sure @param fullPath exist
+ * fullPath can be a path to file or dir
  */
-export function makeSureDirExist(fullPath: string) {
-  const dir = getDir(fullPath);
+export function makeSureDirExist(
+  fullPath: string,
+  options?: {
+    isDir?: boolean;
+  }
+) {
+  const {isDir} = options ?? {};
+  const dir = isDir ? fullPath : getDir(fullPath);
   const dirExist = fs.existsSync(dir);
   if (!dirExist) {
     const res = fs.mkdirSync(dir, {recursive: true});
