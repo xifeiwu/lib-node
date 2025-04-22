@@ -302,6 +302,21 @@ export async function selectFileFromDir(
   return selectedFileInfo;
 }
 
+export async function selectAndRequireFile<ContentType = any>(
+  targetDirInfoList: Array<GetFileListInfo>,
+  options?: {
+    /** sort file list before display */
+    handleFileList?: (fileList: FilePathInfo[]) => FilePathInfo[];
+  }
+) {
+  const fileInfo = await selectFileFromDir(targetDirInfoList, options);
+  if (!fileInfo.fullPath) {
+    throw new Error(`The file selected not exist`);
+  }
+  const content = require(fileInfo.fullPath);
+  return content as ContentType;
+}
+
 export function recursiveDeleteFile(path: string) {
   if (fs.existsSync(path)) {
     if (fs.statSync(path).isFile()) {
