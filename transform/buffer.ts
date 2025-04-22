@@ -37,9 +37,18 @@ export function convertToBuffer(...args: Array<CanConvertToBuffer>) {
   const bufList: Buffer[] = [];
   for (const data of args) {
     let buffer: Buffer = data as Buffer;
-    if (Array.isArray(data) && data.every(isNumber)) {
-      buffer = Buffer.from(data as Array<number>);
-    } else if (isPlainObject(data) || Array.isArray(data)) {
+    if (Array.isArray(data)) {
+      if (data.length === 0) {
+        // when array length is 0, data.every(isNumber) is true
+        buffer = Buffer.from(JSON.stringify(data));
+      } else {
+        if (data.every(isNumber)) {
+          buffer = Buffer.from(data as Array<number>);
+        } else {
+          buffer = Buffer.from(JSON.stringify(data));
+        }
+      }
+    } else if (isPlainObject(data)) {
       buffer = Buffer.from(JSON.stringify(data));
     } else if (isString(data)) {
       buffer = Buffer.from(data as string);
