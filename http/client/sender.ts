@@ -30,9 +30,9 @@ import {logColorful} from '../../log';
 
 process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
 
-export function mergeHttpRequestOptions(
+function mergeTwoHttpRequestOptions(
   options1: HttpRequestOptions,
-  options2?: HttpRequestOptions
+  options2: HttpRequestOptions
 ): HttpRequestOptions {
   if (options2 === undefined) {
     return options1;
@@ -45,6 +45,19 @@ export function mergeHttpRequestOptions(
     ...restOptions2,
     headers: mergedHeaders,
   };
+}
+export function mergeHttpRequestOptions(
+  options1: HttpRequestOptions,
+  ...otherOptions: HttpRequestOptions[]
+): HttpRequestOptions {
+  if (otherOptions.length === 0) {
+    return options1;
+  } else if (otherOptions.length === 1) {
+    return mergeTwoHttpRequestOptions(options1, otherOptions[0]);
+  } else {
+    const [options2, ...restOptions] = otherOptions;
+    return mergeHttpRequestOptions(mergeHttpRequestOptions(options1, options2), ...restOptions);
+  }
 }
 
 /**
@@ -78,7 +91,14 @@ export function sendHttpRequest<Payload extends ConnectionPayload = any>(
     if (dataIsReadable) {
       (data as Readable).pipe(request);
     } else {
-      request.end(convertToBuffer(data));
+      const buf = convertToBuffer(data);
+      /**
+       * When request.end is call content-length will appended to headers part by http module logic.
+       */
+      if (mergedRequestOptions.method.toLowerCase() === 'delete') {
+        request.setHeader('content-length', buf.byteLength);
+      }
+      request.end(buf);
     }
   }
   return {request, url, requestOptions: mergedRequestOptions};
