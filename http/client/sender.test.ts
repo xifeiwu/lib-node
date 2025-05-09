@@ -77,6 +77,9 @@ export async function testUnreachable() {
   }
 }
 
+/**
+ * client can wait for 1000s before close
+ */
 export async function testTimeout() {
   const {origin, server} = await startHttpDebugServer();
   const config: CustomResponseOptions = {
