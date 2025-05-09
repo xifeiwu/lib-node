@@ -1,23 +1,105 @@
+import assert from 'assert';
 import {logColorful} from '../../log';
 import {toReadable} from '../../stream';
 import {DebugServerPathname, startHttpDebugServer} from '../server';
 import {requestAndGetResponseInfo} from './sender';
+import {CustomResponseOptions, HttpRequestOptions} from '../../types';
+import {getAFreePort} from '../../net';
 
-export async function testRequestAndGetResponseInfo() {
+export async function contentTypeAndStream() {
+  const {origin, server} = await startHttpDebugServer();
+  const payload = {
+    a: 1,
+    b: true,
+  };
+  const originRequestOptions: HttpRequestOptions = {
+    method: 'post',
+    origin,
+    pathname: DebugServerPathname.echo,
+  };
   {
     const {requestOptions, responseInfo, request} = await requestAndGetResponseInfo({
-      method: 'post',
-      origin: 'http://elif.site',
-      pathname: '/api/debug/echo',
-      data: toReadable({
-        a: 1,
-        b: true,
-      }),
+      ...originRequestOptions,
+      data: toReadable(payload),
     });
     const headers = request.getHeaders();
     logColorful({}, headers);
+    // logColorful({}, requestOptions);
+    logColorful({}, responseInfo);
+    const {
+      data: {data},
+    } = responseInfo;
+    assert.equal(data.type, 'Buffer');
+  }
+  {
+    const {requestOptions, responseInfo, request} = await requestAndGetResponseInfo({
+      ...originRequestOptions,
+      headers: {
+        'content-type': 'application/json',
+      },
+      data: toReadable(payload),
+    });
+    const headers = request.getHeaders();
+    logColorful({}, headers);
+    // logColorful({}, requestOptions);
+    logColorful({}, responseInfo);
+    const {
+      data: {data},
+    } = responseInfo;
+    assert.deepEqual(data, payload);
+  }
+  server.close();
+}
+
+export async function testUnreachable() {
+  const origin = 'http://127.0.0.1:' + (await getAFreePort());
+  const config: CustomResponseOptions = {
+    delayMs: 1000 * 1000,
+  };
+  try {
+    const {requestOptions, responseInfo, request} = await requestAndGetResponseInfo({
+      origin,
+      method: 'post',
+      pathname: DebugServerPathname.customResponse,
+      headers: {
+        'content-type': 'application/json',
+      },
+      data: config,
+      // This will set the timeout before the socket is connected.
+      timeout: 12000,
+    });
     logColorful({}, requestOptions);
     logColorful({}, responseInfo);
+  } catch (err) {
+    console.log(err);
+    assert.equal(err.code, 'ECONNREFUSED');
+  } finally {
+  }
+}
+
+export async function testTimeout() {
+  const {origin, server} = await startHttpDebugServer();
+  const config: CustomResponseOptions = {
+    delayMs: 1000 * 1000,
+  };
+  try {
+    const {requestOptions, responseInfo, request} = await requestAndGetResponseInfo({
+      origin,
+      method: 'post',
+      pathname: DebugServerPathname.customResponse,
+      headers: {
+        'content-type': 'application/json',
+      },
+      data: config,
+      // This will set the timeout before the socket is connected.
+      timeout: 12000,
+    });
+    logColorful({}, requestOptions);
+    logColorful({}, responseInfo);
+  } catch (err) {
+    console.log(err);
+  } finally {
+    server.close();
   }
 }
 

@@ -89,11 +89,13 @@ export function sendHttpRequest<Payload extends ConnectionPayload = any>(
     request.end();
   } else {
     if (dataIsReadable) {
+      /** http module will append 'transfer-encoding': 'chunked' to header part when data is stream */
       (data as Readable).pipe(request);
     } else {
       const buf = convertToBuffer(data);
       /**
-       * When request.end is call content-length will appended to headers part by http module logic.
+       * http module will append content-length to header part when data length is fixed.
+       * But when method is delete, http module will not do this work.
        */
       if (mergedRequestOptions.method.toLowerCase() === 'delete') {
         request.setHeader('content-length', buf.byteLength);

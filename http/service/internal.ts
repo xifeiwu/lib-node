@@ -10,7 +10,7 @@ import {OutgoingHttpHeaders} from 'http';
  *
  * For key content-length, transfer-encoding of header part, there are some related logic on node http module
  * 1. When request.end() is called, http module knows the byteLength of body, and set it as value of content-length
- * 2. When request.write() called multpile times, `chunk` will be set as value of transfer-encoding
+ * 2. When request.write() called multpile times, `chunked` will be set as value of transfer-encoding
  * But there is no special logic for content-type, to avoid set headers.content-type on every httpRequestOptions,
  * if the content-type is not set, it can be referred by function getContentTypeByData
  *

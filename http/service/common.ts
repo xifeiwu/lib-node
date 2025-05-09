@@ -15,7 +15,10 @@ export function toUrlencodedFormat(data: object) {
 
 export async function getIncomingMessageData(incomingMessage: ReadableWithMeta) {
   const {headers} = incomingMessage;
-  const contentLength = parseInt(headers['content-length']);
+  let contentLength: number;
+  if ('chunked' !== headers['transfer-encoding']?.toLocaleLowerCase()) {
+    contentLength = parseInt(headers['content-length']);
+  }
   let resolved = false;
   return new Promise<Buffer | undefined>((res, rej) => {
     let byteLength = 0;
