@@ -239,7 +239,7 @@ export function getFileInfoList(
 /**
  * @param root
  * @param options
- * @returns
+ * @returns relativePath list
  */
 export function getFileList(root: string, options?: GetFileListOption) {
   const {includeDir, ...goThroughDirOptions} = options ?? {};
