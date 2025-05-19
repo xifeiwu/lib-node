@@ -123,6 +123,7 @@ export function goThroughDir<T = any>(
 
 export interface FileInfoTreeItem {
   relativePath: string;
+  basename: string;
   stat: fs.Stats;
   children?: FileInfoTreeItem[];
 }
@@ -135,7 +136,7 @@ export function getFileInfoTree(root: string, options?: GoThroughDirOptions): Fi
       if (err) {
         return null;
       }
-      const {relativePath} = pathInfo;
+      const {relativePath, basename} = pathInfo;
       // const isDir = Array.isArray(children);
       /** in filterMode, filter out dir info when it's children is empty */
       // if (filterMode) {
@@ -152,7 +153,7 @@ export function getFileInfoTree(root: string, options?: GoThroughDirOptions): Fi
       //   }
       // }
       const stat = fs.statSync(path.join(root, relativePath));
-      return {stat, relativePath, children};
+      return {stat, relativePath, basename, children};
     },
     options
   );
