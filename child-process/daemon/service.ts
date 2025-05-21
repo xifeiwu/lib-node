@@ -23,7 +23,7 @@ export async function startDetachedDaemon(
       spawnConfig.maxWaitTime4Ipc = MAX_WAIT_TIME_DEBUG_MODE;
     }
   }
-  const scriptPath = tryUseJsFile(path.resolve(__dirname, '../run-on-cp/daemon.ts'));
+  const scriptPath = tryUseJsFile(path.resolve(__dirname, '../cp-script/daemon.ts'));
   const spawnConfig4Daemon = getCpConfigByScriptPath<Daemon.DaemonConfig>(scriptPath, {
     /** args key is used for killing Zombie Daemon Process */
     params: [daemonKey],
