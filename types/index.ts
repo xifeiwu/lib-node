@@ -1,4 +1,5 @@
 export * from './fs';
+export * from './path';
 export * from './http';
 export * from './net';
 export * from './log';
