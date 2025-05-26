@@ -148,3 +148,8 @@ export async function calDuration<T>(promise: Promise<T>) {
   console.log(`time used ${end - start}`);
   return res;
 }
+
+export function rerequire(modulePath) {
+  delete require.cache[require.resolve(modulePath)];
+  return require(modulePath);
+}
