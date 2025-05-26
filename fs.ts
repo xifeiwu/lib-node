@@ -128,8 +128,9 @@ export interface FileInfoTreeItem {
   children?: FileInfoTreeItem[];
 }
 export function getFileInfoTree(root: string, options?: GoThroughDirOptions): FileInfoTreeItem {
-  // const {dirFilter, fileFilter} = options ?? {};
-  // const filterMode = Boolean(dirFilter || fileFilter);
+  if (!fs.existsSync(root)) {
+    return null;
+  }
   return goThroughDir<FileInfoTreeItem>(
     root,
     (err, {pathInfo, children}) => {
@@ -231,8 +232,11 @@ export function getFileInfoList(
   root: string,
   options?: FlatChildrenOptions<FileInfoTreeItem> & GoThroughDirOptions
 ): FileInfoTreeItem[] {
-  const {includeDir, sortChildren, ...goThroughDirOptions} = options;
+  const {includeDir, sortChildren, ...goThroughDirOptions} = options ?? {};
   const fileInfoTree = getFileInfoTree(root, goThroughDirOptions);
+  if (!fileInfoTree) {
+    return [];
+  }
   const fileInfoList = flatChildren(fileInfoTree, {includeDir, sortChildren});
   return fileInfoList;
 }
