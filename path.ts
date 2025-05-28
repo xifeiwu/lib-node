@@ -17,3 +17,8 @@ export function getFilePathInfo(filePath: string): FilePathSegement {
   };
   return pathInfo;
 }
+
+export function getPathWithBasenaneSuffix(fullPath: string, suffix: string) {
+  const {dirname, bareBasename, extname} = getFilePathInfo(fullPath);
+  return path.join(dirname, bareBasename + suffix + extname);
+}
