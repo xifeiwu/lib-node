@@ -400,7 +400,6 @@ export function makeSureDirExist(
   }
 }
 /**
- * @deprecated by makeSureDirExist
  * Make sure dirPath of @param filePath exist
  */
 export function makeSureDirExistForFile(filePath: string) {
