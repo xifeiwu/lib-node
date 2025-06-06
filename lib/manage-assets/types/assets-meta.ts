@@ -1,4 +1,4 @@
-import {AssetInfoFull, AssetInfoPartial, ShortIdToAssetInfo} from './asset';
+import {AssetInfoFull, AssetInfoPartial} from './asset';
 
 export interface DirAssetsStateChange {
   added: AssetInfoFull[];

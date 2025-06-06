@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import {getFileList, GetFileListOption} from '../../service/external';
+import {getFileList, GetFileListOption} from '../external';
 import {removeShortIdInFilePath} from '../service';
 
 export function removeShortIdSuffixOfDir(

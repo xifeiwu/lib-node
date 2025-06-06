@@ -3,7 +3,8 @@ import {doActionsToAssetsAndMeta, getAssetsPartailInfoListOfDir} from '../../ser
 import {diffAssetInfoList} from './service';
 import {logColorful, goOnOrNot} from '../../external';
 
-export async function getAssetStateChange(rootDir: string, metaHandlers: MetaHandlers) {
+export async function getAssetStateChange(metaHandlers: MetaHandlers) {
+  const {rootDir} = metaHandlers;
   let assetInfoListMeta: AssetInfoFull[] = await metaHandlers.getAllItems();
   let latestAssetInfoList: AssetInfoFull[] = await getAssetsPartailInfoListOfDir(rootDir);
   return {
@@ -14,14 +15,13 @@ export async function getAssetStateChange(rootDir: string, metaHandlers: MetaHan
 }
 
 export async function applyStateChange(
-  rootDir: string,
   stateChangeInfo: AssetStateChangeInfo,
   metaHandlers: MetaHandlers,
   options?: {
     needConfirm?: boolean;
   }
 ) {
-  const {getMetaLocation} = metaHandlers;
+  const {rootDir, getMetaLocation} = metaHandlers;
   const {needConfirm = false} = options ?? {};
   const {stateChange} = stateChangeInfo;
   if (needConfirm) {
@@ -85,14 +85,13 @@ export async function applyStateChange(
 }
 
 async function syncUpAssetsChangeToMeta(
-  rootDir: string,
   metaHandlers: MetaHandlers,
   options?: {
     needConfirm?: boolean;
   }
 ) {
   const {needConfirm} = options ?? {};
-  const stateChangeInfo = await getAssetStateChange(rootDir, metaHandlers);
+  const stateChangeInfo = await getAssetStateChange(metaHandlers);
   if (!stateChangeInfo.stateChange.isNeedAction) {
     return true;
   }
@@ -104,12 +103,11 @@ async function syncUpAssetsChangeToMeta(
       defaultValue: true,
     });
   }
-  await applyStateChange(rootDir, stateChangeInfo, metaHandlers);
+  await applyStateChange(stateChangeInfo, metaHandlers);
   return true;
 }
 
 export async function makeSureMetaIsUptodate(
-  rootDir: string,
   metaHandlers: MetaHandlers,
   options?: {
     needConfirm?: boolean;
@@ -119,6 +117,6 @@ export async function makeSureMetaIsUptodate(
   if (!haveMeta) {
     await resetMeta();
   } else {
-    return await syncUpAssetsChangeToMeta(rootDir, metaHandlers, options);
+    return await syncUpAssetsChangeToMeta(metaHandlers, options);
   }
 }

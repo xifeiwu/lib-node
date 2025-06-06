@@ -2,7 +2,7 @@
  * Describe all asset info of dir in tree format
  */
 
-import {AssetInfoFull} from '../types';
+import {AssetInfoFull} from '.';
 
 // export type AssetMeta = DirAssetMeta | AssetInfoFull;
 export type AssetTree = {

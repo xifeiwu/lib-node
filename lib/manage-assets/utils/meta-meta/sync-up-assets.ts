@@ -118,29 +118,29 @@ export async function getActionForSyncUpFiles(
 }
 
 export async function syncUpAssetsBetweenDir(
-  from: {rootDir: string; metaHandlers: MetaHandlers},
-  to: {rootDir: string; metaHandlers: MetaHandlers},
+  from: {metaHandlers: MetaHandlers},
+  to: {metaHandlers: MetaHandlers},
   options?: {
     needConfirm?: boolean;
   }
 ) {
   const {needConfirm = true} = options ?? {};
-  const stateChangeInfo1 = await getAssetStateChange(from.rootDir, from.metaHandlers);
-  const stateChangeInfo2 = await getAssetStateChange(to.rootDir, to.metaHandlers);
+  const stateChangeInfo1 = await getAssetStateChange(from.metaHandlers);
+  const stateChangeInfo2 = await getAssetStateChange(to.metaHandlers);
   const isNeedAction = stateChangeInfo1.stateChange.isNeedAction || stateChangeInfo2.stateChange.isNeedAction;
   if (isNeedAction) {
     logColorful({color: 'red'}, 'apply change to assets meta as there are some change on assets');
     if (stateChangeInfo1.stateChange.isNeedAction) {
-      await applyStateChange(from.rootDir, stateChangeInfo1, from.metaHandlers, {needConfirm});
+      await applyStateChange(stateChangeInfo1, from.metaHandlers, {needConfirm});
     }
     if (stateChangeInfo2.stateChange.isNeedAction) {
-      await applyStateChange(to.rootDir, stateChangeInfo2, to.metaHandlers, {needConfirm});
+      await applyStateChange(stateChangeInfo2, to.metaHandlers, {needConfirm});
     }
     return await syncUpAssetsBetweenDir(from, to);
   }
   const allActions = await getActionForSyncUpFiles(
-    {assetInfoList: stateChangeInfo1.assetInfoListMeta, rootDir: from.rootDir},
-    {assetInfoList: stateChangeInfo2.assetInfoListMeta, rootDir: to.rootDir}
+    {assetInfoList: stateChangeInfo1.assetInfoListMeta, rootDir: from.metaHandlers.rootDir},
+    {assetInfoList: stateChangeInfo2.assetInfoListMeta, rootDir: to.metaHandlers.rootDir}
   );
   const fromMetaKey = from.metaHandlers.getMetaLocation();
   const toMetaKey = to.metaHandlers.getMetaLocation();
@@ -148,7 +148,7 @@ export async function syncUpAssetsBetweenDir(
     logColorful({color: 'red'}, `No syncUpAssetsBetweenDir action between ${fromMetaKey} and ${toMetaKey}`);
     return true;
   }
-  const logFile = getPathWithDtSuffix(path.join(getMetaDir(from.rootDir), 'sync-up-assets.ts'));
+  const logFile = getPathWithDtSuffix(path.join(getMetaDir(from.metaHandlers.rootDir), 'sync-up-assets.ts'));
   fs.writeFileSync(
     logFile,
     `export const target='${toMetaKey}';\nexport const action=${JSON.stringify(allActions, null, 2)}`
@@ -170,5 +170,5 @@ export async function syncUpAssetsBetweenDir(
       defaultValue: true,
     });
   }
-  await doActionsToAssetsAndMeta(to.rootDir, allActions, to.metaHandlers);
+  await doActionsToAssetsAndMeta(to.metaHandlers.rootDir, allActions, to.metaHandlers);
 }

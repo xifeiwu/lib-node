@@ -14,4 +14,6 @@ export {
   runFuncTestCases,
   goOnOrNot,
   recursiveDeleteFile,
+  getFileList,
+  GetFileListOption,
 } from '../../index';

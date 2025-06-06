@@ -95,6 +95,7 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, option
     return assetInfoList;
   }
   return {
+    rootDir,
     getMetaLocation,
     haveMeta,
     resetMeta,

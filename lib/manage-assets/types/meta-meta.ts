@@ -20,6 +20,7 @@ export interface ActionToAssetsAndMeta {
 }
 
 export interface MetaHandlers {
+  rootDir: string;
   getMetaLocation: () => string;
   haveMeta: () => boolean;
   resetMeta: (options?: GetDirAssetOptions) => Promise<AssetInfoFull[]>;
