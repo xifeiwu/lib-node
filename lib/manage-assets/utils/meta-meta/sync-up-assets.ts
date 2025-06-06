@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import {applyStateChange, getAssetStateChange, makeSureMetaIsUptodate} from '../assets-meta';
+import {makeSureMetaIsUptodate} from '../assets-meta';
 import {getPathWithDtSuffix, goOnOrNot, logColorful} from '../../external';
 import {ActionOptions, MetaHandlers} from '../../types';
 import {
@@ -112,7 +112,11 @@ export async function getActionForSyncUpFiles(
 
   const filesToMove = moveFiles.map(it => it.from.asset.relativePath);
   // Not delete files that will be moved to another space
-  const deleteFiles: Array<string> = pathOnlyIn2.filter(it => !filesToMove.includes(it));
+  const deleteFiles: Array<AssetInfoFull> = pathOnlyIn2
+    .filter(it => !filesToMove.includes(it))
+    .map(p => {
+      return pathToInfo2[p];
+    });
 
   return {copyFiles, deleteFiles, moveFiles};
 }

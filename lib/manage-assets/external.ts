@@ -16,4 +16,7 @@ export {
   recursiveDeleteFile,
   getFileList,
   GetFileListOption,
+  getFileInfoList,
+  moveFile,
+  getFilePathInfo,
 } from '../../index';

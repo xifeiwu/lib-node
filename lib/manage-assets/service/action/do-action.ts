@@ -1,8 +1,15 @@
 import fs from 'fs';
 import path from 'path';
-import {ActionToAssetsAndMeta, CopyAction, DoSyncUpAssetActionOptions, MetaHandlers} from '../../types';
-import {logColorful} from '../../external';
+import {
+  ActionToAssetsAndMeta,
+  AssetInfoFull,
+  CopyAction,
+  DoSyncUpAssetActionOptions,
+  MetaHandlers,
+} from '../../types';
+import {logColorful, getFilePathInfo, moveFile} from '../../external';
 import {getPartialAssetInfo} from '../asset-info';
+import {parseFilePath} from '../short-id';
 
 export function needActionToAssetsAndMeta(allActions: ActionToAssetsAndMeta) {
   const {copyFiles = [], moveFiles = [], deleteFiles = []} = allActions;
@@ -11,6 +18,27 @@ export function needActionToAssetsAndMeta(allActions: ActionToAssetsAndMeta) {
       return sum + it.length;
     }, 0) > 0;
   return isNeedAction;
+}
+
+function getSoftDeleteFileHandler(dir4DeletedFile?: string) {
+  if (dir4DeletedFile && !fs.existsSync(dir4DeletedFile)) {
+    throw new Error(`dir4DeletedFile not exist: ${dir4DeletedFile}`);
+  }
+  function softDeleteFile(rootDir: string, assetInfo: AssetInfoFull, options?: DoSyncUpAssetActionOptions) {
+    const {relativePath, shortId} = assetInfo;
+    const fullPath = path.join(rootDir, relativePath);
+    if (dir4DeletedFile) {
+      const {extname} = getFilePathInfo(fullPath);
+      const newPath = path.join(dir4DeletedFile, shortId + extname);
+      if (!fs.existsSync(newPath)) {
+        moveFile(fullPath, newPath);
+        options?.logging && logColorful({color: 'blue'}, `move file from ${fullPath} to ${newPath}`);
+      }
+    }
+    options?.logging && logColorful({color: 'blue'}, `delete file: ${fullPath}`);
+    fs.unlinkSync(fullPath);
+  }
+  return softDeleteFile;
 }
 
 export async function doActionsToAssetsAndMeta(
@@ -28,6 +56,10 @@ export async function doActionsToAssetsAndMeta(
   if (!needActionToAssetsAndMeta(allActions)) {
     return false;
   }
+  if (dir4DeletedFile && !fs.existsSync(dir4DeletedFile)) {
+    throw new Error(`dir4DeletedFile not exist: ${dir4DeletedFile}`);
+  }
+  const softDeleteFile = getSoftDeleteFileHandler(dir4DeletedFile);
   const {rootDir, insertOrUpdateItem, removeItem, snapshot} = metaHandlers;
   if (snapShotMetaBeforeAction && snapshot) {
     const filePath = await snapshot();
@@ -48,11 +80,9 @@ export async function doActionsToAssetsAndMeta(
   }
 
   // do delete action first
-  for (const relativePath of deleteFiles) {
-    const fullPath = path.join(rootDir, relativePath);
-    logging && logColorful({color: 'blue'}, `delete file: ${fullPath}`);
-    !notChangeAsset && fs.unlinkSync(fullPath);
-    Boolean(removeItem) && (await removeItem(relativePath));
+  for (const info of deleteFiles) {
+    !notChangeAsset && softDeleteFile(rootDir, info, options);
+    Boolean(removeItem) && (await removeItem(info.relativePath));
   }
   try {
     const sameDirActions: CopyAction[] = [];
@@ -88,9 +118,7 @@ export async function doActionsToAssetsAndMeta(
         referMoveCntMap[relativePath]--;
         if (referMoveCntMap[relativePath] === 0) {
           const {relativePath} = from.asset;
-          const fullPath = path.join(from.rootDir, relativePath);
-          logging && logColorful({color: 'blue'}, `delete file: ${fullPath}`);
-          !notChangeAsset && fs.unlinkSync(fullPath);
+          !notChangeAsset && softDeleteFile(rootDir, from.asset, options);
           Boolean(removeItem) && (await removeItem(relativePath));
         }
       }

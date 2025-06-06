@@ -16,7 +16,7 @@ export interface CopyAction {
 export interface ActionToAssetsAndMeta {
   copyFiles?: Array<CopyAction>;
   moveFiles?: Array<CopyAction>;
-  deleteFiles?: Array<string>;
+  deleteFiles?: Array<AssetInfoFull>;
 }
 
 export interface MetaHandlers {
