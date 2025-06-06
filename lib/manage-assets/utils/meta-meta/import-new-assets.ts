@@ -1,9 +1,9 @@
 import fs from 'fs';
 import path from 'path';
-import {applyStateChange, getAssetStateChange} from '../assets-meta';
+import {applyStateChange, getAssetStateChange, makeSureMetaIsUptodate} from '../assets-meta';
 import {getAssetInfoByShortId, getMetaDir, needActionToAssetsAndMeta} from '../../service';
 import {getOneAssetInfo, doActionsToAssetsAndMeta} from '../../service';
-import {ActionToAssetsAndMeta, MetaHandlers} from '../../types';
+import {ActionOptions, ActionToAssetsAndMeta, MetaHandlers} from '../../types';
 import {getShortIdToAssetInfo} from '../../service';
 import {AssetInfoFull, ShortIdToAssetInfo} from '../../types';
 import {getPathWithDtSuffix, goOnOrNot, logColorful} from '../../external';
@@ -72,27 +72,16 @@ export async function getActionForImportNewAssets(
 export async function importNewAssets(
   from: {metaHandlers: MetaHandlers},
   to: {metaHandlers: MetaHandlers},
-  options?: {
-    needConfirm?: boolean;
-  }
+  options?: ActionOptions
 ) {
-  const {needConfirm = true} = options ?? {};
-  const stateChangeInfo1 = await getAssetStateChange(from.metaHandlers);
-  const stateChangeInfo2 = await getAssetStateChange(to.metaHandlers);
-  const isNeedAction = stateChangeInfo1.stateChange.isNeedAction || stateChangeInfo2.stateChange.isNeedAction;
-  if (isNeedAction) {
-    logColorful({color: 'red'}, 'apply change to meta as there are some change on assets');
-    if (stateChangeInfo1.stateChange.isNeedAction) {
-      await applyStateChange(stateChangeInfo1, from.metaHandlers, {needConfirm});
-    }
-    if (stateChangeInfo2.stateChange.isNeedAction) {
-      await applyStateChange(stateChangeInfo2, to.metaHandlers, {needConfirm});
-    }
-    return await importNewAssets(from, to);
-  }
+  const {needConfirm = true, logging} = options ?? {};
+  const {metaHandlers: metaHandlers1} = from;
+  const {metaHandlers: metaHandlers2} = to;
+  await makeSureMetaIsUptodate(metaHandlers1, options);
+  await makeSureMetaIsUptodate(metaHandlers2, options);
   const allActions = await getActionForImportNewAssets(
-    {assetInfoList: stateChangeInfo1.assetInfoListMeta, rootDir: from.metaHandlers.rootDir},
-    {assetInfoList: stateChangeInfo2.assetInfoListMeta, rootDir: to.metaHandlers.rootDir}
+    {assetInfoList: await metaHandlers1.getAllItems(), rootDir: from.metaHandlers.rootDir},
+    {assetInfoList: await metaHandlers2.getAllItems(), rootDir: to.metaHandlers.rootDir}
   );
 
   const fromMetaKey = from.metaHandlers.getMetaLocation();

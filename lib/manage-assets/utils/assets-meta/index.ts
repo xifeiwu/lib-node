@@ -1,7 +1,15 @@
-import {ActionToAssetsAndMeta, AssetInfoFull, AssetStateChangeInfo, MetaHandlers} from '../../types';
-import {doActionsToAssetsAndMeta, getAssetsPartailInfoListOfDir} from '../../service';
+import fs from 'fs';
+import path from 'path';
+import {
+  ActionOptions,
+  ActionToAssetsAndMeta,
+  AssetInfoFull,
+  AssetStateChangeInfo,
+  MetaHandlers,
+} from '../../types';
+import {doActionsToAssetsAndMeta, getAssetsPartailInfoListOfDir, getMetaDir} from '../../service';
 import {diffAssetInfoList} from './service';
-import {logColorful, goOnOrNot} from '../../external';
+import {logColorful, goOnOrNot, getPathWithDtSuffix} from '../../external';
 
 export async function getAssetStateChange(metaHandlers: MetaHandlers) {
   const {rootDir} = metaHandlers;
@@ -84,37 +92,41 @@ export async function applyStateChange(
   await doActionsToAssetsAndMeta(rootDir, allActions, metaHandlers, {notChangeAsset: true});
 }
 
-async function syncUpAssetsChangeToMeta(
-  metaHandlers: MetaHandlers,
-  options?: {
-    needConfirm?: boolean;
-  }
-) {
+async function syncUpAssetsChangeToMeta(metaHandlers: MetaHandlers, options?: ActionOptions) {
+  const {logging} = options ?? {};
+  const metaKey = metaHandlers.getKey();
+  const {rootDir} = metaHandlers;
   const {needConfirm} = options ?? {};
+  logging && logColorful({color: 'blue'}, `start checking assets-meta alignment for: ${metaKey}`);
+
   const stateChangeInfo = await getAssetStateChange(metaHandlers);
-  if (!stateChangeInfo.stateChange.isNeedAction) {
-    return true;
+  const {stateChange} = stateChangeInfo;
+  if (stateChange.isNeedAction) {
+    if (needConfirm) {
+      const content = JSON.stringify(stateChangeInfo.stateChange, null, 2);
+      const size = Buffer.from(content).byteLength;
+      if (size > 1024) {
+        const logFilePath = getPathWithDtSuffix(path.join(getMetaDir(rootDir), 'state-change.ts'));
+        fs.writeFileSync(logFilePath, content);
+        logColorful({}, `stateChange is saved to file`, logFilePath);
+      } else {
+        logColorful({}, content);
+      }
+      await goOnOrNot({
+        tips: [`Are you sure to apply state change above?`],
+        style: {color: 'red'},
+        defaultValue: true,
+      });
+    }
+    await applyStateChange(stateChangeInfo, metaHandlers);
+  } else {
+    logging && logColorful({color: 'blue'}, `asset-meta already aligned`);
   }
-  if (needConfirm) {
-    logColorful({}, stateChangeInfo.stateChange);
-    await goOnOrNot({
-      tips: [`Are you sure to apply state change above?`],
-      style: {color: 'red'},
-      defaultValue: true,
-    });
-  }
-  await applyStateChange(stateChangeInfo, metaHandlers);
-  return true;
 }
 
-export async function makeSureMetaIsUptodate(
-  metaHandlers: MetaHandlers,
-  options?: {
-    needConfirm?: boolean;
-  }
-) {
+export async function makeSureMetaIsUptodate(metaHandlers: MetaHandlers, options?: ActionOptions) {
   const {haveMeta, resetMeta} = metaHandlers;
-  if (!haveMeta) {
+  if (!haveMeta()) {
     await resetMeta();
   } else {
     return await syncUpAssetsChangeToMeta(metaHandlers, options);

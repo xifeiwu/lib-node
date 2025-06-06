@@ -11,6 +11,10 @@ import {
 import {recursiveDeleteFile} from '../../external';
 
 export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, options) => {
+  if (!fs.existsSync(rootDir)) {
+    throw new Error(`rootDir not exist: ${rootDir}`);
+  }
+
   const {initMetaIfNotExist} = options ?? {};
   let assetInfoList: AssetInfoFull[];
 
