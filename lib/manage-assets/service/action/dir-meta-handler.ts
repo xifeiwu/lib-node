@@ -24,6 +24,9 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, option
       await resetMeta();
     }
   }
+  function getKey() {
+    return getMetaDir(rootDir);
+  }
   function haveMeta() {
     return Array.isArray(assetInfoList);
   }
@@ -96,6 +99,7 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, option
   }
   return {
     rootDir,
+    getKey,
     getMetaLocation,
     haveMeta,
     resetMeta,
