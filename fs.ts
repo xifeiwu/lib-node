@@ -414,3 +414,24 @@ export function writeFileSync(fullPath: string, data: string | NodeJS.ArrayBuffe
   }
   fs.writeFileSync(fullPath, data);
 }
+
+export function isInSameDevice(fullPath1: string, fullPath2: string) {
+  try {
+    const stat1 = fs.statSync(fullPath1);
+    const stat2 = fs.statSync(fullPath2);
+    return stat1.dev === stat2.dev;
+  } catch (err) {
+    return false;
+  }
+}
+
+export function moveFile(fromPath: string, toPath: string) {
+  fromPath = path.resolve(fromPath);
+  toPath = path.resolve(toPath);
+  if (isInSameDevice(fromPath, toPath)) {
+    fs.renameSync(fromPath, fromPath);
+  } else {
+    fs.copyFileSync(fromPath, toPath);
+    fs.unlinkSync(fromPath);
+  }
+}

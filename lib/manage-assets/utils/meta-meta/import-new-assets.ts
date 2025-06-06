@@ -113,5 +113,5 @@ export async function importNewAssets(
       defaultValue: true,
     });
   }
-  await doActionsToAssetsAndMeta(to.metaHandlers.rootDir, allActions, to.metaHandlers);
+  await doActionsToAssetsAndMeta(allActions, to.metaHandlers);
 }

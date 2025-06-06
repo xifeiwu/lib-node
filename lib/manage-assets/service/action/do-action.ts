@@ -12,18 +12,28 @@ export function needActionToAssetsAndMeta(allActions: ActionToAssetsAndMeta) {
     }, 0) > 0;
   return isNeedAction;
 }
+
 export async function doActionsToAssetsAndMeta(
-  rootDir: string,
   allActions: Partial<ActionToAssetsAndMeta>,
   metaHandlers: MetaHandlers,
   options?: DoSyncUpAssetActionOptions
 ) {
-  const {notChangeAsset, dirPrefix = '', logging} = options ?? {};
+  const {
+    notChangeAsset,
+    dirPrefix4NewFile = '',
+    dir4DeletedFile,
+    snapShotMetaBeforeAction,
+    logging,
+  } = options ?? {};
   if (!needActionToAssetsAndMeta(allActions)) {
     return false;
   }
+  const {rootDir, insertOrUpdateItem, removeItem, snapshot} = metaHandlers;
+  if (snapShotMetaBeforeAction && snapshot) {
+    const filePath = await snapshot();
+    logging && logColorful({color: 'yellow'}, `snapshot meta in ${filePath}`);
+  }
   const {copyFiles = [], moveFiles = [], deleteFiles = []} = allActions;
-  const {insertOrUpdateItem, removeItem} = metaHandlers;
   const referMoveCntMap: Record<string, number> = {};
   for (const aciton of moveFiles) {
     const {
@@ -61,7 +71,8 @@ export async function doActionsToAssetsAndMeta(
         asset: {relativePath, sha1, shortId},
       } = from;
       const fromPath = path.join(from.rootDir, relativePath);
-      const relativePath2 = path.join(dirPrefix, to.asset.relativePath);
+      const relativePath2 =
+        from.rootDir !== to.rootDir ? path.join(dirPrefix4NewFile, to.asset.relativePath) : relativePath;
       const toPath = path.join(to.rootDir, relativePath2);
       logging && logColorful({color: 'blue'}, `copy file from ${fromPath} to ${toPath}`);
       !notChangeAsset && fs.copyFileSync(fromPath, toPath);

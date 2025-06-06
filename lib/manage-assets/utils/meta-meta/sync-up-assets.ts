@@ -160,5 +160,5 @@ export async function syncUpAssetsBetweenDir(
       defaultValue: true,
     });
   }
-  await doActionsToAssetsAndMeta(metaHandlers2.rootDir, allActions, metaHandlers2);
+  await doActionsToAssetsAndMeta(allActions, metaHandlers2);
 }

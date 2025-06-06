@@ -89,7 +89,7 @@ export async function applyStateChange(
   );
   allActions.deleteFiles.push(...deleted.map(it => it.relativePath));
 
-  await doActionsToAssetsAndMeta(rootDir, allActions, metaHandlers, {notChangeAsset: true});
+  await doActionsToAssetsAndMeta(allActions, metaHandlers, {notChangeAsset: true});
 }
 
 async function syncUpAssetsChangeToMeta(metaHandlers: MetaHandlers, options?: ActionOptions) {

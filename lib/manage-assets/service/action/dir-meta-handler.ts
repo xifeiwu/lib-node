@@ -8,7 +8,7 @@ import {
   getMetaOfDir,
   saveDirMetaToFile,
 } from '../dir-assets';
-import {recursiveDeleteFile} from '../../external';
+import {getPathWithDtSuffix, recursiveDeleteFile} from '../../external';
 
 export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, options) => {
   if (!fs.existsSync(rootDir)) {
@@ -101,6 +101,16 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, option
     saveDirMetaToFile(rootDir, assetInfoList);
     return assetInfoList;
   }
+  async function snapshot() {
+    const metaFile = getMetaFilePath(rootDir);
+    if (!fs.existsSync(metaFile)) {
+      return false;
+    }
+    const backUpMetaFile = getPathWithDtSuffix(metaFile);
+    fs.cpSync(metaFile, backUpMetaFile);
+    return backUpMetaFile;
+  }
+
   return {
     rootDir,
     getKey,
@@ -113,5 +123,6 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, option
     removeItem,
     getAllItems,
     saveState,
+    snapshot,
   };
 };

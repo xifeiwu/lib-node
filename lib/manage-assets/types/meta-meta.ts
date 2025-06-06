@@ -31,6 +31,7 @@ export interface MetaHandlers {
   removeItem: (relativePath: string) => Promise<AssetInfoFull>;
   getAllItems: (options?: {paranoid?: boolean}) => Promise<AssetInfoFull[]>;
   saveState: () => Promise<AssetInfoFull[]>;
+  snapshot?: () => Promise<string | false>;
 }
 export type GetMetaHandlers = (
   rootDir: string,
@@ -38,10 +39,12 @@ export type GetMetaHandlers = (
 ) => Promise<MetaHandlers>;
 
 export interface DoSyncUpAssetActionOptions {
-  // allActions: Partial<ActionToAssetsAndMeta>;
-  // metaHandlers: MetaHandlers;
-  /** do change to asset or not?  */
   notChangeAsset?: boolean;
-  dirPrefix?: string;
+  // dir prefix for new assets copied from other dir
+  dirPrefix4NewFile?: string;
+  // should be full path
+  dir4DeletedFile?: string;
   logging?: boolean;
+  // back up current meta before doing action
+  snapShotMetaBeforeAction?: boolean;
 }
