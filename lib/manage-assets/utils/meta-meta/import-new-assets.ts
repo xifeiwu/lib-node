@@ -100,7 +100,10 @@ export async function importNewAssets(
   const fromMetaKey = from.metaHandlers.getMetaLocation();
   const toMetaKey = to.metaHandlers.getMetaLocation();
   if (!needActionToAssetsAndMeta(allActions)) {
-    logColorful({color: 'red'}, `No importNewAssets actions are needed between ${fromMetaKey} and ${toMetaKey}`);
+    logColorful(
+      {color: 'red'},
+      `No importNewAssets actions are needed between ${fromMetaKey} and ${toMetaKey}`
+    );
     return true;
   }
 
@@ -147,7 +150,7 @@ export async function copyAsset(
     rootDir: rootDir1,
     relativePath: relativePath1,
   });
-  await makeSureMetaIsUptodate(metaHandlers);
+  await makeSureMetaIsUptodate(metaHandlers, options?.actionOptions);
   logging && logColorful({color: 'blue'}, `This is info for asset ${fullPath}`, assetInfo);
   const {shortId} = assetInfo;
   const items = await findItems({shortId});
