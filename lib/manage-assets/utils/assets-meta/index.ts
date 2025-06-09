@@ -87,7 +87,7 @@ export async function applyStateChange(
       };
     })
   );
-  allActions.deleteFiles.push(...deleted.map(it => it.relativePath));
+  allActions.deleteFiles.push(...deleted);
 
   await doActionsToAssetsAndMeta(allActions, metaHandlers, {notChangeAsset: true});
 }

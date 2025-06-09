@@ -1,9 +1,16 @@
 import fs from 'fs';
 import path from 'path';
 import {applyStateChange, getAssetStateChange, makeSureMetaIsUptodate} from '../assets-meta';
-import {getAssetInfoByShortId, getMetaDir, needActionToAssetsAndMeta} from '../../service';
+import {
+  getAssetInfo,
+  getAssetInfoByShortId,
+  getFullAssetInfo,
+  getMetaDir,
+  getSha1AsId,
+  needActionToAssetsAndMeta,
+} from '../../service';
 import {getOneAssetInfo, doActionsToAssetsAndMeta} from '../../service';
-import {ActionOptions, ActionToAssetsAndMeta, MetaHandlers} from '../../types';
+import {ActionOptions, ActionToAssetsAndMeta, GetAssetInfoParams, MetaHandlers} from '../../types';
 import {getShortIdToAssetInfo} from '../../service';
 import {AssetInfoFull, ShortIdToAssetInfo} from '../../types';
 import {getPathWithDtSuffix, goOnOrNot, logColorful} from '../../external';
@@ -114,4 +121,32 @@ export async function importNewAssets(
     });
   }
   await doActionsToAssetsAndMeta(allActions, to.metaHandlers);
+}
+
+export async function copyAsset(
+  metaHandlers: MetaHandlers,
+  filePath: string,
+  options?: {actionOptions?: ActionOptions; getAssetInfoParams: GetAssetInfoParams}
+) {
+  const {
+    actionOptions: {needConfirm, logging} = {needConfirm: true, logging: true},
+    getAssetInfoParams = {},
+  } = options ?? {};
+  const {getKey, rootDir, findItems} = metaHandlers;
+  const fullPath = path.resolve(process.cwd(), filePath);
+  const assetInfo = await getFullAssetInfo({...getAssetInfoParams, fullPath});
+  logging && logColorful({color: 'blue'}, `This is info for asset ${fullPath}`, assetInfo);
+  const {shortId} = assetInfo;
+  const items = await findItems({shortId});
+  if (items.length > 0) {
+    logColorful({color: 'red'}, `This asseet already exist in meta ${getKey()}`);
+    logColorful({}, items);
+    return;
+  }
+  if (needConfirm) {
+    await goOnOrNot({
+      tips: [`Do you want to add file ${fullPath} to ${rootDir} using meta ${getKey()}`],
+    });
+  }
+  doActionsToAssetsAndMeta();
 }

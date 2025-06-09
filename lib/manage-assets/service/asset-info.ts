@@ -1,6 +1,6 @@
 import fs from 'fs';
-import path from 'path';
-import {hashData, logColorful, byteToWord, isBoolean, isDate, toDate} from '../external';
+import path, {relative} from 'path';
+import {hashData, logColorful, byteToWord, isBoolean, isDate, toDate, getFilePathInfo} from '../external';
 import {SHORT_ID_LENGTH} from './constant';
 import {AssetInfoPartial, AssetInfoFull, GetAssetInfoParams} from '../types';
 import {appendShortIdToFilePath, parseFilePath} from './short-id';
@@ -71,12 +71,27 @@ export async function getAssetInfo(options?: GetAssetInfoParams): Promise<AssetI
   return assetInfo;
 }
 
-export async function getFullAssetInfo(options: GetAssetInfoParams): Promise<AssetInfoFull> {
-  const assetInfo = await getAssetInfo({...options, reCalcId: true});
+function convertOptions(options: Partial<GetAssetInfoParams> & {fullPath?: string}): GetAssetInfoParams {
+  const {fullPath, ...restOptions} = options;
+  const {dirname, basename} = getFilePathInfo(fullPath);
+  return {...restOptions, rootDir: dirname, relativePath: basename};
+}
+
+/**
+ * A wrapper for getAssetInfo with functionality:
+ * 1. pass value of reCalcId for getFullAssetInfo
+ * 2. support param with type Partial<GetAssetInfoParams> & {fullPath?: string}, which is very useful for some scenario
+ */
+export async function getFullAssetInfo(
+  options: Partial<GetAssetInfoParams> & {fullPath?: string}
+): Promise<AssetInfoFull> {
+  const assetInfo = await getAssetInfo({...convertOptions(options), reCalcId: true});
   return assetInfo as AssetInfoFull;
 }
-export async function getPartialAssetInfo(options: GetAssetInfoParams) {
-  const assetInfo = await getAssetInfo({...options, reCalcId: false});
+export async function getPartialAssetInfo(
+  options: Partial<GetAssetInfoParams> & {fullPath?: string}
+): Promise<AssetInfoPartial> {
+  const assetInfo = await getAssetInfo({...convertOptions(options), reCalcId: false});
   return assetInfo;
 }
 
