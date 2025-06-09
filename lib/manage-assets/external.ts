@@ -6,6 +6,8 @@ export {
   PickPartial,
   PartialExcept,
   formatDate,
+  getRandomBase64String,
+  getSequentialBase64String,
 } from '../../../fe/common';
 export {
   logColorful,
@@ -26,4 +28,5 @@ export {
   GetFileListOption,
   getFileInfoList,
   moveFile,
+  writeFileSync,
 } from '../../index';

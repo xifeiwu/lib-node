@@ -1,9 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import childProcess from 'child_process';
-import {selectOption} from './general';
-import {isNumber} from './external';
-import {getFilePathInfo} from './path';
+import {selectOption} from '../general';
+import {isNumber} from '../external';
 import {
   PathInfoForRecur,
   FileFilter,
@@ -11,46 +9,11 @@ import {
   GetFileListInfo,
   GetFileListOption,
   GoThroughDirOptions,
-} from './types';
+  FileInfoTreeItem,
+} from '../types';
+import {HOME_PATH} from './service';
+import childProcess from 'child_process';
 
-const HOME_PATH = process.env.HOME;
-
-/**
- * start from @param 'startDir', find upwards to find the file with name @param'targetFileName'
- * @param startDir, start dir
- * @param targetFileName, target file name
- */
-export function findClosestFile(startDir: string, targetFileName: string): string | null {
-  const fullPath = path.resolve(startDir, targetFileName);
-  if (startDir == HOME_PATH || startDir == '/') {
-    return null;
-  }
-  if (fs.existsSync(fullPath)) {
-    return fullPath;
-  } else {
-    return findClosestFile(path.resolve(startDir, '..'), targetFileName);
-  }
-}
-
-/**
- * start from @param 'dir', find file list with @param'name' upwards
- * @param dir, start dir
- * @param name, target file name
- */
-export function findFileListByNameUpward(dir: string, name: string) {
-  const results = [];
-  let currentPath = dir;
-  while (currentPath !== HOME_PATH && currentPath !== '/' && currentPath !== null) {
-    // console.log(currentPath);
-    const toFind = path.resolve(currentPath, name);
-    if (fs.existsSync(toFind)) {
-      results.push(toFind);
-    }
-    currentPath = path.resolve(currentPath, '..');
-  }
-
-  return results;
-}
 
 /**
  * @returns go through dir, and return value returned from cb function
@@ -121,12 +84,6 @@ export function goThroughDir<T = any>(
   return null;
 }
 
-export interface FileInfoTreeItem {
-  relativePath: string;
-  basename: string;
-  stat: fs.Stats;
-  children?: FileInfoTreeItem[];
-}
 export function getFileInfoTree(root: string, options?: GoThroughDirOptions): FileInfoTreeItem {
   if (!fs.existsSync(root)) {
     return null;
@@ -322,26 +279,41 @@ export async function selectAndRequireFile<ContentType = any>(
   return content as ContentType;
 }
 
-export function recursiveDeleteFile(path: string) {
-  if (fs.existsSync(path)) {
-    if (fs.statSync(path).isFile()) {
-      fs.unlinkSync(path);
-    } else if (fs.statSync(path).isDirectory()) {
-      fs.readdirSync(path).forEach((file, index) => {
-        const curPath = path + '/' + file;
-        if (fs.statSync(curPath).isDirectory()) {
-          // recurse
-          recursiveDeleteFile(curPath);
-        } else {
-          // delete file
-          fs.unlinkSync(curPath);
-        }
-      });
-      fs.rmdirSync(path);
-    }
-  } else {
-    console.error(`Error: path ${path} not exist`);
+/**
+ * start from @param 'startDir', find upwards to find the file with name @param'targetFileName'
+ * @param startDir, start dir
+ * @param targetFileName, target file name
+ */
+export function findClosestFile(startDir: string, targetFileName: string): string | null {
+  const fullPath = path.resolve(startDir, targetFileName);
+  if (startDir == HOME_PATH || startDir == '/') {
+    return null;
   }
+  if (fs.existsSync(fullPath)) {
+    return fullPath;
+  } else {
+    return findClosestFile(path.resolve(startDir, '..'), targetFileName);
+  }
+}
+
+/**
+ * start from @param 'dir', find file list with @param'name' upwards
+ * @param dir, start dir
+ * @param name, target file name
+ */
+export function findFileListByNameUpward(dir: string, name: string) {
+  const results = [];
+  let currentPath = dir;
+  while (currentPath !== HOME_PATH && currentPath !== '/' && currentPath !== null) {
+    // console.log(currentPath);
+    const toFind = path.resolve(currentPath, name);
+    if (fs.existsSync(toFind)) {
+      results.push(toFind);
+    }
+    currentPath = path.resolve(currentPath, '..');
+  }
+
+  return results;
 }
 
 export function getModulePath(moduleName: string, currentPath: string) {
@@ -365,73 +337,4 @@ export function getModulePath(moduleName: string, currentPath: string) {
   }
   const fullPath = pathList.map(it => path.resolve(it, moduleName)).find(it => fs.existsSync(it));
   return fullPath;
-}
-
-export function isDirFormat(fullPath: string) {
-  return fullPath.endsWith('/');
-}
-export function getDir(fullPath: string) {
-  const isDir = isDirFormat(fullPath);
-  return isDir ? fullPath : path.dirname(fullPath);
-}
-
-export function isDirExistForFile(fullPath: string) {
-  const isDir = isDirFormat(fullPath);
-  const dirname = isDir ? fullPath : path.dirname(fullPath);
-  return fs.existsSync(dirname);
-}
-
-/**
- * Make sure @param fullPath exist
- * fullPath can be a path to file or dir
- */
-export function makeSureDirExist(
-  fullPath: string,
-  options?: {
-    isDir?: boolean;
-  }
-) {
-  const {isDir} = options ?? {};
-  const dir = isDir ? fullPath : getDir(fullPath);
-  const dirExist = fs.existsSync(dir);
-  if (!dirExist) {
-    const res = fs.mkdirSync(dir, {recursive: true});
-    return res;
-  }
-}
-/**
- * Make sure dirPath of @param filePath exist
- */
-export function makeSureDirExistForFile(filePath: string) {
-  const {dirname} = getFilePathInfo(filePath);
-  return makeSureDirExist(dirname);
-}
-
-export function writeFileSync(fullPath: string, data: string | NodeJS.ArrayBufferView) {
-  const dirName = path.dirname(fullPath);
-  if (!fs.existsSync(dirName)) {
-    fs.mkdirSync(dirName, {recursive: true});
-  }
-  fs.writeFileSync(fullPath, data);
-}
-
-export function isInSameDevice(fullPath1: string, fullPath2: string) {
-  try {
-    const stat1 = fs.statSync(fullPath1);
-    const stat2 = fs.statSync(fullPath2);
-    return stat1.dev === stat2.dev;
-  } catch (err) {
-    return false;
-  }
-}
-
-export function moveFile(fromPath: string, toPath: string) {
-  fromPath = path.resolve(fromPath);
-  toPath = path.resolve(toPath);
-  if (isInSameDevice(fromPath, toPath)) {
-    fs.renameSync(fromPath, fromPath);
-  } else {
-    fs.copyFileSync(fromPath, toPath);
-    fs.unlinkSync(fromPath);
-  }
 }

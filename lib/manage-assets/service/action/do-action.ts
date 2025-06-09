@@ -9,6 +9,7 @@ import {
 } from '../../types';
 import {logColorful, getFilePathInfo, moveFile} from '../../external';
 import {getPartialAssetInfo} from '../asset-info';
+import {parseFilePath} from '../short-id';
 import {formatDate} from '../../../../external';
 
 export function needActionToAssetsAndMeta(allActions: ActionToAssetsAndMeta) {
@@ -46,7 +47,7 @@ export async function doActionsToAssetsAndMeta(
   metaHandlers: MetaHandlers,
   options?: DoSyncUpAssetActionOptions
 ) {
-  options = options ?? {};
+  options = (options ?? {}) as DoSyncUpAssetActionOptions;
   const {notChangeAsset, dir4DeletedFile, dirPrefix4NewFile, snapShotMetaBeforeAction, logging} = options;
   const defaultDirPrefix4NewFile = `new-file-${formatDate(new Date(), 'yyyy-MM-ddThh:mm:ss')}`;
 

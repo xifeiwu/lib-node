@@ -1,3 +1,5 @@
+import fs from 'fs';
+
 /** PathInfo for go through dir */
 export interface PathInfoForRecur {
   /** filename */
@@ -30,6 +32,13 @@ export interface FilePathInfo {
   fullPath: string;
   /** More accurate description for the file when there are the same relativePath exist in multiple dir */
   label: string;
+}
+
+export interface FileInfoTreeItem {
+  relativePath: string;
+  basename: string;
+  stat: fs.Stats;
+  children?: FileInfoTreeItem[];
 }
 
 /**

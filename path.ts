@@ -52,3 +52,43 @@ export function getDtFromPath(fullPath: string) {
   const [dateTimeStr] = execResult;
   return new Date(dateTimeStr);
 }
+
+export function isDirFormat(fullPath: string) {
+  return fullPath.endsWith('/');
+}
+export function getDir(fullPath: string) {
+  const isDir = isDirFormat(fullPath);
+  return isDir ? fullPath : path.dirname(fullPath);
+}
+
+export function isDirExistForFile(fullPath: string) {
+  const isDir = isDirFormat(fullPath);
+  const dirname = isDir ? fullPath : path.dirname(fullPath);
+  return fs.existsSync(dirname);
+}
+
+/**
+ * Make sure @param fullPath exist
+ * fullPath can be a path to file or dir
+ */
+export function makeSureDirExist(
+  fullPath: string,
+  options?: {
+    isDir?: boolean;
+  }
+) {
+  const {isDir} = options ?? {};
+  const dir = isDir ? fullPath : getDir(fullPath);
+  const dirExist = fs.existsSync(dir);
+  if (!dirExist) {
+    const res = fs.mkdirSync(dir, {recursive: true});
+    return res;
+  }
+}
+/**
+ * Make sure dirPath of @param filePath exist
+ */
+export function makeSureDirExistForFile(filePath: string) {
+  const {dirname} = getFilePathInfo(filePath);
+  return makeSureDirExist(dirname);
+}

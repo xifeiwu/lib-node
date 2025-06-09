@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import assert from 'assert';
-import {getDtFromPath, getFilePathInfo, getPathWithDtSuffix} from './path';
+import {getDtFromPath, getFilePathInfo, getPathWithDtSuffix, makeSureDirExist} from './path';
 import {runFuncTestCases} from './service';
 
 export function testGetFilePathInfo() {
@@ -76,4 +76,19 @@ export async function dateTimeSuffix() {
   const dt = getDtFromPath(pathWithSuffix);
   assert(dt instanceof Date);
   fs.unlinkSync(pathWithSuffix);
+}
+
+export async function testMakeSureDirExist() {
+  const relativePath = 'a/b/c';
+  fs.existsSync(relativePath) && fs.rmdirSync(path.resolve(process.cwd(), relativePath), {recursive: true});
+  await runFuncTestCases(makeSureDirExist, [
+    {
+      params: [relativePath],
+      expected(res: string) {
+        assert.equal(res, relativePath);
+        return fs.existsSync(path.join(process.cwd(), relativePath));
+      },
+    },
+  ]);
+  fs.existsSync(relativePath) && fs.rmdirSync(path.resolve(process.cwd(), relativePath), {recursive: true});
 }

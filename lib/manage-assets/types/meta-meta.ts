@@ -1,4 +1,3 @@
-import {ActionOptions} from './action';
 import {AssetInfoFull, GetDirAssetOptions} from './asset';
 
 export interface CopyAction {

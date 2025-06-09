@@ -7,12 +7,13 @@ import {
   requestAndGetResponseInfo,
 } from '../../http';
 import {RecordHttpByDirOptions, RecordHttpOptions, HttpRecordContent, HttpRequestOptions} from './types';
-import {getMultipleDirFileList, makeSureDirExist} from '../../fs';
+import {getMultipleDirFileList} from '../../fs';
 import {MOCK_FILE_SUFFIX} from './service';
 import {selectFileAndGetExports} from '../../utils';
 import {SendRequestWithResponseInfoResult} from '../../types';
 import {getHashDigest} from '../../crypto';
 import {convertToBuffer} from '../../transform';
+import { makeSureDirExist } from '../../path';
 
 export function convertObjectToCjsContent<T extends HttpRecordContent>(info: T) {
   const lines = Object.entries(info).map(([key, value]) => {
