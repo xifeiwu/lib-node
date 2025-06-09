@@ -54,12 +54,12 @@ export async function applyStateChange(
         },
         to: {
           rootDir,
-          asset: it,
+          relativePath: it.relativePath,
         },
       };
     }),
     ...[...copied, ...modified].map(it => {
-      const {from, to} = it;
+      const {from} = it;
       return {
         from: {
           rootDir,
@@ -67,7 +67,7 @@ export async function applyStateChange(
         },
         to: {
           rootDir,
-          asset: to,
+          relativePath: from.relativePath,
         },
       };
     })
@@ -82,7 +82,7 @@ export async function applyStateChange(
         },
         to: {
           rootDir,
-          asset: to,
+          relativePath: from.relativePath,
         },
       };
     })
@@ -108,8 +108,9 @@ async function syncUpAssetsChangeToMeta(metaHandlers: MetaHandlers, options?: Ac
       if (size > 1024) {
         const logFilePath = getPathWithDtSuffix(path.join(getMetaDir(rootDir), 'state-change.ts'));
         fs.writeFileSync(logFilePath, content);
-        logColorful({}, `stateChange is saved to file`, logFilePath);
+        logColorful({color: 'red'}, `syncUpAssetsChangeToMeta actions are saved to file`, logFilePath);
       } else {
+        logColorful({color: 'red'}, `syncUpAssetsChangeToMeta actions as follows:`);
         logColorful({}, content);
       }
       await goOnOrNot({
