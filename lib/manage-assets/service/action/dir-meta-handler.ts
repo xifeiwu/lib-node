@@ -10,12 +10,12 @@ import {
 } from '../dir-assets';
 import {getPathWithDtSuffix, recursiveDeleteFile} from '../../external';
 
-export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, options) => {
+export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, globalOptions) => {
   if (!fs.existsSync(rootDir)) {
     throw new Error(`rootDir not exist: ${rootDir}`);
   }
 
-  const {initMetaIfNotExist} = options ?? {};
+  const {initMetaIfNotExist, getAssetInfoParams, goThroughDirOptions} = globalOptions ?? {};
   let assetInfoList: AssetInfoFull[];
 
   try {
@@ -23,9 +23,8 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, option
     assetInfoList = assetInfoTreeToList(meta);
   } catch (err) {
     console.error(err);
-
     if (initMetaIfNotExist) {
-      await resetMeta();
+      await resetMeta({getAssetInfoParams, goThroughDirOptions});
     }
   }
   function getKey() {
@@ -45,7 +44,7 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, option
   }
 
   async function resetMeta(options?: GetDirAssetOptions) {
-    assetInfoList = await getAssetFullInfoListOfDir(rootDir, options);
+    assetInfoList = await getAssetFullInfoListOfDir(rootDir, options ?? globalOptions);
     saveDirMetaToFile(rootDir, assetInfoList, {toNewFile: true});
     return assetInfoList;
   }

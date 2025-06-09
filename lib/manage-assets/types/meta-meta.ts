@@ -1,4 +1,4 @@
-import {PartialExcept} from '../external';
+import {ActionOptions} from './action';
 import {AssetInfoFull, GetDirAssetOptions} from './asset';
 
 export interface CopyAction {
@@ -34,16 +34,20 @@ export interface MetaHandlers {
 }
 export type GetMetaHandlers = (
   rootDir: string,
-  options?: {initMetaIfNotExist?: boolean}
+  options?: {initMetaIfNotExist?: boolean} & GetDirAssetOptions
 ) => Promise<MetaHandlers>;
 
-export interface DoSyncUpAssetActionOptions {
+export interface ActionOptions {
+  logging?: boolean;
+  needConfirm?: boolean;
+}
+
+export interface DoSyncUpAssetActionOptions extends ActionOptions {
   notChangeAsset?: boolean;
   // dir prefix for new assets copied from other dir
   dirPrefix4NewFile?: string;
   // should be full path
   dir4DeletedFile?: string;
-  logging?: boolean;
   // back up current meta before doing action
   snapShotMetaBeforeAction?: boolean;
 }

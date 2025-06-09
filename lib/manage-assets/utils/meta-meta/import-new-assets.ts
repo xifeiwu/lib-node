@@ -13,7 +13,7 @@ import {getOneAssetInfo, doActionsToAssetsAndMeta} from '../../service';
 import {ActionOptions, ActionToAssetsAndMeta, GetAssetInfoParams, MetaHandlers} from '../../types';
 import {getShortIdToAssetInfo} from '../../service';
 import {AssetInfoFull, ShortIdToAssetInfo} from '../../types';
-import {getPathWithDtSuffix, goOnOrNot, logColorful} from '../../external';
+import {getFilePathInfo, getPathWithDtSuffix, goOnOrNot, logColorful} from '../../external';
 
 /**
  * What should do to import new assets from dir to target dir
@@ -122,15 +122,20 @@ export async function importNewAssets(
 export async function copyAsset(
   metaHandlers: MetaHandlers,
   filePath: string,
-  options?: {actionOptions?: ActionOptions; getAssetInfoParams: GetAssetInfoParams}
+  options?: {actionOptions?: ActionOptions; getAssetInfoParams?: GetAssetInfoParams}
 ) {
   const {
     actionOptions: {needConfirm, logging} = {needConfirm: true, logging: true},
     getAssetInfoParams = {},
   } = options ?? {};
-  const {getKey, rootDir, findItems} = metaHandlers;
+  const {getKey, rootDir: rootDir2, findItems} = metaHandlers;
   const fullPath = path.resolve(process.cwd(), filePath);
-  const assetInfo = await getFullAssetInfo({...getAssetInfoParams, fullPath});
+  const {dirname: rootDir1, basename: relativePath1} = getFilePathInfo(fullPath);
+  const assetInfo = await getFullAssetInfo({
+    ...getAssetInfoParams,
+    rootDir: rootDir1,
+    relativePath: relativePath1,
+  });
   logging && logColorful({color: 'blue'}, `This is info for asset ${fullPath}`, assetInfo);
   const {shortId} = assetInfo;
   const items = await findItems({shortId});
@@ -141,8 +146,23 @@ export async function copyAsset(
   }
   if (needConfirm) {
     await goOnOrNot({
-      tips: [`Do you want to add file ${fullPath} to ${rootDir} using meta ${getKey()}`],
+      tips: [`Do you want to add file ${fullPath} to ${rootDir2} using meta ${getKey()}`],
     });
   }
-  doActionsToAssetsAndMeta();
+  doActionsToAssetsAndMeta(
+    {
+      copyFiles: [
+        {
+          from: {
+            rootDir: rootDir1,
+            asset: assetInfo,
+          },
+          to: {
+            rootDir: rootDir2,
+          },
+        },
+      ],
+    },
+    metaHandlers
+  );
 }

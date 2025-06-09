@@ -9,7 +9,6 @@ import {
 } from '../../types';
 import {logColorful, getFilePathInfo, moveFile} from '../../external';
 import {getPartialAssetInfo} from '../asset-info';
-import {parseFilePath} from '../short-id';
 import {formatDate} from '../../../../external';
 
 export function needActionToAssetsAndMeta(allActions: ActionToAssetsAndMeta) {
