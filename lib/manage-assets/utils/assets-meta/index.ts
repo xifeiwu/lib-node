@@ -97,7 +97,7 @@ async function syncUpAssetsChangeToMeta(metaHandlers: MetaHandlers, options?: Ac
   const metaKey = metaHandlers.getKey();
   const {rootDir} = metaHandlers;
   const {needConfirm} = options ?? {};
-  logging && logColorful({color: 'blue'}, `start checking assets-meta alignment for: ${metaKey}`);
+  logging && logColorful({color: 'yellow'}, `start checking assets-meta alignment for: ${metaKey}`);
 
   const stateChangeInfo = await getAssetStateChange(metaHandlers);
   const {stateChange} = stateChangeInfo;
@@ -120,13 +120,15 @@ async function syncUpAssetsChangeToMeta(metaHandlers: MetaHandlers, options?: Ac
     }
     await applyStateChange(stateChangeInfo, metaHandlers);
   } else {
-    logging && logColorful({color: 'blue'}, `asset-meta already aligned`);
+    logging && logColorful({color: 'yellow'}, `assets-meta already aligned for ${metaKey}`);
   }
 }
 
 export async function makeSureMetaIsUptodate(metaHandlers: MetaHandlers, options?: ActionOptions) {
-  const {haveMeta, resetMeta} = metaHandlers;
+  const {getKey, haveMeta, resetMeta} = metaHandlers;
+  options?.logging && logColorful({color: 'yellow'}, `${getKey()} hasMeta: ${haveMeta()}`);
   if (!haveMeta()) {
+    options?.logging && logColorful({color: 'yellow'}, `start resetMeta for: ${getKey()}`);
     await resetMeta();
   } else {
     return await syncUpAssetsChangeToMeta(metaHandlers, options);

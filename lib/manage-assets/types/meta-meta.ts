@@ -7,7 +7,7 @@ export interface CopyAction {
   };
   to: {
     rootDir: string;
-    relativePath?: string;
+    relativePath: string;
   };
 }
 
@@ -42,6 +42,7 @@ export interface ActionOptions {
 }
 
 export interface DoSyncUpAssetActionOptions extends ActionOptions {
+  // It's useful when sync up meta with assets: just upadte meta with assets change
   notChangeAsset?: boolean;
   // dir prefix for new assets copied from other dir
   dirPrefix4NewFile?: string;

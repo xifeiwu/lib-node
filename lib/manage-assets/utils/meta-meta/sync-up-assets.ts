@@ -130,7 +130,7 @@ export async function syncUpAssetsBetweenDir(
   const fromMetaKey = metaHandlers1.getMetaLocation();
   const toMetaKey = metaHandlers2.getMetaLocation();
   if (!needActionToAssetsAndMeta(allActions)) {
-    logColorful({color: 'red'}, `No syncUpAssetsBetweenDir action between ${fromMetaKey} and ${toMetaKey}`);
+    logColorful({color: 'red'}, `No syncUpAssetsBetweenDir actions are needed between ${fromMetaKey} and ${toMetaKey}`);
     return true;
   }
   const logFile = getPathWithDtSuffix(path.join(getMetaDir(metaHandlers1.rootDir), 'sync-up-assets.ts'));

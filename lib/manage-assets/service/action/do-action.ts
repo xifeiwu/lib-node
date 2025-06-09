@@ -7,7 +7,13 @@ import {
   DoSyncUpAssetActionOptions,
   MetaHandlers,
 } from '../../types';
-import {logColorful, getFilePathInfo, moveFile} from '../../external';
+import {
+  logColorful,
+  getFilePathInfo,
+  moveFile,
+  makeSureDirExist,
+  makeSureDirExistForFile,
+} from '../../external';
 import {getPartialAssetInfo} from '../asset-info';
 import {parseFilePath} from '../short-id';
 import {formatDate} from '../../../../external';
@@ -21,6 +27,9 @@ export function needActionToAssetsAndMeta(allActions: ActionToAssetsAndMeta) {
   return isNeedAction;
 }
 
+/**
+ * Move the file to delete to a folder for the case it may be used in future
+ */
 function getSoftDeleteFileHandler(dir4DeletedFile?: string) {
   if (dir4DeletedFile && !fs.existsSync(dir4DeletedFile)) {
     throw new Error(`dir4DeletedFile not exist: ${dir4DeletedFile}`);
@@ -48,8 +57,13 @@ export async function doActionsToAssetsAndMeta(
   options?: DoSyncUpAssetActionOptions
 ) {
   options = (options ?? {}) as DoSyncUpAssetActionOptions;
-  const {notChangeAsset, dir4DeletedFile, dirPrefix4NewFile, snapShotMetaBeforeAction, logging} = options;
-  const defaultDirPrefix4NewFile = `new-file-${formatDate(new Date(), 'yyyy-MM-ddThh:mm:ss')}`;
+  const {
+    notChangeAsset,
+    dir4DeletedFile,
+    dirPrefix4NewFile = '',
+    snapShotMetaBeforeAction,
+    logging,
+  } = options;
 
   if (!needActionToAssetsAndMeta(allActions)) {
     return false;
@@ -99,16 +113,14 @@ export async function doActionsToAssetsAndMeta(
         asset: {relativePath, sha1, shortId},
       } = from;
       const fromPath = path.join(from.rootDir, relativePath);
-      let relativePath2: string;
-      if (to.relativePath === undefined) {
-        const {basename} = getFilePathInfo(relativePath);
-        relativePath2 = path.join(dirPrefix4NewFile ?? defaultDirPrefix4NewFile, basename);
-      } else {
+      let relativePath2: string = relativePath;
+      if (!notChangeAsset) {
         relativePath2 = path.join(dirPrefix4NewFile, to.relativePath);
+        const toPath = path.join(to.rootDir, relativePath2);
+        makeSureDirExistForFile(toPath);
+        logging && logColorful({color: 'blue'}, `copy file from ${fromPath} to ${toPath}`);
+        fs.copyFileSync(fromPath, toPath);
       }
-      const toPath = path.join(to.rootDir, relativePath2);
-      logging && logColorful({color: 'blue'}, `copy file from ${fromPath} to ${toPath}`);
-      !notChangeAsset && fs.copyFileSync(fromPath, toPath);
       Boolean(insertOrUpdateItem) &&
         (await insertOrUpdateItem({
           ...(await getPartialAssetInfo({rootDir: to.rootDir, relativePath: relativePath2})),

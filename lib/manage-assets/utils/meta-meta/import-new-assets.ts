@@ -1,19 +1,30 @@
 import fs from 'fs';
 import path from 'path';
-import {applyStateChange, getAssetStateChange, makeSureMetaIsUptodate} from '../assets-meta';
+import {makeSureMetaIsUptodate} from '../assets-meta';
 import {
-  getAssetInfo,
+  appendShortIdToFilePath,
   getAssetInfoByShortId,
   getFullAssetInfo,
   getMetaDir,
-  getSha1AsId,
   needActionToAssetsAndMeta,
 } from '../../service';
 import {getOneAssetInfo, doActionsToAssetsAndMeta} from '../../service';
 import {ActionOptions, ActionToAssetsAndMeta, GetAssetInfoParams, MetaHandlers} from '../../types';
 import {getShortIdToAssetInfo} from '../../service';
 import {AssetInfoFull, ShortIdToAssetInfo} from '../../types';
-import {getFilePathInfo, getPathWithDtSuffix, goOnOrNot, logColorful} from '../../external';
+import {formatDate, getFilePathInfo, getPathWithDtSuffix, goOnOrNot, logColorful} from '../../external';
+
+/**
+ * get relative path for target dir
+ * 1. save to dir new-files-${formatDate(new Date(), 'yyyy-MM-dd')}
+ * 2. append shortId to avoid override
+ * 3. stay basename
+ */
+function getToRelativePath(fromAssetInfo: AssetInfoFull) {
+  const {relativePath, shortId} = fromAssetInfo;
+  const pathWithSuffix = appendShortIdToFilePath(relativePath, shortId);
+  return `new-files-${formatDate(new Date(), 'yyyy-MM-dd')}/${getFilePathInfo(pathWithSuffix).basename}`;
+}
 
 /**
  * What should do to import new assets from dir to target dir
@@ -56,7 +67,6 @@ export async function getActionForImportNewAssets(
   const allActions = {
     copyFiles: Object.values(toAdd).map(it => {
       const asset = getOneAssetInfo(it);
-      const {relativePath} = asset;
       return {
         from: {
           rootDir: from.rootDir,
@@ -64,7 +74,7 @@ export async function getActionForImportNewAssets(
         },
         to: {
           rootDir: to.rootDir,
-          relativePath,
+          relativePath: getToRelativePath(asset),
         },
       };
     }),
@@ -90,7 +100,7 @@ export async function importNewAssets(
   const fromMetaKey = from.metaHandlers.getMetaLocation();
   const toMetaKey = to.metaHandlers.getMetaLocation();
   if (!needActionToAssetsAndMeta(allActions)) {
-    logColorful({color: 'red'}, `No importNewAssets action between ${fromMetaKey} and ${toMetaKey}`);
+    logColorful({color: 'red'}, `No importNewAssets actions are needed between ${fromMetaKey} and ${toMetaKey}`);
     return true;
   }
 
@@ -107,7 +117,8 @@ export async function importNewAssets(
     fromMetaKey,
     'to',
     toMetaKey,
-    `is saved to file ${logFile}.`
+    `is saved to file`,
+    logFile
   );
   if (needConfirm) {
     await goOnOrNot({
@@ -136,6 +147,7 @@ export async function copyAsset(
     rootDir: rootDir1,
     relativePath: relativePath1,
   });
+  await makeSureMetaIsUptodate(metaHandlers);
   logging && logColorful({color: 'blue'}, `This is info for asset ${fullPath}`, assetInfo);
   const {shortId} = assetInfo;
   const items = await findItems({shortId});
