@@ -120,8 +120,8 @@ export async function syncUpAssetsBetweenDir(
   const {needConfirm = true, logging} = options ?? {};
   const {metaHandlers: metaHandlers1} = from;
   const {metaHandlers: metaHandlers2} = to;
-  await makeSureMetaIsUptodate(metaHandlers1);
-  await makeSureMetaIsUptodate(metaHandlers2);
+  await makeSureMetaIsUptodate(metaHandlers1, options);
+  await makeSureMetaIsUptodate(metaHandlers2, options);
 
   const allActions = await getActionForSyncUpFiles(
     {assetInfoList: await metaHandlers1.getAllItems(), rootDir: metaHandlers1.rootDir},
@@ -130,7 +130,10 @@ export async function syncUpAssetsBetweenDir(
   const fromMetaKey = metaHandlers1.getMetaLocation();
   const toMetaKey = metaHandlers2.getMetaLocation();
   if (!needActionToAssetsAndMeta(allActions)) {
-    logColorful({color: 'red'}, `No syncUpAssetsBetweenDir actions are needed between ${fromMetaKey} and ${toMetaKey}`);
+    logColorful(
+      {color: 'red'},
+      `No syncUpAssetsBetweenDir actions are needed between ${fromMetaKey} and ${toMetaKey}`
+    );
     return true;
   }
   const logFile = getPathWithDtSuffix(path.join(getMetaDir(metaHandlers1.rootDir), 'sync-up-assets.ts'));
@@ -155,5 +158,5 @@ export async function syncUpAssetsBetweenDir(
       defaultValue: true,
     });
   }
-  await doActionsToAssetsAndMeta(allActions, metaHandlers2);
+  await doActionsToAssetsAndMeta(allActions, metaHandlers2, options);
 }
