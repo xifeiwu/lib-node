@@ -90,5 +90,5 @@ export function makeSureDirExist(
  */
 export function makeSureDirExistForFile(filePath: string) {
   const {dirname} = getFilePathInfo(filePath);
-  return makeSureDirExist(dirname);
+  return makeSureDirExist(dirname, {isDir: true});
 }
