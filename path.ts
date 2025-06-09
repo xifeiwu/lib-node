@@ -8,6 +8,16 @@ export function parseBasename(basename: string) {
   const bareBasename = path.basename(basename, extname);
   return {extname, bareBasename};
 }
+
+/**
+params: ['zMovie/modules/lib/node/path.test.ts'],
+expected: {
+  dirname: 'zMovie/modules/lib/node',
+  basename: 'path.test.ts',
+  bareBasename: 'path.test',
+  extname: '.ts',
+},
+ */
 export function getFilePathInfo(filePath: string): FilePathSegement {
   const dirname = path.dirname(filePath);
   const basename = path.basename(filePath);

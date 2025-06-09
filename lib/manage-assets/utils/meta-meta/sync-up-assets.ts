@@ -57,7 +57,6 @@ export async function getActionForSyncUpFiles(
       /** try to recover the file by move aciton in rootDir2 to reduce resource cost */
       const deleted = infoList2.find(it => pathOnlyIn2.includes(it.relativePath));
       const asset = deleted ?? infoList2[0];
-      const {sha1, shortId} = asset;
       return {
         sourceCanDelete: Boolean(deleted),
         action: {
@@ -67,11 +66,7 @@ export async function getActionForSyncUpFiles(
           },
           to: {
             rootDir: to.rootDir,
-            asset: {
-              sha1,
-              shortId,
-              relativePath,
-            },
+            relativePath,
           },
         },
       };
@@ -85,11 +80,7 @@ export async function getActionForSyncUpFiles(
         },
         to: {
           rootDir: to.rootDir,
-          asset: {
-            sha1: assetInfo.sha1,
-            shortId: assetInfo.shortId,
-            relativePath,
-          },
+          relativePath,
         },
       },
     };

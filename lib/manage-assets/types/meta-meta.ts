@@ -1,7 +1,6 @@
 import {PartialExcept} from '../external';
 import {AssetInfoFull, GetDirAssetOptions} from './asset';
 
-type AssetInfoGetFromCopy = PartialExcept<Partial<AssetInfoFull>, 'sha1' | 'shortId' | 'relativePath'>;
 export interface CopyAction {
   from: {
     rootDir: string;
@@ -9,7 +8,7 @@ export interface CopyAction {
   };
   to: {
     rootDir: string;
-    asset: AssetInfoGetFromCopy;
+    relativePath?: string;
   };
 }
 

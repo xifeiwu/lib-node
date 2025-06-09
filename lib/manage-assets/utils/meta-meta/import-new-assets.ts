@@ -56,7 +56,7 @@ export async function getActionForImportNewAssets(
   const allActions = {
     copyFiles: Object.values(toAdd).map(it => {
       const asset = getOneAssetInfo(it);
-      const {sha1, shortId, relativePath} = asset;
+      const {relativePath} = asset;
       return {
         from: {
           rootDir: from.rootDir,
@@ -64,11 +64,7 @@ export async function getActionForImportNewAssets(
         },
         to: {
           rootDir: to.rootDir,
-          asset: {
-            sha1,
-            shortId,
-            relativePath,
-          },
+          relativePath,
         },
       };
     }),

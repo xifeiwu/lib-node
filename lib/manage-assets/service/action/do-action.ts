@@ -10,6 +10,7 @@ import {
 import {logColorful, getFilePathInfo, moveFile} from '../../external';
 import {getPartialAssetInfo} from '../asset-info';
 import {parseFilePath} from '../short-id';
+import {formatDate} from '../../../../external';
 
 export function needActionToAssetsAndMeta(allActions: ActionToAssetsAndMeta) {
   const {copyFiles = [], moveFiles = [], deleteFiles = []} = allActions;
@@ -46,13 +47,10 @@ export async function doActionsToAssetsAndMeta(
   metaHandlers: MetaHandlers,
   options?: DoSyncUpAssetActionOptions
 ) {
-  const {
-    notChangeAsset,
-    dirPrefix4NewFile = '',
-    dir4DeletedFile,
-    snapShotMetaBeforeAction,
-    logging,
-  } = options ?? {};
+  options = options ?? {};
+  const {notChangeAsset, dir4DeletedFile, dirPrefix4NewFile, snapShotMetaBeforeAction, logging} = options;
+  const defaultDirPrefix4NewFile = `new-file-${formatDate(new Date(), 'yyyy-MM-ddThh:mm:ss')}`;
+
   if (!needActionToAssetsAndMeta(allActions)) {
     return false;
   }
@@ -101,8 +99,13 @@ export async function doActionsToAssetsAndMeta(
         asset: {relativePath, sha1, shortId},
       } = from;
       const fromPath = path.join(from.rootDir, relativePath);
-      const relativePath2 =
-        from.rootDir !== to.rootDir ? path.join(dirPrefix4NewFile, to.asset.relativePath) : relativePath;
+      let relativePath2: string;
+      if (to.relativePath === undefined) {
+        const {basename} = getFilePathInfo(relativePath);
+        relativePath2 = path.join(dirPrefix4NewFile ?? defaultDirPrefix4NewFile, basename);
+      } else {
+        relativePath2 = path.join(dirPrefix4NewFile, to.relativePath);
+      }
       const toPath = path.join(to.rootDir, relativePath2);
       logging && logColorful({color: 'blue'}, `copy file from ${fromPath} to ${toPath}`);
       !notChangeAsset && fs.copyFileSync(fromPath, toPath);

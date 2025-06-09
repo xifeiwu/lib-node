@@ -1,4 +1,12 @@
-export {isBoolean, isDate, toDate, byteToWord, PickPartial, PartialExcept} from '../../../fe/common';
+export {
+  isBoolean,
+  isDate,
+  toDate,
+  byteToWord,
+  PickPartial,
+  PartialExcept,
+  formatDate,
+} from '../../../fe/common';
 export {
   logColorful,
   hashData,
@@ -18,5 +26,4 @@ export {
   GetFileListOption,
   getFileInfoList,
   moveFile,
-  getFilePathInfo,
 } from '../../index';
