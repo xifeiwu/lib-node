@@ -76,6 +76,7 @@ export function getCpConfigByScriptName<CpConfig = any>(
   const scriptPath = getScriptFullpath(basename);
   return getCpConfigByScriptPath(scriptPath, config);
 }
+
 export async function spawnScript<CpConfig = any, ResponseFromCp = any>(
   basename: CP.ScriptFileName,
   config?: Partial<SpawnAndTryIpcConfig<CpConfig>>

@@ -1,10 +1,13 @@
-import {Server} from 'net';
 import {ChildProcess, SpawnOptions} from 'child_process';
 
 export interface SpawnConfig {
   command: string;
   args?: ReadonlyArray<string>;
   spawnOptions?: SpawnOptions;
+  /**
+   * args are argument for command, params are for script
+   */
+  params?: string[];
 }
 
 export interface InfoToCp<CpConfig = any> {
