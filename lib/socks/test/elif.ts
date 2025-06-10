@@ -69,7 +69,18 @@ const homeBrewInstall: HttpRequestOptions = {
   },
 };
 
-const httpRequestOptions = nodejsOrg;
+// const httpRequestOptions = nodejsOrg;
+const httpRequestOptions: HttpRequestOptions = {
+  method: 'get',
+  url: 'https://javdb.com/packs/js/app-e59c8b5d8adedd2a1f1d.js',
+  headers: {
+    'Upgrade-Insecure-Requests': 1,
+    'User-Agent':
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36',
+    'sec-ch-ua-mobile': '?0',
+    'sec-ch-ua-platform': 'macOS',
+  },
+};
 
 /**
  * Notice:
