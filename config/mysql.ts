@@ -12,7 +12,7 @@ interface GeneralConfig {
     root: 'mysql';
     project: 'assist';
     explorer: 'explore' | 'employees' | 'employees2';
-    portaldb: 'portaldb_penguin';
+    portaldb: 'portaldb_penguin' | 'portaldb_turtle';
   };
   elif: {
     root: 'mysql';
@@ -81,7 +81,7 @@ const DB_INFO: DBInfo = {
     },
     portaldb: {
       password: 'portaldb',
-      databaseList: ['portaldb_penguin'],
+      databaseList: ['portaldb_penguin', 'portaldb_turtle'],
     },
   },
   elif: {
