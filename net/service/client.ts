@@ -2,6 +2,7 @@ import net, {NetConnectOpts, ServerOpts, Socket, TcpNetConnectOpts} from 'net';
 import tls from 'tls';
 import {GetSocketOptions, HttpUpgradeConfig} from '../../types';
 import {requestAndGetUpgradeInfo} from '../../http';
+import {isNumber, isObject} from '../../external';
 
 export function startSocketClient(options: NetConnectOpts, connectionListener?: () => void): Promise<Socket>;
 export function startSocketClient(
@@ -35,8 +36,30 @@ export function startTlsClient(
 ): Promise<tls.TLSSocket>;
 export function startTlsClient(path: string, connectionListener?: () => void): Promise<tls.TLSSocket>;
 export async function startTlsClient(...args) {
+  // {...mergedOptions, servername: mergedOptions.host}
+  const finalArgs = [];
+  if (args.length === 1) {
+    // port or options
+    const [arg] = args;
+    if (isObject(arg)) {
+      const {host} = arg;
+      finalArgs.push({
+        ...arg,
+        servername: host,
+      });
+    } else {
+      finalArgs.push(arg);
+    }
+  } else if (args.length == 2) {
+    // [port, options]
+    finalArgs.push(...args);
+  } else if (args.length === 3) {
+    // [port, host, options]
+    const [port, host, options = {}] = args;
+    finalArgs.push(port, host, {...options, servername: host});
+  }
   return new Promise<tls.TLSSocket>((res, rej) => {
-    const client = tls.connect(...(args as [number, string]));
+    const client = tls.connect(...(finalArgs as [number, string]));
     client.on('secureConnect', () => {
       res(client);
     });
