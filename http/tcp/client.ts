@@ -5,7 +5,7 @@ import {getDataFromReadable} from '../../stream';
 import {startSocketClient, startTlsClient} from '../../net';
 import {CanConvertToBuffer, HttpRequestOptions, HttpRequestInfo} from '../../types';
 import {TLSSocket} from 'tls';
-import {OutgoingHttpHeader, OutgoingHttpHeaders} from 'http';
+import {OutgoingHttpHeaders} from 'http';
 
 /**
  * @deprecated by httpRequestInfoToBuffer
@@ -115,8 +115,12 @@ export async function sendHttpRequestByTcp(
       )
       .pipe(client);
   } else {
-    client.write(headerPart);
-    client.end(bufferData);
+    if (bufferData.byteLength > 0) {
+      client.write(headerPart);
+      client.end(bufferData);
+    } else {
+      client.end(headerPart);
+    }
   }
   return client;
 }
