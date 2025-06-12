@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import {selectOption} from '../general';
+import {rerequire, selectOption} from '../general';
 import {isNumber} from '../external';
 import {
   PathInfoForRecur,
@@ -13,7 +13,6 @@ import {
 } from '../types';
 import {HOME_PATH} from './service';
 import childProcess from 'child_process';
-
 
 /**
  * @returns go through dir, and return value returned from cb function
@@ -275,7 +274,7 @@ export async function selectAndRequireFile<ContentType = any>(
   if (!fileInfo.fullPath) {
     throw new Error(`The file selected not exist`);
   }
-  const content = require(fileInfo.fullPath);
+  const content = rerequire(fileInfo.fullPath);
   return content as ContentType;
 }
 
