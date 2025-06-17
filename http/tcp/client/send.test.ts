@@ -1,11 +1,11 @@
-import {sendHttpRequestByTcp} from './client';
+import {sendHttpRequestByTcp} from './send';
 import {
   DebugServerPathname,
   getDataFromReadable,
   HttpRequestOptions,
   logColorful,
   startHttpDebugServer,
-} from '../../index';
+} from '../../../index';
 
 export async function testSendHttpRequestByTcp() {
   const {origin} = await startHttpDebugServer();

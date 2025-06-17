@@ -1,4 +1,4 @@
-import {sendHttpRequestByTcp} from '../../tcp/client';
+import {sendHttpRequestByTcp} from '../../tcp';
 import {goOnOrNot, HttpRequestOptions, logColorful, requestAndGetResponseInfo} from '../../../index';
 import {intToWord} from '../../../external';
 

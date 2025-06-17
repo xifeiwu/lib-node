@@ -1,9 +1,9 @@
 import {Socket, TcpNetConnectOpts} from 'net';
 import {Readable, Transform, isReadable} from 'stream';
-import {convertToBuffer, httpRequestInfoToBuffer, httpRequestOptionsToHttpInfo} from '../../index';
-import {getDataFromReadable} from '../../stream';
-import {startSocketClient, startTlsClient} from '../../net';
-import {CanConvertToBuffer, HttpRequestOptions, HttpRequestInfo} from '../../types';
+import {convertToBuffer, httpRequestInfoToBuffer, httpRequestOptionsToHttpInfo} from '../../../index';
+import {getDataFromReadable} from '../../../stream';
+import {startSocketClient, startTlsClient} from '../../../net';
+import {CanConvertToBuffer, HttpRequestOptions, HttpRequestInfo} from '../../../types';
 import {TLSSocket} from 'tls';
 import {OutgoingHttpHeaders} from 'http';
 

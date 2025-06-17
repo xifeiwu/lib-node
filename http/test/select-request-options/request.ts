@@ -1,4 +1,4 @@
-import {sendHttpRequestByTcp} from '../../tcp/client';
+import {sendHttpRequestByTcp} from '../../tcp/client/send';
 import {
   getDataFromReadable,
   getDefaultTlsConfig,
