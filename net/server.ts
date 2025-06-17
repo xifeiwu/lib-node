@@ -1,14 +1,14 @@
 import {Socket} from 'net';
 import {startSocketClient, startSocketServer} from '../net';
 import {getOneLineFromReader} from '../stream';
-import {httpFirstLineReg} from '../service';
 import {HttpHandler, Protocol, TcpHandler, TcpServerConfig} from '../types';
 import {isSocksProtocol, SocksVersion} from '../lib/socks';
 import {responseHttpConnection} from '../http';
+import {REG_HTTP_REQUEST_FIRST_LINE} from '../external';
 
 function isHttpRequest(buffer: Buffer) {
   const str = buffer.toString();
-  return httpFirstLineReg.test(str);
+  return REG_HTTP_REQUEST_FIRST_LINE.test(str);
 }
 
 async function getConnectionProtocol(

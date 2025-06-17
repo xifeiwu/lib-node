@@ -7,7 +7,4 @@ export const SOCKET_FILE_SUFFIX = '.socket';
 export const uploadDirOnHome = path.resolve(process.env.HOME, 'uploads');
 export const uploadDirOnCwd = path.resolve(process.cwd(), 'uploads');
 
-// POST /posts/42/comments HTTP/1.1\r\n
-export const httpFirstLineReg =
-  /^(get|post|put|patch|options|delete|head|connect)\s([^\s]+)\s(http\/\d\.\d)(?:\r\n)?$/i;
 export const httpHeaderLineReg = /^ *([^:]*): *(.*)(?:\r\n)?$/i;

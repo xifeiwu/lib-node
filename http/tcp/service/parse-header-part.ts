@@ -1,7 +1,8 @@
 import {Readable} from 'stream';
 import {HttpRequestHeaderPartInfo, HttpRequestFirstLineInfo} from '../../../types';
-import {httpFirstLineReg, httpHeaderLineReg} from '../../../service';
+import {httpHeaderLineReg} from '../../../service';
 import {getOneLineFromReader} from '../../../stream';
+import {REG_HTTP_REQUEST_FIRST_LINE} from '../../../external';
 
 interface ParseFirstLineResults {
   firstLineInfo?: HttpRequestFirstLineInfo;
@@ -10,7 +11,7 @@ interface ParseFirstLineResults {
 export async function tryParseHttpFirstLine(reader: Readable): Promise<ParseFirstLineResults | null> {
   const buffer = await getOneLineFromReader(reader);
   const line = buffer.toString('utf-8').trim().replace(/\r\n$/, '');
-  const execResult = httpFirstLineReg.exec(line);
+  const execResult = REG_HTTP_REQUEST_FIRST_LINE.exec(line);
   let firstLineInfo: HttpRequestFirstLineInfo;
   if (execResult) {
     const [method, url, httpVersion] = execResult.slice(1);

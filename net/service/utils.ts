@@ -3,8 +3,8 @@ import fs from 'fs';
 import path from 'path';
 import {Writable} from 'stream';
 import net, {Socket} from 'net';
-import {httpFirstLineReg, ColorStyle, HttpRequestFirstLineInfo, SocketInfo, logColorful} from '../../index';
-import {isString, isNumber, formatDate} from '../../external';
+import {ColorStyle, HttpRequestFirstLineInfo, SocketInfo, logColorful} from '../../index';
+import {isString, isNumber, formatDate, REG_HTTP_REQUEST_FIRST_LINE} from '../../external';
 import {TlsOptions} from 'tls';
 
 export function getLocalIpAddress() {
@@ -154,7 +154,7 @@ export function getProtocolInfoByFirstChunk(chunk: Buffer): ProtocolInfo {
   });
   const firstLine = (index > 0 ? chunk.subarray(0, index) : chunk).toString('utf-8');
   if (index !== -1) {
-    const execHttpReg = httpFirstLineReg.exec(firstLine);
+    const execHttpReg = REG_HTTP_REQUEST_FIRST_LINE.exec(firstLine);
     if (execHttpReg) {
       const [method, url, httpVersion] = execHttpReg.slice(1);
       return {

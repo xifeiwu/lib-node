@@ -50,4 +50,6 @@ export {
   intToWord,
   wordToByte,
   throttle,
+  REG_HTTP_REQUEST_FIRST_LINE,
+  REG_HTTP_RESPONSE_FIRST_LINE,
 } from '../fe/common';
