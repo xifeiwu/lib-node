@@ -1,5 +1,5 @@
-import {inferContentTypeByData, toBuffer} from '../../../index';
-import {HttpResponseInfo} from '../../../types';
+import {inferContentTypeByData, toBuffer} from '../../../../index';
+import {HttpResponseInfo} from '../../../../types';
 
 /**
  * TODO: remove

@@ -1,3 +1,6 @@
+/**
+ * For logic in dir internal, it's only used internally, will not export to outside
+ */
 import {Socket} from 'net';
 import {HttpIncomingMessage} from './http-incoming-message';
 

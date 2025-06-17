@@ -1,8 +1,8 @@
 import {startSocketServer} from '../../../net';
-import {getHttpIncomingMessage} from '../utils';
 import {httpResponseInfoToBuffer} from '../../service';
 import {parseHttpBody} from '../../../lib/http-body-parser';
 import {TcpServerConfig} from '../../../types';
+import {getHttpIncomingMessage} from '../service/internal';
 
 export async function startHttpDebugServerOnTcp(config?: TcpServerConfig) {
   const {host, port, server, overTls} = await startSocketServer(async socket => {
