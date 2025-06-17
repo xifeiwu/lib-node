@@ -10,6 +10,7 @@ import {
 } from '../../../index';
 import {getUrlPropsFromConfig, toNormalizedUrlProps} from '../../../external';
 import path from 'path';
+import {requestThroughHttpAndPrintResponse, requestThroughTcpAndPrintResponse} from '../service';
 
 async function selectRequestOptions() {
   const selected = await selectAndRequireFile<{requestOptions: HttpRequestOptions}>([
@@ -20,19 +21,12 @@ async function selectRequestOptions() {
 
 export async function requestThroughHttp() {
   const requestOptions = await selectRequestOptions();
-  const {
-    requestOptions: finalRequestOptions,
-    responseInfo,
-    request,
-  } = await requestAndGetResponseInfo(requestOptions);
-  logColorful({}, finalRequestOptions);
-  logColorful({}, responseInfo);
+  await requestThroughHttpAndPrintResponse(requestOptions);
 }
+
 export async function requestThroughTcp() {
   const requestOptions = await selectRequestOptions();
-  const client = await sendHttpRequestByTcp(requestOptions);
-  const responseData = await getDataFromReadable(client);
-  logColorful({}, responseData);
+  await requestThroughTcpAndPrintResponse(requestOptions);
 }
 
 export async function exploreDifferent() {
