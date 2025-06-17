@@ -1,5 +1,6 @@
 import {sendHttpRequestByTcp} from '../../tcp/client';
 import {goOnOrNot, HttpRequestOptions, logColorful, requestAndGetResponseInfo} from '../../../index';
+import {intToWord} from '../../../external';
 
 export async function requestThroughHttpAndPrintResponse(requestOptions: HttpRequestOptions) {
   const {
@@ -28,6 +29,8 @@ export async function requestThroughTcpAndPrintResponse(requestOptions: HttpRequ
   const bufList: Buffer[] = [];
   client.on('data', async chunk => {
     logColorful({color: 'red'}, `size: ${chunk.byteLength}`);
+    bufList.push(chunk);
+    client.pause();
     if (
       await goOnOrNot({
         tips: [`print chunk data in string format?`],
@@ -36,11 +39,11 @@ export async function requestThroughTcpAndPrintResponse(requestOptions: HttpRequ
     ) {
       logColorful({}, chunk);
     }
-    bufList.push(chunk);
+    client.resume();
   });
   client.on('end', async chunk => {
     const allData = Buffer.concat(bufList);
-    logColorful({color: 'red'}, `total size: ${allData.byteLength}`);
+    logColorful({color: 'red'}, `total size: ${intToWord(allData.byteLength)}`);
     if (
       await goOnOrNot({
         tips: [`print response data in string format?`],
@@ -49,5 +52,6 @@ export async function requestThroughTcpAndPrintResponse(requestOptions: HttpRequ
     ) {
       logColorful({}, allData);
     }
+    logColorful({color: 'red'}, `total size: ${intToWord(allData.byteLength)}`);
   });
 }

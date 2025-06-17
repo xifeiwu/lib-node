@@ -1,6 +1,6 @@
 import {HttpRequestOptions} from '../../../../types';
 
-export const requestOptions: HttpRequestOptions = {
+export const httpRequestOptions: HttpRequestOptions = {
   url: 'https://nodejs.org/docs/latest/api/',
   headers: {
     accept:

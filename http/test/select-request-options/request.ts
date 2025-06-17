@@ -13,10 +13,10 @@ import path from 'path';
 import {requestThroughHttpAndPrintResponse, requestThroughTcpAndPrintResponse} from '../service';
 
 async function selectRequestOptions() {
-  const selected = await selectAndRequireFile<{requestOptions: HttpRequestOptions}>([
+  const selected = await selectAndRequireFile<{httpRequestOptions: HttpRequestOptions}>([
     {targetDir: path.resolve(__dirname, 'request-options')},
   ]);
-  return selected.requestOptions;
+  return selected.httpRequestOptions;
 }
 
 export async function requestThroughHttp() {
