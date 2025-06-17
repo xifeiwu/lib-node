@@ -49,4 +49,10 @@ export {
   httpRequestOptionsToHttpInfo,
   httpRequestOptionsToCurlCommand,
   sendHttpRequestByTcp,
+  selectAndRequireFile,
 } from '../../../index';
+
+export {
+  requestThroughTcpAndPrintResponse,
+  requestThroughHttpAndPrintResponse,
+} from '../../../http/test/service';
