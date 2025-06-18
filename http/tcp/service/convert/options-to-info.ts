@@ -1,6 +1,6 @@
 import {TcpNetConnectOpts} from 'net';
-import {toUrlInstance, getUrlPropsFromConfig, urlPropsToHref, urlInstanceToProps} from '../../../external';
-import {HttpRequestOptions, HttpRequestInfo, ConnectionRole} from '../../../types';
+import {toUrlInstance, getUrlPropsFromConfig, urlPropsToHref, urlInstanceToProps} from '../../../../external';
+import {HttpRequestOptions, HttpRequestInfo, ConnectionRole} from '../../../../types';
 import {httpRequestInfoToBuffer} from './info-to-buffer';
 /**
  * Convert HttpRequestOptions to

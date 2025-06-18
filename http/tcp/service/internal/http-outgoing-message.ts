@@ -9,8 +9,9 @@ import {
 } from '../../../../types';
 import {getOneLineFromBuffer} from '../../../../stream';
 import {OutgoingHttpHeaders} from 'http';
-import {httpRequestHeaderPartInfoToBuffer, inferContentTypeByData} from '../../../service';
 import {convertToBuffer} from '../../../../transform';
+import {httpRequestHeaderPartInfoToBuffer} from '../convert';
+import {inferContentTypeByData} from '../common';
 
 export class HttpOutgoingMessage {
   socket: Socket;

@@ -53,4 +53,5 @@ export {
   REG_HTTP_REQUEST_FIRST_LINE,
   REG_HTTP_RESPONSE_FIRST_LINE,
   REG_HTTP_HEADER,
+  LINE_BREAK,
 } from '../fe/common';

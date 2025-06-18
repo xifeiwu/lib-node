@@ -1,8 +1,8 @@
 import http from 'http';
 import {ConnectionPayload, HttpResponseInfo} from '../../../types';
-import {updateHeadersByHttpInfo} from '../../service/internal';
 import {Readable} from 'stream';
 import {convertToBuffer} from '../../../transform';
+import {updateHeadersByHttpInfo} from '../../tcp';
 
 export function sendHttpResponse<Payload extends ConnectionPayload = any>(
   response: http.ServerResponse,

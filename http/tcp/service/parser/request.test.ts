@@ -3,7 +3,7 @@ import {Readable} from 'stream';
 import {tryParseHttpRequestFirstLine, tryParseHttpRequestHeaderPart} from './request';
 import {getDataFromReadable} from '../../../../stream';
 import {HttpRequestInfo} from '../../../../types';
-import {httpRequestInfoToBuffer} from '../../../service';
+import {httpRequestInfoToBuffer} from '../convert';
 
 const requestInfo: HttpRequestInfo = {
   method: 'post',

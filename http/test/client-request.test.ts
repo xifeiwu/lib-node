@@ -7,7 +7,6 @@ import {
   upgradeToWebsocket,
   getHttpResponseInfo,
 } from '../client';
-import {httpResponseInfoToBuffer} from '../service';
 import {
   getHttpRequestInfo,
   handleConnectEvent,
@@ -16,6 +15,7 @@ import {
   startHttpDebugServer,
   startHttpServer,
 } from '../server';
+import {httpResponseInfoToBuffer} from '../tcp';
 
 export async function testRequestAndGetResponseInfo() {
   const {origin, server} = await startHttpDebugServer();

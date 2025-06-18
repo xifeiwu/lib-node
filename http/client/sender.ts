@@ -1,7 +1,7 @@
 import http from 'http';
 import https from 'https';
 import {convertToBuffer} from '../../transform';
-import {Socket, TcpNetConnectOpts} from 'net';
+import {Socket} from 'net';
 import {
   toUrlInstance,
   getUrlPropsFromConfig,
@@ -10,7 +10,6 @@ import {
   isObject,
   getRandomBase64String,
   convertKeyToLowerCase,
-  urlInstanceToProps,
 } from '../../external';
 import {
   HttpRequestOptions,
@@ -21,12 +20,11 @@ import {
   SendHttpRequestResult,
   SendRequestWithResponseResult,
   SendRequestWithResponseInfoResult,
-  HttpRequestInfo,
 } from '../../types';
 import {Readable} from 'stream';
 import {getHttpResponseInfo} from './receiver';
-import {updateHeadersByHttpInfo} from '../service/internal';
 import {logColorful} from '../../log';
+import {updateHeadersByHttpInfo} from '../tcp';
 
 process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
 

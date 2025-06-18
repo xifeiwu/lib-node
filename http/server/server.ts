@@ -4,12 +4,11 @@ import https from 'https';
 import {IncomingMessage} from 'http';
 import {HttpServerConfig, LogColors} from '../../types';
 import {getAFreePort, isOverTls, watchSocketState} from '../../net';
-import {httpResponseInfoToBuffer} from '../service';
 import {getHttpRequestHeaderPartInfo, handleConnectEvent} from './service';
 import {customResponseByRequest, response404, responseEmpty, responseHttpRequestInfo} from './utils';
 import {logColorful} from '../../log';
 import {toNormalizedUrlProps, unifyNull} from '../../external';
-import {convertToBuffer} from '../../transform';
+import { httpResponseInfoToBuffer } from '../tcp';
 
 function createServer(options: HttpServerConfig['options']) {
   if (isOverTls(options)) {
