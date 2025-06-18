@@ -52,4 +52,5 @@ export {
   throttle,
   REG_HTTP_REQUEST_FIRST_LINE,
   REG_HTTP_RESPONSE_FIRST_LINE,
+  REG_HTTP_HEADER,
 } from '../fe/common';

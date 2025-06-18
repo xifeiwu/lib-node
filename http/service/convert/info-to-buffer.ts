@@ -8,7 +8,6 @@ import {
   HttpRequestHeaderPartInfo,
   HttpResponseFirstLineInfo,
   HttpResponseHeaderPartInfo,
-  HttpRequestOptions,
 } from '../../../types';
 import {updateHeadersByHttpInfo} from '../internal';
 import {convertToBuffer} from '../../../transform';
@@ -58,16 +57,6 @@ function httpCommonInfoToBuffer(
 function requestFirstLineToString(firstLineInfo: PickPartial<HttpRequestFirstLineInfo, 'httpVersion'>) {
   const {method = 'get', url = '/', httpVersion} = firstLineInfo;
   return [method.toUpperCase(), url, getHttpVersion(httpVersion)].join(' ');
-}
-export function httpRequestHeaderPartInfoToBuffer(
-  info: PickPartial<HttpRequestHeaderPartInfo, 'httpVersion'>
-) {
-  return convertToBuffer(
-    requestFirstLineToString(info),
-    LINE_BREAK,
-    headersToString(info.headers),
-    LINE_BREAK
-  );
 }
 
 export function httpRequestInfoToBuffer(
@@ -121,5 +110,19 @@ export function httpResponseInfoToBuffer(
     responseFirstLineToString(responseInfo),
     {headers, data},
     {adaptHeaders: role === 'sender'}
+  );
+}
+
+/**
+ * Not include logic for twist headers
+ */
+export function httpRequestHeaderPartInfoToBuffer(
+  info: PickPartial<HttpRequestHeaderPartInfo, 'httpVersion'>
+) {
+  return convertToBuffer(
+    requestFirstLineToString(info),
+    LINE_BREAK,
+    headersToString(info.headers),
+    LINE_BREAK
   );
 }

@@ -1,9 +1,9 @@
 import assert from 'assert';
 import {Readable} from 'stream';
-import {tryParseHttpFirstLine, tryParseHttpHeaderPart} from './parse-header-part';
-import {getDataFromReadable} from '../../../index';
-import {HttpRequestInfo} from '../../../types';
-import {httpRequestInfoToBuffer} from '../../service';
+import {tryParseHttpRequestFirstLine, tryParseHttpRequestHeaderPart} from './request';
+import {getDataFromReadable} from '../../../../index';
+import {HttpRequestInfo} from '../../../../types';
+import {httpRequestInfoToBuffer} from '../../../service';
 
 const requestInfo: HttpRequestInfo = {
   method: 'post',
@@ -25,7 +25,7 @@ export async function testParseHttpHeaderPart() {
       this.push(null);
     },
   });
-  const {headerPartProps, dataConsumed} = await tryParseHttpHeaderPart(reader);
+  const {info: headerPartProps, dataConsumed} = await tryParseHttpRequestHeaderPart(reader);
   assert.deepEqual(headerPartProps, {
     method: 'POST',
     url: '/api/debug/echo',
@@ -48,7 +48,9 @@ export async function testParseHttpFirstLine() {
     },
   });
   try {
-    const {firstLineInfo, dataConsumed: dataConsumed4FirstLine} = await tryParseHttpFirstLine(reader);
+    const {info: firstLineInfo, dataConsumed: dataConsumed4FirstLine} = await tryParseHttpRequestFirstLine(
+      reader
+    );
     console.log(`firstLineInfo`);
     assert.deepEqual(firstLineInfo, {
       method: 'POST',
@@ -56,7 +58,7 @@ export async function testParseHttpFirstLine() {
       httpVersion: 'HTTP/1.1',
     });
     assert.equal(dataConsumed4FirstLine.toString(), `POST /api/debug/echo HTTP/1.1\r\n`);
-    const {headerPartProps: requestInfo, dataConsumed} = await tryParseHttpHeaderPart(reader, firstLineInfo);
+    const {info: requestInfo, dataConsumed} = await tryParseHttpRequestHeaderPart(reader, firstLineInfo);
 
     assert.deepEqual(requestInfo, {
       method: 'POST',
