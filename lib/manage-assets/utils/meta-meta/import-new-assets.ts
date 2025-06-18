@@ -19,6 +19,7 @@ import {formatDate, getFilePathInfo, getPathWithDtSuffix, goOnOrNot, logColorful
  * 1. save to dir new-files-${formatDate(new Date(), 'yyyy-MM-dd')}
  * 2. append shortId to avoid override
  * 3. stay basename
+ * 4. There shouldn't be duplicate file if logic runs correct, as they are new file
  */
 function getToRelativePath(fromAssetInfo: AssetInfoFull) {
   const {relativePath, shortId} = fromAssetInfo;
@@ -174,6 +175,7 @@ export async function copyAsset(
           },
           to: {
             rootDir: rootDir2,
+            relativePath: getToRelativePath(assetInfo),
           },
         },
       ],
