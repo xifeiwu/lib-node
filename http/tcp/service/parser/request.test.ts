@@ -1,7 +1,7 @@
 import assert from 'assert';
 import {Readable} from 'stream';
 import {tryParseHttpRequestFirstLine, tryParseHttpRequestHeaderPart} from './request';
-import {getDataFromReadable} from '../../../../index';
+import {getDataFromReadable} from '../../../../stream';
 import {HttpRequestInfo} from '../../../../types';
 import {httpRequestInfoToBuffer} from '../../../service';
 

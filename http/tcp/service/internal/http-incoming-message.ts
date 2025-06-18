@@ -3,7 +3,7 @@ import {isNumber} from '../../../../external';
 import {Socket} from 'net';
 import {HttpRequestHeaderPartInfo} from '../../../../types';
 import {getOneLineFromBuffer} from '../../../../stream';
-import {tryParseHttpHeaderPart} from '../../service';
+import {tryParseHttpRequestHeaderPart} from '../../service';
 
 export class HttpIncomingMessage extends Readable {
   socket: Socket;
@@ -84,7 +84,7 @@ export class HttpIncomingMessage extends Readable {
     this.push(chunk.subarray(0, size));
   }
   async parseHeaderPart() {
-    const {headerPartProps} = await tryParseHttpHeaderPart(this.socket);
+    const {info: headerPartProps} = await tryParseHttpRequestHeaderPart(this.socket);
     this.headerPartProps = headerPartProps;
   }
   parseBody() {
