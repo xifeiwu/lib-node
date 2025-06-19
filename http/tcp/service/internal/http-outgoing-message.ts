@@ -1,4 +1,3 @@
-import {Writable} from 'stream';
 import {convertKeyToLowerCase, isNumber} from '../../../../external';
 import {Socket} from 'net';
 import {
@@ -7,18 +6,20 @@ import {
   HttpRequestInfo,
   HttpRequestOptions,
 } from '../../../../types';
-import {getOneLineFromBuffer} from '../../../../stream';
 import {OutgoingHttpHeaders} from 'http';
 import {convertToBuffer} from '../../../../transform';
 import {httpRequestHeaderPartInfoToBuffer} from '../convert';
 import {inferContentTypeByData} from '../common';
+import EventEmitter from 'events';
+import { Transform } from 'stream';
 
-export class HttpOutgoingMessage {
+export class HttpOutgoingMessage extends EventEmitter {
   socket: Socket;
   headerPartInfo: HttpRequestHeaderPartInfo<'sender'>;
   _headers: OutgoingHttpHeaders;
   headerSent: boolean;
   constructor(socket: Socket, headerPartInfo: HttpRequestHeaderPartInfo<'sender'>) {
+    super();
     this.socket = socket;
     this._headers = convertKeyToLowerCase(headerPartInfo.headers) ?? {};
   }

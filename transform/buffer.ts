@@ -96,13 +96,16 @@ export function fromBuffer(
   return finalData;
 }
 
+/**
+ * Only console part data if it's too large
+ */
 export function largeDataToString(
   data: CanConvertToBuffer,
   options?: {
     maxPrintSize?: number;
   }
 ) {
-  const buf = toBuffer(data);
+  const buf = convertToBuffer(data);
   const {maxPrintSize} = options ?? {};
   if (!isNumber(maxPrintSize)) {
     return buf.toString();
