@@ -9,3 +9,7 @@ https://github.com/node-formidable/formidable/tree/1699ec6fcb6fb01b2f7cacb735fea
 ## TODO
 
 1. Use charset from content-type of header part
+
+## Notice
+
+Default value of HttpBodyParserOptions.wayOfHandleFile is cache, if uploaded file is need to save, set to other values.

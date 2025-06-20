@@ -1,5 +1,11 @@
 import {sendHttpRequestByTcp} from '../../tcp';
-import {goOnOrNot, HttpRequestOptions, logColorful, requestAndGetResponseInfo} from '../../../index';
+import {
+  getSocketInfo,
+  goOnOrNot,
+  HttpRequestOptions,
+  logColorful,
+  requestAndGetResponseInfo,
+} from '../../../index';
 import {intToWord} from '../../../external';
 
 export async function requestThroughHttpAndPrintResponse(requestOptions: HttpRequestOptions) {
@@ -27,23 +33,29 @@ export async function requestThroughHttpAndPrintResponse(requestOptions: HttpReq
 export async function requestThroughTcpAndPrintResponse(requestOptions: HttpRequestOptions) {
   const client = await sendHttpRequestByTcp(requestOptions);
   const bufList: Buffer[] = [];
+  let totalSize = 0;
   client.on('data', async chunk => {
-    logColorful({color: 'red'}, `size: ${chunk.byteLength}`);
-    bufList.push(chunk);
-    client.pause();
-    if (
-      await goOnOrNot({
-        tips: [`print chunk data in string format?`],
-        defaultValue: false,
-      })
-    ) {
+    totalSize += chunk.byteLength;
+    logColorful({color: 'red'}, `size: ${chunk.byteLength}/${totalSize}`);
+    /** print header part */
+    if (bufList.length === 0) {
       logColorful({}, chunk);
     }
-    client.resume();
+    bufList.push(chunk);
+    // client.pause();
+    // if (
+    //   await goOnOrNot({
+    //     tips: [`print chunk data in string format?`],
+    //     defaultValue: false,
+    //   })
+    // ) {
+    //   logColorful({}, chunk);
+    // }
+    // client.resume();
   });
   client.on('end', async chunk => {
     const allData = Buffer.concat(bufList);
-    logColorful({color: 'red'}, `total size: ${intToWord(allData.byteLength)}`);
+    logColorful({color: 'red'}, `total size: ${intToWord(allData.byteLength)}/${totalSize}`);
     if (
       await goOnOrNot({
         tips: [`print response data in string format?`],
@@ -53,5 +65,6 @@ export async function requestThroughTcpAndPrintResponse(requestOptions: HttpRequ
       logColorful({}, allData);
     }
     logColorful({color: 'red'}, `total size: ${intToWord(allData.byteLength)}`);
+    logColorful({color: 'red'}, getSocketInfo(client));
   });
 }

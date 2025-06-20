@@ -9,9 +9,11 @@ import {
   httpRequestOptionsToHttpInfo,
   sendHttpRequestByTcp,
   requestThroughTcpAndPrintResponse,
+  getSocketInfo,
 } from '../../service/external';
 import {Readable} from 'stream';
 import {requestThroughHttpAndPrintResponse, selectAndRequireFile} from '../../service/external';
+import {Socket} from 'net';
 
 async function selectRequestOptions() {
   const selected = await selectAndRequireFile<{httpRequestOptions: HttpRequestOptions}>([
@@ -30,8 +32,10 @@ export async function bySocketServer() {
   const status = await connectToSocksServer({
     socksVersion: 1,
     socksServer: {
-      host: 'elif.site',
-      port: 80,
+      // host: 'elif.site',
+      // port: 80,
+      host: '127.0.0.1',
+      port: 3160
     },
     auth: SOCKS_AUTH_USER_PASS,
     requestTarget: {
@@ -40,7 +44,7 @@ export async function bySocketServer() {
     },
   });
   const {socket} = status;
-  let reader: Readable;
+  let reader: Socket;
   const buffer = httpRequestInfoToBuffer(info);
   logColorful({}, '--start--');
   logColorful({}, buffer);
@@ -62,11 +66,14 @@ export async function bySocketServer() {
     reader = socket;
   }
   await sendHttpRequestByTcp(httpRequestOptions, reader);
+  let totalSize = 0;
   reader.on('data', chunk => {
+    totalSize += chunk.byteLength;
     logColorful({}, chunk.toString());
+    logColorful({color: 'red'}, getSocketInfo(reader));
   });
   reader.on('end', chunk => {
-    logColorful({color: 'red'}, 'end', chunk ? chunk.toString() : '');
+    logColorful({color: 'red'}, totalSize);
   });
 }
 
