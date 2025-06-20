@@ -29,15 +29,25 @@ export function getCacheWriter() {
   return {writer, waitCacheData};
 }
 
+export function printWritableState(writer: Writable) {
+  const {closed, destroyed, writable, writableCorked, writableEnded, writableLength} = writer;
+  logColorful({}, {closed, destroyed, writable, writableCorked, writableEnded, writableLength});
+}
+
 export function watchWritableState(writer: Writable, options?: WatchStreamOptions) {
-  const {colorStyle = {color: 'black'}, logPrefix = ''} = options ?? {};
+  const {colorStyle = {color: 'black'}, logPrefix = '', printState} = options ?? {};
+  if (printState) {
+    logColorful(colorStyle, `${logPrefix}writer state:`);
+    printWritableState(writer);
+  }
   const eventNameList = ['drain', 'finish', 'pipe', 'unpipe', 'error', 'close'];
   for (const eventName of eventNameList) {
     writer.on(eventName, chunkOrError => {
-      logColorful(colorStyle, `${logPrefix} writer on-${eventName}`);
+      logColorful(colorStyle, `${logPrefix}writer on-${eventName}`);
       if (eventName === 'error') {
         colorStyle && logColorful(colorStyle, chunkOrError.stack);
       }
+      printState && printWritableState(writer);
     });
   }
 }

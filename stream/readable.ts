@@ -7,6 +7,7 @@ import {
   fromBuffer,
   logColorful,
   convertToBuffer,
+  largeDataToString,
 } from '../index';
 import {getBufferMatcher} from '../general';
 import {CanConvertToBuffer, WatchStreamOptions} from '../types';
@@ -158,8 +159,27 @@ export function getOneLineFromBuffer(buffer: Buffer) {
   };
 }
 
+export function printReadableState(reader: Readable) {
+  const {closed, destroyed, readable, readableFlowing, readableHighWaterMark, readableLength} = reader;
+  logColorful(
+    {},
+    {
+      closed,
+      destroyed,
+      readable,
+      readableFlowing,
+      readableHighWaterMark,
+      readableLength,
+      paused: reader.isPaused(),
+    }
+  );
+}
 export function watchReadableState(reader: Readable, options?: WatchStreamOptions) {
-  const {colorStyle = {color: 'black'}, logPrefix = '', maxPrintSizeOnData} = options ?? {};
+  const {colorStyle = {color: 'black'}, logPrefix = '', maxPrintSizeOnData = 16, printState} = options ?? {};
+  if (printState) {
+    logColorful(colorStyle, `${logPrefix}reader state:`);
+    printReadableState(reader);
+  }
   /**
    * Event readable, data will change flowMode of Readable, so it will not in event list by default.
    * NOTICE: data, readable can not be listened together.
@@ -168,22 +188,19 @@ export function watchReadableState(reader: Readable, options?: WatchStreamOption
   if (isNumber(maxPrintSizeOnData)) {
     reader.on('data', chunk => {
       const {byteLength} = chunk;
-      logColorful(colorStyle, `${logPrefix} reader on-${'data'} [size: ${byteLength}]`);
+      logColorful(colorStyle, `${logPrefix}reader on-${'data'} [size: ${byteLength}]`);
       // console.log(chunk.toString());
-      logColorful(
-        colorStyle,
-        byteLength > maxPrintSizeOnData
-          ? chunk.subarray(0, maxPrintSizeOnData).toString() + '...'
-          : chunk.toString()
-      );
+      logColorful(colorStyle, largeDataToString(chunk, {maxPrintSize: maxPrintSizeOnData}));
+      printState && printReadableState(reader);
     });
   }
   for (const eventName of eventNameList) {
     reader.on(eventName, chunkOrError => {
-      colorStyle && logColorful(colorStyle, `${logPrefix} reader on-${eventName}`);
+      logColorful(colorStyle, `${logPrefix}reader on-${eventName}`);
       if (eventName === 'error') {
-        colorStyle && logColorful(colorStyle, chunkOrError.stack);
+        logColorful(colorStyle, chunkOrError.stack);
       }
+      printState && printReadableState(reader);
     });
   }
 }
