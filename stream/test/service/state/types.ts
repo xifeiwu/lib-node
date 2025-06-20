@@ -1,7 +1,7 @@
-import {ColorStyle} from '../../../../types';
+import {ColorStyle, LogColors} from '../../../../types';
 
 export interface WatchStreamOptions {
-  colorStyle?: ColorStyle;
+  color?: LogColors;
   logPrefix?: string;
   /**
    * if maxPrintSizeOnData is not undefined,
@@ -12,4 +12,5 @@ export interface WatchStreamOptions {
    * print stream state
    */
   printState?: boolean;
+  isDuplex?: boolean;
 }
