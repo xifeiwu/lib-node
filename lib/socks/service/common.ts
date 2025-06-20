@@ -6,7 +6,7 @@ import {getWrappedSocket as getWrappedSocketVc1} from '../vc1/service';
 const getWrappedSocket: Partial<{
   [version in SocksVersion]: GetWrappedSocket<SocksVersion>;
 }> = {
-  1: getWrappedSocketVc1,
+  // 1: getWrappedSocketVc1,
 };
 
 export function getWrapSocketFunc(socksVersion: SocksVersion) {

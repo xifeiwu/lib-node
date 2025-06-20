@@ -11,9 +11,9 @@ import {
   requestThroughTcpAndPrintResponse,
   getSocketInfo,
 } from '../../service/external';
-import {Readable} from 'stream';
 import {requestThroughHttpAndPrintResponse, selectAndRequireFile} from '../../service/external';
 import {Socket} from 'net';
+import {EMethod} from '../../types/v5';
 
 async function selectRequestOptions() {
   const selected = await selectAndRequireFile<{httpRequestOptions: HttpRequestOptions}>([
@@ -31,13 +31,16 @@ export async function bySocketServer() {
   const {info, urlInst: url, target} = httpRequestOptionsToHttpInfo(httpRequestOptions);
   const status = await connectToSocksServer({
     socksVersion: 1,
+    auth: SOCKS_AUTH_USER_PASS,
+    // socksVersion: 5,
+    // methodList: [{method: EMethod.NoAuth}],
+    // methodList: [{method: EMethod.UserPass, info: SOCKS_AUTH_USER_PASS}],
     socksServer: {
       // host: 'elif.site',
       // port: 80,
       host: '127.0.0.1',
-      port: 3160
+      port: 3160,
     },
-    auth: SOCKS_AUTH_USER_PASS,
     requestTarget: {
       address: target.host,
       port: target.port,
@@ -53,7 +56,7 @@ export async function bySocketServer() {
     // const tlsSocket = new TLSSocket(socket, {isServer: false, servername: ''});
     const tlsSocket = tls.connect({
       socket,
-      servername: 'javdb.com',
+      servername: url.hostname,
     });
     await new Promise((res, rej) => {
       tlsSocket.on('secureConnect', res);
@@ -68,9 +71,11 @@ export async function bySocketServer() {
   await sendHttpRequestByTcp(httpRequestOptions, reader);
   let totalSize = 0;
   reader.on('data', chunk => {
-    totalSize += chunk.byteLength;
-    logColorful({}, chunk.toString());
-    logColorful({color: 'red'}, getSocketInfo(reader));
+    const length = chunk.byteLength;
+    totalSize += length;
+    // logColorful({}, chunk.toString());
+    logColorful({color: 'red'}, `${length}/${totalSize}`);
+    logColorful({}, getSocketInfo(reader));
   });
   reader.on('end', chunk => {
     logColorful({color: 'red'}, totalSize);
@@ -86,30 +91,3 @@ export async function requestThroughTcp() {
   const requestOptions = await selectRequestOptions();
   await requestThroughTcpAndPrintResponse(requestOptions);
 }
-
-// export async function requestByHttpAndTcp() {
-//   // const {origin, server} = await startHttpDebugServerOnTcp({options: getDefaultTlsConfig()});
-//   // Echo request entity by setting url to origin of debugServer
-//   // httpRequestOptions.url = origin;
-
-//   const {requestOptions, responseInfo} = await requestAndGetResponseInfo(httpRequestOptions);
-//   logColorful({}, requestOptions);
-//   logColorful({}, responseInfo);
-//   logColorful({}, httpRequestOptionsToCurlCommand(requestOptions));
-
-//   const client = (await sendHttpRequestByTcp(httpRequestOptions)) as TLSSocket;
-//   const response = await getDataFromReadable(client);
-//   logColorful({}, response);
-//   // server.close();
-// }
-
-// export async function requestByTcp() {
-//   const client = (await sendHttpRequestByTcp(httpRequestOptions)) as TLSSocket;
-//   const certificate = client.getPeerCertificate();
-//   const publicKey = certificate.pubkey;
-//   console.log('Public Key:', publicKey);
-//   console.log('Certificate:', certificate);
-
-//   const response = await getDataFromReadable(client);
-//   logColorful({}, response);
-// }
