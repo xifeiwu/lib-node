@@ -1,8 +1,5 @@
-import {Duplex, Transform} from 'stream';
+import {Transform} from 'stream';
 import {waitFor} from '../external';
-import {WatchStreamOptions} from '../types';
-import {watchReadableState} from './readable';
-import {watchWritableState} from './writable';
 
 // TODO: fix stream.push() after EOF
 export function slowStream(chunkSize = 1024, wait = 500) {
@@ -25,9 +22,4 @@ export function slowStream(chunkSize = 1024, wait = 500) {
       next();
     },
   });
-}
-
-export function watchDuplexState(duplex: Duplex, options?: WatchStreamOptions) {
-  watchReadableState(duplex, options);
-  watchWritableState(duplex, options);
 }
