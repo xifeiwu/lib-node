@@ -342,66 +342,13 @@ export async function getProcessInfoByPort(port: number | string): Promise<Proce
   }
 }
 
-/**
- * Find the process who use the port, and kill it.
- * @param options
- * @returns The info of process killed
- */
-// export async function selectProcessToKill(
-//   processInfoList: ProcessInfo[],
-//   options?: {
-//     printProcessInfo?: boolean;
-//     selectProcessToKill?: boolean;
-//   }
-// ) {
-//   const {printProcessInfo, selectProcessToKill} = options ?? {};
-//   printProcessInfo && console.log(processInfoList);
-//   const pidToKill: number[] = [];
-//   if (processInfoList.length > 1) {
-//     if (selectProcessToKill) {
-//       const selected = await selectOption(
-//         [
-//           {
-//             label: 'kill all',
-//             pid: -1,
-//           },
-//           ...processInfoList.map(it => {
-//             const {pid, ppid, command} = it;
-//             return {
-//               pid,
-//               ppid,
-//               command,
-//               label: `${pid}.${ppid} - ${command}`,
-//             };
-//           }),
-//         ],
-//         {
-//           defaultIndex: 0,
-//         }
-//       );
-//       if (selected.pid === -1) {
-//         pidToKill.push(...processInfoList.map(it => it.pid));
-//       } else {
-//         pidToKill.push(selected.pid);
-//       }
-//     } else {
-//       pidToKill.push(...processInfoList.map(it => it.pid));
-//     }
-//   } else if (processInfoList.length > 0) {
-//     pidToKill.push(processInfoList[0].pid);
-//   }
-
-//   pidToKill.forEach(pid => process.kill(Number(pid)));
-//   return pidToKill.map(pid => processInfoList.find(it => it.pid === pid));
-// }
-
 export async function closePortIfInUse(port: number) {
   const isPortOpen = await checkPort(port);
   if (isPortOpen) {
     const processInfoList = await getProcessInfoByPort(port);
     return killProcessByPid(
       processInfoList.map(it => it.pid),
-      {doubleConfirm: true}
+      {doubleConfirm: true, killChildren: true}
     );
   }
   return [];
