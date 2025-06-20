@@ -117,9 +117,9 @@ export async function sendHttpRequestByTcp(
   } else {
     if (bufferData.byteLength > 0) {
       client.write(headerPart);
-      client.end(bufferData);
+      client.write(bufferData);
     } else {
-      client.end(headerPart);
+      client.write(headerPart);
     }
   }
   return client;
