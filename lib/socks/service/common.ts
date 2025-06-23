@@ -9,7 +9,7 @@ const getWrappedSocket: Partial<{
   1: getWrappedSocketVc1,
 };
 
-export function getWrapSocketFunc(socksVersion: SocksVersion) {
+export function getWrapSocketFunc(socksVersion: SocksVersion): GetWrappedSocket<SocksVersion> {
   const func = getWrappedSocket[socksVersion];
   return func ? func : (socket: Socket) => socket;
 }

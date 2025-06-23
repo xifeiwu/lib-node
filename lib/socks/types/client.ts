@@ -4,6 +4,7 @@ import {NegotiationInfoClient as NegotiationInfoVc1, NegotiationResult as Negoti
 import {StateTracer} from './base';
 import {SocksVersion} from './common';
 import {SocksError} from '../service/utils';
+import {Duplex} from 'stream';
 
 /**
  * if type is string, will treat as http href and get socket by http upgrade protocol
