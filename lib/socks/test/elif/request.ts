@@ -35,11 +35,12 @@ export async function bySocketServer() {
     // socksVersion: 5,
     // methodList: [{method: EMethod.NoAuth}],
     // methodList: [{method: EMethod.UserPass, info: SOCKS_AUTH_USER_PASS}],
+    // socksServer: 'http://elif.site',
     socksServer: {
-      // host: 'elif.site',
-      // port: 80,
-      host: '127.0.0.1',
-      port: 3160,
+      host: 'elif.site',
+      port: 80,
+      // host: '127.0.0.1',
+      // port: 3160,
     },
     requestTarget: {
       address: target.host,
@@ -52,34 +53,38 @@ export async function bySocketServer() {
   logColorful({}, '--start--');
   logColorful({}, buffer);
   logColorful({}, '--end--');
-  if (url.protocol === 'https:') {
-    // const tlsSocket = new TLSSocket(socket, {isServer: false, servername: ''});
-    const tlsSocket = tls.connect({
-      socket,
-      servername: url.hostname,
+  try {
+    if (url.protocol === 'https:') {
+      // const tlsSocket = new TLSSocket(socket, {isServer: false, servername: ''});
+      const tlsSocket = tls.connect({
+        socket,
+        servername: url.hostname,
+      });
+      await new Promise((res, rej) => {
+        tlsSocket.on('secureConnect', res);
+        tlsSocket.on('error', rej);
+      });
+      logColorful({}, tlsSocket.bytesRead, tlsSocket.bytesWritten);
+      reader = tlsSocket;
+    } else {
+      // socket.end(buffer);
+      reader = socket;
+    }
+    await sendHttpRequestByTcp(httpRequestOptions, reader);
+    let totalSize = 0;
+    reader.on('data', chunk => {
+      const length = chunk.byteLength;
+      totalSize += length;
+      // logColorful({}, chunk.toString());
+      logColorful({color: 'red'}, `${length}/${totalSize}`);
+      logColorful({}, getSocketInfo(reader));
     });
-    await new Promise((res, rej) => {
-      tlsSocket.on('secureConnect', res);
-      tlsSocket.on('error', rej);
+    reader.on('end', chunk => {
+      logColorful({color: 'red'}, totalSize);
     });
-    logColorful({}, tlsSocket.bytesRead, tlsSocket.bytesWritten);
-    reader = tlsSocket;
-  } else {
-    // socket.end(buffer);
-    reader = socket;
+  } catch (err) {
+    console.log(err);
   }
-  await sendHttpRequestByTcp(httpRequestOptions, reader);
-  let totalSize = 0;
-  reader.on('data', chunk => {
-    const length = chunk.byteLength;
-    totalSize += length;
-    // logColorful({}, chunk.toString());
-    logColorful({color: 'red'}, `${length}/${totalSize}`);
-    logColorful({}, getSocketInfo(reader));
-  });
-  reader.on('end', chunk => {
-    logColorful({color: 'red'}, totalSize);
-  });
 }
 
 export async function requestThroughHttp() {
