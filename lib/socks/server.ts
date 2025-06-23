@@ -108,6 +108,21 @@ export async function handleSocksConnection<Version extends SocksVersion>(
         stateTracer.push(`${SERVER_STATE.connectionError}: ${err?.message}`);
       });
       socket.resume();
+      // // When client ends, we stop writing to target
+      // wrappedSocket.on('end', () => {
+      //   socket2Remote.end(); // Half-close target socket
+      // });
+      // // On error, destroy both sockets
+      // wrappedSocket.on('error', () => {
+      //   socket2Remote.destroy();
+      // });
+      // // When target ends, we stop writing to client
+      // socket2Remote.on('end', () => {
+      //   wrappedSocket.end(); // Half-close client socket
+      // });
+      // socket2Remote.on('error', () => {
+      //   wrappedSocket.destroy();
+      // });
       // status.stateTracer = serverserverState.success;
       stateTracer.push(SERVER_STATE.handleConnectCommandSuccess);
     } else if (command === ECommand.ECHO) {
