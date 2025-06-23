@@ -1,10 +1,12 @@
-import {DuplexOptions, ReadableOptions} from 'stream';
+import {DuplexOptions, ReadableOptions, TransformOptions} from 'stream';
 
 import {LogColors, BufferGeneratorConfig} from '../../../../types';
 
 interface CommonFuncConfig {
   /** log what pushed or not */
   color?: LogColors;
+  /** prefix before log content */
+  logPrefix?: string;
   maxPrintSize?: number;
   /** time dealy during each push in ms */
   delay?: number;
@@ -18,7 +20,14 @@ export interface CustomizedReadableConfig extends ReadFuncConfig {
 
 export interface WriteFuncConfig extends CommonFuncConfig {}
 
+interface DuplexFuncConfig extends CommonFuncConfig {
+  read?: ReadFuncConfig;
+  write?: WriteFuncConfig;
+}
 export interface CustomizedDuplexConfig extends DuplexOptions {
-  readFuncConfig?: ReadFuncConfig;
-  writeFuncConfig?: WriteFuncConfig;
+  customize?: DuplexFuncConfig;
+}
+
+export interface CustomizedTransformConfig extends TransformOptions {
+  customize?: DuplexFuncConfig;
 }
