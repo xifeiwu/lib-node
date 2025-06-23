@@ -4,7 +4,7 @@
 export type CanConvertToBuffer = string | number | object | Uint8Array | Buffer;
 
 export interface BufferGeneratorConfig {
-  source?: CanConvertToBuffer;
+  source?: 'number' | 'word' | CanConvertToBuffer;
   /** use the same char as content per geenrate */
   sameItemPerGenerate?: boolean;
   /** full chunk data to target size by existing data */

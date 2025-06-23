@@ -1,4 +1,4 @@
-import {base64url, byteToWord, isNumber, isPlainObject, isString} from '../external';
+import {BASE64_CHARS, byteToWord, isNumber, isPlainObject, isString, LETTERS, NUMBERS} from '../external';
 import {BufferGeneratorConfig, CanConvertToBuffer} from '../types';
 
 /**
@@ -120,14 +120,13 @@ export function largeDataToString(
 
 const G = Math.pow(1024, 3);
 export function getBufferGenerator(config?: BufferGeneratorConfig) {
-  const {source = base64url, sameItemPerGenerate = true, chunkSize = 1, generateCount = 3} = config ?? {};
+  const {source, sameItemPerGenerate = true, chunkSize = 1, generateCount = 3} = config ?? {};
   if (generateCount > 10000) {
     throw new Error(`value of countOfGenerate is too large`);
   }
-  if (chunkSize > G) {
-    throw new Error(`value of chunkSize is too large`);
-  }
-  let sourceBuffer = convertToBuffer(source);
+  let sourceBuffer = convertToBuffer(
+    source === 'word' ? LETTERS : source === 'number' ? NUMBERS : BASE64_CHARS
+  );
   /**
    * Try to get more different char when the length is 1
    */
