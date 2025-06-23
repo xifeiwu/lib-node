@@ -1,6 +1,6 @@
 import {BinaryLike, randomFillSync} from 'crypto';
-import {Transform} from 'stream';
-import {toBuffer} from '../transform';
+import {Readable, Transform} from 'stream';
+import {convertToBuffer} from '../transform';
 import {CanConvertToBuffer} from '../types';
 
 export const defaultIvBytes = 1;
@@ -8,9 +8,10 @@ export const defaultIvBytes = 1;
 export function getIv(length: number) {
   return randomFillSync(new Uint8Array(length));
 }
+
 export function xorData(data: BinaryLike, iv: CanConvertToBuffer) {
-  const chunk = toBuffer(data);
-  const key = toBuffer(iv);
+  const chunk = convertToBuffer(data);
+  const key = convertToBuffer(iv);
   const keyLength = key.byteLength;
   const output = Buffer.alloc(chunk.byteLength);
   for (let i = 0; i < chunk.byteLength; i++) {
@@ -18,10 +19,27 @@ export function xorData(data: BinaryLike, iv: CanConvertToBuffer) {
   }
   return output;
 }
-export function getXorTransform(iv: BinaryLike) {
+
+export function getXorDataFunc(iv: CanConvertToBuffer) {
+  const ivBuf = convertToBuffer(iv);
+  const ivLength = ivBuf.byteLength;
+  let ivIndex = 0;
+  function xorData(chunk: CanConvertToBuffer) {
+    const buf = convertToBuffer(chunk);
+    const output = Buffer.alloc(buf.byteLength);
+    for (let i = 0; i < buf.byteLength; i++) {
+      output[i] = chunk[i] ^ iv[ivIndex++ % ivLength];
+    }
+    return output;
+  }
+  return xorData;
+}
+
+export function getXorTransform(iv: BinaryLike, reader: Readable) {
+  const xorData = getXorDataFunc(iv);
   const transform = new Transform({
     transform(chunks, enc, cb) {
-      this.push(xorData(chunks, iv));
+      reader.push(xorData(chunks));
       cb && cb();
     },
   });
