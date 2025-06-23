@@ -1,17 +1,13 @@
 import {TcpNetConnectOpts} from 'net';
 import {toUrlInstance, getUrlPropsFromConfig, urlPropsToHref, urlInstanceToProps} from '../../../../external';
-import {HttpRequestOptions, HttpRequestInfo, ConnectionRole} from '../../../../types';
+import {HttpRequestOptions, HttpRequestInfo, ConnectionRole, HttpRequestInfoFull} from '../../../../types';
 import {httpRequestInfoToBuffer} from './info-to-buffer';
 /**
  * Convert HttpRequestOptions to
  * @param httpOption
  * @returns
  */
-export function httpRequestOptionsToHttpInfo(httpOption: HttpRequestOptions): {
-  info: HttpRequestInfo;
-  target: Pick<TcpNetConnectOpts, 'host' | 'port'> & {overTls: boolean};
-  urlInst: URL;
-} {
+export function httpRequestOptionsToHttpInfo(httpOption: HttpRequestOptions): HttpRequestInfoFull {
   const {
     urlProps,
     restProps: {method = 'get', headers, data, port},

@@ -34,6 +34,19 @@ export interface HttpRequestInfo<DataType = any, Role extends ConnectionRole = '
   data?: DataType;
 }
 
+/**
+ * All infos from HttpRequestOptions
+ */
+export interface HttpRequestInfoFull {
+  info: HttpRequestInfo;
+  target: {
+    host: string;
+    port: number;
+    overTls: boolean;
+  };
+  urlInst: URL;
+}
+
 export interface HttpResponseFirstLineInfo {
   httpVersion: string;
   statusCode: number;
