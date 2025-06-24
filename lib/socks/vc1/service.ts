@@ -49,10 +49,18 @@ class EncryptedSocket extends Duplex {
   }
   converReaderData(reader: Readable, iv: Buffer) {
     reader.pipe(getXorTransform(iv, this));
+    reader.once('end', () => {
+      this.push(null);
+    });
   }
   _read() {}
   _write(chunk: string | Buffer, encoding?: BufferEncoding, cb?: (err?: Error) => void) {
     return this.socket.write(this.xorData4Write(chunk), encoding, cb);
+  }
+  _final(cb: (error?: Error | null) => void): void {
+    if (this.socket.writable) {
+      this.socket.end(cb);
+    }
   }
   get localAddress() {
     return this.socket?.localAddress;

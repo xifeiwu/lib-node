@@ -102,7 +102,10 @@ export const SERVER_STATE = {
   handleConnectCommandSuccess: 'handle connect command success',
   willProxyToRemoteSocksServer: 'will proxy connection to remote socks server',
   proxyToRemoteSocksServerSuccess: 'proxy to remote socks server success',
+  clientSocketClosed: 'client socket closed',
+  clientSocketError: 'client socket closed',
   remoteSocketClosed: 'remote socket closed',
+  remoteSocketError: 'remote socket closed',
   connectionError: 'connection error',
 };
 
