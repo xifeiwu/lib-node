@@ -34,11 +34,10 @@ export function getCustomizedWriter(config?: CustomizedWritableConfig) {
 }
 
 export function getCustomizedDuplex(config?: CustomizedDuplexConfig) {
+  const {customize: {read, write = {}, ...common} = {}, ...duplexOptions} = config ?? {};
   // duplex read, write function can't be undefined
-  const {customize: {read = {}, write = {}, ...common} = {}, ...duplexOptions} = config ?? {};
-
   const duplex = new Duplex({
-    read: read ? getReadFunc({...read, ...common}) : undefined,
+    read: read ? getReadFunc({...read, ...common}) : () => {},
     write: write ? getWriteFunc({...write, ...common}) : undefined,
     ...duplexOptions,
   });
@@ -46,16 +45,12 @@ export function getCustomizedDuplex(config?: CustomizedDuplexConfig) {
 }
 
 export function getCustomizedTransform(config?: CustomizedTransformConfig) {
-  const {customize: {read, write, ...common} = {}, ...otherOptions} = config ?? {};
-  const transformOptions: TransformOptions = {
-    ...otherOptions,
-  };
-  if (read) {
-    transformOptions.read = getReadFunc({...read, ...common});
-  }
-  if (write) {
-    transformOptions.write = getWriteFunc({...write, ...common});
-  }
-  const transform = new Transform(transformOptions);
+  const {customize: {read, write, ...common} = {}, ...transformOptions} = config ?? {};
+  // duplex read, write function can't be undefined
+  const transform = new Transform({
+    read: read ? getReadFunc({...read, ...common}) : () => {},
+    write: write ? getWriteFunc({...write, ...common}) : undefined,
+    ...transformOptions,
+  });
   return transform;
 }
