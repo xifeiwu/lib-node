@@ -1,6 +1,6 @@
 import {Duplex, Readable} from 'stream';
-import {CanConvertToBuffer, getXorDataFunc, getXorTransform} from '../service/external';
-import {getCustomizedDuplex, watchDuplexState} from '../../../stream';
+import {CanConvertToBuffer, getXorDataFunc, getXorTransform, logColorful} from '../service/external';
+import {getCustomizedDuplex, printDuplexState, watchDuplexState} from '../../../stream';
 
 class EncryptedSocket extends Duplex {
   socket: Duplex;
@@ -20,10 +20,20 @@ class EncryptedSocket extends Duplex {
   }
   converReaderData(reader: Readable, iv: Buffer) {
     reader.pipe(getXorTransform(iv, this));
+    reader.on('end', () => {
+      this.push(null);
+      logColorful({color: 'red'}, 'reader on end');
+      printDuplexState(this);
+    });
   }
   _read() {}
   _write(chunk: string | Buffer, encoding?: BufferEncoding, cb?: (err?: Error) => void) {
     return this.socket.write(this.xorData4Write(chunk), encoding, cb);
+  }
+  _final(cb: (error?: Error | null) => void): void {
+    if (this.socket.writable) {
+      this.socket.end(cb);
+    }
   }
 }
 
@@ -33,19 +43,29 @@ export async function testState() {
       read: {source: 'number', generateCount: 5, delay: 300},
       color: 'blue',
     },
-    allowHalfOpen: false,
+    // allowHalfOpen: false,
   });
-  watchDuplexState(clientSocket, {logPrefix: 'clientSocket ', printState: true, color: 'blue'});
+  watchDuplexState(clientSocket, {
+    logPrefix: 'clientSocket ',
+    printState: true,
+    color: 'blue',
+    maxPrintSizeOnData: 10,
+  });
 
   const es = new EncryptedSocket(clientSocket);
-  watchDuplexState(es, {logPrefix: 'EncryptedSocket ', printState: true, color: 'magenta'});
+  watchDuplexState(es, {
+    logPrefix: 'EncryptedSocket ',
+    printState: true,
+    color: 'magenta',
+    maxPrintSizeOnData: 10,
+  });
 
   const remoteSocket = getCustomizedDuplex({
     customize: {
       read: {source: 'word', generateCount: 5, delay: 300},
       color: 'red',
     },
-    allowHalfOpen: false,
+    // allowHalfOpen: false,
   });
   watchDuplexState(remoteSocket, {logPrefix: 'remoteSocket ', printState: true, color: 'red'});
 
