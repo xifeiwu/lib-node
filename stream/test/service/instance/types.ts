@@ -1,4 +1,4 @@
-import {DuplexOptions, ReadableOptions, TransformOptions} from 'stream';
+import {DuplexOptions, ReadableOptions, TransformOptions, WritableOptions} from 'stream';
 
 import {LogColors, BufferGeneratorConfig} from '../../../../types';
 
@@ -19,6 +19,10 @@ export interface CustomizedReadableConfig extends ReadFuncConfig {
 }
 
 export interface WriteFuncConfig extends CommonFuncConfig {}
+
+export interface CustomizedWritableConfig extends WriteFuncConfig {
+  writableOptions?: WritableOptions;
+}
 
 interface DuplexFuncConfig extends CommonFuncConfig {
   read?: ReadFuncConfig;

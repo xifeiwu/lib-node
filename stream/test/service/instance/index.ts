@@ -1,5 +1,10 @@
-import {Duplex, Readable, Transform, TransformOptions} from 'stream';
-import {CustomizedDuplexConfig, CustomizedReadableConfig, CustomizedTransformConfig} from './types';
+import {Duplex, Readable, Transform, TransformOptions, Writable} from 'stream';
+import {
+  CustomizedDuplexConfig,
+  CustomizedReadableConfig,
+  CustomizedTransformConfig,
+  CustomizedWritableConfig,
+} from './types';
 import {getReadFunc, getWriteFunc} from './service';
 
 /**
@@ -14,8 +19,23 @@ export function getCustomizedReader(config?: CustomizedReadableConfig) {
   return d1;
 }
 
+export function getCustomizedWriter(config?: CustomizedWritableConfig) {
+  const {writableOptions, ...restConfig} = config ?? {};
+  return new Writable({
+    write: getWriteFunc(restConfig),
+    // final(cb) {
+    //   if (restConfig.color) {
+    //     logColorful({color: restConfig.color}, 'final of writer is called');
+    //   }
+    //   cb && cb();
+    // },
+    ...writableOptions,
+  });
+}
+
 export function getCustomizedDuplex(config?: CustomizedDuplexConfig) {
-  const {customize: {read, write, ...common} = {}, ...duplexOptions} = config ?? {};
+  // duplex read, write function can't be undefined
+  const {customize: {read = {}, write = {}, ...common} = {}, ...duplexOptions} = config ?? {};
 
   const duplex = new Duplex({
     read: read ? getReadFunc({...read, ...common}) : undefined,

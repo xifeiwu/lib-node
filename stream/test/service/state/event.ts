@@ -7,10 +7,11 @@ import {largeDataToString} from '../../../../transform';
 import {printDuplexState, printReadableState, printWritableState} from './state';
 
 export function watchReadableState(reader: Readable, options?: WatchStreamOptions) {
-  const {color, logPrefix = '', maxPrintSizeOnData = 16, printState, isDuplex} = options ?? {};
+  const {color, logPrefix = '', maxPrintSizeOnData, printState, isDuplex} = options ?? {};
+  const role = isDuplex ? 'duplex' : 'reader';
   const printStateFunc = (isDuplex ? printDuplexState : printReadableState) as typeof printReadableState;
   if (printState) {
-    logColorful({color}, `${logPrefix}reader state:`);
+    logColorful({color}, `${logPrefix}${role} state:`);
     printStateFunc(reader);
   }
   /**
@@ -18,10 +19,11 @@ export function watchReadableState(reader: Readable, options?: WatchStreamOption
    * NOTICE: data, readable can not be listened together.
    */
   const eventNameList: ReadableEvent[] = ['pause', 'resume', 'end', 'error', 'close'];
+  // as listen on data event will change flowingMode of readable, so I should be set explictly by caller
   if (isNumber(maxPrintSizeOnData)) {
     reader.on('data', chunk => {
       const {byteLength} = chunk;
-      logColorful({color}, `${logPrefix}reader on-${'data'} [size: ${byteLength}]`);
+      logColorful({color}, `${logPrefix}${role} on-${'data'} [size: ${byteLength}]`);
       // console.log(chunk.toString());
       logColorful({color}, largeDataToString(chunk, {maxPrintSize: maxPrintSizeOnData}));
       printState && printStateFunc(reader);
@@ -29,7 +31,7 @@ export function watchReadableState(reader: Readable, options?: WatchStreamOption
   }
   for (const eventName of eventNameList) {
     reader.on(eventName, chunkOrError => {
-      logColorful({color}, `${logPrefix}reader on-${eventName}`);
+      logColorful({color}, `${logPrefix}${role} on-${eventName}`);
       if (eventName === 'error') {
         logColorful({color}, chunkOrError.stack);
       }
@@ -40,15 +42,16 @@ export function watchReadableState(reader: Readable, options?: WatchStreamOption
 
 export function watchWritableState(writer: Writable, options?: WatchStreamOptions) {
   const {color, logPrefix = '', printState, isDuplex} = options ?? {};
+  const role = isDuplex ? 'duplex' : 'writer';
   const printStateFunc = (isDuplex ? printDuplexState : printWritableState) as typeof printWritableState;
   if (printState) {
-    logColorful({color}, `${logPrefix}writer state:`);
+    logColorful({color}, `${logPrefix}${role} state:`);
     printStateFunc(writer);
   }
   const eventNameList = ['drain', 'finish', 'pipe', 'unpipe', 'error', 'close'];
   for (const eventName of eventNameList) {
     writer.on(eventName, chunkOrError => {
-      logColorful({color}, `${logPrefix}writer on-${eventName}`);
+      logColorful({color}, `${logPrefix}${role} on-${eventName}`);
       if (eventName === 'error') {
         logColorful({color}, chunkOrError.stack);
       }

@@ -73,12 +73,6 @@ async function sendDataOverTcpAndCheckResponse(httpRequestOptions: HttpRequestOp
     console.log(err);
   }
 }
-export async function byPipeSocket() {
-  const httpRequestOptions = await selectRequestOptions();
-  const {target} = httpRequestOptionsToHttpInfo(httpRequestOptions);
-  const socket = await startSocketClient(target);
-  await sendDataOverTcpAndCheckResponse(httpRequestOptions, socket);
-}
 
 /**
  * Notice:
@@ -117,4 +111,11 @@ export async function requestThroughHttp() {
 export async function requestThroughTcp() {
   const requestOptions = await selectRequestOptions();
   await requestThroughTcpAndPrintResponse(requestOptions);
+}
+
+export async function byPipeSocket() {
+  const httpRequestOptions = await selectRequestOptions();
+  const {target} = httpRequestOptionsToHttpInfo(httpRequestOptions);
+  const socket = await startSocketClient(target);
+  await sendDataOverTcpAndCheckResponse(httpRequestOptions, socket);
 }
