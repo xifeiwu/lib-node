@@ -58,4 +58,5 @@ export {
   LETTERS_LOWERCASE,
   LETTERS,
   NUMBERS,
+  toLocalISOString,
 } from '../fe/common';

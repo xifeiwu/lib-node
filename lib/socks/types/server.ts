@@ -30,6 +30,11 @@ export type ProxyConfig = SocksProxyConfig<5> | SocksProxyConfig<1>;
 
 export type SocksServerConfig<Version extends SocksVersion = any> = ServerConfig[Version] & {
   socksVersion: Version;
+  /**
+   * after this time, socks server will terminate the tcp connection anyway.
+   * the unit is second
+   */
+  tcpMaxLifeTime?: number;
   proxyConfigList?: Array<ProxyConfig>;
 };
 

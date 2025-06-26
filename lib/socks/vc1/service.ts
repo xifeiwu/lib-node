@@ -46,6 +46,15 @@ class EncryptedSocket extends Duplex {
     this.iv = convertToBuffer(iv);
     this.converReaderData(this.socket, this.iv);
     this.xorData4Write = getXorDataFunc(this.iv);
+    // need to listen close event???
+    socket.once('error', err => {
+      this.destroy(err);
+    });
+    this.on('close', () => {
+      if (!socket.destroyed) {
+        socket.destroy();
+      }
+    });
   }
   converReaderData(reader: Readable, iv: Buffer) {
     reader.pipe(getXorTransform(iv, this));

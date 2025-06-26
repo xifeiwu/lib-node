@@ -1,6 +1,7 @@
 import {Duplex, Readable} from 'stream';
 import {CanConvertToBuffer, getXorDataFunc, getXorTransform, logColorful} from '../service/external';
 import {getCustomizedDuplex, printDuplexState, watchDuplexState} from '../../../stream';
+import {waitFor} from '../../../external';
 
 class EncryptedSocket extends Duplex {
   socket: Duplex;
@@ -22,7 +23,7 @@ class EncryptedSocket extends Duplex {
     reader.pipe(getXorTransform(iv, this));
     reader.on('end', () => {
       this.push(null);
-      logColorful({color: 'red'}, 'reader on end');
+      // logColorful({color: 'red'}, 'reader on end');
       printDuplexState(this);
     });
   }
@@ -40,8 +41,9 @@ class EncryptedSocket extends Duplex {
 export async function testState() {
   const clientSocket = getCustomizedDuplex({
     customize: {
-      read: {source: 'number', generateCount: 5, delay: 300},
+      read: {source: 'number', generateCount: 5, delay: 500},
       color: 'blue',
+      logPrefix: 'clientSocket ',
     },
     // allowHalfOpen: false,
   });
@@ -62,12 +64,16 @@ export async function testState() {
 
   const remoteSocket = getCustomizedDuplex({
     customize: {
-      read: {source: 'word', generateCount: 5, delay: 300},
+      read: {source: 'word', generateCount: 5, delay: 500},
       color: 'red',
+      logPrefix: 'remoteSocket ',
     },
     // allowHalfOpen: false,
   });
   watchDuplexState(remoteSocket, {logPrefix: 'remoteSocket ', printState: true, color: 'red'});
 
   remoteSocket.pipe(es).pipe(remoteSocket);
+
+  // await waitFor(1000)
+  // es.destroy();
 }

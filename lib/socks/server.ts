@@ -8,7 +8,7 @@ import {
 } from './types';
 import {Socket} from 'net';
 import {pipeline} from 'stream';
-import {ERRORS, createError, SERVER_STATE, pushState, serializeErrorInfo} from './';
+import {ERRORS, createError, SERVER_STATE, pushState, serializeErrorInfo, suffixWithDt} from './';
 import {
   negotiation as negotiationV5,
   sendRequestTargetResponse as sendRequestTargetResponseV5,
@@ -20,6 +20,7 @@ import {
 import {ECommand, RequestTargetV5} from './types/v5';
 import {handleConnectCommand} from './proxy';
 import {getWrapSocketFunc} from './service/common';
+import {StateTracer} from './types/base';
 
 /**
  * Two phases on server side:
@@ -41,6 +42,59 @@ const sendRequestTargetResponse: {
   1: sendRequestTargetResponseVc1,
 };
 
+function handleSocketPipe(
+  socket2Remote: Socket,
+  clientSocket: Socket,
+  options: {tcpMaxLifeTime: number; stateTracer: StateTracer}
+) {
+  const {tcpMaxLifeTime, stateTracer} = options;
+  pipeline(clientSocket, socket2Remote, err => {
+    // status.stateTracer = serverserverState.socket_connect_between_client_target_fail;
+    // status.error = err;
+    Boolean(err?.message) && stateTracer.push(`${SERVER_STATE.connectionError}: ${err?.message}`);
+  });
+  pipeline(socket2Remote, clientSocket, err => {
+    // status.stateTracer = serverserverState.socket_connect_between_client_target_fail;
+    // status.error = err;
+    Boolean(err?.message) && stateTracer.push(`${SERVER_STATE.connectionError}: ${err?.message}`);
+  });
+  setTimeout(() => {
+    if (!socket2Remote.destroyed) {
+      socket2Remote.destroy();
+    }
+  }, tcpMaxLifeTime);
+  const closeBoth = () => {
+    if (!socket2Remote.destroyed) socket2Remote.destroy();
+    if (!clientSocket.destroyed) clientSocket.destroy();
+  };
+
+  socket2Remote.on('close', () => {
+    stateTracer.push(suffixWithDt(SERVER_STATE.remoteSocketClosed));
+    closeBoth();
+  });
+  clientSocket.on('close', () => {
+    stateTracer.push(suffixWithDt(SERVER_STATE.clientSocketClosed));
+    closeBoth();
+  });
+  socket2Remote.on('error', () => {
+    stateTracer.push(suffixWithDt(SERVER_STATE.remoteSocketError));
+    closeBoth();
+  });
+  clientSocket.on('error', () => {
+    stateTracer.push(suffixWithDt(SERVER_STATE.clientSocketError));
+    closeBoth();
+  });
+  socket2Remote.on('end', () => {
+    if (!clientSocket.writableEnded && !clientSocket.destroyed) {
+      clientSocket.end();
+    }
+  });
+  clientSocket.on('end', () => {
+    if (!socket2Remote.writableEnded && !socket2Remote.destroyed) {
+      socket2Remote.end();
+    }
+  });
+}
 /**
  * Handle new connection on sock server side
  * Close socket on socket error events of any error thrown during the logic process
@@ -50,7 +104,7 @@ export async function handleSocksConnection<Version extends SocksVersion>(
   config: SocksServerConfig<Version>,
   handleRequestTarget?: (requestTarget: RequestTargetV5) => Promise<boolean | undefined>
 ) {
-  const {socksVersion, proxyConfigList, ...serverConfig} = config;
+  const {socksVersion, proxyConfigList, tcpMaxLifeTime = 6 * 3600, ...serverConfig} = config;
   const info: SocksServerInfo = {
     socksVersion,
     negotiationResult: undefined,
@@ -77,11 +131,6 @@ export async function handleSocksConnection<Version extends SocksVersion>(
 
       info.socket2Remote = socket2Remote;
       info.socksClientInfo = socksClientInfo;
-      if (socket2Remote) {
-        socket2Remote.once('close', () => {
-          stateTracer.push(SERVER_STATE.remoteSocketClosed);
-        });
-      }
 
       if (!socket || !socket2Remote || socket.destroyed || socket2Remote.destroyed) {
         throw createError(ERRORS.connectionError);
@@ -97,40 +146,11 @@ export async function handleSocksConnection<Version extends SocksVersion>(
       //   })
       // }
       const wrappedSocket = getWrapSocketFunc(socksVersion)(socket, negotiationResult);
-      pipeline(wrappedSocket, socket2Remote, err => {
-        // status.stateTracer = serverserverState.socket_connect_between_client_target_fail;
-        // status.error = err;
-        Boolean(err?.message) && stateTracer.push(`${SERVER_STATE.connectionError}: ${err?.message}`);
-      });
-      pipeline(socket2Remote, wrappedSocket, err => {
-        // status.stateTracer = serverserverState.socket_connect_between_client_target_fail;
-        // status.error = err;
-        Boolean(err?.message) && stateTracer.push(`${SERVER_STATE.connectionError}: ${err?.message}`);
-      });
+      handleSocketPipe(socket2Remote, wrappedSocket, {tcpMaxLifeTime, stateTracer});
       socket.resume();
-      // // When client ends, we stop writing to target
-      wrappedSocket.on('end', () => {
-        // Half-close target socket
-        // stateTracer.push(SERVER_STATE.clientSocketClosed);
-        socket2Remote.end();
-      });
-      // On error, destroy both sockets
-      wrappedSocket.on('error', () => {
-        stateTracer.push(SERVER_STATE.clientSocketError);
-        socket2Remote.destroy();
-      });
-      // When target ends, we stop writing to client
-      socket2Remote.on('end', () => {
-        // Half-close client socket
-        // stateTracer.push(SERVER_STATE.remoteSocketClosed);
-        wrappedSocket.end();
-      });
-      socket2Remote.on('error', () => {
-        stateTracer.push(SERVER_STATE.remoteSocketError);
-        wrappedSocket.destroy();
-      });
+
       // status.stateTracer = serverserverState.success;
-      stateTracer.push(SERVER_STATE.handleConnectCommandSuccess);
+      stateTracer.push(suffixWithDt(SERVER_STATE.handleConnectCommandSuccess));
     } else if (command === ECommand.ECHO) {
       stateTracer.push(SERVER_STATE.handleConnectCommand);
       await sendRequestTargetResponse[socksVersion](

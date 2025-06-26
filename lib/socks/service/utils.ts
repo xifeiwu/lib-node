@@ -28,6 +28,7 @@ import {
   RequestTargetV5,
   RequestTargetResponseV5,
 } from '../types/v5';
+import {toLocalISOString} from '../../../external';
 
 export const UPGRADE_PROTOCOL_SOCKS_PREFIX = 'scks-';
 
@@ -103,9 +104,9 @@ export const SERVER_STATE = {
   willProxyToRemoteSocksServer: 'will proxy connection to remote socks server',
   proxyToRemoteSocksServerSuccess: 'proxy to remote socks server success',
   clientSocketClosed: 'client socket closed',
-  clientSocketError: 'client socket closed',
+  clientSocketError: 'client socket error',
   remoteSocketClosed: 'remote socket closed',
-  remoteSocketError: 'remote socket closed',
+  remoteSocketError: 'remote socket error',
   connectionError: 'connection error',
 };
 
@@ -444,4 +445,11 @@ export function isSocksProtocol(firstByte: number | string) {
   return socksVersion.some(it => {
     return String(it) === String(firstByte);
   });
+}
+
+/**
+ * suffix text with date-time
+ */
+export function suffixWithDt(text: string) {
+  return text + `[${toLocalISOString(new Date())}]`;
 }
