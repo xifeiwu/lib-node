@@ -5,7 +5,7 @@ import {
   CustomizedTransformConfig,
   CustomizedWritableConfig,
 } from './types';
-import {getReadFunc, getWriteFunc} from './service';
+import {getReadFunc, getWritableFuncs} from './service';
 
 /**
  * configurable reader
@@ -22,7 +22,7 @@ export function getCustomizedReader(config?: CustomizedReadableConfig) {
 export function getCustomizedWriter(config?: CustomizedWritableConfig) {
   const {writableOptions, ...restConfig} = config ?? {};
   return new Writable({
-    write: getWriteFunc(restConfig),
+    ...getWritableFuncs(restConfig),
     // final(cb) {
     //   if (restConfig.color) {
     //     logColorful({color: restConfig.color}, 'final of writer is called');
@@ -38,7 +38,7 @@ export function getCustomizedDuplex(config?: CustomizedDuplexConfig) {
   // duplex read, write function can't be undefined
   const duplex = new Duplex({
     read: read ? getReadFunc({...read, ...common}) : () => {},
-    write: write ? getWriteFunc({...write, ...common}) : undefined,
+    ...(write ? getWritableFuncs({...write, ...common}) : {}),
     ...duplexOptions,
   });
   return duplex;
@@ -49,7 +49,7 @@ export function getCustomizedTransform(config?: CustomizedTransformConfig) {
   // duplex read, write function can't be undefined
   const transform = new Transform({
     read: read ? getReadFunc({...read, ...common}) : () => {},
-    write: write ? getWriteFunc({...write, ...common}) : undefined,
+    ...(write ? getWritableFuncs({...write, ...common}) : {}),
     ...transformOptions,
   });
   return transform;

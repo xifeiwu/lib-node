@@ -30,7 +30,7 @@ export function getReadFunc(config?: ReadFuncConfig) {
   return read;
 }
 
-export function getWriteFunc(config?: WriteFuncConfig) {
+export function getWritableFuncs(config?: WriteFuncConfig) {
   const {color, logPrefix = '', maxPrintSize = 16, delay} = config ?? {};
   async function write(this: Writable, chunk: Buffer, _enc, cb) {
     /** for delay */
@@ -45,5 +45,11 @@ export function getWriteFunc(config?: WriteFuncConfig) {
     }
     cb && cb();
   }
-  return write;
+  async function final(this: Writable, cb) {
+    if (color) {
+      logColorful({color}, [logPrefix, 'final'].filter(Boolean).join(' '));
+    }
+    cb && cb();
+  }
+  return {write, final};
 }

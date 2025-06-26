@@ -89,10 +89,10 @@ export async function bySocksServer() {
     // methodList: [{method: EMethod.UserPass, info: SOCKS_AUTH_USER_PASS}],
     // socksServer: 'http://elif.site',
     socksServer: {
-      // host: 'elif.site',
-      // port: 80,
-      host: '127.0.0.1',
-      port: 3160,
+      host: 'elif.site',
+      port: 80,
+      // host: '127.0.0.1',
+      // port: 3160,
     },
     requestTarget: {
       address: target.host,
