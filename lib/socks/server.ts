@@ -42,7 +42,7 @@ const sendRequestTargetResponse: {
   1: sendRequestTargetResponseVc1,
 };
 
-function handleSocketPipe(
+function pipeSocket(
   socket2Remote: Socket,
   clientSocket: Socket,
   options: {tcpMaxLifeTime: number; stateTracer: StateTracer}
@@ -146,7 +146,7 @@ export async function handleSocksConnection<Version extends SocksVersion>(
       //   })
       // }
       const wrappedSocket = getWrapSocketFunc(socksVersion)(socket, negotiationResult);
-      handleSocketPipe(socket2Remote, wrappedSocket, {tcpMaxLifeTime, stateTracer});
+      pipeSocket(socket2Remote, wrappedSocket, {tcpMaxLifeTime, stateTracer});
       socket.resume();
 
       // status.stateTracer = serverserverState.success;
