@@ -23,9 +23,12 @@ export function watchReadableState(reader: Readable, options?: WatchStreamOption
   if (isNumber(maxPrintSizeOnData)) {
     reader.on('data', chunk => {
       const {byteLength} = chunk;
-      logColorful({color}, `${logPrefix}${role} on-${'data'} [size: ${byteLength}]`);
-      // console.log(chunk.toString());
-      logColorful({color}, largeDataToString(chunk, {maxPrintSize: maxPrintSizeOnData}));
+      logColorful(
+        {color},
+        `${logPrefix}${role} on-${'data'} [size: ${byteLength}]: ${largeDataToString(chunk, {
+          maxPrintSize: maxPrintSizeOnData,
+        })}`
+      );
       printState && printStateFunc(reader);
     });
   }
@@ -67,5 +70,5 @@ interface watchOptions extends WatchStreamOptions {
 export function watchDuplexState(duplex: Duplex, watchOptions?: watchOptions) {
   const {reader = {}, writer = {}, ...rest} = watchOptions ?? {};
   watchReadableState(duplex, {...rest, ...reader, isDuplex: true});
-  watchWritableState(duplex, {...writer, ...writer, isDuplex: true});
+  watchWritableState(duplex, {...rest, ...writer, isDuplex: true});
 }
