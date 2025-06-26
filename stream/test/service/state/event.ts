@@ -25,7 +25,7 @@ export function watchReadableState(reader: Readable, options?: WatchStreamOption
       const {byteLength} = chunk;
       logColorful(
         {color},
-        `${logPrefix}${role} on-${'data'} [size: ${byteLength}]: ${largeDataToString(chunk, {
+        `${logPrefix} ${role} on-${'data'} [size: ${byteLength}]: ${largeDataToString(chunk, {
           maxPrintSize: maxPrintSizeOnData,
         })}`
       );
@@ -34,7 +34,7 @@ export function watchReadableState(reader: Readable, options?: WatchStreamOption
   }
   for (const eventName of eventNameList) {
     reader.on(eventName, chunkOrError => {
-      logColorful({color}, `${logPrefix}${role} on-${eventName}`);
+      logColorful({color}, `${logPrefix} ${role} on-${eventName}`);
       if (eventName === 'error') {
         logColorful({color}, chunkOrError.stack);
       }
@@ -48,13 +48,13 @@ export function watchWritableState(writer: Writable, options?: WatchStreamOption
   const role = isDuplex ? 'duplex' : 'writer';
   const printStateFunc = (isDuplex ? printDuplexState : printWritableState) as typeof printWritableState;
   if (printState) {
-    logColorful({color}, `${logPrefix}${role} state:`);
+    logColorful({color}, `${logPrefix} ${role} state:`);
     printStateFunc(writer);
   }
   const eventNameList = ['drain', 'finish', 'pipe', 'unpipe', 'error', 'close'];
   for (const eventName of eventNameList) {
     writer.on(eventName, chunkOrError => {
-      logColorful({color}, `${logPrefix}${role} on-${eventName}`);
+      logColorful({color}, `${logPrefix} ${role} on-${eventName}`);
       if (eventName === 'error') {
         logColorful({color}, chunkOrError.stack);
       }
