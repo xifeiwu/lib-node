@@ -59,4 +59,5 @@ export {
   LETTERS,
   NUMBERS,
   toLocalISOString,
+  REG_BASE64,
 } from '../fe/common';

@@ -48,7 +48,7 @@ export function getHashDigest(
   data: CanConvertToBuffer,
   config?: {algorithm: hashAlgorithm; encode?: BinaryToTextEncoding; maxDigestLength?: number}
 ) {
-  const {algorithm = DEFAULT_ALGORITHM, encode = DEFAULT_ENCODE, maxDigestLength} = config;
+  const {algorithm = DEFAULT_ALGORITHM, encode = DEFAULT_ENCODE, maxDigestLength} = config ?? {};
   const hash = createHash(algorithm);
   hash.update(convertToBuffer(data));
   const digest = hash.digest(encode);
