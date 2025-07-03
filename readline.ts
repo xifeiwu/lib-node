@@ -11,10 +11,14 @@ export async function selectOption<T extends {label: string}>(
   itemList: T[],
   option?: {
     tip?: Array<any> | string;
+    /**
+     * @deprecated by defaultAnswer
+     */
     defaultIndex?: number;
+    defaultAnswer?: number | string;
   }
 ): Promise<T & {answer: number | string}> {
-  const {tip = 'please select', defaultIndex = 0} = option ? option : {};
+  const {tip = 'please select', defaultIndex, defaultAnswer = 0} = option ? option : {};
   let tipArr: string[] = [];
   if (isString(tip)) {
     // tip = [tip];
@@ -22,7 +26,7 @@ export async function selectOption<T extends {label: string}>(
   } else {
     tipArr = (tip as Array<any>).map(it => inspect(it));
   }
-  tipArr.push(`[default index is ${defaultIndex})]:`);
+  tipArr.push(`[default answer is ${defaultAnswer})]:`);
   const optionStr = itemList
     .map((it, index) => {
       return `${index}. ${String(it.label ? it.label : it)}`;
@@ -34,32 +38,32 @@ export async function selectOption<T extends {label: string}>(
     output: process.stdout,
   });
   return new Promise((res, rej) => {
-    interact.question(optionStr, answer => {
+    interact.question(optionStr, (answer: string) => {
       let index: number;
       let parsedAnswer: number | string = answer;
-      // let answerIsNumber = false;
+      const useDefaultAnswer = answer.length === 0;
       /** 1. If there is no input, set defaultIndex as value index */
-      if (answer.trim().length === 0) {
-        index = defaultIndex;
+      if (useDefaultAnswer) {
+        answer = defaultAnswer as string;
+      }
+      /** 2. Try answer as value of option label, and find index by label value */
+      const i = itemList.findIndex(it => it.label === answer);
+      if (i !== -1) {
+        index = i;
       } else {
-        /** 2. Try answer as value of option label, and find index by label value */
-        const i = itemList.findIndex(it => it.label === answer);
-        if (i !== -1) {
-          index = i;
-        } else {
-          /** 3. Try answer as option index */
-          const answerAsIndex = parseInt(answer);
-          if (Number.isInteger(answerAsIndex)) {
-            index = answerAsIndex;
-            parsedAnswer = answerAsIndex;
-          }
+        /** 3. Try answer as option index */
+        const answerAsIndex = parseInt(answer);
+        if (Number.isInteger(answerAsIndex)) {
+          index = answerAsIndex;
+          parsedAnswer = answerAsIndex;
         }
       }
+      // }
       interact.close();
       if (!itemList[index]) {
         rej(`Can't find option by input: ${answer}`);
       } else {
-        res({...itemList[index], answer: parsedAnswer});
+        res({...itemList[index], answer: useDefaultAnswer ? '' : parsedAnswer});
       }
     });
   });
