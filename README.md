@@ -1,12 +1,16 @@
-## Intro
+# Intro
 
-Commonly used logic based on native node runtime, and not depend on any third party modules.
+A cluster of commonly-used small-granularity logic based on nodejs native modules, the logic not depend on any third party modules.
 
-## Notice
+# Notice
 
 1. To avoid dependency of `@types/node` on `lib/fe`, unit test case of `lib/fe` is located in dir `fe.test`.
 
-## Structure
+# Folder Structure
+
+1. Functions are categorized by the nodejs native module it mainly based on, if it's not very clear which category it belongs to, it can be placed in dir other first.
+2. For the basic function not depends on any other function, and used across many functions, it should be placed in file of dir service
+3. For the function that based many other functions, and implement a commonly-used loigc, it should be placed in file of dir util
 
 Category by node native module
 .
@@ -42,10 +46,10 @@ Category by node native module
 ├── utils                   A group of frequently used logic based on other basic logics
 └── yarn.lock
 
-## Dependencies
+# Dependencies
 
 fe/modules/libs
 
-## TODO
+# TODO
 
 1. dir net need refactor
