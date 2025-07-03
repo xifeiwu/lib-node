@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import {rerequire, selectOption} from '../readline';
+import {selectOption} from '../readline';
 import {isNumber} from '../external';
 import {
   PathInfoForRecur,
@@ -13,6 +13,7 @@ import {
 } from '../types';
 import {HOME_PATH} from './service';
 import childProcess from 'child_process';
+import {rerequire} from '../service';
 
 /**
  * @returns go through dir, and return value returned from cb function
