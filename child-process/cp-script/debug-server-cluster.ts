@@ -9,7 +9,7 @@ import {
   SerializableSpawnInfo,
   htmlUlItems,
 } from '../../index';
-import {spawnScript} from './service';
+import {spawnScriptAndTryIpc} from './service';
 import {out} from './service';
 import {CP} from '../../types';
 
@@ -40,7 +40,7 @@ export async function start() {
     /** Start one by one to avoid port confliction */
     let cnt = 0;
     while (cnt++ < slaveCount) {
-      const response = await spawnScript<CP.DebugServerResponse>('debug-server.ts', spawnConfig);
+      const response = await spawnScriptAndTryIpc<CP.DebugServerResponse>('debug-server.ts', spawnConfig);
       slaves.push(serializeSpawnResponse(response));
     }
 

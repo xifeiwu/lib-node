@@ -6,13 +6,13 @@ import {
   killProcessByPid,
   logColorful,
   serializeSpawnResponse,
-  spawnScript,
+  spawnScriptAndTryIpc,
 } from '../../index';
 
 export async function testDebugServer() {
   const tag = 'testSpawnTsScript';
   const port = await getAFreePort(4000);
-  const spawnInfo = await spawnScript<CP.DebugServerConfig, CP.DebugServerResponse>('debug-server.ts', {
+  const spawnInfo = await spawnScriptAndTryIpc<CP.DebugServerConfig, CP.DebugServerResponse>('debug-server.ts', {
     args: [tag],
     spawnOptions: {
       stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
@@ -42,7 +42,7 @@ export async function debugDebugServer() {
   // console.log(process.env.NODE_ENV)
   // console.log(process.env)
   const port = await getAFreePort(4000);
-  const spawnInfo = await spawnScript<CP.DebugServerConfig, CP.DebugServerResponse>('debug-server.ts', {
+  const spawnInfo = await spawnScriptAndTryIpc<CP.DebugServerConfig, CP.DebugServerResponse>('debug-server.ts', {
     args: [tag],
     spawnOptions: {
       stdio: [0, 1, 2, 'ipc'],
@@ -63,7 +63,7 @@ export async function debugDebugServer() {
 export async function testCustomization() {
   const tag = 'testCustomization';
   const port = await getAFreePort(4000);
-  const spawnInfo = await spawnScript<CP.DebugServerConfig, CP.DebugServerResponse>('debug-server.ts', {
+  const spawnInfo = await spawnScriptAndTryIpc<CP.DebugServerConfig, CP.DebugServerResponse>('debug-server.ts', {
     args: [tag],
     spawnOptions: {
       stdio: [0, 1, 2, 'ipc'],
