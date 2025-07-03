@@ -1,7 +1,7 @@
 import stream, {Transform, Readable} from 'stream';
 import {DataTypeFromBuffer, TargetDataTypeFromBuffer, fromBuffer, convertToBuffer} from '../index';
-import {getBufferMatcher} from '../readline';
 import {CanConvertToBuffer} from '../types';
+import {getSequenceMatcher} from '../external';
 
 export function getDataFromReadable(reader: Readable): Promise<Buffer> {
   const {readable} = reader;
@@ -84,7 +84,7 @@ export function getOneLineFromReader(
     resolve = res;
     reject = rej;
   });
-  let matcher = getBufferMatcher('\r\n');
+  let matcher = getSequenceMatcher('\r\n');
   let resolved = false;
   const bytes: number[] = [];
   const parse = () => {
@@ -129,7 +129,7 @@ export function getOneLineFromReader(
   return promise;
 }
 
-const crlfMatcher = getBufferMatcher('\r\n');
+const crlfMatcher = getSequenceMatcher('\r\n');
 export function getOneLineFromBuffer(buffer: Buffer) {
   // let matcher = getBufferMatcher('\r\n');
   let success = false;

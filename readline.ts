@@ -1,17 +1,8 @@
 import readline from 'readline';
-import {isFunction, isNumber, isObject, isString} from './external';
+import {isNumber, isObject, isString} from './external';
 import {coloringContent, inspect} from './log';
 import {CanConvertToBuffer, ColorStyle, LoggableContent} from './types';
 import {toBuffer} from './transform';
-
-/**
- * Determine if a value is a Stream
- *
- * @param {*} val The value to test
- *
- * @returns {boolean} True if value is a Stream, otherwise false
- */
-export const isStream = val => isObject(val) && isFunction(val.pipe);
 
 /**
  * Get selected item by index or its label content
@@ -132,48 +123,4 @@ export async function goOnOrNot(config?: {
       interact.close();
     });
   });
-}
-
-/**
- * @deprecated move to somewhere else
- * @param target 
- * @returns 
- */
-export function getBufferMatcher(target: CanConvertToBuffer) {
-  const values = [...toBuffer(target)] as number[];
-  if (values.length === 0) {
-    throw new Error(`target is Empty`);
-  }
-  let index = 0;
-  function resetIndex() {
-    index = 0;
-  }
-  return (n: number | string) => {
-    n = !isNumber(n) ? Buffer.from(n as string)[0] : n;
-    if (n === values[index]) {
-      index++;
-    } else {
-      /** reset index when current match fail */
-      resetIndex();
-    }
-    const matched = index === values.length;
-    /** reset index when all matched success  */
-    if (matched) {
-      resetIndex();
-    }
-    return matched;
-  };
-}
-
-export async function calDuration<T>(promise: Promise<T>) {
-  const start = Date.now();
-  const res = await promise;
-  const end = Date.now();
-  console.log(`time used ${end - start}`);
-  return res;
-}
-
-export function rerequire(modulePath) {
-  delete require.cache[require.resolve(modulePath)];
-  return require(modulePath);
 }

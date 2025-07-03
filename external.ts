@@ -60,4 +60,5 @@ export {
   NUMBERS,
   toLocalISOString,
   REG_BASE64,
+  getSequenceMatcher,
 } from '../fe/common';
