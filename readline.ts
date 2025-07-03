@@ -44,28 +44,32 @@ export async function selectOption<T extends {label: string}>(
   });
   return new Promise((res, rej) => {
     interact.question(optionStr, answer => {
-      /** 1. Try answer as option index */
-      const answerAsIndex = parseInt(answer);
-      const answerIsNumber = Number.isInteger(answerAsIndex);
       let index: number;
-      if (answerIsNumber) {
-        index = answerAsIndex;
+      let parsedAnswer: number | string = answer;
+      // let answerIsNumber = false;
+      /** 1. If there is no input, set defaultIndex as value index */
+      if (answer.trim().length === 0) {
+        index = defaultIndex;
       } else {
-        /** 2. If fail, try answer as option label, and find index by option label */
+        /** 2. Try answer as value of option label, and find index by label value */
         const i = itemList.findIndex(it => it.label === answer);
         if (i !== -1) {
           index = i;
         } else {
-          /** 3. Use defaultIndex as index value */
-          index = defaultIndex;
+          /** 3. Try answer as option index */
+          const answerAsIndex = parseInt(answer);
+          if (Number.isInteger(answerAsIndex)) {
+            index = answerAsIndex;
+            parsedAnswer = answerAsIndex;
+          }
         }
       }
-      if (!itemList[index]) {
-        rej(`index ${index} does not existed in options`);
-      } else {
-        res({...itemList[index], answer: answerIsNumber ? answerAsIndex : answer});
-      }
       interact.close();
+      if (!itemList[index]) {
+        rej(`Can't find option by input: ${answer}`);
+      } else {
+        res({...itemList[index], answer: parsedAnswer});
+      }
     });
   });
 }
@@ -130,6 +134,11 @@ export async function goOnOrNot(config?: {
   });
 }
 
+/**
+ * @deprecated move to somewhere else
+ * @param target 
+ * @returns 
+ */
 export function getBufferMatcher(target: CanConvertToBuffer) {
   const values = [...toBuffer(target)] as number[];
   if (values.length === 0) {
