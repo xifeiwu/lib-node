@@ -1,5 +1,5 @@
 export * from './service';
-export * from './general';
+export * from './readline';
 export * from './crypto';
 export * from './transform';
 export * from './net';

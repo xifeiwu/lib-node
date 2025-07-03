@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import {rerequire, selectOption} from '../general';
+import {rerequire, selectOption} from '../readline';
 import {isNumber} from '../external';
 import {
   PathInfoForRecur,

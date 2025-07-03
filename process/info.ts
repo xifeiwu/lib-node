@@ -1,5 +1,5 @@
 import {spawn, execSync} from 'child_process';
-import {goOnOrNot, selectOption} from '../general';
+import {goOnOrNot, selectOption} from '../readline';
 import {isFunction, isNumber} from '../external';
 import {checkPort} from '../net';
 import {
