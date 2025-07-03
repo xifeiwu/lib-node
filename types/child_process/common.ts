@@ -1,13 +1,45 @@
 import {ChildProcess, SpawnOptions} from 'child_process';
 
+/**
+ * Configs used for node spwan function in format:
+ * spawn(command, args, spawnOptions)
+ */
 export interface SpawnConfig {
   command: string;
   args?: ReadonlyArray<string>;
   spawnOptions?: SpawnOptions;
   /**
+   * @deprecated as this property should be part of SpawnFileOptions
    * args are argument for command, params are for script
    */
   params?: string[];
+}
+
+/** Existing key with a null value means should give a default value by program */
+export interface TsNodeOptions {
+  '-r'?: string | null;
+  '--project'?: string | null;
+  '--transpileOnly'?: boolean;
+  '--swc'?: boolean;
+}
+/**
+ * Spawn config specially for file
+ * command get from file extname
+ * args of SpawnConfig split into two parts: tsNodeOptions for ts-node, params for ts script
+ */
+export interface SpawnFileOptions<RuntimeOptions = any> {
+  /** param for runtime */
+  runtimeOptions?: RuntimeOptions;
+  /** param for script */
+  params?: string[];
+  spawnOptions?: SpawnOptions;
+  // printCommand?: boolean;
+}
+
+export interface SpawnResult {
+  childProcess: ChildProcess;
+  spawnConfig: SpawnConfig;
+  wholeScript: string;
 }
 
 export interface InfoToCp<CpConfig = any> {
@@ -20,6 +52,12 @@ export interface InfoToCp<CpConfig = any> {
   // spawnConfig?: Partial<SpawnAndTryIpcConfig>;
   spawnConfig?: SpawnAndTryIpcConfig;
 }
+
+/**
+ * For many cases, parent process need communication with child process by:
+ * 1. send params to child process
+ * 2. wait for response from child process
+ */
 export interface IpcConfig<CpConfig = any> {
   /** Info send to child process if process.send is enabled */
   infoToCp?: InfoToCp<CpConfig>;
@@ -31,6 +69,10 @@ export interface IpcConfig<CpConfig = any> {
    */
   maxWaitTime4Ipc?: number;
 }
+
+/**
+ * Do a communication by IpcConfig during spwan process
+ */
 export interface SpawnAndTryIpcConfig<CpConfig = any> extends SpawnConfig, IpcConfig<CpConfig> {}
 
 export interface SpawnAndTryIpcResponse<ResponseFromCp = any> {

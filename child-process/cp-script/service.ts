@@ -6,7 +6,7 @@ import {
   SpawnAndTryIpcConfig,
   SpawnConfig,
   toConsole,
-  SpawnTsFileOptions,
+  SpawnFileOptions,
 } from '../../index';
 import {isNumber, waitFor} from '../../external';
 import {CP, IpcConfig} from '../../types';
@@ -71,7 +71,7 @@ export async function handleCpCustomization(config?: CP.CpCustomization, key?: s
  */
 export function getCpConfigByScriptName<CpConfig = any>(
   basename: CP.ScriptFileName,
-  config?: SpawnTsFileOptions & IpcConfig<CpConfig>
+  config?: SpawnFileOptions & IpcConfig<CpConfig>
 ): SpawnAndTryIpcConfig<CpConfig> {
   const scriptPath = getScriptFullpath(basename);
   return getCpConfigByScriptPath(scriptPath, config);
