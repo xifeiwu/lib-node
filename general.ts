@@ -13,13 +13,16 @@ import {toBuffer} from './transform';
  */
 export const isStream = val => isObject(val) && isFunction(val.pipe);
 
+/**
+ * Get selected item by index or its label content
+ */
 export async function selectOption<T extends {label: string}>(
   itemList: T[],
   option?: {
     tip?: Array<any> | string;
     defaultIndex?: number;
   }
-): Promise<T> {
+): Promise<T & {answer: number | string}> {
   const {tip = 'please select', defaultIndex = 0} = option ? option : {};
   let tipArr: string[] = [];
   if (isString(tip)) {
@@ -41,14 +44,26 @@ export async function selectOption<T extends {label: string}>(
   });
   return new Promise((res, rej) => {
     interact.question(optionStr, answer => {
-      let index = parseInt(answer);
-      if (Number.isNaN(index)) {
-        index = defaultIndex;
+      /** 1. Try answer as option index */
+      const answerAsIndex = parseInt(answer);
+      const answerIsNumber = Number.isInteger(answerAsIndex);
+      let index: number;
+      if (answerIsNumber) {
+        index = answerAsIndex;
+      } else {
+        /** 2. If fail, try answer as option label, and find index by option label */
+        const i = itemList.findIndex(it => it.label === answer);
+        if (i !== -1) {
+          index = i;
+        } else {
+          /** 3. Use defaultIndex as index value */
+          index = defaultIndex;
+        }
       }
       if (!itemList[index]) {
         rej(`index ${index} does not existed in options`);
       } else {
-        res(itemList[index]);
+        res({...itemList[index], answer: answerIsNumber ? answerAsIndex : answer});
       }
       interact.close();
     });
