@@ -58,7 +58,6 @@ export async function selectOption<T extends {label: string}>(
           parsedAnswer = answerAsIndex;
         }
       }
-      // }
       interact.close();
       if (!itemList[index]) {
         rej(`Can't find option by input: ${answer}`);

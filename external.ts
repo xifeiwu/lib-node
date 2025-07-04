@@ -61,4 +61,5 @@ export {
   toLocalISOString,
   REG_BASE64,
   getSequenceMatcher,
+  isAsyncFunction,
 } from '../fe/common';
