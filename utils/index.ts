@@ -1,3 +1,3 @@
 export * from './select';
 export * from './git';
-export {runExport} from './run-export';
+export {runScriptExport} from './run-script-export';
