@@ -7,18 +7,10 @@ import {logColorful} from '../../log';
 import {goOnOrNot, selectOption} from '../../readline';
 import {isNumber, isAsyncFunction, isObject, isFunction} from '../../external';
 import {rerequire} from '../../service';
+import {RunScriptExportOptions, GetFuncNameOptions} from '../../types';
 
 const RUN_ALL_EXPORTED_FUNCTIONS = '_all';
 
-interface GetFuncNameOptions {
-  funcName?: string;
-  /** If there is only one exported function, run it directly */
-  runTheOnlyFuncDirectly?: boolean;
-}
-
-interface RunScriptExport extends GetFuncNameOptions {
-  funcParams?: Array<any>;
-}
 async function getFuncNameToRun(funcNameList: string[], options?: GetFuncNameOptions) {
   const {funcName, runTheOnlyFuncDirectly} = options ?? {};
   if (!Array.isArray(funcNameList) || funcNameList.length === 0) {
@@ -88,7 +80,7 @@ async function handleClass(Module: {new (): any; prototype: any}, functionAndPar
 /**
  * run exported function from .ts/.js file
  */
-export async function runScriptExport(scriptPath: string, options?: RunScriptExport) {
+export async function runScriptExport(scriptPath: string, options?: RunScriptExportOptions) {
   const {funcParams} = options ?? {};
   const fullPath = path.resolve(process.cwd(), scriptPath);
   if (!fs.existsSync(fullPath)) {
