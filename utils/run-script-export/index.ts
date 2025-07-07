@@ -39,7 +39,7 @@ async function getFuncNameToRun(funcNameList: string[], options?: GetFuncNameOpt
   const selectedFuncName = label;
   /** Double confirm if function name is selected by option index */
   if (
-    isNumber(answer) &&
+    (isNumber(answer) || answer === '') &&
     !(await goOnOrNot({
       style: {
         color: 'red',
