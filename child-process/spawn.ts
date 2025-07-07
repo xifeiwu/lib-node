@@ -40,6 +40,7 @@ export function getTsNodeParams(
   if (Object.prototype.hasOwnProperty.call(mergedTsNodeOptions, '-r') && mergedTsNodeOptions['-r'] === null) {
     let tsConfigPathsRegister = findClosestFile(dirPath, 'node_modules/tsconfig-paths/register.js');
     if (!tsConfigPathsRegister) {
+      /** use global tsconfig-paths if it's not a dependency of project */
       const {NVM_BIN} = process.env;
       if (NVM_BIN) {
         tsConfigPathsRegister = path.resolve(NVM_BIN, '../lib/node_modules/tsconfig-paths/register.js');
@@ -90,7 +91,7 @@ export function getSpawnConfigByScriptPath<RunTimeOptions = any>(
   /** params should follow after fullPath */
   if (extname === '.ts') {
     command = 'ts-node';
-    args = [...getTsNodeParams(fullPath, {runtimeOptions: runtimeOptions}), fullPath, ...params];
+    args = [...getTsNodeParams(fullPath, {runtimeOptions}), fullPath, ...params];
   } else if (extname === '.js') {
     command = 'node';
     args = [fullPath, ...params];

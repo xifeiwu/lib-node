@@ -1,17 +1,15 @@
 import fs from 'fs';
 
 /**
- * Spawn .js file first if exist, as .ts file will cost more resource
- * @param fullPath
- * @returns
+ * For the case .ts file compiled to .js file, will use .js file first when running logic for the consideration of saving cost.
  */
-export function tryUseJsFile(fullPath: string) {
+export function tryUseJsFile(scriptPath: string) {
   let jsFilePath: string;
-  if (fullPath.endsWith('.ts')) {
-    jsFilePath = fullPath.replace(/ts$/, 'js');
+  if (scriptPath.endsWith('.ts')) {
+    jsFilePath = scriptPath.replace(/ts$/, 'js');
   }
   if (jsFilePath && fs.existsSync(jsFilePath)) {
     return jsFilePath;
   }
-  return fullPath;
+  return scriptPath;
 }
