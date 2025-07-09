@@ -5,7 +5,7 @@ import {findClosestFile} from '../fs';
 import {isBoolean, isNumber, isString} from '../external';
 import {
   InfoToCp,
-  SpawnAndTryIpcConfig,
+  SpawnAndIpcConfig,
   SpawnAndTryIpcResponse,
   SerializableSpawnInfo,
   IpcConfig,
@@ -95,6 +95,8 @@ export function getSpawnConfigByScriptPath<RunTimeOptions = any>(
   } else if (extname === '.js') {
     command = 'node';
     args = [fullPath, ...params];
+  } else {
+    throw new Error(`Can't get spawn config by extname: ${extname}`);
   }
   return {
     command,
@@ -143,16 +145,19 @@ export function spawnTsFile(tsFilePath: string, options?: SpawnFileOptions) {
 export function getCpConfigByScriptPath<CpConfig = any>(
   fullPath: string,
   options?: SpawnFileOptions & IpcConfig<CpConfig>
-): SpawnAndTryIpcConfig<CpConfig> {
-  return getSpawnAndTryIpcConfigByScriptPath(fullPath, options);
+): SpawnAndIpcConfig<CpConfig> {
+  return getSpawnAndIpcConfigByScriptPath(fullPath, options);
 }
 
-export function getSpawnAndTryIpcConfigByScriptPath<CpConfig = any>(
-  fullPath: string,
+/**
+ * @deprecated getSpawnConfigByScriptPath should be enough
+ */
+export function getSpawnAndIpcConfigByScriptPath<CpConfig = any>(
+  scriptPath: string,
   options?: SpawnFileOptions & IpcConfig<CpConfig>
-): SpawnAndTryIpcConfig<CpConfig> {
+): SpawnAndIpcConfig<CpConfig> {
   const {infoToCp, maxWaitTime4Ipc, ...spawnTsFileOptions} = options;
-  const spawnConfig = getSpawnConfigByScriptPath(fullPath, spawnTsFileOptions);
+  const spawnConfig = getSpawnConfigByScriptPath(scriptPath, spawnTsFileOptions);
   return {
     ...spawnConfig,
     infoToCp,
@@ -190,7 +195,7 @@ export async function waitParentMessageFromIPC<CpConfig>(config?: {maxWait?: num
  * @returns
  */
 export async function spawnAndTryIpc<InfoToCp = any, ResponseFromCp = any>(
-  config: SpawnAndTryIpcConfig<InfoToCp>
+  config: SpawnAndIpcConfig<InfoToCp>
 ): Promise<SpawnAndTryIpcResponse<ResponseFromCp>> {
   const {command, args, spawnOptions, maxWaitTime4Ipc, infoToCp} = config;
   const childProcess = spawn(command, args, spawnOptions);

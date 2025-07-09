@@ -1,5 +1,5 @@
 import {Server} from 'net';
-import {InfoToCp, SerializableSpawnInfo, SpawnAndTryIpcConfig, SpawnAndTryIpcResponse} from './common';
+import {InfoToCp, SerializableSpawnInfo, SpawnAndIpcConfig, SpawnAndTryIpcResponse} from './common';
 
 /**
  * Type for ts script run in child process

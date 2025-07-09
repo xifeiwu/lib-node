@@ -50,7 +50,7 @@ export interface InfoToCp<CpConfig = any> {
    * Set it as Partial value as some config may be provided on child process
    */
   // spawnConfig?: Partial<SpawnAndTryIpcConfig>;
-  spawnConfig?: SpawnAndTryIpcConfig;
+  spawnConfig?: SpawnAndIpcConfig;
 }
 
 /**
@@ -73,7 +73,7 @@ export interface IpcConfig<CpConfig = any> {
 /**
  * Do a communication by IpcConfig during spwan process
  */
-export interface SpawnAndTryIpcConfig<CpConfig = any> extends SpawnConfig, IpcConfig<CpConfig> {}
+export interface SpawnAndIpcConfig<CpConfig = any> extends SpawnConfig, IpcConfig<CpConfig> {}
 
 export interface SpawnAndTryIpcResponse<ResponseFromCp = any> {
   /** original config passed */

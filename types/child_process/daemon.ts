@@ -1,4 +1,4 @@
-import {SpawnAndTryIpcConfig, SpawnAndTryIpcResponse} from './common';
+import {SpawnAndIpcConfig, SpawnAndTryIpcResponse} from './common';
 import {SocketServerInfo, TcpServerConfig} from '../net';
 
 /**
@@ -16,11 +16,11 @@ export namespace Daemon {
         minInterval?: number;
       };
     };
-    spawnConfig?: SpawnAndTryIpcConfig;
+    spawnConfig?: SpawnAndIpcConfig;
   }
 
   export interface CpInfo<ResponseFromCp = any> extends Partial<SpawnAndTryIpcResponse<ResponseFromCp>> {
-    spawnConfig: SpawnAndTryIpcConfig;
+    spawnConfig: SpawnAndIpcConfig;
   }
   export interface SerializableCpInfo<ResponseFromCp = any>
     extends Omit<CpInfo<ResponseFromCp>, 'childProcess'> {

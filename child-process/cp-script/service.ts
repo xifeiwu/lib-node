@@ -3,7 +3,7 @@ import {
   getFileList,
   getCpConfigByScriptPath,
   spawnAndTryIpc,
-  SpawnAndTryIpcConfig,
+  SpawnAndIpcConfig,
   SpawnConfig,
   toConsole,
   SpawnFileOptions,
@@ -72,14 +72,14 @@ export async function handleCpCustomization(config?: CP.CpCustomization, key?: s
 export function getCpConfigByScriptName<CpConfig = any>(
   basename: CP.ScriptFileName,
   config?: SpawnFileOptions & IpcConfig<CpConfig>
-): SpawnAndTryIpcConfig<CpConfig> {
+): SpawnAndIpcConfig<CpConfig> {
   const scriptPath = getScriptFullpath(basename);
   return getCpConfigByScriptPath(scriptPath, config);
 }
 
 export async function spawnScriptAndTryIpc<CpConfig = any, ResponseFromCp = any>(
   basename: CP.ScriptFileName,
-  config?: Partial<SpawnAndTryIpcConfig<CpConfig>>
+  config?: Partial<SpawnAndIpcConfig<CpConfig>>
 ): Promise<SpawnAndTryIpcResponse<ResponseFromCp> & {config: SpawnConfig}> {
   const spawnConfig = getCpConfigByScriptName(basename, config);
   const cpInfo = await spawnAndTryIpc(spawnConfig);
