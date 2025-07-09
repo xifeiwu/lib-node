@@ -1,5 +1,6 @@
 import {execSync} from 'child_process';
 import {logColorful} from '../log';
+import {convertToBuffer} from '../transform';
 
 export function logCmdAndexecSync(cmd: string, options?: {throwError?: boolean}) {
   const {throwError = true} = options ?? {};
@@ -8,10 +9,11 @@ export function logCmdAndexecSync(cmd: string, options?: {throwError?: boolean})
     const result = execSync(cmd);
     return result;
   } catch (err) {
-    const {stack, message} = err;
+    const {stderr, stdout} = err;
     if (throwError) {
-      logColorful({color: 'red'}, process.cwd(), stack ?? message);
-      throw err;
+      const message = convertToBuffer(stdout ?? stderr).toString();
+      logColorful({color: 'red'}, message);
+      throw new Error(message);
     }
   }
 }
