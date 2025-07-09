@@ -7,7 +7,7 @@ import {logColorful} from '../../log';
 import {goOnOrNot, selectOption} from '../../readline';
 import {isNumber, isAsyncFunction, isObject, isFunction} from '../../external';
 import {rerequire} from '../../service';
-import {RunScriptExportOptions, GetFuncNameOptions} from '../../types';
+import {RunScriptOptions, GetFuncNameOptions} from '../../types';
 
 const RUN_ALL_EXPORTED_FUNCTIONS = '_all';
 
@@ -80,13 +80,16 @@ async function handleClass(Module: {new (): any; prototype: any}, functionAndPar
 /**
  * run exported function from .ts/.js file
  */
-export async function runScriptExport(scriptPath: string, options?: RunScriptExportOptions) {
-  const {funcParams} = options ?? {};
+export async function runTsScript(scriptPath: string, options?: RunScriptOptions) {
+  const {funcParams, selectExportedFunc} = options ?? {};
   const fullPath = path.resolve(process.cwd(), scriptPath);
   if (!fs.existsSync(fullPath)) {
     throw new Error(`file ${fullPath} not exist`);
   }
   const Module = rerequire(fullPath);
+  if (!selectExportedFunc) {
+    return;
+  }
   if (!isObject(Module)) {
     throw new Error(`the require result from script file '${fullPath}' is not an object.`);
   }
