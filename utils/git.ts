@@ -49,7 +49,7 @@ function toGitRepoInfo(info: GitRepoInfo | GitRepoInfoTree) {
 }
 interface SyncupGitRepoConfig {
   hostDir: string;
-  /** which dir of hostDir used to locate git repo */
+  /** the relative path of hostDir that host vendor projects */
   repoDir: string;
   index?: number;
 }
