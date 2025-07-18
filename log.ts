@@ -92,8 +92,7 @@ const colorMap: {
   },
 };
 
-export function coloringContent(colorStyle: ColorStyle, content: LoggableContent): string {
-  const {color = 'black'} = colorStyle ?? {};
+export function loggableContentToStr(content: LoggableContent): string {
   let finalStr = '';
   if (isPlainObject(content) || Array.isArray(content)) {
     finalStr = util.inspect(content, {depth: 10, colors: false});
@@ -102,7 +101,12 @@ export function coloringContent(colorStyle: ColorStyle, content: LoggableContent
   } else {
     finalStr = String(content);
   }
+  return finalStr;
+}
+export function coloringContent(colorStyle: ColorStyle, content: LoggableContent): string {
+  const {color = 'black'} = colorStyle ?? {};
   const colorInfo = colorMap[color];
+  const finalStr = loggableContentToStr(content);
   return `${colorInfo.start}${finalStr}${colorInfo.end}`;
 }
 export function logColorful(colorStyle: ColorStyle, ...contentList: Array<LoggableContent>) {

@@ -1,6 +1,6 @@
 import readline from 'readline';
 import {isNumber, isObject, isString} from './external';
-import {coloringContent, inspect} from './log';
+import {coloringContent, inspect, loggableContentToStr} from './log';
 import {CanConvertToBuffer, ColorStyle, LoggableContent} from './types';
 import {toBuffer} from './transform';
 
@@ -101,17 +101,30 @@ export async function goOnOrNot(config?: {
     color: 'yellow',
     ...style,
   };
-  const optionStr = [...tips, `Go on or Not?[${defaultValue ? yesCondition : noCondition}]?`]
-    .map(it => {
-      const tipItem: TipItem = isObject(it)
+
+  const formattedTips: {content: string; style: ColorStyle}[] = tips.map(it => {
+    const tipItem: TipItem =
+      isObject(it) && Object.prototype.hasOwnProperty.call(it, style)
         ? (it as TipItem)
         : {
             content: it,
             style: defaultStyle,
           };
-      return coloringContent(tipItem.style, tipItem.content);
-    })
-    .join('\n');
+    return {...tipItem, content: loggableContentToStr(tipItem.content)};
+  });
+
+  /** append default value */
+  if (formattedTips.length > 0 || formattedTips[formattedTips.length - 1].content.endsWith('?')) {
+    formattedTips[formattedTips.length - 1].content += `[${defaultValue ? yesCondition : noCondition}]?`;
+  } else {
+    formattedTips.push({
+      content: `Go on or Not?[${defaultValue ? yesCondition : noCondition}]?`,
+      style: defaultStyle,
+    });
+  }
+
+  const optionStr = formattedTips.map(it => coloringContent(it.style, it.content)).join('\n');
+
   const interact = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
