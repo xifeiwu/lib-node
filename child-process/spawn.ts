@@ -72,9 +72,10 @@ export function getTsNodeParams(
 }
 
 /**
+ * @deprecated by getSpawnConfigByScript as it's more simple
+ * Convert from SpawnFileOptions to SpawnConfig
  * spawn a script by info get from its path:
  * get command by file extname
- * @returns
  */
 export function getSpawnConfigByScriptPath<RunTimeOptions = any>(
   scriptPath: string,
@@ -105,11 +106,23 @@ export function getSpawnConfigByScriptPath<RunTimeOptions = any>(
   };
 }
 
+/**
+ * Convert from SpawnFileOptions to SpawnConfig
+ * spawn a script by info get from its path:
+ * get command by file extname
+ */
+export function getSpawnConfigByScript<RunTimeOptions = any>(
+  scriptPath: string,
+  options?: SpawnFileOptions<RunTimeOptions>
+): SpawnConfig {
+  return getSpawnConfigByScriptPath<RunTimeOptions>(scriptPath, options);
+}
+
 export function spawnScript<RunTimeOptions = any>(
   scriptPath: string,
   options?: SpawnFileOptions<RunTimeOptions>
 ): SpawnResult {
-  const spawnConfig = getSpawnConfigByScriptPath(scriptPath, options);
+  const spawnConfig = getSpawnConfigByScript(scriptPath, options);
   const {command, args, spawnOptions = {}} = spawnConfig;
   const childProcess = spawn(command, args, {
     stdio: ['pipe', 'pipe', 'pipe'],
@@ -126,43 +139,18 @@ export function spawnScript<RunTimeOptions = any>(
  * @returns
  */
 export function spawnTsFile(tsFilePath: string, options?: SpawnFileOptions) {
-  const spawnConfig = getSpawnConfigByScriptPath(tsFilePath, options);
-  const {command, args, spawnOptions = {}} = spawnConfig;
-  const childProcess = spawn(command, args, {
-    stdio: ['pipe', 'pipe', 'pipe'],
-    ...spawnOptions,
-  });
-  // const {printCommand} = options ?? {};
-  // if (printCommand) {
-  //   console.log(`[${process.pid}]spawn command[${childProcess.pid}]: ${command} ${args.join(' ')}`);
-  // }
+  const {childProcess} = spawnScript(tsFilePath, options);
   return childProcess;
 }
 
 /**
- * @deprecated by getSpawnAndTryIpcConfigByScriptPath due to inaccurate function name
+ * @deprecated by getSpawnAndIpcConfigByScriptPath due to inaccurate function name
  */
 export function getCpConfigByScriptPath<CpConfig = any>(
   fullPath: string,
   options?: SpawnFileOptions & IpcConfig<CpConfig>
 ): SpawnAndIpcConfig<CpConfig> {
-  return getSpawnAndIpcConfigByScriptPath(fullPath, options);
-}
-
-/**
- * @deprecated getSpawnConfigByScriptPath should be enough
- */
-export function getSpawnAndIpcConfigByScriptPath<CpConfig = any>(
-  scriptPath: string,
-  options?: SpawnFileOptions & IpcConfig<CpConfig>
-): SpawnAndIpcConfig<CpConfig> {
-  const {infoToCp, maxWaitTime4Ipc, ...spawnTsFileOptions} = options;
-  const spawnConfig = getSpawnConfigByScriptPath(scriptPath, spawnTsFileOptions);
-  return {
-    ...spawnConfig,
-    infoToCp,
-    maxWaitTime4Ipc,
-  };
+  return getSpawnConfigByScriptPath(fullPath, options);
 }
 
 /**
@@ -194,8 +182,8 @@ export async function waitParentMessageFromIPC<CpConfig>(config?: {maxWait?: num
  * @param config
  * @returns
  */
-export async function spawnAndTryIpc<InfoToCp = any, ResponseFromCp = any>(
-  config: SpawnAndIpcConfig<InfoToCp>
+export async function spawnAndTryIpc<CpConfig = any, ResponseFromCp = any>(
+  config: SpawnAndIpcConfig<CpConfig>
 ): Promise<SpawnAndTryIpcResponse<ResponseFromCp>> {
   const {command, args, spawnOptions, maxWaitTime4Ipc, infoToCp} = config;
   const childProcess = spawn(command, args, spawnOptions);
@@ -261,4 +249,28 @@ export function serializeSpawnResponse<ResponseFromCp = any>(
     pid: childProcess.pid,
     ...rest,
   };
+}
+
+/**
+ * Get params for spawnAndTryIpc by scriptPath
+ */
+export function getSpawnAndIpcConfigByScriptPath<CpConfig = any>(
+  scriptPath: string,
+  options?: SpawnFileOptions & IpcConfig<CpConfig>
+): SpawnAndIpcConfig<CpConfig> {
+  const {infoToCp, maxWaitTime4Ipc, ...spawnTsFileOptions} = options;
+  const spawnConfig = getSpawnConfigByScriptPath(scriptPath, spawnTsFileOptions);
+  return {
+    ...spawnConfig,
+    infoToCp,
+    maxWaitTime4Ipc,
+  };
+}
+
+export async function spawnAndTryIpcScript<CpConfig = any, ResponseFromCp = any>(
+  scriptPath: string,
+  options?: SpawnFileOptions & IpcConfig<CpConfig>
+) {
+  const spwanAndIpcConfig = getSpawnAndIpcConfigByScriptPath<CpConfig>(scriptPath, options);
+  return spawnAndTryIpc<CpConfig, ResponseFromCp>(spwanAndIpcConfig);
 }

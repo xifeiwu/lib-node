@@ -1,20 +1,5 @@
 import {ChildProcess, SpawnOptions} from 'child_process';
 
-/**
- * Configs used for node spwan function in format:
- * spawn(command, args, spawnOptions)
- */
-export interface SpawnConfig {
-  command: string;
-  args?: ReadonlyArray<string>;
-  spawnOptions?: SpawnOptions;
-  /**
-   * @deprecated as this property should be part of SpawnFileOptions
-   * args are argument for command, params are for script
-   */
-  params?: string[];
-}
-
 /** Existing key with a null value means should give a default value by program */
 export interface TsNodeOptions {
   '-r'?: string | null;
@@ -34,6 +19,21 @@ export interface SpawnFileOptions<RuntimeOptions = any> {
   params?: string[];
   spawnOptions?: SpawnOptions;
   // printCommand?: boolean;
+}
+
+/**
+ * Configs used for node spwan function in format:
+ * spawn(command, args, spawnOptions)
+ */
+export interface SpawnConfig {
+  command: string;
+  args?: ReadonlyArray<string>;
+  spawnOptions?: SpawnOptions;
+  /**
+   * @deprecated as this property should be part of SpawnFileOptions
+   * args are argument for command, params are for script
+   */
+  params?: string[];
 }
 
 export interface SpawnResult {
