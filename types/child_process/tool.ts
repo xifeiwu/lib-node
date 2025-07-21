@@ -1,9 +1,9 @@
 export interface GitRepoInfo {
   source: Array<{
+    /** the remote name of current source */
+    origin?: string;
     /** git address */
     url: string;
-    /** the remote name of current source */
-    remote?: string;
     /** git branch */
     branch: string;
     /**

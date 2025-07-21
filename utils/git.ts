@@ -69,17 +69,32 @@ export async function syncUpGitRepos(gitRepos: GitRepoInfoTree, config: SyncupGi
       continue;
     }
     const {
-      source: [{url, remote = 'origin', branch, commit}],
+      source,
       relativePath = path.join(repoDir, repoOrCategoryName),
       postPullCmds = [],
     } = toGitRepoInfo(info);
+    const [mainSource] = source;
+    if (!mainSource) {
+      throw new Error(`At least one source should be set`);
+    }
+    const {url, origin = 'origin', branch, commit} = mainSource;
     const fullPath = path.resolve(hostDir, relativePath);
     /**
      * 1. Check repo dir, clone repo if not exist
      */
     if (!fs.existsSync(fullPath)) {
       // fs.mkdirSync(relativePath, {recursive: true});
-      execSyncAndLog(`git clone ${url} ${relativePath}`);
+      for (let i = 0; i < source.length; i++) {
+        if (i === 0) {
+          execSyncAndLog(`git clone -o ${origin} -b ${branch} ${url} ${relativePath}`);
+        } else {
+          const it = source[i];
+          if (!it.origin) {
+            continue;
+          }
+          execSyncAndLog(`git remote add -t ${it.branch} ${it.origin} ${it.url}`);
+        }
+      }
     }
     process.chdir(fullPath);
     /**
@@ -106,7 +121,7 @@ export async function syncUpGitRepos(gitRepos: GitRepoInfoTree, config: SyncupGi
           /** List branches that contain the commit */
           execSyncAndLog(`git branch --contain=${commit}`);
         } catch (err) {
-          execSyncAndLog(`git fetch ${remote}`);
+          execSyncAndLog(`git fetch ${origin}`);
           // execSyncAndLog(`git reset --hard ${remote}/${branch}`);
         }
         /** Align with target commit */
@@ -118,8 +133,8 @@ export async function syncUpGitRepos(gitRepos: GitRepoInfoTree, config: SyncupGi
       }
     } else {
       /** Align target branch with remote */
-      execSyncAndLog(`git fetch ${remote}`);
-      execSyncAndLog(`git reset --hard ${remote}/${branch}`);
+      execSyncAndLog(`git fetch ${origin}`);
+      execSyncAndLog(`git reset --hard ${origin}/${branch}`);
     }
     for (const command of postPullCmds) {
       if (isString(command)) {
