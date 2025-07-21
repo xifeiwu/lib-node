@@ -13,9 +13,12 @@ export async function start() {
       });
       /** Wait message for one second at most */
       setTimeout(() => {
-        res({});
+        res(null);
       }, 1000);
     });
+  }
+  if (!ipcMessage) {
+    return;
   }
   const {config} = ipcMessage;
   const [scriptPath, options] = config;
@@ -42,4 +45,10 @@ export async function start() {
     throw err;
   }
 }
-start();
+
+/**
+ * Avoid run script when import
+ */
+if (process.env.SPAWNED_BY) {
+  start();
+}

@@ -8,6 +8,8 @@ import {
   tryUseJsFile,
 } from '../../../child-process';
 import {logColorful} from '../../../log';
+/** make sure ./child.ts is compiled to child.js also */
+import './child';
 
 const defaultTsNodeOptions: TsNodeOptions = {
   // '--transpileOnly': true,
@@ -71,6 +73,10 @@ export async function runTsScriptInCP(targetScript: string, options?: RunScriptI
     spawnOptions: {
       ...spawnOptions,
       stdio: [0, 1, 2, 'ipc'],
+      env: {
+        ...process.env,
+        SPAWNED_BY: __filename,
+      },
     },
     infoToCp: {
       config: [targetScript, runScriptOptions],
