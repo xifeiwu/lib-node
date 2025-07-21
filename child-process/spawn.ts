@@ -254,7 +254,7 @@ export function serializeSpawnResponse<ResponseFromCp = any>(
 /**
  * Get params for spawnAndTryIpc by scriptPath
  */
-export function getSpawnAndIpcConfigByScriptPath<CpConfig = any>(
+export function getSpawnAndIpcConfigByScript<CpConfig = any>(
   scriptPath: string,
   options?: SpawnFileOptions & IpcConfig<CpConfig>
 ): SpawnAndIpcConfig<CpConfig> {
@@ -267,10 +267,10 @@ export function getSpawnAndIpcConfigByScriptPath<CpConfig = any>(
   };
 }
 
-export async function spawnAndTryIpcScript<CpConfig = any, ResponseFromCp = any>(
+export async function spawnScriptAndTryIpc<CpConfig = any, ResponseFromCp = any>(
   scriptPath: string,
   options?: SpawnFileOptions & IpcConfig<CpConfig>
 ) {
-  const spwanAndIpcConfig = getSpawnAndIpcConfigByScriptPath<CpConfig>(scriptPath, options);
+  const spwanAndIpcConfig = getSpawnAndIpcConfigByScript<CpConfig>(scriptPath, options);
   return spawnAndTryIpc<CpConfig, ResponseFromCp>(spwanAndIpcConfig);
 }
