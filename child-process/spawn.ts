@@ -144,7 +144,7 @@ export function spawnTsFile(tsFilePath: string, options?: SpawnFileOptions) {
 }
 
 /**
- * @deprecated by getSpawnAndIpcConfigByScriptPath due to inaccurate function name
+ * @deprecated by getSpawnAndIpcConfigByScript due to inaccurate function name
  */
 export function getCpConfigByScriptPath<CpConfig = any>(
   fullPath: string,

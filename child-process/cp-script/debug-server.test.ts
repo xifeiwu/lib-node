@@ -12,18 +12,21 @@ import {
 export async function testDebugServer() {
   const tag = 'testSpawnTsScript';
   const port = await getAFreePort(4000);
-  const spawnInfo = await spawnScriptAndTryIpc<CP.DebugServerConfig, CP.DebugServerResponse>('debug-server.ts', {
-    args: [tag],
-    spawnOptions: {
-      stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
-    },
-    infoToCp: {
-      config: {
-        port,
+  const spawnInfo = await spawnScriptAndTryIpc<CP.DebugServerConfig, CP.DebugServerResponse>(
+    'debug-server.ts',
+    {
+      params: [tag],
+      spawnOptions: {
+        stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
       },
-    },
-    maxWaitTime4Ipc: 20,
-  });
+      infoToCp: {
+        config: {
+          port,
+        },
+      },
+      maxWaitTime4Ipc: 20,
+    }
+  );
   const {responseFromCp, childProcess} = spawnInfo;
   logColorful({}, serializeSpawnResponse(spawnInfo));
   assert.equal(responseFromCp.port, port);
@@ -42,18 +45,21 @@ export async function debugDebugServer() {
   // console.log(process.env.NODE_ENV)
   // console.log(process.env)
   const port = await getAFreePort(4000);
-  const spawnInfo = await spawnScriptAndTryIpc<CP.DebugServerConfig, CP.DebugServerResponse>('debug-server.ts', {
-    args: [tag],
-    spawnOptions: {
-      stdio: [0, 1, 2, 'ipc'],
-    },
-    infoToCp: {
-      config: {
-        port,
+  const spawnInfo = await spawnScriptAndTryIpc<CP.DebugServerConfig, CP.DebugServerResponse>(
+    'debug-server.ts',
+    {
+      params: [tag],
+      spawnOptions: {
+        stdio: [0, 1, 2, 'ipc'],
       },
-    },
-    maxWaitTime4Ipc: 6,
-  });
+      infoToCp: {
+        config: {
+          port,
+        },
+      },
+      maxWaitTime4Ipc: 6,
+    }
+  );
   const {childProcess} = spawnInfo;
   logColorful({}, serializeSpawnResponse(spawnInfo));
   // childProcess.disconnect && childProcess.disconnect();
@@ -63,20 +69,23 @@ export async function debugDebugServer() {
 export async function testCustomization() {
   const tag = 'testCustomization';
   const port = await getAFreePort(4000);
-  const spawnInfo = await spawnScriptAndTryIpc<CP.DebugServerConfig, CP.DebugServerResponse>('debug-server.ts', {
-    args: [tag],
-    spawnOptions: {
-      stdio: [0, 1, 2, 'ipc'],
-    },
-    infoToCp: {
-      config: {
-        port,
-        delay: 10000,
-        errorMessage: 'trigger by demend',
+  const spawnInfo = await spawnScriptAndTryIpc<CP.DebugServerConfig, CP.DebugServerResponse>(
+    'debug-server.ts',
+    {
+      params: [tag],
+      spawnOptions: {
+        stdio: [0, 1, 2, 'ipc'],
       },
-    },
-    maxWaitTime4Ipc: 6,
-  });
+      infoToCp: {
+        config: {
+          port,
+          delay: 10000,
+          errorMessage: 'trigger by demend',
+        },
+      },
+      maxWaitTime4Ipc: 6,
+    }
+  );
   const {childProcess} = spawnInfo;
   logColorful({}, serializeSpawnResponse(spawnInfo));
 }
