@@ -23,7 +23,12 @@ const defaultTsNodeOptions: TsNodeOptions = {
  * Run cp
  */
 export async function runTsScriptInCP(targetScript: string, options?: RunScriptInCPOptions) {
-  const {dryRun, spawnOptions, tsNodeOptions, runScriptOptions} = options ?? {};
+  const {
+    dryRun,
+    spawnOptions: {env, ...restSpawnOptions} = {},
+    tsNodeOptions,
+    runScriptOptions,
+  } = options ?? {};
 
   const {extname} = getFilePathInfo(targetScript);
   if (!['.ts', '.js'].includes(extname)) {
@@ -71,10 +76,10 @@ export async function runTsScriptInCP(targetScript: string, options?: RunScriptI
     command: finalCommand,
     args: finalArgs,
     spawnOptions: {
-      ...spawnOptions,
+      ...restSpawnOptions,
       stdio: [0, 1, 2, 'ipc'],
       env: {
-        ...process.env,
+        ...env,
         SPAWNED_BY: __filename,
       },
     },
