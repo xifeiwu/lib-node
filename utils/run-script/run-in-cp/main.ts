@@ -2,7 +2,7 @@ import path from 'path';
 import {RunScriptInCPOptions, TsNodeOptions} from '../../../types';
 import {getFilePathInfo} from '../../../path';
 import {
-  getSpawnConfigByScriptPath,
+  getSpawnConfigByScript,
   serializeSpawnResponse,
   spawnAndTryIpc,
   tryUseJsFile,
@@ -25,7 +25,7 @@ const defaultTsNodeOptions: TsNodeOptions = {
 export async function runTsScriptInCP(targetScript: string, options?: RunScriptInCPOptions) {
   const {
     dryRun,
-    spawnOptions: {env, ...restSpawnOptions} = {},
+    spawnOptions: {env = {}, ...restSpawnOptions} = {},
     tsNodeOptions,
     runScriptOptions,
   } = options ?? {};
@@ -42,7 +42,7 @@ export async function runTsScriptInCP(targetScript: string, options?: RunScriptI
    * command: ts-node
    * args: [-r, node/start/feature/node_modules/tsconfig-paths/register.js, --project, node/start/feature/tsconfig.json, --swc, /Users/wuxifei/code/node/start/feature/1-js/object/defineProperty/get-set.ts]
    */
-  const spawnAndIpcConfig = getSpawnConfigByScriptPath<TsNodeOptions>(targetScript, {
+  const spawnAndIpcConfig = getSpawnConfigByScript<TsNodeOptions>(targetScript, {
     runtimeOptions: targetIsTsFile ? tsNodeOptions ?? defaultTsNodeOptions : {},
   });
   const {command, args} = spawnAndIpcConfig;
@@ -79,6 +79,7 @@ export async function runTsScriptInCP(targetScript: string, options?: RunScriptI
       ...restSpawnOptions,
       stdio: [0, 1, 2, 'ipc'],
       env: {
+        ...process.env,
         ...env,
         SPAWNED_BY: __filename,
       },

@@ -17,7 +17,7 @@ export async function runTsFileExportWithParam() {
   });
   logColorful({}, result);
 }
-runTsFileExportWithParam()
+runTsFileExportWithParam();
 
 export async function runJsFileExport() {
   const tsScript = path.join(__dirname, 'scripts/test.js');

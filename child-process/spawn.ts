@@ -206,7 +206,9 @@ export async function spawnAndTryIpc<CpConfig = any, ResponseFromCp = any>(
       info.spawnTime = new Date().toLocaleString();
       res();
     });
-    childProcess.once('error', err => rej(err));
+    childProcess.once('error', err => {
+      rej(err);
+    });
   });
   /**
    * Take care: child process **must** send response to IPC channel, or main process will hang here.

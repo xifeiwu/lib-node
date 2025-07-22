@@ -4,6 +4,9 @@ import {runTsScript} from '../run-ts-script';
 
 const TAG = 'OUT_OF_FUNCTION';
 
+/**
+ * This script works together with main.ts, it can't be used directly
+ */
 export async function start() {
   let ipcMessage: InfoToCp<RunScriptParams> = {};
   if (process.send) {
