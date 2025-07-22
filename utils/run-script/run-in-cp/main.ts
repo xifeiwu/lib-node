@@ -8,8 +8,11 @@ import {
   tryUseJsFile,
 } from '../../../child-process';
 import {logColorful} from '../../../log';
-/** make sure ./child.ts is compiled to child.js also */
-import './child';
+/**
+ * make sure ./child.ts is compiled to child.js also
+ * NOTICE: Remove the import here as this file will run anyway and will block the existing of process
+ */
+// import './child';
 
 const defaultTsNodeOptions: TsNodeOptions = {
   // '--transpileOnly': true,
