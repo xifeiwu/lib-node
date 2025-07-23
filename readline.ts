@@ -114,7 +114,7 @@ export async function goOnOrNot(config?: {
   });
 
   /** append default value */
-  if (formattedTips.length > 0 || formattedTips[formattedTips.length - 1].content.endsWith('?')) {
+  if (formattedTips.length > 0 && formattedTips[formattedTips.length - 1].content.endsWith('?')) {
     formattedTips[formattedTips.length - 1].content += `[${defaultValue ? yesCondition : noCondition}]?`;
   } else {
     formattedTips.push({
