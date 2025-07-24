@@ -1,5 +1,5 @@
 import {logColorful} from '../../../log';
-import {InfoToCp, RunScriptParams} from '../../../types';
+import {InfoToCp, RunScriptOptions, RunScriptParams} from '../../../types';
 import {runTsScript} from '../run-ts-script';
 
 const TAG = 'OUT_OF_FUNCTION';
@@ -8,7 +8,7 @@ const TAG = 'OUT_OF_FUNCTION';
  * This script works together with main.ts, it can't be used directly
  */
 export async function start() {
-  let ipcMessage: InfoToCp<RunScriptParams> = {};
+  let ipcMessage: InfoToCp<RunScriptParams>;
   if (process.send) {
     ipcMessage = await new Promise<InfoToCp<RunScriptParams>>(res => {
       process.once('message', (chunk: InfoToCp<RunScriptParams>) => {
@@ -20,11 +20,23 @@ export async function start() {
       }, 1000);
     });
   }
-  if (!ipcMessage) {
-    return;
+  /**
+   * Support get params in two way:
+   * 1. passed from parent process
+   * 2. parsed from process.argv
+   */
+  let scriptPath: string;
+  let options: RunScriptOptions;
+  if (ipcMessage) {
+    const {config} = ipcMessage;
+    [scriptPath, options] = config;
+  } else {
+    [, , scriptPath] = process.argv;
+    options = {
+      selectExportedFunc: true,
+      funcParams: process.argv.slice(3),
+    };
   }
-  const {config} = ipcMessage;
-  const [scriptPath, options] = config;
 
   if (process.connected && process.send) {
     /** Child process will exit by the error EPipe if the error is not catched here */
@@ -49,9 +61,4 @@ export async function start() {
   }
 }
 
-/**
- * Avoid run script when import
- */
-if (process.env.SPAWNED_BY) {
-  start();
-}
+start();
