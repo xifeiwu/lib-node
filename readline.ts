@@ -1,20 +1,20 @@
 import readline from 'readline';
-import {isNumber, isObject, isString} from './external';
+import {isObject, isString} from './external';
 import {coloringContent, inspect, loggableContentToStr} from './log';
-import {CanConvertToBuffer, ColorStyle, LoggableContent} from './types';
+import {ColorStyle, LoggableContent} from './types';
 
-export async function showQuestionAndGetAnswer(question: string): Promise<string> {
+export async function showQuestionAndGetAnswer(question: string, defaultAnswer: string): Promise<string> {
   const interact = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
   });
-  const answer = new Promise<string>(res => {
+  const answer = await new Promise<string>(res => {
     interact.question(question, (answer: string) => {
       res(answer);
       interact.close();
     });
   });
-  return answer;
+  return answer.length > 0 ? answer : defaultAnswer;
 }
 
 /**
