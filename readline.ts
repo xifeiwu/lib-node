@@ -2,7 +2,20 @@ import readline from 'readline';
 import {isNumber, isObject, isString} from './external';
 import {coloringContent, inspect, loggableContentToStr} from './log';
 import {CanConvertToBuffer, ColorStyle, LoggableContent} from './types';
-import {toBuffer} from './transform';
+
+export async function showQuestionAndGetAnswer(question: string): Promise<string> {
+  const interact = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+  const answer = new Promise<string>(res => {
+    interact.question(question, (answer: string) => {
+      res(answer);
+      interact.close();
+    });
+  });
+  return answer;
+}
 
 /**
  * Get selected item by index or its label content
@@ -33,39 +46,31 @@ export async function selectOption<T extends {label: string}>(
     })
     .concat(...tipArr)
     .join('\n');
-  const interact = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-  return new Promise((res, rej) => {
-    interact.question(optionStr, (answer: string) => {
-      let index: number;
-      let parsedAnswer: number | string = answer;
-      const useDefaultAnswer = answer.length === 0;
-      /** 1. If there is no input, set defaultIndex as value index */
-      if (useDefaultAnswer) {
-        answer = defaultAnswer as string;
-      }
-      /** 2. Try answer as value of option label, and find index by label value */
-      const i = itemList.findIndex(it => it.label === answer);
-      if (i !== -1) {
-        index = i;
-      } else {
-        /** 3. Try answer as option index */
-        const answerAsIndex = parseInt(answer);
-        if (Number.isInteger(answerAsIndex)) {
-          index = answerAsIndex;
-          parsedAnswer = answerAsIndex;
-        }
-      }
-      interact.close();
-      if (!itemList[index]) {
-        rej(`Can't find option by input: ${answer}`);
-      } else {
-        res({...itemList[index], answer: useDefaultAnswer ? '' : parsedAnswer});
-      }
-    });
-  });
+  let answer = await showQuestionAndGetAnswer(optionStr);
+  let index: number;
+  let parsedAnswer: number | string = answer;
+  const useDefaultAnswer = answer.length === 0;
+  /** 1. If there is no input, set defaultIndex as value index */
+  if (useDefaultAnswer) {
+    answer = defaultAnswer as string;
+  }
+  /** 2. Try answer as value of option label, and find index by label value */
+  const i = itemList.findIndex(it => it.label === answer);
+  if (i !== -1) {
+    index = i;
+  } else {
+    /** 3. Try answer as option index */
+    const answerAsIndex = parseInt(answer);
+    if (Number.isInteger(answerAsIndex)) {
+      index = answerAsIndex;
+      parsedAnswer = answerAsIndex;
+    }
+  }
+  if (!itemList[index]) {
+    throw new Error(`Can't find option by input: ${answer}`);
+  } else {
+    return {...itemList[index], answer: useDefaultAnswer ? '' : parsedAnswer};
+  }
 }
 
 const answerToValue = {
@@ -124,19 +129,10 @@ export async function goOnOrNot(config?: {
   }
 
   const optionStr = formattedTips.map(it => coloringContent(it.style, it.content)).join('\n');
-
-  const interact = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-  return new Promise<boolean>(res => {
-    interact.question(optionStr, answer => {
-      if (answer.trim() === '' && defaultValue !== undefined) {
-        res(defaultValue);
-      } else {
-        res(answerToValue[answer] ?? false);
-      }
-      interact.close();
-    });
-  });
+  const answer = await showQuestionAndGetAnswer(optionStr);
+  if (answer.trim() === '' && defaultValue !== undefined) {
+    return defaultValue;
+  } else {
+    return answerToValue[answer] ?? false;
+  }
 }
