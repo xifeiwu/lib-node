@@ -27,7 +27,7 @@ export function logCmdAndexecSync(cmd: string, options?: {throwError?: boolean})
   }
 }
 
-export function diffDir(dir1: string, dir2: string) {
+export function diffDir(dir1: string, dir2: string): string {
   const dirNotExist = [dir1, dir2].find(it => !fs.existsSync(it));
   if (dirNotExist) {
     throw new Error(`dir not exist: ${dirNotExist}`);
