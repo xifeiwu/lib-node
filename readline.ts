@@ -3,7 +3,7 @@ import {isObject, isString} from './external';
 import {coloringContent, inspect, loggableContentToStr} from './log';
 import {ColorStyle, LoggableContent} from './types';
 
-export async function showQuestionAndGetAnswer(question: string, defaultAnswer: string): Promise<string> {
+export async function showQuestionAndGetAnswer(question: string, defaultAnswer?: string): Promise<string> {
   const interact = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
@@ -14,7 +14,7 @@ export async function showQuestionAndGetAnswer(question: string, defaultAnswer: 
       interact.close();
     });
   });
-  return answer.length > 0 ? answer : defaultAnswer;
+  return answer.length === 0 && defaultAnswer !== undefined ? defaultAnswer : answer;
 }
 
 /**
