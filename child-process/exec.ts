@@ -39,7 +39,7 @@ export function diffDir(dir1: string, dir2: string): string {
     if (e.status === 1) {
       return e.stdout.toString();
     } else {
-      throw new Error('diff command failed:', e.stderr?.toString() || e.message);
+      throw new Error('diff command failed:' + e.stderr?.toString() || e.message);
     }
   }
 }
