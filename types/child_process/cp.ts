@@ -95,6 +95,9 @@ export namespace CP {
   }
   export type DaemonResponseOnAction = DaemonResponseInfo | DaemonResponsePong | DaemonResponseError;
 
+  /**
+   * @deprecated may be useless
+   */
   export type ScriptFileName =
     | 'debug-server.ts'
     | 'debug-server.js'
