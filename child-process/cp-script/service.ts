@@ -1,16 +1,10 @@
 import path from 'path';
-import {
-  getFileList,
-  getCpConfigByScriptPath,
-  spawnAndTryIpc,
-  SpawnAndIpcConfig,
-  SpawnConfig,
-  toConsole,
-  SpawnFileOptions,
-} from '../../index';
 import {isNumber, waitFor} from '../../external';
 import {CP, IpcConfig} from '../../types';
-import {SpawnAndTryIpcResponse} from '../../index';
+import {toConsole} from '../../log';
+import {getFileList} from '../../fs';
+import {parseBasename} from '../../path';
+import {selectOption} from '../../readline';
 
 /** For child process */
 export function out(value: any) {
@@ -37,13 +31,44 @@ export function getScriptFullpath(basename: CP.ScriptFileName) {
   return path.resolve(scriptDir, basename);
 }
 
-export async function runAllCpCustomization(config?: CP.CpCustomization) {
-  config = config ?? {};
-  const keys = Object.keys(config) as Array<keyof CP.CpCustomization>;
-  for (const key of keys) {
-    await handleCpCustomization(config, key);
+export async function getFullPathOfCpScript(
+  basename: string,
+  options?: {
+    tryJsFirst?: boolean;
   }
+) {
+  const {tryJsFirst} = options ?? {};
+  const scriptList = await getFileList(__dirname, {
+    fileFilter({basename}) {
+      const {bareBasename, extname} = parseBasename(basename);
+      return (
+        ['.ts', '.js'].includes(extname) &&
+        !bareBasename.endsWith('.test') &&
+        !['service'].includes(bareBasename)
+      );
+    },
+  });
+  const bareBasenameList = scriptList.map(it => parseBasename(it).bareBasename);
+  let target: string;
+  if (bareBasenameList.includes(basename)) {
+    basename += tryJsFirst ? '.js' : '.ts';
+  }
+  if (scriptList.includes(basename)) {
+    target = basename;
+  }
+  if (!target) {
+    ({label: target} = await selectOption(scriptList.map(it => ({label: it}))));
+  }
+  return path.resolve(__dirname, target);
 }
+
+// export async function runAllCpCustomization(config?: CP.CpCustomization) {
+//   config = config ?? {};
+//   const keys = Object.keys(config) as Array<keyof CP.CpCustomization>;
+//   for (const key of keys) {
+//     await handleCpCustomization(config, key);
+//   }
+// }
 export async function handleCpCustomization(config?: CP.CpCustomization, key?: string) {
   if (!config || !key) {
     return;
@@ -69,22 +94,22 @@ export async function handleCpCustomization(config?: CP.CpCustomization, key?: s
  * @param config
  * @returns
  */
-export function getCpConfigByScriptName<CpConfig = any>(
-  basename: CP.ScriptFileName,
-  config?: SpawnFileOptions & IpcConfig<CpConfig>
-): SpawnAndIpcConfig<CpConfig> {
-  const scriptPath = getScriptFullpath(basename);
-  return getCpConfigByScriptPath(scriptPath, config);
-}
+// export function getCpConfigByScriptName<CpConfig = any>(
+//   basename: CP.ScriptFileName,
+//   config?: SpawnFileOptions & IpcConfig<CpConfig>
+// ): SpawnAndIpcConfig<CpConfig> {
+//   const scriptPath = getScriptFullpath(basename);
+//   return getCpConfigByScriptPath(scriptPath, config);
+// }
 
-export async function spawnScriptAndTryIpc<CpConfig = any, ResponseFromCp = any>(
-  basename: CP.ScriptFileName,
-  config?: Partial<SpawnAndIpcConfig<CpConfig>>
-): Promise<SpawnAndTryIpcResponse<ResponseFromCp> & {config: SpawnConfig}> {
-  const spawnConfig = getCpConfigByScriptName(basename, config);
-  const cpInfo = await spawnAndTryIpc(spawnConfig);
-  return {
-    config: spawnConfig,
-    ...cpInfo,
-  };
-}
+// export async function spawnScriptAndTryIpc<CpConfig = any, ResponseFromCp = any>(
+//   basename: CP.ScriptFileName,
+//   config?: Partial<SpawnAndIpcConfig<CpConfig>>
+// ): Promise<SpawnAndTryIpcResponse<ResponseFromCp> & {config: SpawnConfig}> {
+//   const spawnConfig = getCpConfigByScriptName(basename, config);
+//   const cpInfo = await spawnAndTryIpc(spawnConfig);
+//   return {
+//     config: spawnConfig,
+//     ...cpInfo,
+//   };
+// }
