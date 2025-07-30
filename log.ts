@@ -98,6 +98,8 @@ export function loggableContentToStr(content: LoggableContent): string {
     finalStr = util.inspect(content, {depth: 10, colors: false});
   } else if (Buffer.isBuffer(content)) {
     finalStr = content.toString();
+  } else if (content instanceof Date) {
+    finalStr = content.toISOString();
   } else {
     finalStr = String(content);
   }
