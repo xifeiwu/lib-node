@@ -29,6 +29,11 @@ export function logCmdAndexecSync(cmd: string, options?: {throwError?: boolean})
   }
 }
 
+/**
+ * Feature of run diff command in execSync:
+ * if content of two dir is the same, $? from shell is 0, return ''
+ * else $? is 1, execSync will throw error, the diff result is in err.stdout
+ */
 export function diffDir(dir1: string, dir2: string): string {
   const dirNotExist = [dir1, dir2].find(it => !fs.existsSync(it));
   if (dirNotExist) {
@@ -36,8 +41,8 @@ export function diffDir(dir1: string, dir2: string): string {
   }
   try {
     logColorful({color: 'yellow'}, `diff -uNra ${dir1} ${dir2}`);
-    execSync(`diff -uNra ${dir1} ${dir2}`, {encoding: 'utf-8', maxBuffer: 1024 * 1024 * 128});
-    return '';
+    const diff = execSync(`diff -uNra ${dir1} ${dir2}`, {encoding: 'utf-8', maxBuffer: 1024 * 1024 * 128});
+    return diff;
   } catch (err: any) {
     if (err.status === 1) {
       return err.stdout.toString();
@@ -70,6 +75,10 @@ export async function syncupDirContentByDiff(from: string, to: string) {
     fs.mkdirSync(to);
   }
   const diff = await diffDir(to, from);
+  if (diff === '') {
+    logColorful({color: 'yellow'}, `The content of two dir is the same.`);
+    return;
+  }
   logColorful({color: 'yellow'}, 'Content of diff:');
   const toPathParts = to.split('/');
   const fromPathParts = from.split('/');
