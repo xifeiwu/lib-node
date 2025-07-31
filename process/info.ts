@@ -342,13 +342,14 @@ export async function getProcessInfoByPort(port: number | string): Promise<Proce
   }
 }
 
-export async function closePortIfInUse(port: number) {
+export async function closePortIfInUse(port: number, options?: {doubleConfirm?: boolean}) {
+  const {doubleConfirm} = options ?? {};
   const isPortOpen = await checkPort(port);
   if (isPortOpen) {
     const processInfoList = await getProcessInfoByPort(port);
     return killProcessByPid(
       processInfoList.map(it => it.pid),
-      {doubleConfirm: true, killChildren: true}
+      {doubleConfirm, killChildren: true}
     );
   }
   return [];
