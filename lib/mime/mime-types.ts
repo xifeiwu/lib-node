@@ -17,7 +17,7 @@
  */
 
 /** should add `"resolveJsonModule": true` in tsconfig.json */
-import db from './db.json';
+import db from './db';
 import {extname} from 'path';
 
 /**
@@ -89,7 +89,9 @@ export function contentType(mimeTypeOrExtName) {
   // TODO: use content-type or other module
   if (mimeType.indexOf('charset') === -1) {
     const _charset = charset(mimeType);
-    if (_charset) { mimeType += '; charset=' + _charset.toLowerCase(); }
+    if (_charset) {
+      mimeType += '; charset=' + _charset.toLowerCase();
+    }
   }
 
   return mimeType;
