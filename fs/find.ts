@@ -52,8 +52,9 @@ export function goThroughDir<T = any>(
   if (!fs.existsSync(fullpath)) {
     return cb(new Error(`File not exist: ${fullpath}`), {pathInfo});
   }
-  if (fs.statSync(fullpath).isDirectory()) {
-    if (dirFilter(pathInfo)) {
+  const stats = fs.statSync(fullpath);
+  if (stats.isDirectory()) {
+    if (dirFilter(pathInfo, stats)) {
       let error = null;
       let fileListOfCurDir = [];
       try {
@@ -62,7 +63,6 @@ export function goThroughDir<T = any>(
       } catch (err) {
         error = err;
       }
-
       const children = fileListOfCurDir
         .map(name => {
           const nextDepth = depth + 1;
@@ -77,7 +77,7 @@ export function goThroughDir<T = any>(
       return cb(ignoreError ? null : error, {pathInfo, children});
     }
   } else {
-    if (fileFilter(pathInfo)) {
+    if (fileFilter(pathInfo, stats)) {
       return cb(null, {pathInfo});
     }
   }
@@ -110,8 +110,8 @@ export function getFileInfoTree(root: string, options?: GoThroughDirOptions): Fi
       //     }
       //   }
       // }
-      const stat = fs.statSync(path.join(root, relativePath));
-      return {stat, relativePath, basename, children};
+      const stats = fs.statSync(path.join(root, relativePath));
+      return {stats, relativePath, basename, children};
     },
     options
   );

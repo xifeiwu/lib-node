@@ -96,7 +96,7 @@ interface FileSize {
 export function testGetFileSizeTree() {
   const fileInfoTree = getFileInfoTree(__dirname);
   function getFileSize(it: FileInfoTreeItem): FileSize {
-    const {relativePath, stat, children} = it;
+    const {relativePath, stats: stat, children} = it;
     if (stat.isDirectory()) {
       /** sort child by size */
       const childrenInfo = children.map(getFileSize).sort((prev, next) => {

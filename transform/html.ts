@@ -71,7 +71,7 @@ export function ulDirContent(dir: string, options?: GoThroughDirOptions) {
     const liItems = children.map(it => {
       const {
         relativePath,
-        stat: {size},
+        stats: {size},
       } = it;
       let label: LiProps['label'] = `${relativePath} [${byteToWord(size)}]`;
       let href: LiProps['href'] = relativePath;

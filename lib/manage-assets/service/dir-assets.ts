@@ -23,8 +23,8 @@ async function getOneAssetMeta(
   item: FileInfoTreeItem,
   getAssetInfoParams: Omit<GetAssetInfoParams, 'relativePath'>
 ): Promise<AssetTree | AssetInfoFull> {
-  const {relativePath, children: fileList, stat} = item;
-  if (stat.isDirectory()) {
+  const {relativePath, children: fileList, stats} = item;
+  if (stats.isDirectory()) {
     /** make sure children exist for dir path */
     const children: Array<AssetTree | AssetInfoFull> = [];
     for (const file of fileList) {

@@ -12,7 +12,7 @@ export interface PathInfoForRecur {
  * relativePath: path relative to root
  * baseName: one level filename, not include any child dir. like value return from path.basename
  */
-export type FileFilter = (pathInfo: PathInfoForRecur) => boolean;
+export type FileFilter = (pathInfo: PathInfoForRecur, stats: fs.Stats) => boolean;
 export interface GoThroughDirOptions {
   /** Whether Go through/Ignore this dir or not */
   dirFilter?: FileFilter;
@@ -37,7 +37,7 @@ export interface FilePathInfo {
 export interface FileInfoTreeItem {
   relativePath: string;
   basename: string;
-  stat: fs.Stats;
+  stats: fs.Stats;
   children?: FileInfoTreeItem[];
 }
 
