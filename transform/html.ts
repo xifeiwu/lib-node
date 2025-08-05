@@ -2,9 +2,14 @@ import fs from 'fs';
 import path from 'path';
 import {Readable} from 'stream';
 import {getFileInfoTree} from '../fs';
-import {byteToWord} from '../external';
+import {byteToWord, AstAOptions, listAUsingUl} from '../external';
 import {GoThroughDirOptions, HtmlProps, LiProps} from '../types';
 
+/**
+ * @deprecated by logic in fe/html-parser
+ * @param item
+ * @returns
+ */
 export function liItem(item: LiProps) {
   const {href, label, style = {}} = item;
   const finalLabel = label ?? href;
@@ -21,10 +26,19 @@ export function liItem(item: LiProps) {
     '</li>',
   ].join('');
 }
+/**
+ * @deprecated by logic in fe/html-parser
+ * @param item
+ * @returns
+ */
 export function ulItems(items: Array<LiProps>) {
   return ['<ul>', ...items.map(liItem), '</ul>'].join('');
 }
-
+/**
+ * @deprecated by logic in fe/html-parser
+ * @param item
+ * @returns
+ */
 export function toHtml(props?: HtmlProps) {
   const {title = '', body = ''} = props ?? {};
   return `<html>
@@ -45,7 +59,11 @@ export function toHtml(props?: HtmlProps) {
   </body>
 </html>`;
 }
-
+/**
+ * @deprecated by logic in fe/html-parser
+ * @param item
+ * @returns
+ */
 export function htmlUlItems(config: {items: Array<LiProps>; htmlProps?: HtmlProps}) {
   const {items, htmlProps} = config;
   const {title = '', body = ''} = htmlProps ?? {};
@@ -68,14 +86,15 @@ export function ulDirContent(dir: string, options?: GoThroughDirOptions) {
   }
   try {
     const {children} = getFileInfoTree(dir, options);
-    const liItems = children.map(it => {
+    const liItems: AstAOptions[] = children.map(it => {
       const {
         relativePath,
         stats: {size},
       } = it;
-      let label: LiProps['label'] = `${relativePath} [${byteToWord(size)}]`;
-      let href: LiProps['href'] = relativePath;
-      let style: LiProps['style'];
+      let text: AstAOptions['text'] = `${relativePath} [${byteToWord(size)}]`;
+      let href: AstAOptions['href'] = relativePath;
+      // let style: AstAOptions['style'];
+      let style = {};
       try {
         const statInfo = fs.statSync(path.resolve(dir, relativePath));
         if (statInfo.isDirectory()) {
@@ -87,11 +106,11 @@ export function ulDirContent(dir: string, options?: GoThroughDirOptions) {
           };
         }
       } catch (err) {
-        label = label + ' ' + err?.message;
+        text = text + ' ' + err?.message;
       }
-      return {label, href, style};
+      return {text, href, attrs: {style: JSON.stringify(style)}};
     });
-    return ulItems(liItems);
+    return listAUsingUl({infoList: liItems});
   } catch (err) {
     return `<div>${err.message}</div>`;
   }

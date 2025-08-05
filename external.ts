@@ -63,3 +63,4 @@ export {
   getSequenceMatcher,
   isAsyncFunction,
 } from '../fe/common';
+export {AstAOptions, listAUsingUl} from '../fe/lib/html-parser';
