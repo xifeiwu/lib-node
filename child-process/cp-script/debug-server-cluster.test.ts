@@ -1,11 +1,11 @@
-import {getCpConfigByScriptName} from './index';
-import {logColorful, getAFreePort, spawnAndTryIpc} from '../../index';
+import path from 'path';
+import {logColorful, getAFreePort, spawnAndTryIpc, getSpawnAndIpcConfigByScript} from '../../index';
 import {CP} from '../../types';
 
 export async function runDebugServerCluster() {
   const port = await getAFreePort(4000);
   const moreArgs = ['runTDebugServerCluster'];
-  const spawnConfig = getCpConfigByScriptName('debug-server-cluster.ts', {
+  const spawnConfig = getSpawnAndIpcConfigByScript(path.join(__dirname, 'debug-server-cluster.ts'), {
     params: moreArgs,
     spawnOptions: {
       stdio: ['ipc', 'ignore', 'ignore'],
