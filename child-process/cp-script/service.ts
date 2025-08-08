@@ -1,3 +1,4 @@
+import fs from 'fs';
 import path from 'path';
 import {isNumber, waitFor} from '../../external';
 import {CP, IpcConfig} from '../../types';
@@ -60,6 +61,14 @@ export async function getFullPathOfCpScript(
     ({label: target} = await selectOption(scriptList.map(it => ({label: it}))));
   }
   return path.resolve(__dirname, target);
+}
+
+export function getCpScript(basename: string) {
+  const fullpath = path.join(__dirname, basename);
+  if (!fs.existsSync(fullpath)) {
+    throw new Error(`file not exist: ${fullpath}`);
+  }
+  return fullpath;
 }
 
 // export async function runAllCpCustomization(config?: CP.CpCustomization) {

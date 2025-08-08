@@ -1,5 +1,5 @@
-import {getScriptFullpath} from '../../cp-script';
-import {logColorful, CP, getSocketPath, Daemon, getCpConfigByScriptPath} from '../../../index';
+import {getCpScript} from '../../cp-script/service';
+import {logColorful, CP, getSocketPath, Daemon, getSpawnAndIpcConfigByScript} from '../../../index';
 import {startDetachedDaemon} from '../service';
 import {SocketClientToDaemon} from '../client';
 
@@ -15,7 +15,7 @@ const spawnDebugServer1: Daemon.CpManagerConfig = {
       minInterval: 5000,
     },
   },
-  spawnConfig: getCpConfigByScriptPath<CP.DebugServerConfig>(getScriptFullpath('debug-server.ts'), {
+  spawnConfig: getSpawnAndIpcConfigByScript<CP.DebugServerConfig>(getCpScript('debug-server.ts'), {
     // spawnOptions: {
     //   stdio,
     // },
@@ -32,7 +32,7 @@ const spawnDebugServer2: Daemon.CpManagerConfig = {
   //     minInterval: 5000,
   //   },
   // },
-  spawnConfig: getCpConfigByScriptPath<CP.DebugServerConfig>(getScriptFullpath('debug-server.ts'), {
+  spawnConfig: getSpawnAndIpcConfigByScript<CP.DebugServerConfig>(getCpScript('debug-server.ts'), {
     // spawnOptions: {
     //   stdio,
     // },

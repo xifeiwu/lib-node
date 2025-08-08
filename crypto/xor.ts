@@ -35,11 +35,11 @@ export function getXorDataFunc(iv: CanConvertToBuffer) {
   return xorData;
 }
 
-export function getXorTransform(iv: BinaryLike, reader: Readable) {
+export function getXorTransform(iv: BinaryLike, reader?: Readable) {
   const xorData = getXorDataFunc(iv);
   const transform = new Transform({
     transform(chunks, enc, cb) {
-      reader.push(xorData(chunks));
+      (reader ?? this).push(xorData(chunks));
       cb && cb();
     },
   });
