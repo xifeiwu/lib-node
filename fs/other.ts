@@ -51,3 +51,32 @@ export function recursiveDeleteFile(path: string) {
     console.error(`Error: path ${path} not exist`);
   }
 }
+
+/**
+ * NOTICE:
+ * for link file, fs.existsSync or fs.statSync will throw error even link file exist,
+ * so here use fs.lstatSync to check existence of link file
+ */
+function isLinkFileExist(filePath: string) {
+  try {
+    const stat = fs.lstatSync(filePath);
+    if (stat) {
+      return true;
+    }
+  } catch {
+    return false;
+  }
+}
+
+export function link(sourceFile: string, targetFile: string) {
+  // link can't be overrided, so remove it first
+  if (!fs.existsSync(sourceFile)) {
+    throw new Error(`binFile not exist: ${sourceFile}`);
+  }
+  if (isLinkFileExist(targetFile)) {
+    fs.unlinkSync(targetFile);
+  }
+  const relativePath = path.relative(path.dirname(targetFile), sourceFile);
+  fs.symlinkSync(relativePath, targetFile);
+  return {sourceFile, targetFile, relativePath};
+}
