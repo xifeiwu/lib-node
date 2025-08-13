@@ -120,6 +120,7 @@ export function getFileInfoTree(root: string, options?: GoThroughDirOptions): Fi
 interface LineCountMapItem {
   relativePath: string;
   lineCount: number;
+  depth: number;
   children?: LineCountMapItem[];
 }
 export function getLineCountMap(
@@ -135,17 +136,17 @@ export function getLineCountMap(
   const fullPath = path.resolve(filePath);
   return goThroughDir<LineCountMapItem>(
     fullPath,
-    (err, {pathInfo: {relativePath}, children}) => {
+    (err, {pathInfo: {relativePath, depth}, children}) => {
       const fullPath = path.join(filePath, relativePath);
       if (Array.isArray(children)) {
         const lineCount = children.reduce<number>((sum, it) => {
           return sum + it.lineCount;
         }, 0);
-        return {relativePath, lineCount, children};
+        return {relativePath, lineCount, depth, children};
       } else {
         const content = fs.readFileSync(fullPath);
         const lineCount = content.toString().split('\n').length;
-        return {relativePath, lineCount};
+        return {relativePath, lineCount, depth};
       }
     },
     options
