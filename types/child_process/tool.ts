@@ -15,7 +15,7 @@ export interface GitRepoInfo {
   /** path relative to project dir, default value is vendor${vendorKey} */
   relativePath?: string;
   /** The shell command to run in relativePath dir after pull code success, */
-  postPullCmds?: Array<string | {cmd: string; throwError?: boolean}>;
+  postPullCmds?: Array<Function | string | {cmd: string; throwError?: boolean}>;
   /** some comment on this repo */
   description?: string[];
 }

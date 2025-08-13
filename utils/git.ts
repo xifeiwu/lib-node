@@ -8,7 +8,7 @@ import cp from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import {GitRepoInfo, GitRepoInfoTree} from '../types';
-import {isString} from '../external';
+import {isFunction, isString} from '../external';
 import {logColorful} from '../log';
 
 function execSyncAndLog(cmd: string, options?: {throwError?: boolean}) {
@@ -18,9 +18,14 @@ function execSyncAndLog(cmd: string, options?: {throwError?: boolean}) {
     const result = cp.execSync(cmd);
     return result;
   } catch (err) {
-    const {stack, message} = err;
+    const {status, stack, stdout, message} = err;
+    logColorful(
+      {color: 'red'},
+      `execute shell command ends with status: ${status}`,
+      process.cwd(),
+      stack ?? (stdout ? stdout.toString() : null) ?? message
+    );
     if (throwError) {
-      logColorful({color: 'red'}, process.cwd(), stack ?? message);
       throw err;
     }
   }
@@ -137,7 +142,9 @@ export async function syncUpGitRepos(gitRepos: GitRepoInfoTree, config: SyncupGi
       execSyncAndLog(`git reset --hard ${origin}/${branch}`);
     }
     for (const command of postPullCmds) {
-      if (isString(command)) {
+      if (isFunction(command)) {
+        await (command as Function)();
+      } else if (isString(command)) {
         execSyncAndLog(command as string);
       } else {
         const {cmd, throwError} = command as {cmd: string; throwError?: boolean};
