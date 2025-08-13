@@ -175,7 +175,7 @@ export function writeGitIgnoreFile(gitRepos: GitRepoInfoTree, config: SyncupGitR
     return results;
   }
   const gitIgnoreFile = path.resolve(hostDir, '.gitignore');
-  let newRules = ['.DS_Store', 'node_modules/', repoDir, ...getRepoRelativePath(gitRepos, {repoDir})].filter(
+  let newRules = ['.DS_Store', 'node_modules/', ...getRepoRelativePath(gitRepos, {repoDir})].filter(
     Boolean
   );
   if (fs.existsSync(gitIgnoreFile)) {
