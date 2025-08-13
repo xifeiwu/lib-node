@@ -4,32 +4,12 @@
  * 2. Not blocked by network issue when can't not loading distinct submodule
  * 3. Can manage  vendor in different version if necessary, such axios, axios-v0
  */
-import cp from 'child_process';
 import fs from 'fs';
 import path from 'path';
-import {GitRepoInfo, GitRepoInfoTree} from '../types';
-import {isFunction, isString} from '../external';
-import {logColorful} from '../log';
-
-function execSyncAndLog(cmd: string, options?: {throwError?: boolean}) {
-  const {throwError = true} = options ?? {};
-  logColorful({color: 'black'}, cmd);
-  try {
-    const result = cp.execSync(cmd);
-    return result;
-  } catch (err) {
-    const {status, stack, stdout, message} = err;
-    logColorful(
-      {color: 'red'},
-      `execute shell command ends with status: ${status}`,
-      process.cwd(),
-      stack ?? (stdout ? stdout.toString() : null) ?? message
-    );
-    if (throwError) {
-      throw err;
-    }
-  }
-}
+import {GitRepoInfo, GitRepoInfoTree} from '../../types';
+import {isFunction, isString} from '../../external';
+import {logColorful} from '../../log';
+import {execSyncAndLog} from '../../child-process';
 
 function getCurrentBranch() {
   return execSyncAndLog(`git branch --show-current`).toString().trim();
@@ -175,9 +155,7 @@ export function writeGitIgnoreFile(gitRepos: GitRepoInfoTree, config: SyncupGitR
     return results;
   }
   const gitIgnoreFile = path.resolve(hostDir, '.gitignore');
-  let newRules = ['.DS_Store', 'node_modules/', ...getRepoRelativePath(gitRepos, {repoDir})].filter(
-    Boolean
-  );
+  let newRules = ['.DS_Store', 'node_modules/', ...getRepoRelativePath(gitRepos, {repoDir})].filter(Boolean);
   if (fs.existsSync(gitIgnoreFile)) {
     const lines = fs.readFileSync(gitIgnoreFile).toString().split('\n').filter(Boolean);
     newRules = Array.from(new Set([...newRules, ...lines]));

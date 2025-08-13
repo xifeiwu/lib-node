@@ -1,17 +1,12 @@
-import fs from 'fs';
-import path from 'path';
 import {execSync} from 'child_process';
 import {logColorful} from '../log';
 import {convertToBuffer} from '../transform';
-import {goOnOrNot} from '../readline';
 
 /**
- * Whether through error or not depends on the return value of shell command:
- * When the $? is not equal 0, execSync will throw Error.
- * So for some normally executed command, it may also throw Error, for example:
- * diff -uNra dir1 dir2
- * When there are different between two dir, the $? is 1, execSync will also throw Error,
- * so we should take care of case like this.
+ * @deprecated by execSyncAndLog
+ * @param cmd
+ * @param options
+ * @returns
  */
 export function logCmdAndexecSync(cmd: string, options?: {throwError?: boolean}) {
   const {throwError = true} = options ?? {};
@@ -30,85 +25,30 @@ export function logCmdAndexecSync(cmd: string, options?: {throwError?: boolean})
 }
 
 /**
- * Feature of run diff command in execSync:
- * if content of two dir is the same, $? from shell is 0, return ''
- * else $? is 1, execSync will throw error, the diff result is in err.stdout
+ * Whether through error or not depends on the return value of shell command:
+ * When the $? is not equal 0, execSync will throw Error.
+ * So for some normally executed command, it may also throw Error, for example:
+ * diff -uNra dir1 dir2
+ * When there are different between two dir, the $? is 1, execSync will also throw Error,
+ * so we should take care of case like this.
  */
-export function diffDir(dir1: string, dir2: string): string {
-  const dirNotExist = [dir1, dir2].find(it => !fs.existsSync(it));
-  if (dirNotExist) {
-    throw new Error(`dir not exist: ${dirNotExist}`);
-  }
+export function execSyncAndLog(cmd: string, options?: {throwError?: boolean; log?: boolean}) {
+  const {throwError = true, log = true} = options ?? {};
+  log && logColorful({color: 'black'}, 'will run command in shell:', cmd);
   try {
-    logColorful({color: 'yellow'}, `diff -uNra ${dir1} ${dir2}`);
-    const diff = execSync(`diff -uNra ${dir1} ${dir2}`, {encoding: 'utf-8', maxBuffer: 1024 * 1024 * 128});
-    return diff;
-  } catch (err: any) {
-    if (err.status === 1) {
-      return err.stdout.toString();
-    } else {
-      throw new Error('diff command failed:' + err.stderr?.toString() || err.message);
+    const result = execSync(cmd);
+    return result;
+  } catch (err) {
+    const {status, stack, stdout, message} = err;
+    log &&
+      logColorful(
+        {color: 'red'},
+        `execute shell command ends with status: ${status}`,
+        process.cwd(),
+        stack ?? (stdout ? stdout.toString() : null) ?? message
+      );
+    if (throwError) {
+      throw err;
     }
-  }
-}
-
-/**
- * sync up content of dir ${from} to dir ${to}
- * diff = to - from
- * path = diff + from, apply diff to from
- * @param from, the dir refer to
- * @param to, the dir to apply patch
- */
-export async function syncupDirContentByDiff(from: string, to: string) {
-  /** diff folder using absolute path */
-  from = path.resolve(from);
-  to = path.resolve(to);
-  if (!fs.existsSync(from)) {
-    throw new Error(`original folder not found: ${from}`);
-  }
-  if (
-    !fs.existsSync(to) &&
-    (await goOnOrNot({
-      tips: [`Folder not exist, will create it`, to + '?'],
-    }))
-  ) {
-    fs.mkdirSync(to);
-  }
-  const diff = await diffDir(to, from);
-  if (diff === '') {
-    logColorful({color: 'yellow'}, `The content of two dir is the same.`);
-    return;
-  }
-  logColorful({color: 'yellow'}, 'Content of diff:');
-  const toPathParts = to.split('/');
-  const fromPathParts = from.split('/');
-  const index = toPathParts.findIndex((it, index) => {
-    return it !== fromPathParts[index];
-  });
-  const patchDir = toPathParts.slice(0, index + 1).join('/');
-  const dirDepth = index + 1;
-  logColorful({}, diff);
-  if (
-    !(await goOnOrNot({
-      tips: [
-        `This is the diff between`,
-        to,
-        'and',
-        from,
-        `will apply to dir ${patchDir}`,
-        `will you apply these diff?`,
-      ],
-      defaultValue: true,
-    }))
-  ) {
-    return;
-  }
-  try {
-    execSync(`patch -d ${patchDir} -p${dirDepth}`, {input: diff, encoding: 'utf-8'});
-  } catch (error) {
-    const {stdout, stderr, message} = error;
-    const out = stdout?.toString();
-    const err = stderr?.toString();
-    logColorful({}, out, err, message);
   }
 }
