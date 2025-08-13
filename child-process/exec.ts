@@ -1,6 +1,7 @@
 import {execSync} from 'child_process';
 import {logColorful} from '../log';
 import {convertToBuffer} from '../transform';
+import {ExecCmdOptions} from '../types';
 
 /**
  * @deprecated by execSyncAndLog
@@ -32,22 +33,23 @@ export function logCmdAndexecSync(cmd: string, options?: {throwError?: boolean})
  * When there are different between two dir, the $? is 1, execSync will also throw Error,
  * so we should take care of case like this.
  */
-export function execSyncAndLog(cmd: string, options?: {throwError?: boolean; log?: boolean}) {
-  const {throwError = true, log = true} = options ?? {};
+export function execCmdWithOptions(cmd: string, options?: ExecCmdOptions) {
+  const {log, ignoreStatus} = options ?? {};
   log && logColorful({color: 'black'}, 'will run command in shell:', cmd);
   try {
     const result = execSync(cmd);
     return result;
   } catch (err) {
     const {status, stack, stdout, message} = err;
-    log &&
+    if (status !== undefined && Array.isArray(ignoreStatus) && ignoreStatus.includes(status)) {
+      return stdout;
+    } else {
       logColorful(
         {color: 'red'},
         `execute shell command ends with status: ${status}`,
         process.cwd(),
         stack ?? (stdout ? stdout.toString() : null) ?? message
       );
-    if (throwError) {
       throw err;
     }
   }

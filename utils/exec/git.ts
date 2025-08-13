@@ -6,16 +6,20 @@
  */
 import fs from 'fs';
 import path from 'path';
-import {GitRepoInfo, GitRepoInfoTree} from '../../types';
+import {ExecCmdOptions, GitRepoInfo, GitRepoInfoTree} from '../../types';
 import {isFunction, isString} from '../../external';
 import {logColorful} from '../../log';
-import {execSyncAndLog} from '../../child-process';
+import {execCmdWithOptions} from '../../child-process';
+
+const DEFAULT_EXEC_OPTIONS: ExecCmdOptions = {
+  log: true,
+};
 
 function getCurrentBranch() {
-  return execSyncAndLog(`git branch --show-current`).toString().trim();
+  return execCmdWithOptions(`git branch --show-current`, DEFAULT_EXEC_OPTIONS).toString().trim();
 }
 function getAllLocalBranches() {
-  return execSyncAndLog(`git for-each-ref --format='%(refname:short)' refs/heads/`)
+  return execCmdWithOptions(`git for-each-ref --format='%(refname:short)' refs/heads/`, DEFAULT_EXEC_OPTIONS)
     .toString()
     .split('\n')
     .map(it => it.trim())
@@ -23,7 +27,7 @@ function getAllLocalBranches() {
   // .map(it => it.substring(2));
 }
 function getCurrentCommitId() {
-  return execSyncAndLog('git rev-parse HEAD').toString().trim();
+  return execCmdWithOptions('git rev-parse HEAD', DEFAULT_EXEC_OPTIONS).toString().trim();
 }
 
 function isGitRepoInfo(info: GitRepoInfo | GitRepoInfoTree) {
@@ -71,13 +75,16 @@ export async function syncUpGitRepos(gitRepos: GitRepoInfoTree, config: SyncupGi
       // fs.mkdirSync(relativePath, {recursive: true});
       for (let i = 0; i < source.length; i++) {
         if (i === 0) {
-          execSyncAndLog(`git clone -o ${origin} -b ${branch} ${url} ${relativePath}`);
+          execCmdWithOptions(
+            `git clone -o ${origin} -b ${branch} ${url} ${relativePath}`,
+            DEFAULT_EXEC_OPTIONS
+          );
         } else {
           const it = source[i];
           if (!it.origin) {
             continue;
           }
-          execSyncAndLog(`git remote add -t ${it.branch} ${it.origin} ${it.url}`);
+          execCmdWithOptions(`git remote add -t ${it.branch} ${it.origin} ${it.url}`, DEFAULT_EXEC_OPTIONS);
         }
       }
     }
@@ -90,9 +97,9 @@ export async function syncUpGitRepos(gitRepos: GitRepoInfoTree, config: SyncupGi
       const allBranchs = getAllLocalBranches();
       const isBranchExist = allBranchs.includes(branch);
       if (!isBranchExist) {
-        execSyncAndLog(`git checkout -b ${branch}`);
+        execCmdWithOptions(`git checkout -b ${branch}`, DEFAULT_EXEC_OPTIONS);
       } else {
-        execSyncAndLog(`git checkout ${branch}`);
+        execCmdWithOptions(`git checkout ${branch}`, DEFAULT_EXEC_OPTIONS);
       }
     }
     /**
@@ -104,31 +111,31 @@ export async function syncUpGitRepos(gitRepos: GitRepoInfoTree, config: SyncupGi
         /** check whether target commit is in current branch */
         try {
           /** List branches that contain the commit */
-          execSyncAndLog(`git branch --contain=${commit}`);
+          execCmdWithOptions(`git branch --contain=${commit}`, DEFAULT_EXEC_OPTIONS);
         } catch (err) {
-          execSyncAndLog(`git fetch ${origin}`);
+          execCmdWithOptions(`git fetch ${origin}`, DEFAULT_EXEC_OPTIONS);
           // execSyncAndLog(`git reset --hard ${remote}/${branch}`);
         }
         /** Align with target commit */
         try {
-          execSyncAndLog(`git reset --hard ${commit}`);
+          execCmdWithOptions(`git reset --hard ${commit}`, DEFAULT_EXEC_OPTIONS);
         } catch (err) {
           throw new Error(`commit id: ${commit} not contained in branch ${branch}`);
         }
       }
     } else {
       /** Align target branch with remote */
-      execSyncAndLog(`git fetch ${origin}`);
-      execSyncAndLog(`git reset --hard ${origin}/${branch}`);
+      execCmdWithOptions(`git fetch ${origin}`, DEFAULT_EXEC_OPTIONS);
+      execCmdWithOptions(`git reset --hard ${origin}/${branch}`, DEFAULT_EXEC_OPTIONS);
     }
     for (const command of postPullCmds) {
       if (isFunction(command)) {
         await (command as Function)();
       } else if (isString(command)) {
-        execSyncAndLog(command as string);
+        execCmdWithOptions(command as string, DEFAULT_EXEC_OPTIONS);
       } else {
-        const {cmd, throwError} = command as {cmd: string; throwError?: boolean};
-        execSyncAndLog(cmd, {throwError});
+        const {cmd, ...options} = command as {cmd: string; ignoreStatus?: number[]};
+        execCmdWithOptions(cmd, {...DEFAULT_EXEC_OPTIONS, ...options});
       }
     }
     // const currentBranch = execSync(`git rev-parse --abbrev-ref HEAD`).toString().trim();
