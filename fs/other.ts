@@ -69,6 +69,9 @@ export function recursiveDeleteFile(path: string) {
   }
 }
 
+/**
+ * @deprecated by linkFile
+ */
 export function link(sourceFile: string, targetFile: string) {
   // link can't be overrided, so remove it first
   if (!fs.existsSync(sourceFile)) {
@@ -82,7 +85,9 @@ export function link(sourceFile: string, targetFile: string) {
   fs.symlinkSync(relativePath, targetFile);
   return {sourceFile, targetFile, relativePath};
 }
-
+export function linkFile(sourceFile: string, targetFile: string) {
+  return link(sourceFile, targetFile)
+}
 
 export function writeFileSync(fullPath: string, data: string | NodeJS.ArrayBufferView) {
   const dirName = path.dirname(fullPath);
