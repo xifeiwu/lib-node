@@ -6,8 +6,8 @@
  */
 import fs from 'fs';
 import path from 'path';
-import {ExecCmdOptions, GitRepoInfo, GitRepoInfoTree} from '../../types';
-import {isFunction, isString} from '../../external';
+import {ExecCmdOptions} from '../../types';
+import {isFunction, isString, GitRepoInfo, GitRepoInfoTree} from '../../external';
 import {logColorful} from '../../log';
 import {execCmdWithOptions} from '../../child-process';
 
