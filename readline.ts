@@ -1,5 +1,5 @@
 import readline from 'readline';
-import {isObject, isString} from './external';
+import {isNumber, isObject, isString} from './external';
 import {coloringContent, inspect, loggableContentToStr} from './log';
 import {ColorStyle, LoggableContent} from './types';
 
@@ -19,7 +19,7 @@ export async function showQuestionAndGetAnswer(question: string, defaultAnswer?:
 
 /**
  * Get selected item by index or its label content
- * @returns answer, is the value from user input, 
+ * @returns answer, is the value from user input,
  * it's value is '' if there is no use input(e.g., just press enter to use default value),
  * will try to convert to int, if success will treat it as index value
  */
@@ -32,9 +32,15 @@ export async function selectOption<T extends {label: string}>(
      */
     defaultIndex?: number;
     defaultAnswer?: number | string;
+    doubleConfirmForAmbiguousCases?: boolean;
   }
 ): Promise<T & {answer: number | string}> {
-  const {tip = 'please select', defaultIndex, defaultAnswer = 0} = option ? option : {};
+  const {
+    tip = 'please select',
+    defaultIndex,
+    defaultAnswer = 0,
+    doubleConfirmForAmbiguousCases,
+  } = option ? option : {};
   let tipArr: string[] = [];
   if (isString(tip)) {
     // tip = [tip];
@@ -69,11 +75,25 @@ export async function selectOption<T extends {label: string}>(
       parsedAnswer = answerAsIndex;
     }
   }
-  if (!itemList[index]) {
+  const selectItem = itemList[index];
+  if (selectItem === undefined) {
     throw new Error(`Can't find option by input: ${answer}`);
-  } else {
-    return {...itemList[index], answer: useDefaultAnswer ? '' : parsedAnswer};
   }
+  /** Double confirm if function name is selected by option index */
+  if (
+    doubleConfirmForAmbiguousCases &&
+    (isNumber(answer) || useDefaultAnswer) &&
+    !(await goOnOrNot({
+      style: {
+        color: 'red',
+      },
+      tips: [`your selection is ${selectItem.label}?`],
+      defaultValue: true,
+    }))
+  ) {
+    throw new Error(`Manually Interrupt`);
+  }
+  return {...itemList[index], answer: useDefaultAnswer ? '' : parsedAnswer};
 }
 
 const answerToValue = {
@@ -120,8 +140,10 @@ export async function goOnOrNot(config?: {
           };
     return {...tipItem, content: loggableContentToStr(tipItem.content)};
   });
-
-  /** append default value */
+  /**
+   * if the last content ends with ?, append default value to last content
+   * or append a new formatted line
+   */
   if (formattedTips.length > 0 && formattedTips[formattedTips.length - 1].content.endsWith('?')) {
     formattedTips[formattedTips.length - 1].content += `[${defaultValue ? yesCondition : noCondition}]?`;
   } else {

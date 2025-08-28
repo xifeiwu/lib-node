@@ -200,6 +200,7 @@ export function getFileInfoList(
 }
 
 /**
+ * Return relative path of file(dir is not included)
  * @param root
  * @param options
  * @returns relativePath list
