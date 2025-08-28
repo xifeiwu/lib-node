@@ -19,6 +19,9 @@ export async function showQuestionAndGetAnswer(question: string, defaultAnswer?:
 
 /**
  * Get selected item by index or its label content
+ * @returns answer, is the value from user input, 
+ * it's value is '' if there is no use input(e.g., just press enter to use default value),
+ * will try to convert to int, if success will treat it as index value
  */
 export async function selectOption<T extends {label: string}>(
   itemList: T[],
