@@ -1,7 +1,7 @@
 import readline from 'readline';
 import {isNumber, isObject, isString} from './external';
-import {coloringContent, inspect, loggableContentToStr} from './log';
-import {ColorStyle, LoggableContent} from './types';
+import {coloringContent, inspect, loggableContentToStr, toContentWithStyle} from './log';
+import {ColorStyle, ContentWitStyle, LoggableContent} from './types';
 
 export async function showQuestionAndGetAnswer(question: string, defaultAnswer?: string): Promise<string> {
   const interact = readline.createInterface({
@@ -26,7 +26,7 @@ export async function showQuestionAndGetAnswer(question: string, defaultAnswer?:
 export async function selectOption<T extends {label: string}>(
   itemList: T[],
   option?: {
-    tip?: Array<any> | string;
+    tips?: Array<LoggableContent | ContentWitStyle>;
     /**
      * @deprecated by defaultAnswer
      */
@@ -36,25 +36,26 @@ export async function selectOption<T extends {label: string}>(
   }
 ): Promise<T & {answer: number | string}> {
   const {
-    tip = 'please select',
+    tips = ['please select'],
     defaultIndex,
     defaultAnswer = 0,
     doubleConfirmForAmbiguousCases,
   } = option ? option : {};
-  let tipArr: string[] = [];
-  if (isString(tip)) {
-    // tip = [tip];
-    tipArr.push(tip as string);
-  } else {
-    tipArr = (tip as Array<any>).map(it => inspect(it));
+  const defaultAnswerTip = `[default answer is ${defaultAnswer})]:`;
+  const formattedTips = toContentWithStyle(tips, {color: 'yellow'});
+  if (Array.isArray(formattedTips) && formattedTips.length > 0) {
+    formattedTips[tips.length - 1].content =
+      loggableContentToStr(formattedTips[tips.length - 1].content) + defaultAnswerTip;
   }
-  tipArr.push(`[default answer is ${defaultAnswer})]:`);
-  const optionStr = itemList
-    .map((it, index) => {
-      return `${index}. ${String(it.label ? it.label : it)}`;
-    })
-    .concat(...tipArr)
+  const optionStr = [
+    ...itemList.map<ContentWitStyle>((it, index) => {
+      return {content: `${index}. ${String(it.label ? it.label : it)}`};
+    }),
+    ...formattedTips,
+  ]
+    .map(it => coloringContent(it.style, it.content))
     .join('\n');
+
   let answer = await showQuestionAndGetAnswer(optionStr);
   let index: number;
   let parsedAnswer: number | string = answer;
@@ -75,25 +76,26 @@ export async function selectOption<T extends {label: string}>(
       parsedAnswer = answerAsIndex;
     }
   }
-  const selectItem = itemList[index];
-  if (selectItem === undefined) {
+  const selectedItem = itemList[index];
+  if (selectedItem === undefined) {
     throw new Error(`Can't find option by input: ${answer}`);
   }
+  const result = {...selectedItem, answer: useDefaultAnswer ? '' : parsedAnswer};
   /** Double confirm if function name is selected by option index */
   if (
     doubleConfirmForAmbiguousCases &&
-    (isNumber(answer) || useDefaultAnswer) &&
+    (isNumber(result.answer) || useDefaultAnswer) &&
     !(await goOnOrNot({
       style: {
         color: 'red',
       },
-      tips: [`your selection is ${selectItem.label}?`],
+      tips: [`your selection is ${selectedItem.label}?`],
       defaultValue: true,
     }))
   ) {
     throw new Error(`Manually Interrupt`);
   }
-  return {...itemList[index], answer: useDefaultAnswer ? '' : parsedAnswer};
+  return result;
 }
 
 const answerToValue = {
@@ -115,12 +117,8 @@ const noCondition = Object.entries(answerToValue)
   .map(it => it[0])
   .join('/');
 
-interface TipItem {
-  content: LoggableContent;
-  style: ColorStyle;
-}
 export async function goOnOrNot(config?: {
-  tips?: Array<LoggableContent | TipItem>;
+  tips?: Array<LoggableContent | ContentWitStyle>;
   style?: ColorStyle;
   defaultValue?: boolean;
 }): Promise<boolean> {
@@ -129,22 +127,15 @@ export async function goOnOrNot(config?: {
     color: 'yellow',
     ...style,
   };
-
-  const formattedTips: {content: string; style: ColorStyle}[] = tips.map(it => {
-    const tipItem: TipItem =
-      isObject(it) && Object.prototype.hasOwnProperty.call(it, style)
-        ? (it as TipItem)
-        : {
-            content: it,
-            style: defaultStyle,
-          };
-    return {...tipItem, content: loggableContentToStr(tipItem.content)};
-  });
+  const formattedTips = toContentWithStyle(tips, defaultStyle);
   /**
    * if the last content ends with ?, append default value to last content
    * or append a new formatted line
    */
-  if (formattedTips.length > 0 && formattedTips[formattedTips.length - 1].content.endsWith('?')) {
+  if (
+    formattedTips.length > 0 &&
+    loggableContentToStr(formattedTips[formattedTips.length - 1].content).endsWith('?')
+  ) {
     formattedTips[formattedTips.length - 1].content += `[${defaultValue ? yesCondition : noCondition}]?`;
   } else {
     formattedTips.push({

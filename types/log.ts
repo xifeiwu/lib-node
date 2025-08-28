@@ -3,3 +3,8 @@ export interface ColorStyle {
   color?: LogColors;
 }
 export type LoggableContent = object | Buffer | string | number | boolean | Date;
+
+export interface ContentWitStyle {
+  content: LoggableContent;
+  style?: ColorStyle;
+}

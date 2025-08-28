@@ -2,7 +2,7 @@ import util from 'util';
 import path from 'path';
 import {isObject, formatDate, isPlainObject} from './external';
 import {writeFileSync} from './fs';
-import {CanConvertToBuffer, ColorStyle, LogColors, LoggableContent} from './types';
+import {CanConvertToBuffer, ColorStyle, ContentWitStyle, LogColors, LoggableContent} from './types';
 
 export function prettyLog(content: any): void;
 export function prettyLog(...args: any[]): void;
@@ -106,12 +106,16 @@ export function loggableContentToStr(content: LoggableContent): string {
   return finalStr;
 }
 export function coloringContent(colorStyle: ColorStyle, content: LoggableContent): string {
-  const {color = 'black'} = colorStyle ?? {};
+  const {color} = colorStyle ?? {};
   const colorInfo = colorMap[color];
   const finalStr = loggableContentToStr(content);
-  return `${colorInfo.start}${finalStr}${colorInfo.end}`;
+  if (colorInfo) {
+    return `${colorInfo.start}${finalStr}${colorInfo.end}`;
+  } else {
+    return finalStr;
+  }
 }
-export function logColorful(colorStyle: ColorStyle, ...contentList: Array<LoggableContent>) {
+export function logColorful(colorStyle: ColorStyle = {}, ...contentList: Array<LoggableContent>) {
   for (const content of contentList) {
     const finalStr = coloringContent(colorStyle, content);
     console.log(finalStr);
@@ -141,4 +145,21 @@ export function logWithColor(color: LogColors, ...contentList: Array<object | Bu
     console.log(`${colorInfo.start}${finalStr}${colorInfo.end}`);
     // });
   }
+}
+
+export function toContentWithStyle(
+  items: Array<LoggableContent | ContentWitStyle>,
+  defaultStyle?: ColorStyle
+) {
+  const formattedTips: ContentWitStyle[] = items.map(it => {
+    const tipItem: ContentWitStyle =
+      isObject(it) && Object.prototype.hasOwnProperty.call(it, 'style')
+        ? (it as ContentWitStyle)
+        : {
+            content: it,
+            style: defaultStyle,
+          };
+    return {...tipItem};
+  });
+  return formattedTips;
 }
