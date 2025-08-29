@@ -12,7 +12,7 @@ export async function runSelectOption() {
       value: 'b',
     },
   ];
-  const selection = await selectOption(options, {tip: 'Please one as answer'});
+  const selection = await selectOption(options, {tips: ['Please one as answer']});
   logColorful({color: 'red'}, 'selection:', selection);
 }
 

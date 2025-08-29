@@ -261,7 +261,7 @@ export async function selectFileFromDir(
     throw new Error(`fileList is empty`);
   }
   const selectedFileInfo = await selectOption<FilePathInfo>(handleFileList(fileList), {
-    tip: 'Please select target file:',
+    tips: ['Please select target file:'],
   });
   return selectedFileInfo;
 }

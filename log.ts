@@ -153,7 +153,7 @@ export function toContentWithStyle(
 ) {
   const formattedTips: ContentWitStyle[] = items.map(it => {
     const tipItem: ContentWitStyle =
-      isObject(it) && Object.prototype.hasOwnProperty.call(it, 'style')
+      isObject(it) && Object.prototype.hasOwnProperty.call(it, 'content')
         ? (it as ContentWitStyle)
         : {
             content: it,

@@ -115,7 +115,7 @@ export async function selectDbConfig<
     const {label} = await selectOption<{label: Site}>(
       sites.map(it => ({label: it})),
       {
-        tip: 'Please select site:',
+        tips: ['Please select site:'],
       }
     );
     site = label;
@@ -126,7 +126,7 @@ export async function selectDbConfig<
     const {label} = await selectOption<{label: string}>(
       usernames.map(it => ({label: it})),
       {
-        tip: 'Please select username:',
+        tips: ['Please select username:'],
       }
     );
     username = label as UserName;
@@ -137,7 +137,7 @@ export async function selectDbConfig<
     const {label} = await selectOption(
       databaseList.map(it => ({label: it})),
       {
-        tip: 'Please select database:',
+        tips: ['Please select database:'],
       }
     );
     database = label;
