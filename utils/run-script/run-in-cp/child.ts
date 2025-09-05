@@ -55,7 +55,7 @@ export async function start() {
     console.log('------');
   } catch (err) {
     console.log(`${TAG} catch Error:`);
-    logColorful({color: 'red'}, err.message);
+    logColorful({color: 'red'}, err);
     console.error(err);
     throw err;
   }
