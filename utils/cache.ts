@@ -48,10 +48,10 @@ export function useCachedData<T>(options: {maxAge: number}, globalDataSource?: G
   }
   /**
    * It only works when typeof globalDataSource is SyncGetDataSource<T>
-   * @param dataSource 
-   * @returns 
+   * @param dataSource
+   * @returns
    */
-  function getOrFetchSync(dataSource: SyncGetDataSource<T>) {
+  function getOrFetchSync(dataSource?: SyncGetDataSource<T>) {
     if (get() === undefined) {
       setSync(dataSource ?? (globalDataSource as SyncGetDataSource<T>));
     }
@@ -63,5 +63,8 @@ export function useCachedData<T>(options: {maxAge: number}, globalDataSource?: G
     }
     return data;
   }
-  return {setSync, set, get, getOrFetch, getOrFetchSync};
+  function getMeta() {
+    return {expireAt};
+  }
+  return {setSync, set, get, getOrFetch, getOrFetchSync, getMeta};
 }
