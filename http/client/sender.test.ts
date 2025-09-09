@@ -3,7 +3,7 @@ import {logColorful} from '../../log';
 import {toReadable} from '../../stream';
 import {DebugServerPathname, startHttpDebugServer} from '../server';
 import {requestAndGetResponseInfo} from './sender';
-import {CustomResponseOptions, HttpRequestOptions} from '../../types';
+import {CustomizeResponseOptions, HttpRequestOptions} from '../../types';
 import {getAFreePort} from '../../net';
 
 export async function contentTypeAndStream() {
@@ -53,7 +53,7 @@ export async function contentTypeAndStream() {
 
 export async function testUnreachable() {
   const origin = 'http://127.0.0.1:' + (await getAFreePort());
-  const config: CustomResponseOptions = {
+  const config: CustomizeResponseOptions = {
     delayMs: 1000 * 1000,
   };
   try {
@@ -82,7 +82,7 @@ export async function testUnreachable() {
  */
 export async function testTimeout() {
   const {origin, server} = await startHttpDebugServer();
-  const config: CustomResponseOptions = {
+  const config: CustomizeResponseOptions = {
     delayMs: 1000 * 1000,
   };
   try {

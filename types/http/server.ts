@@ -12,11 +12,11 @@ export interface HttpServerConfig {
 /**
  * Custom how to handle response on server side
  */
-export interface CustomResponseOptions extends Partial<HttpResponseInfo<PlainObject, 'receiver'>> {
+export interface CustomizeResponseOptions extends Partial<HttpResponseInfo<PlainObject, 'receiver'>> {
   delayMs?: number | string;
 }
 
 /**
  * @deprecated by CustomResponseOptions
  */
-export type CustomHandleRequestOptions = CustomResponseOptions;
+export type CustomHandleRequestOptions = CustomizeResponseOptions;

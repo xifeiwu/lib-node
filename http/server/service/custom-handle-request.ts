@@ -1,5 +1,5 @@
 import http from 'http';
-import {CustomResponseOptions, HttpRequestOptions} from '../../../types';
+import {CustomizeResponseOptions, HttpRequestOptions} from '../../../types';
 import {convertToBuffer} from '../../../transform';
 import {
   deepEqual,
@@ -15,7 +15,7 @@ import {getHttpRequestHeaderPartInfo} from '../service';
 function setHeader(response: http.ServerResponse, key: string, value: string | number) {
   response.setHeader(key, value);
 }
-export async function customResponseByConfig(response: http.ServerResponse, config?: CustomResponseOptions) {
+export async function customResponseByConfig(response: http.ServerResponse, config?: CustomizeResponseOptions) {
   const {delayMs, statusCode, statusMessage, headers, data} = config ?? {};
   if (delayMs) {
     const delayInMs = parseInt(delayMs as string);
@@ -50,7 +50,7 @@ export async function customResponseByConfig(response: http.ServerResponse, conf
 
 export interface HttpConditionAndAction {
   requestConfig: Pick<HttpRequestOptions, 'method' | 'pathname' | 'query'>;
-  action: CustomResponseOptions;
+  action: CustomizeResponseOptions;
 }
 /**
  * @deprecated

@@ -1,7 +1,7 @@
 import assert from 'assert';
 import {requestAndGetResponseInfo} from '../client';
 import {DebugServerPathname, startHttpDebugServer} from '../server';
-import {CustomResponseOptions, HttpServerConfig} from '../../types';
+import {CustomizeResponseOptions, HttpServerConfig} from '../../types';
 import {getDefaultHttpsConfig} from '../service';
 import {sendHttpRequestByTcp} from '../tcp';
 import {getDataFromReadable} from '../../stream';
@@ -56,7 +56,7 @@ export async function testResponseHttpRequestProps() {
 
 export async function testCustomRespnse() {
   const {origin, server} = await startHttpDebugServer();
-  const customized: CustomResponseOptions = {
+  const customized: CustomizeResponseOptions = {
     statusCode: 405,
     data: {
       a: 'a',
@@ -64,7 +64,7 @@ export async function testCustomRespnse() {
       c: true,
     },
   };
-  const {responseInfo} = await requestAndGetResponseInfo<any, CustomResponseOptions>({
+  const {responseInfo} = await requestAndGetResponseInfo<any, CustomizeResponseOptions>({
     method: 'post',
     origin,
     pathname: DebugServerPathname.customResponse,

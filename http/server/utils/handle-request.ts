@@ -1,7 +1,7 @@
 import http from 'http';
 import {convertToBuffer} from '../../../transform';
 import {getHttpRequestInfo, customResponseByConfig} from '../service';
-import {CustomResponseOptions} from '../../../types';
+import {CustomizeResponseOptions} from '../../../types';
 import {toNormalizedUrlProps, isPlainObject, unifyNull} from '../../../external';
 
 /**
@@ -25,7 +25,7 @@ export async function responseHttpRequestInfo(request: http.IncomingMessage, res
 export async function customResponseByRequest(
   request: http.IncomingMessage,
   response: http.ServerResponse,
-  config?: CustomResponseOptions
+  config?: CustomizeResponseOptions
 ) {
   const {url, data} = await getHttpRequestInfo(request);
   const {query} = toNormalizedUrlProps(url);
