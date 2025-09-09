@@ -60,6 +60,10 @@ function getFullPath(
   makeSureDirExist(finalPath);
   return finalPath;
 }
+
+/**
+ * send a http request, and save all request info to a file, include request info and response info
+ */
 export async function recordHttpRequest<ResData = any>(
   requestOptions: HttpRequestOptions,
   options: RecordHttpOptions
@@ -76,14 +80,6 @@ export async function recordHttpRequest<ResData = any>(
   console.log(`writing mock file ${fullPath}`);
   const content: HttpRecordContent = {
     ignore: false,
-    // queryCompare: {
-
-    // },
-    // payloadCompare: {
-    //   ignore: false,
-    //   includeObjectKeys: null,
-    //   excludeObjectKeys: {},
-    // },
     requestCompare: {
       query: {
         ignore: false,
@@ -104,6 +100,9 @@ export async function recordHttpRequest<ResData = any>(
   return {content, fullPath};
 }
 
+/**
+ * list all request configs under the dir, select the one want to record
+ */
 export async function recordHttpRequestBySelectConfigFile(options: RecordHttpByDirOptions) {
   const {targetDirList, moreMockItems = {}, ...restOptions} = options;
   const {
@@ -125,6 +124,9 @@ export async function recordHttpRequestBySelectConfigFile(options: RecordHttpByD
   });
 }
 
+/**
+ * recordHttpRequest for all the config files of target dir
+ */
 export async function recordHttpRequestByDir(options: RecordHttpByDirOptions) {
   const {targetDirList, moreMockItems = {}, ...restOptions} = options;
   // requestConfigDir: string, options: RequestByDir
