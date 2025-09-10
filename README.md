@@ -1,6 +1,9 @@
 # Intro
 
-A cluster of commonly-used small-granularity logic based on nodejs native modules, the logic not depend on any third party modules.
+A cluster of commonly-used small-granularity logic based on nodejs native modules, the logic not depend on any third party modules except:
+
+- modules/lib/fe
+- modules/types/fe
 
 # Notice
 
@@ -46,10 +49,6 @@ Category by node native module
 ├── types
 ├── utils                   A group of frequently used logic based on other basic logics
 └── yarn.lock
-
-# Dependencies
-
-fe/modules/libs
 
 # TODO
 
