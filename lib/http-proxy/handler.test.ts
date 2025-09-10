@@ -14,7 +14,9 @@ export async function twoWayOfProxyPayload() {
     console.log(`req.readable`);
     console.log(req.readable);
     proxyRequest(req, res, {
-      targetHref: 'http://elif.site',
+      defaultRequestOptions: {
+        origin: 'http://elif.site',
+      },
       handleInfoOfRes2Origin(info) {
         const {headers} = info;
         headers.handler = 'handler1';
@@ -28,7 +30,9 @@ export async function twoWayOfProxyPayload() {
     console.log(req.readable);
     proxyRequest(req, res, {
       originData: data,
-      targetHref: 'http://elif.site',
+      defaultRequestOptions: {
+        origin: 'http://elif.site'
+      },
       handleInfoOfRes2Origin(info) {
         const {headers} = info;
         headers.handler = 'handler2';

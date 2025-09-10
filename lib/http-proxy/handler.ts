@@ -52,7 +52,7 @@ export async function proxyRequest(req: IncomingMessage, res: ServerResponse, co
   } = config;
   const originReqInfo = getHttpRequestHeaderPartInfo(req);
   let proxyReqInfo: HttpRequestOptions = deepMerge(defaultRequestOptions, {
-    origin: config.targetHref,
+    // origin: config.targetHref,
     url: originReqInfo.url,
     method: originReqInfo.method,
     headers: originReqInfo.headers,

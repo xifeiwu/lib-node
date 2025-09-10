@@ -6,7 +6,7 @@ export interface HttpProxyConfig {
   /**
    * Target href can be passed here, or in handleInfoOfProxyReq.
    */
-  targetHref?: string;
+  // targetHref?: string;
   /** Change headers.origin to origin value of targetHref */
   // changeOrigin?: boolean;
   /**
@@ -15,7 +15,7 @@ export interface HttpProxyConfig {
    */
   originData?: Parameters<typeof toReadable>[0];
   /** Default options for http.request of proxy */
-  defaultRequestOptions?: Pick<RequestOptions, 'auth'>;
+  defaultRequestOptions?: Partial<HttpRequestOptions>;
   /**
    * Handle info of proxy request before request in sent
    * The value returned will be set as new HttpRequestOptions of proxy

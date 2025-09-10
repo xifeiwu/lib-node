@@ -258,7 +258,7 @@ export async function selectFileFromDir(
   const {handleFileList = items => items} = options ?? {};
   const fileList = getMultipleDirFileList(targetDirInfoList);
   if (fileList.length === 0) {
-    throw new Error(`fileList is empty`);
+    throw new Error(`fileList is empty for dir: ${targetDirInfoList.map(it => it.targetDir).join(', ')}`);
   }
   const selectedFileInfo = await selectOption<FilePathInfo>(handleFileList(fileList), {
     tips: ['Please select target file:'],

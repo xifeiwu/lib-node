@@ -5,7 +5,9 @@ import {requestAndGetResponseInfo, waitFor} from './external';
 // https://pulse.conviva.com/
 export async function proxyToBaidu() {
   const config: HttpProxyConfig = {
-    targetHref: 'https://www.baidu.com',
+    defaultRequestOptions: {
+      origin: 'https://www.baidu.com',
+    },
     handleInfoForProxyReq(reqInfo) {
       console.log(`reqInfo`);
       console.log(reqInfo);
@@ -61,7 +63,9 @@ export async function proxyToBaidu() {
 export async function test443Port() {
   await startProxyServer(
     {
-      targetHref: 'http://elif.site',
+      defaultRequestOptions: {
+        origin: 'http://elif.site',
+      },
     },
     {port: 443}
   );
