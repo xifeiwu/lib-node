@@ -1,6 +1,6 @@
 import stream, {Transform, Readable} from 'stream';
-import {DataTypeFromBuffer, TargetDataTypeFromBuffer, fromBuffer, convertToBuffer} from '../index';
-import {CanConvertToBuffer} from '../types';
+import {fromBuffer, convertToBuffer} from '../index';
+import {CanConvertToBuffer, CanTransfromBetweenBuffer, ConvertBufferToType} from '../types';
 import {getSequenceMatcher} from '../external';
 
 export function getDataFromReadable(reader: Readable): Promise<Buffer> {
@@ -45,9 +45,9 @@ export function toReadable(data: CanConvertToBuffer | Readable) {
 
 const MAX_SIZE = 16 * 1024 * 1024;
 export function getDataByTransform(
-  cb2Data: (data: DataTypeFromBuffer) => void,
+  cbOnData: (info: {chunkData?: Buffer; data?: CanTransfromBetweenBuffer; totalSize: number}) => void,
   config?: {
-    targetType?: TargetDataTypeFromBuffer;
+    targetType?: ConvertBufferToType;
     maxSize?: number;
   }
 ) {
@@ -57,14 +57,15 @@ export function getDataByTransform(
   return new Transform({
     transform(data, _enc, next) {
       this.push(data);
+      totalSize += data.byteLength;
       if (totalSize < maxSize) {
         bufferList.push(data);
-        totalSize += data.byteLength;
       }
+      cbOnData({chunkData: data, totalSize});
       next && next();
     },
     final(cb) {
-      cb2Data(fromBuffer(Buffer.concat(bufferList), targetType));
+      cbOnData({data: fromBuffer(Buffer.concat(bufferList), targetType), totalSize});
       cb && cb();
     },
   });

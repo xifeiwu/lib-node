@@ -78,11 +78,14 @@ export async function proxyHttpRequest(req: IncomingMessage, res: ServerResponse
   (originData ? toReadable(originData) : req)
     .pipe(
       getDataByTransform(
-        data => {
-          proxyReqInfo.data = data;
+        ({data}) => {
+          if (data) {
+            proxyReqInfo.data = data;
+          }
         },
         {
           targetType: 'json',
+          maxSize: 1024 * 1024,
         }
       )
     )
@@ -125,7 +128,7 @@ export async function proxyHttpRequest(req: IncomingMessage, res: ServerResponse
     res2Proxy
       .pipe(
         getDataByTransform(
-          data => {
+          ({data}) => {
             proxyStatus.responseInfo.toProxy.data = data;
           },
           {

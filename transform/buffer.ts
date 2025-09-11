@@ -1,5 +1,10 @@
 import {BASE64_CHARS, byteToWord, isNumber, isPlainObject, isString, LETTERS, NUMBERS} from '../external';
-import {BufferGeneratorConfig, CanConvertToBuffer} from '../types';
+import {
+  BufferGeneratorConfig,
+  CanConvertToBuffer,
+  CanTransfromBetweenBuffer,
+  ConvertBufferToType,
+} from '../types';
 
 /**
  * @deprecated by convertToBuffer as array params is confusing
@@ -72,17 +77,14 @@ export function convertToBuffer(...args: Array<CanConvertToBuffer>) {
   }
 }
 
-export type TargetDataTypeFromBuffer = 'json' | 'string' | 'buffer';
-export type DataTypeFromBuffer = string | number | object | Uint8Array; //Buffer | string | object | null;
-
 export function fromBuffer(
   buffer: CanConvertToBuffer,
-  dataType: TargetDataTypeFromBuffer
-): DataTypeFromBuffer {
+  dataType: ConvertBufferToType
+): CanTransfromBetweenBuffer {
   if (!Buffer.isBuffer(buffer)) {
     buffer = convertToBuffer(buffer);
   }
-  let finalData: DataTypeFromBuffer = buffer;
+  let finalData: CanTransfromBetweenBuffer = buffer;
   if (dataType === 'json') {
     finalData = buffer.toString();
     try {

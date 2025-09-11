@@ -1,6 +1,6 @@
 import {RequestOptions, IncomingMessage} from 'http';
 import {toReadable} from '../../stream';
-import {HttpRequestInfo, HttpResponseInfo, HttpRequestOptions} from '../../types';
+import {HttpRequestInfo, HttpResponseInfo, HttpRequestOptions, CanTransfromBetweenBuffer} from '../../types';
 
 export interface HttpProxyConfig {
   /**
@@ -33,6 +33,15 @@ export interface HttpProxyConfig {
   handleResponseInfoToOrigin?: (
     info: HttpResponseInfo
   ) => Promise<HttpResponseInfo | void> | HttpResponseInfo | void;
+}
+
+interface MoreProxyRequestInfo {
+  bytesWritten?: number;
+  data?: CanTransfromBetweenBuffer;
+}
+interface MoreResponseToProxyInfo {
+  bytesRead?: number;
+  data?: CanTransfromBetweenBuffer;
 }
 
 export interface ProxyStatus {

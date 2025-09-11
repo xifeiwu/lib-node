@@ -13,3 +13,8 @@ export interface BufferGeneratorConfig {
   /** how many chunk can be genereated by calling function generator */
   generateCount?: number;
 }
+
+
+export type ConvertBufferToType = 'json' | 'string' | 'buffer' | 'number';
+export type CanTransfromBetweenBuffer = CanConvertToBuffer;
+// export type DataTypeFromBuffer = string | number | object | Uint8Array; //Buffer | string | object | null;
