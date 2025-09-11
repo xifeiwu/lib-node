@@ -16,6 +16,9 @@ export async function contentTypeAndStream() {
     method: 'post',
     origin,
     pathname: DebugServerPathname.echo,
+    headers: {
+      cookie: ['a=b', 'c=1']
+    }
   };
   {
     const {requestOptions, responseInfo, request} = await requestAndGetResponseInfo({

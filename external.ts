@@ -12,6 +12,7 @@ export {
   concatPath,
   deepClone,
   deepMerge,
+  deepMergeByConcat,
   formatDate,
   cookieRewrite,
   encodeQueryString,

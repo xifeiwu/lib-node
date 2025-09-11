@@ -6,6 +6,7 @@ import {
   toUrlInstance,
   getUrlPropsFromConfig,
   deepMerge,
+  deepMergeByConcat,
   urlPropsToHref,
   isObject,
   getRandomBase64String,
@@ -25,6 +26,7 @@ import {Readable} from 'stream';
 import {getHttpResponseInfo} from './receiver';
 import {logColorful} from '../../log';
 import {updateHeadersByHttpInfo} from '../tcp';
+import {mergeHttpHeaders} from '../service';
 
 process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
 
@@ -37,7 +39,7 @@ function mergeTwoHttpRequestOptions(
   }
   const {headers: headers1 = {}, ...restOptions1} = options1;
   const {headers: headers2, ...restOptions2} = options2;
-  const mergedHeaders = deepMerge(headers1, headers2);
+  const mergedHeaders = mergeHttpHeaders(headers1, headers2);
   return {
     ...restOptions1,
     ...restOptions2,
