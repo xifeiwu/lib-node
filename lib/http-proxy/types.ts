@@ -4,9 +4,9 @@ import {HttpRequestInfo, HttpResponseInfo, HttpRequestOptions} from '../../types
 
 export interface HttpProxyConfig {
   /**
-   * Target href can be passed here, or in handleInfoOfProxyReq.
+   * global options for http.request of proxy, will merge with info from request to proxy
    */
-  // targetHref?: string;
+  globalRequestOptions?: Partial<HttpRequestOptions>;
   /** Change headers.origin to origin value of targetHref */
   // changeOrigin?: boolean;
   /**
@@ -14,13 +14,10 @@ export interface HttpProxyConfig {
    * 1. Program already got all original data to decide how to handle some logic, the req stream is alreay ended.
    */
   originData?: Parameters<typeof toReadable>[0];
-  /** Default options for http.request of proxy */
-  defaultRequestOptions?: Partial<HttpRequestOptions>;
   /**
-   * Handle info of proxy request before request in sent
-   * The value returned will be set as new HttpRequestOptions of proxy
+   * Handle httpRequestOptions before proxy send request to target
    */
-  handleInfoForProxyReq?: (
+  handleProxyRequestOptions?: (
     info: HttpRequestOptions
   ) => Promise<HttpRequestOptions | void> | HttpRequestOptions | void;
   /**
@@ -33,7 +30,7 @@ export interface HttpProxyConfig {
   /** Just on response to proxy */
   onRes2Proxy?: (info: HttpResponseInfo, proxyReqInfo: HttpRequestOptions, response: IncomingMessage) => void;
   /** Handle info of response to proxy */
-  handleInfoOfRes2Origin?: (
+  handleResponseInfoToOrigin?: (
     info: HttpResponseInfo
   ) => Promise<HttpResponseInfo | void> | HttpResponseInfo | void;
 }

@@ -41,14 +41,14 @@ export function onRes2Proxy(resInfo: HttpResponseInfo, proxyReq: HttpRequestOpti
  * |        | <---------response2Origin---------- |       | <---------response2Proxy----------- |        |
  * +--------+                                     +-------+                                     +--------+
  */
-export async function proxyRequest(req: IncomingMessage, res: ServerResponse, config: HttpProxyConfig) {
+export async function proxyHttpRequest(req: IncomingMessage, res: ServerResponse, config: HttpProxyConfig) {
   const proxyStatus: ProxyStatus = {ts: Date.now()};
   const {
-    defaultRequestOptions,
+    globalRequestOptions,
     originData,
-    handleInfoForProxyReq,
-    handleInfoOfRes2Origin,
+    handleProxyRequestOptions,
     preProxyReq,
+    handleResponseInfoToOrigin,
     onRes2Proxy,
   } = config;
   const originReqInfo = getHttpRequestHeaderPartInfo(req);
@@ -58,12 +58,11 @@ export async function proxyRequest(req: IncomingMessage, res: ServerResponse, co
       method: originReqInfo.method,
       headers: originReqInfo.headers,
     },
-    defaultRequestOptions
+    globalRequestOptions
   );
 
-  // let reqInfo = handleRequestInfo(req, config);
-  if (handleInfoForProxyReq) {
-    const tmp = await handleInfoForProxyReq(proxyReqInfo);
+  if (handleProxyRequestOptions) {
+    const tmp = await handleProxyRequestOptions(proxyReqInfo);
     if (tmp) {
       proxyReqInfo = tmp;
     }
@@ -107,8 +106,8 @@ export async function proxyRequest(req: IncomingMessage, res: ServerResponse, co
       // }
       infoOfRes2Origin.headers[key] = newValue;
     }
-    if (handleInfoOfRes2Origin) {
-      const tmp = await handleInfoOfRes2Origin(infoOfRes2Origin);
+    if (handleResponseInfoToOrigin) {
+      const tmp = await handleResponseInfoToOrigin(infoOfRes2Origin);
       if (tmp) {
         infoOfRes2Origin = tmp;
       }

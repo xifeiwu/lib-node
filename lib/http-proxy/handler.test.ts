@@ -2,7 +2,7 @@ import http from 'http';
 import https from 'https';
 import {getDataFromReadable} from '../../stream';
 // import {getAFreePort} from '../../net/http';
-import {proxyRequest} from './handler';
+import {proxyHttpRequest} from './handler';
 import {getHttpRequestHeaderPartInfo, requestAndGetResponseInfo} from './external';
 import {getAFreePort} from '../../net';
 
@@ -13,11 +13,11 @@ export async function twoWayOfProxyPayload() {
   const handler1: http.RequestListener = (req, res) => {
     console.log(`req.readable`);
     console.log(req.readable);
-    proxyRequest(req, res, {
-      defaultRequestOptions: {
+    proxyHttpRequest(req, res, {
+      globalRequestOptions: {
         origin: 'http://elif.site',
       },
-      handleInfoOfRes2Origin(info) {
+      handleResponseInfoToOrigin(info) {
         const {headers} = info;
         headers.handler = 'handler1';
         return info;
@@ -28,12 +28,12 @@ export async function twoWayOfProxyPayload() {
     const data = await getDataFromReadable(req);
     console.log(`req.readable`);
     console.log(req.readable);
-    proxyRequest(req, res, {
+    proxyHttpRequest(req, res, {
       originData: data,
-      defaultRequestOptions: {
+      globalRequestOptions: {
         origin: 'http://elif.site'
       },
-      handleInfoOfRes2Origin(info) {
+      handleResponseInfoToOrigin(info) {
         const {headers} = info;
         headers.handler = 'handler2';
         return info;

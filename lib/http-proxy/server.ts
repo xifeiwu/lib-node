@@ -1,7 +1,7 @@
 import {HttpProxyConfig, ProxyStatus} from './types';
 import {startHttpServer, getHttpRequestHeaderPartInfo} from './external';
 import {toBuffer} from '../../transform';
-import {proxyRequest} from './handler';
+import {proxyHttpRequest} from './handler';
 import {toUrlInstance} from '../../external';
 import {getPreRequestCb} from './utils';
 import {HttpServerConfig} from '../../types';
@@ -25,7 +25,7 @@ export async function startProxyServer(proxyConfig: HttpProxyConfig, httpServerC
           res.end(toBuffer(JSON.stringify(resData)));
           return;
         } else {
-          proxyRequest(req, res, {
+          proxyHttpRequest(req, res, {
             ...proxyConfig,
             preProxyReq: getPreRequestCb({
               statusList: proxyStatusList,
