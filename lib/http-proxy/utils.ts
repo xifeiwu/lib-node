@@ -29,7 +29,7 @@ export function getPreRequestCb(config: {
       origin: {method, url},
       proxy,
     } = reqInfo;
-    logColorful(logTheme ?? {color: 'yellow'}, `[${id}]: ${method.toUpperCase()} ${url} -> ${targetHref}`);
+    logColorful(logTheme ?? {}, `[${id}]: ${method.toUpperCase()} ${url} -> ${targetHref}`);
     if (saveStatus) {
       if (isNumber(maxAge) && maxAge > 0) {
         const now = Date.now();
