@@ -15,7 +15,10 @@ import {getHttpRequestHeaderPartInfo} from '../service';
 function setHeader(response: http.ServerResponse, key: string, value: string | number) {
   response.setHeader(key, value);
 }
-export async function customResponseByConfig(response: http.ServerResponse, config?: CustomizeResponseOptions) {
+export async function customResponseByConfig(
+  response: http.ServerResponse,
+  config?: CustomizeResponseOptions
+) {
   const {delayMs, statusCode, statusMessage, headers, data} = config ?? {};
   if (delayMs) {
     const delayInMs = parseInt(delayMs as string);
@@ -49,7 +52,9 @@ export async function customResponseByConfig(response: http.ServerResponse, conf
 }
 
 export interface HttpConditionAndAction {
-  requestConfig: Pick<HttpRequestOptions, 'method' | 'pathname' | 'query'>;
+  ignore?: boolean;
+  key?: string;
+  requestOptions: Pick<HttpRequestOptions, 'method' | 'pathname' | 'query'>;
   action: CustomizeResponseOptions;
 }
 /**
@@ -69,12 +74,15 @@ export async function handleIncomingMessage(
     return false;
   }
   const matchedConfig = configList.find(config => {
-    const {requestConfig} = config;
-    if (requestConfig.method.toLowerCase() !== method.toLowerCase() || requestConfig.pathname !== pathname) {
+    const {requestOptions} = config;
+    if (
+      requestOptions.method.toLowerCase() !== method.toLowerCase() ||
+      requestOptions.pathname !== pathname
+    ) {
       return false;
     }
-    if (requestConfig.query) {
-      return deepEqual(requestConfig.query, query);
+    if (requestOptions.query) {
+      return deepEqual(requestOptions.query, query);
     }
     return true;
   });
@@ -92,22 +100,36 @@ export async function handleIncomingMessageByConfig(
   const {request, response} = httpStream;
   const {method, url} = getHttpRequestHeaderPartInfo(request);
   const {pathname, query} = toNormalizedUrlProps(url);
+  const curRequestOptions = {
+    method,
+    pathname,
+    query,
+  };
   if (!Array.isArray(configList)) {
     return {sentData: false};
   }
   const matchedConfig = configList.find(config => {
-    const {requestConfig} = config;
-    if (requestConfig.method.toLowerCase() !== method.toLowerCase() || requestConfig.pathname !== pathname) {
+    const {ignore, requestOptions} = config;
+    if (ignore || !requestOptions) {
       return false;
     }
-    if (requestConfig.query) {
-      return deepEqual(requestConfig.query, query);
-    }
-    return true;
+    const keys: Array<keyof HttpRequestOptions> = ['method', 'pathname', 'query'];
+    const isSame = keys.every(key => {
+      const value = requestOptions[key];
+      if (value === undefined) {
+        return true;
+      }
+      if (isObject(value)) {
+        return deepEqual(value, curRequestOptions[key]);
+      } else {
+        return value === curRequestOptions[key];
+      }
+    });
+    return isSame;
   });
   if (!matchedConfig) {
     return {sentData: false};
   }
-  response.setHeader('z-customer', JSON.stringify(matchedConfig));
+  response.setHeader('z-customize-response', matchedConfig.key ?? JSON.stringify(matchedConfig));
   return await customResponseByConfig(response, matchedConfig.action);
 }
