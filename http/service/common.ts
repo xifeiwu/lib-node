@@ -1,6 +1,6 @@
 import {IncomingHttpHeaders, OutgoingHttpHeader, OutgoingHttpHeaders} from 'http';
-import {deepMergeByConcat, Env, deepClone} from '../../external';
-import {HttpServerConfig} from '../../types';
+import {deepMergeByConcat, Env, deepClone, isObject, deepEqual} from '../../external';
+import {HttpRequestOptions, HttpServerConfig} from '../../types';
 import {getDefaultTlsConfig} from '../../net';
 
 export function getDefaultHttpsConfig(options?: {env?: Env}): HttpServerConfig {
@@ -101,4 +101,26 @@ export function mergeHttpHeaders(
   } else if (headers2) {
     return deepClone(headers2);
   }
+}
+
+/**
+ * Only compare key/value pair exist in options
+ */
+export function compareHttpRequestOptions(refer: HttpRequestOptions, options?: HttpRequestOptions) {
+  if (!options) {
+    return false;
+  }
+  const keys: Array<keyof HttpRequestOptions> = ['origin', 'method', 'pathname', 'query', 'data'];
+  const isSame = keys.every(key => {
+    const value = options[key];
+    if (value === undefined) {
+      return true;
+    }
+    if (isObject(value)) {
+      return deepEqual(value, options[key]);
+    } else {
+      return value === options[key];
+    }
+  });
+  return isSame;
 }
