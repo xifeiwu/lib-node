@@ -53,8 +53,8 @@ export function goThroughDir<T = any>(
     return cb(new Error(`File not exist: ${fullpath}`), {pathInfo});
   }
   const stats = fs.statSync(fullpath);
-  if (depth === 0 || stats.isDirectory()) {
-    if (dirFilter(pathInfo, stats)) {
+  if (stats.isDirectory()) {
+    if (depth === 0 || dirFilter(pathInfo, stats)) {
       let error = null;
       let fileListOfCurDir = [];
       try {
