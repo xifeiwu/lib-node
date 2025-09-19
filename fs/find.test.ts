@@ -1,15 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 import assert from 'assert';
-import {
-  flatChildren,
-  getFileInfoTree,
-  getFileList,
-  getLineCountMap,
-} from './find';
+import {flatChildren, getFileInfoTree, getFileList, getLineCountMap} from './find';
 import {isString} from '../external';
 import {runFuncTestCases} from '../service';
-import { FileInfoTreeItem } from '../types';
+import {FileInfoTreeItem} from '../types';
+import { logColorful } from '../log';
 
 export function testGetFileList() {
   const fileList = getFileList(__dirname, {
@@ -22,6 +18,23 @@ export function testGetFileList() {
   assert.ok(isString(fileList[0]));
 }
 
+export function testFilteroutHiddenFiles() {
+  const filterOutHiddenFile = (info) => {
+    console.log(info);
+    const {basename} = info;
+    return basename.startsWith('.')
+  };
+  const fullPath = '/Users/wuxifei/code/react/start/small-apps-wrapper/apps/browser-feature';
+  const files = getFileList(fullPath, {
+    fileFilter(info) {
+      return filterOutHiddenFile(info);
+    },
+    dirFilter(info) {
+      return filterOutHiddenFile(info);
+    },
+  });
+  logColorful({}, files);
+}
 /**
  * Just used to check data, can modify anytime.
  */
