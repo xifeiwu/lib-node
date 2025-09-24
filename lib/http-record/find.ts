@@ -115,7 +115,9 @@ export function getHttpRecordFinder(options: FindRecordFileOptions): {
   }
   for (const dirInfo of getFileListOptions) {
     const {targetDir} = dirInfo;
-    fs.watch(targetDir, () => updateFileList(targetDir));
+    if (fs.existsSync(targetDir)) {
+      fs.watch(targetDir, () => updateFileList(targetDir));
+    }
   }
   updateFileList();
   getRecordFileList = () => {
