@@ -72,7 +72,7 @@ export function recursiveDeleteFile(path: string) {
 /**
  * @deprecated by linkFile
  */
-export function link(sourceFile: string, targetFile: string) {
+export function linkFile(sourceFile: string, targetFile: string) {
   // link can't be overrided, so remove it first
   if (!fs.existsSync(sourceFile)) {
     throw new Error(`binFile not exist: ${sourceFile}`);
@@ -86,7 +86,7 @@ export function link(sourceFile: string, targetFile: string) {
   return {sourceFile, targetFile, relativePath};
 }
 export function linkFile(sourceFile: string, targetFile: string) {
-  return link(sourceFile, targetFile)
+  return linkFile(sourceFile, targetFile)
 }
 
 export function writeFileSync(fullPath: string, data: string | NodeJS.ArrayBufferView) {
