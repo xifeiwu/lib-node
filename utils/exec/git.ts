@@ -7,9 +7,10 @@
 import fs from 'fs';
 import path from 'path';
 import {ExecCmdOptions} from '../../types';
-import {isFunction, isString, GitRepoInfo, GitRepoInfoTree} from '../../external';
+import {isFunction, isString, GitRepoInfo, GitRepoInfoTree, GitRepoConfigFileExport} from '../../external';
 import {logColorful} from '../../log';
 import {execCmdWithOptions} from '../../child-process';
+import {goOnOrNot} from '../../readline';
 
 const DEFAULT_EXEC_OPTIONS: ExecCmdOptions = {
   log: true,
@@ -31,7 +32,8 @@ function getCurrentCommitId() {
 }
 
 function isGitRepoInfo(info: GitRepoInfo | GitRepoInfoTree) {
-  return (info as GitRepoInfo).source !== undefined;
+  const {source} = info as GitRepoInfo;
+  return source !== undefined && Array.isArray(source);
 }
 function toGitRepoInfo(info: GitRepoInfo | GitRepoInfoTree) {
   return info as GitRepoInfo;
@@ -47,7 +49,6 @@ export async function syncUpGitRepos(gitRepos: GitRepoInfoTree, config: SyncupGi
   const indexPrefix = mainIndex !== undefined ? mainIndex + '.' : '';
   let index = 0;
   for (const [repoOrCategoryName, info] of Object.entries(gitRepos)) {
-    logColorful({color: 'yellow'}, `${indexPrefix}${++index}. handing repo ${repoDir}/${repoOrCategoryName}`);
     process.chdir(hostDir);
     if (!isGitRepoInfo(info)) {
       await syncUpGitRepos(info as GitRepoInfoTree, {
@@ -59,19 +60,21 @@ export async function syncUpGitRepos(gitRepos: GitRepoInfoTree, config: SyncupGi
     }
     const {
       source,
+      /** calculate relativePath if it's not set */
       relativePath = path.join(repoDir, repoOrCategoryName),
       postPullCmds = [],
     } = toGitRepoInfo(info);
+    logColorful({color: 'yellow'}, `${indexPrefix}${++index}. handing repo ${relativePath}`);
     const [mainSource] = source;
     if (!mainSource) {
       throw new Error(`At least one source should be set`);
     }
     const {url, origin = 'origin', branch, commit} = mainSource;
-    const fullPath = path.resolve(hostDir, relativePath);
+    const repoFullPath = path.resolve(hostDir, relativePath);
     /**
      * 1. Check repo dir, clone repo if not exist
      */
-    if (!fs.existsSync(fullPath)) {
+    if (!fs.existsSync(repoFullPath)) {
       // fs.mkdirSync(relativePath, {recursive: true});
       for (let i = 0; i < source.length; i++) {
         if (i === 0) {
@@ -88,7 +91,7 @@ export async function syncUpGitRepos(gitRepos: GitRepoInfoTree, config: SyncupGi
         }
       }
     }
-    process.chdir(fullPath);
+    process.chdir(repoFullPath);
     /**
      * 2. Check branch, make sure in target branch
      */
@@ -168,4 +171,56 @@ export function writeGitIgnoreFile(gitRepos: GitRepoInfoTree, config: SyncupGitR
     newRules = Array.from(new Set([...newRules, ...lines]));
   }
   fs.writeFileSync(gitIgnoreFile, newRules.join('\n'));
+}
+
+export async function syncUpGitReposByDir(config: {dir: string; repoFileName?: string}) {
+  const {dir: hostDir, repoFileName} = config;
+  if (!fs.existsSync(hostDir)) {
+    throw new Error(`dir not exist: ${hostDir}`);
+  }
+  if (!fs.statSync(hostDir).isDirectory()) {
+    throw new Error(`is not a dir: ${hostDir}`);
+  }
+  process.chdir(hostDir);
+  const fileNames = [
+    repoFileName,
+    'gitmodules.ts',
+    'gitmodules.js',
+    'gitmodules/index.ts',
+    'gitmodules/index.js',
+    'gitmodules.json',
+  ].filter(Boolean);
+  const repoConfigFile = fileNames.map(p => path.resolve(hostDir, p)).find(it => fs.existsSync(it));
+  if (!repoConfigFile) {
+    throw new Error(
+      `Not found git modules config file in current work dir: ['gitmodules.ts', 'gitmodules.js', 'gitmodules.json']`
+    );
+  }
+  const {repoInfoTree, repoDir = ''} = require(repoConfigFile) as GitRepoConfigFileExport;
+  for (const dir of [hostDir, repoDir]) {
+    if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) {
+      throw new Error(`dir not exist: ${dir}`);
+    }
+  }
+  if (
+    !(await goOnOrNot({
+      tips: [
+        {
+          content: {configFile: repoConfigFile, hostDir, repoDir},
+        },
+        'Will run command using config above?',
+      ],
+      defaultValue: true,
+    }))
+  ) {
+    return;
+  }
+  await syncUpGitRepos(repoInfoTree, {
+    hostDir,
+    repoDir,
+  });
+  writeGitIgnoreFile(repoInfoTree, {
+    hostDir,
+    repoDir,
+  });
 }

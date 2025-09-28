@@ -66,4 +66,4 @@ export {
 } from '../fe/common';
 export {AstAOptions, listAUsingUl} from '../fe/lib/html-parser';
 
-export {GitRepoInfo, GitRepoInfoTree} from '../../types/fe'
+export {GitRepoInfo, GitRepoInfoTree, GitRepoConfigFileExport} from '../../types/fe';
