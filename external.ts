@@ -39,6 +39,7 @@ export {
   toInteger,
   NormalizedUrlProps,
   isSameUrlTarget,
+  diffUrlTarget,
   get,
   set,
   toNormalizedUrlProps,

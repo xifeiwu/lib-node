@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import {deepEqual, unifyNull, isSameUrlTarget, isString} from '../../external';
+import {deepEqual, unifyNull, isSameUrlTarget, diffUrlTarget, isString} from '../../external';
 import {
   FindRecordFileOptions,
   HttpRecordContent,
@@ -45,15 +45,16 @@ export function findRecordFile(
     if (ignore || !requestOptions) {
       return false;
     }
-    if (debugCompare) {
-      console.log(`start compare: ${relativePath}`);
-    }
+    debugCompare && console.log(`start compare: ${relativePath}`);
     const {method = 'get', data: payload} = requestOptions;
     if (!isSameMethod(targetMethod, method)) {
+      debugCompare && console.log(`different method: ${method} vs ${targetMethod}`);
       return false;
     }
 
-    if (!isSameUrlTarget(targetRequestConfig, requestOptions, {ignoreOrigin: true})) {
+    const urlTargetDiff = diffUrlTarget(targetRequestConfig, requestOptions, {ignoreOrigin: true});
+    if (urlTargetDiff) {
+      console.log(`different target url:`, urlTargetDiff);
       return false;
     }
 
@@ -65,6 +66,7 @@ export function findRecordFile(
         debug: debugCompare,
       });
     if (!payloadMatched) {
+      // debugCompare && console.log(`different payload`, payload, targetPayload);
       return false;
     }
     if (debugCompare) {
