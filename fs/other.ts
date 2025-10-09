@@ -86,7 +86,7 @@ export function link(sourceFile: string, targetFile: string) {
   return {sourceFile, targetFile, relativePath};
 }
 export function linkFile(sourceFile: string, targetFile: string) {
-  return linkFile(sourceFile, targetFile)
+  return link(sourceFile, targetFile)
 }
 
 export function writeFileSync(fullPath: string, data: string | NodeJS.ArrayBufferView) {
