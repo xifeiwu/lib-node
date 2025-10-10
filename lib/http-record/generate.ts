@@ -7,7 +7,7 @@ import {
   requestAndGetResponseInfo,
 } from '../../http';
 import {RecordHttpByDirOptions, RecordHttpOptions, HttpRecordContent, HttpRequestOptions} from './types';
-import {getMultipleDirFileList} from '../../fs';
+import {getFileListOfMultipleDir} from '../../fs';
 import {MOCK_FILE_SUFFIX} from './service';
 import {selectFileAndGetExports} from '../../utils';
 import {SendRequestWithResponseInfoResult} from '../../types';
@@ -139,7 +139,7 @@ export async function recordHttpRequestByDir(options: RecordHttpByDirOptions) {
   //   fs.mkdirSync(outputDir, {recursive: true});
   //   // throw new Error(`Error, output dir not exist: ${outputDir}`);
   // }
-  const fileList = getMultipleDirFileList(targetDirList);
+  const fileList = getFileListOfMultipleDir(targetDirList);
   for (const {fullPath, relativePath} of fileList) {
     console.log(`reqesting using config from file ${fullPath}`);
     const {requestOptions, ...restExports} = require(fullPath) as HttpRecordContent;

@@ -193,7 +193,7 @@ function getLabelDefault(pathInfo: Omit<FilePathInfo, 'label'>) {
   const {relativePath} = pathInfo;
   return relativePath;
 }
-export function getMultipleDirFileList(targetDirInfoList: Array<GetFileListInfo>): Array<FilePathInfo> {
+export function getFileListOfMultipleDir(targetDirInfoList: Array<GetFileListInfo>): Array<FilePathInfo> {
   const allFiles = targetDirInfoList.reduce<Array<FilePathInfo>>((sum, it) => {
     const {targetDir, options, getLabel = getLabelDefault} = it;
     const fileList = getFileList(targetDir, options);
@@ -317,7 +317,7 @@ export async function selectFileFromDir(
   }
 ) {
   const {handleFileList = items => items} = options ?? {};
-  const fileList = getMultipleDirFileList(targetDirInfoList);
+  const fileList = getFileListOfMultipleDir(targetDirInfoList);
   if (fileList.length === 0) {
     throw new Error(`fileList is empty for dir: ${targetDirInfoList.map(it => it.targetDir).join(', ')}`);
   }
