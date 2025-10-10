@@ -299,6 +299,7 @@ export function findClosestFile(startDir: string, targetFileName: string): strin
 }
 
 /**
+ * @deprecated by findClosestFile
  * start from @param 'dir', find file list with @param'name' upwards
  * @param dir, start dir
  * @param name, target file name
@@ -318,7 +319,7 @@ export function findFileListByNameUpward(dir: string, name: string) {
   return results;
 }
 
-export function getModulePath(moduleName: string, currentPath: string) {
+export function findModulePath(moduleName: string, currentPath: string) {
   const pathList = [];
   try {
     const globalDir = path.resolve(
