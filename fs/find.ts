@@ -84,75 +84,6 @@ export function goThroughDir<T = any>(
   return null;
 }
 
-export function getFileInfoTree(root: string, options?: GoThroughDirOptions): FileInfoTreeItem {
-  if (!fs.existsSync(root)) {
-    return null;
-  }
-  return goThroughDir<FileInfoTreeItem>(
-    root,
-    (err, {pathInfo, children}) => {
-      if (err) {
-        return null;
-      }
-      const {relativePath, basename} = pathInfo;
-      // const isDir = Array.isArray(children);
-      /** in filterMode, filter out dir info when it's children is empty */
-      // if (filterMode) {
-      //   if (isDir) {
-      //     if (dirFilter) {
-      //       if (!dirFilter(pathInfo)) {
-      //         return null;
-      //       }
-      //     } else {
-      //       if (children.length === 0) {
-      //         return null;
-      //       }
-      //     }
-      //   }
-      // }
-      const stats = fs.statSync(path.join(root, relativePath));
-      return {stats, relativePath, basename, children};
-    },
-    options
-  );
-}
-
-interface LineCountMapItem {
-  relativePath: string;
-  lineCount: number;
-  depth: number;
-  children?: LineCountMapItem[];
-}
-export function getLineCountMap(
-  filePath: string,
-  options?: {
-    dirFilter?: FileFilter;
-    fileFilter?: FileFilter;
-  }
-): LineCountMapItem {
-  if (!filePath) {
-    filePath = '.';
-  }
-  const fullPath = path.resolve(filePath);
-  return goThroughDir<LineCountMapItem>(
-    fullPath,
-    (err, {pathInfo: {relativePath, depth}, children}) => {
-      const fullPath = path.join(filePath, relativePath);
-      if (Array.isArray(children)) {
-        const lineCount = children.reduce<number>((sum, it) => {
-          return sum + it.lineCount;
-        }, 0);
-        return {relativePath, lineCount, depth, children};
-      } else {
-        const content = fs.readFileSync(fullPath);
-        const lineCount = content.toString().split('\n').length;
-        return {relativePath, lineCount, depth};
-      }
-    },
-    options
-  );
-}
-
 interface FlatChildrenOptions<T = any> {
   sortChildren?: (a: T, b: T) => number;
   includeDir?: boolean;
@@ -184,6 +115,39 @@ export function flatChildren<T extends {children?: any[]}>(mapInfo: T, options?:
     }
   }
   return mapToList(mapInfo);
+}
+
+export function getFileInfoTree(root: string, options?: GoThroughDirOptions): FileInfoTreeItem {
+  if (!fs.existsSync(root)) {
+    return null;
+  }
+  return goThroughDir<FileInfoTreeItem>(
+    root,
+    (err, {pathInfo, children}) => {
+      if (err) {
+        return null;
+      }
+      const {relativePath, basename} = pathInfo;
+      // const isDir = Array.isArray(children);
+      /** in filterMode, filter out dir info when it's children is empty */
+      // if (filterMode) {
+      //   if (isDir) {
+      //     if (dirFilter) {
+      //       if (!dirFilter(pathInfo)) {
+      //         return null;
+      //       }
+      //     } else {
+      //       if (children.length === 0) {
+      //         return null;
+      //       }
+      //     }
+      //   }
+      // }
+      const stats = fs.statSync(path.join(root, relativePath));
+      return {stats, relativePath, basename, children};
+    },
+    options
+  );
 }
 
 export function getFileInfoList(
@@ -248,37 +212,40 @@ export function getMultipleDirFileList(targetDirInfoList: Array<GetFileListInfo>
   return allFiles;
 }
 
-export async function selectFileFromDir(
-  targetDirInfoList: Array<GetFileListInfo>,
-  options?: {
-    /** sort file list before display */
-    handleFileList?: (fileList: FilePathInfo[]) => FilePathInfo[];
-  }
-) {
-  const {handleFileList = items => items} = options ?? {};
-  const fileList = getMultipleDirFileList(targetDirInfoList);
-  if (fileList.length === 0) {
-    throw new Error(`fileList is empty for dir: ${targetDirInfoList.map(it => it.targetDir).join(', ')}`);
-  }
-  const selectedFileInfo = await selectOption<FilePathInfo>(handleFileList(fileList), {
-    tips: ['Please select target file:'],
-  });
-  return selectedFileInfo;
+interface LineCountMapItem {
+  relativePath: string;
+  lineCount: number;
+  depth: number;
+  children?: LineCountMapItem[];
 }
-
-export async function selectAndRequireFile<ContentType = any>(
-  targetDirInfoList: Array<GetFileListInfo>,
+export function getLineCountMap(
+  filePath: string,
   options?: {
-    /** sort file list before display */
-    handleFileList?: (fileList: FilePathInfo[]) => FilePathInfo[];
+    dirFilter?: FileFilter;
+    fileFilter?: FileFilter;
   }
-) {
-  const fileInfo = await selectFileFromDir(targetDirInfoList, options);
-  if (!fileInfo.fullPath) {
-    throw new Error(`The file selected not exist`);
+): LineCountMapItem {
+  if (!filePath) {
+    filePath = '.';
   }
-  const content = rerequire(fileInfo.fullPath);
-  return content as ContentType;
+  const fullPath = path.resolve(filePath);
+  return goThroughDir<LineCountMapItem>(
+    fullPath,
+    (err, {pathInfo: {relativePath, depth}, children}) => {
+      const fullPath = path.join(filePath, relativePath);
+      if (Array.isArray(children)) {
+        const lineCount = children.reduce<number>((sum, it) => {
+          return sum + it.lineCount;
+        }, 0);
+        return {relativePath, lineCount, depth, children};
+      } else {
+        const content = fs.readFileSync(fullPath);
+        const lineCount = content.toString().split('\n').length;
+        return {relativePath, lineCount, depth};
+      }
+    },
+    options
+  );
 }
 
 /**
@@ -340,4 +307,37 @@ export function findModulePath(moduleName: string, currentPath: string) {
   }
   const fullPath = pathList.map(it => path.resolve(it, moduleName)).find(it => fs.existsSync(it));
   return fullPath;
+}
+
+export async function selectFileFromDir(
+  targetDirInfoList: Array<GetFileListInfo>,
+  options?: {
+    /** sort file list before display */
+    handleFileList?: (fileList: FilePathInfo[]) => FilePathInfo[];
+  }
+) {
+  const {handleFileList = items => items} = options ?? {};
+  const fileList = getMultipleDirFileList(targetDirInfoList);
+  if (fileList.length === 0) {
+    throw new Error(`fileList is empty for dir: ${targetDirInfoList.map(it => it.targetDir).join(', ')}`);
+  }
+  const selectedFileInfo = await selectOption<FilePathInfo>(handleFileList(fileList), {
+    tips: ['Please select target file:'],
+  });
+  return selectedFileInfo;
+}
+
+export async function selectAndRequireFile<ContentType = any>(
+  targetDirInfoList: Array<GetFileListInfo>,
+  options?: {
+    /** sort file list before display */
+    handleFileList?: (fileList: FilePathInfo[]) => FilePathInfo[];
+  }
+) {
+  const fileInfo = await selectFileFromDir(targetDirInfoList, options);
+  if (!fileInfo.fullPath) {
+    throw new Error(`The file selected not exist`);
+  }
+  const content = rerequire(fileInfo.fullPath);
+  return content as ContentType;
 }
