@@ -16,7 +16,7 @@ export type FileFilter = (pathInfo: PathInfoForRecur, stats: fs.Stats) => boolea
 
 export type GoThroughDirCb<T = any> = (
   err: Error | null,
-  res: {pathInfo: PathInfoForRecur; children?: T[]}
+  res: {pathInfo: PathInfoForRecur; stats: fs.Stats; children?: T[]}
 ) => T | null;
 export interface GoThroughDirOptions {
   /** Whether Go through/Ignore this dir or not */

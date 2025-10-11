@@ -70,14 +70,17 @@ export function testGetFileInfoTree() {
     },
   ]);
 }
-export function testCostOfGetFileInfoTree() {
-  let dt = Date.now();
-  // path.join(process.env.HOME, 'code')
-  const tree = getFileInfoTree('/Users/wuxifei/code/node/tool/busybox');
-  logColorful({}, `time consumed: ${Date.now() - dt}`);
+
+export function testCostOfGetFile() {
+  let dt: number;
   dt = Date.now();
-  const list = getFileList('/Users/wuxifei/code/node/tool/busybox');
-  logColorful({}, `time consumed: ${Date.now() - dt}`);
+  // const dir = path.join(process.env.HOME, 'code')
+  const dir = '/Users/wuxifei/code/node/tool/busybox';
+  const list = getFileList(dir);
+  logColorful({}, `getFileList: ${Date.now() - dt}`);
+  dt = Date.now();
+  const tree = getFileInfoTree(dir);
+  logColorful({}, `getFileInfoTree: ${Date.now() - dt}`);
   logColorful({}, 'end');
 }
 

@@ -12,6 +12,10 @@ import {
   GoThroughDirCb,
 } from '../types';
 
+const filterOutHiddenFile: FileFilter = info => {
+  const {basename} = info;
+  return basename.startsWith('.');
+};
 /**
  * @returns go through dir, and return value returned from cb function
  */
@@ -47,6 +51,7 @@ export function goThroughDir<T = any>(
   }
   const fullpath = path.join(root, relativePath);
   if (!fs.existsSync(fullpath)) {
+    // @ts-ignore
     return cb(new Error(`File not exist: ${fullpath}`), {pathInfo});
   }
   const stats = fs.statSync(fullpath);
@@ -71,11 +76,11 @@ export function goThroughDir<T = any>(
           return child;
         })
         .filter(it => it !== null && it !== undefined);
-      return cb(ignoreError ? null : error, {pathInfo, children});
+      return cb(ignoreError ? null : error, {pathInfo, stats, children});
     }
   } else {
     if (fileFilter(pathInfo, stats)) {
-      return cb(null, {pathInfo});
+      return cb(null, {pathInfo, stats});
     }
   }
   return null;
@@ -120,7 +125,7 @@ export function getFileInfoTree(root: string, options?: GoThroughDirOptions): Fi
   }
   return goThroughDir<FileInfoTreeItem>(
     root,
-    (err, {pathInfo, children}) => {
+    (err, {pathInfo, stats, children}) => {
       if (err) {
         return null;
       }
@@ -140,7 +145,7 @@ export function getFileInfoTree(root: string, options?: GoThroughDirOptions): Fi
       //     }
       //   }
       // }
-      const stats = fs.statSync(path.join(root, relativePath));
+      // const stats = fs.statSync(path.join(root, relativePath));
       return {stats, relativePath, basename, children};
     },
     options
@@ -263,9 +268,7 @@ export function searchFileInDir(dir: string, options?: SearchFileOptions) {
       const match = filter ? matchFilter(filter, basename) : true;
       return !basename.startsWith('.') && match;
     },
-    dirFilter({basename}) {
-      return !basename.startsWith('.');
-    },
+    dirFilter: filterOutHiddenFile,
   };
   const dirPath = path.resolve(dir);
   const cb: GoThroughDirCb = (err, {pathInfo: {relativePath, depth}, children}) => {
