@@ -9,15 +9,13 @@ export function parseBasename(basename: string) {
   return {extname, bareBasename};
 }
 
-/**
-params: ['zMovie/modules/lib/node/path.test.ts'],
-expected: {
-  dirname: 'zMovie/modules/lib/node',
-  basename: 'path.test.ts',
-  bareBasename: 'path.test',
-  extname: '.ts',
-},
- */
+// params: ['zMovie/modules/lib/node/path.test.ts'],
+// expected: {
+//   dirname: 'zMovie/modules/lib/node',
+//   basename: 'path.test.ts',
+//   bareBasename: 'path.test',
+//   extname: '.ts',
+// },
 export function getFilePathInfo(filePath: string): FilePathSegement {
   const dirname = path.dirname(filePath);
   const basename = path.basename(filePath);
@@ -29,21 +27,53 @@ export function getFilePathInfo(filePath: string): FilePathSegement {
   return pathInfo;
 }
 
+export function convertBareBasename(
+  filePath: string,
+  convert: (info: FilePathSegement) => string
+  // options?: {action: 'add' | 'remove'; prefix?: string; suffix: string}
+) {
+  const pathInfo = getFilePathInfo(filePath);
+  const newBareBaseame = convert(pathInfo);
+  const {extname, dirname} = pathInfo;
+  return path.join(dirname, newBareBaseame + extname);
+}
+
+export function addSuffixToBareBasename(filePath: string, suffix: string) {
+  return convertBareBasename(filePath, ({bareBasename}) => {
+    return bareBasename + suffix;
+  });
+}
+
+/**
+ * @deprecated by addSuffixToBareBasename
+ * @param fullPath
+ * @param suffix
+ * @returns
+ */
 export function getPathWithBasenaneSuffix(fullPath: string, suffix: string) {
   const {dirname, bareBasename, extname} = getFilePathInfo(fullPath);
   return path.join(dirname, bareBasename + suffix + extname);
 }
 
 /**
+ * @deprecated by addDtSuffixToBareBasename
  * get full path with bareBasename suffixed with date-time string
  */
-export function getPathWithDtSuffix(fullPath: string) {
+export function getPathWithDtSuffix(filePath: string) {
   const suffix = formatDate(new Date(), '-yyyy-MM-ddThh:mm:ss');
-  return getPathWithBasenaneSuffix(fullPath, suffix);
+  return addSuffixToBareBasename(filePath, suffix);
+}
+export function addDtSuffixToBareBasename(filePath) {
+  return getPathWithDtSuffix(filePath);
 }
 
-export function getDtFromPath(fullPath: string) {
-  const {bareBasename} = getFilePathInfo(fullPath);
+/**
+ * @deprecated by getDtFromBasename
+ * @param filePath
+ * @returns
+ */
+export function getDtFromPath(filePath: string) {
+  const {bareBasename} = getFilePathInfo(filePath);
   const reg = /[\d]{4,4}-[\d]{2,2}-[\d]{2,2}T[\d]{2,2}:[\d]{2,2}:[\d]{2,2}$/;
   const execResult = reg.exec(bareBasename);
   if (!execResult) {
@@ -51,6 +81,9 @@ export function getDtFromPath(fullPath: string) {
   }
   const [dateTimeStr] = execResult;
   return new Date(dateTimeStr);
+}
+export function getDtFromBasename(filePath: string) {
+  return getDtFromPath(filePath);
 }
 
 export function isDirFormat(fullPath: string) {
