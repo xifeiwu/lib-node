@@ -18,8 +18,10 @@ import {HOME_PATH} from './service';
 export function goThroughDir<T = any>(
   root: string,
   /**
-   * Should take care about return value of cb function if want to get a correct structure by goThroughDir
-   * Should return null if not want the item to be part of children list of parent dir
+   * 1. About return value of cb function:
+   * - Be serous about data returned from cb as the value will be treated as final result or tree item of final result
+   * - Should return null if not want the item to be part of children list of parent dir
+   * 2. If children passed to cb is array, it means current item is dir.
    */
   cb: (err: Error | null, res: {pathInfo: PathInfoForRecur; children?: T[]}) => T | null,
   /** option passed through each recursive without any change */
@@ -32,8 +34,6 @@ export function goThroughDir<T = any>(
     relativePath: '.',
     depth: 0,
   };
-  // const relativePath = path.join(pathInfo.prefix, pathInfo.baseName);
-  // pathInfo.relativePath = relativePath;
   const {relativePath, depth} = pathInfo;
   const {
     dirFilter = () => true,
