@@ -1,2 +1,2 @@
 export * from './find';
-export * from './other';
+export * from './others';
