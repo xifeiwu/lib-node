@@ -14,7 +14,7 @@ import {
 
 const filterOutHiddenFile: FileFilter = info => {
   const {basename} = info;
-  return basename.startsWith('.');
+  return !basename.startsWith('.');
 };
 /**
  * @returns go through dir, and return value returned from cb function
@@ -32,7 +32,7 @@ export function goThroughDir<T = any>(
   options?: GoThroughDirOptions,
   /** use for recursive: pass path related info */
   pathInfo?: PathInfoForRecur
-) {
+): T {
   pathInfo = pathInfo || {
     basename: '',
     relativePath: '.',
@@ -99,6 +99,9 @@ interface FlatChildrenOptions<T = any> {
 export function flatChildren<T extends {children?: any[]}>(mapInfo: T, options?: FlatChildrenOptions) {
   const {sortChildren, includeDir = true} = options ?? {};
   function mapToList(map: T): T[] {
+    if (!map) {
+      return [];
+    }
     const {children, ...others} = map;
     if (Array.isArray(children)) {
       if (sortChildren) {
@@ -279,21 +282,34 @@ interface SearchFileResultMapItem {
   fullpath: string;
   children?: SearchFileResultMapItem[];
 }
-export function searchFileInDir(dir: string, options?: SearchFileOptions) {
-  const filter: FilterItem = isString(options.filter)
+export function searchFileInDir(dir: string, options?: SearchFileOptions & GoThroughDirOptions) {
+  const {filter, ...restOptions} = options;
+  // not use strict match for type string
+  const finalFilter: FilterItem = isString(options.filter)
     ? (str: string) => str.includes(options.filter as string)
     : options.filter;
   const goThroughDirOptions: GoThroughDirOptions = {
     fileFilter({basename}) {
-      const match = filter ? matchFilter(filter, basename) : true;
+      const match = finalFilter ? matchFilter(finalFilter, basename) : true;
       return !basename.startsWith('.') && match;
     },
     dirFilter: filterOutHiddenFile,
+    ...restOptions,
   };
   const dirPath = path.resolve(dir);
   const cb: GoThroughDirCb = (err, {pathInfo: {relativePath, depth}, children}) => {
+    if (err) {
+      throw err;
+    }
     const fullpath = path.join(dirPath, relativePath);
-    return {relativePath, fullpath, children};
+    const result: SearchFileResultMapItem = {relativePath, fullpath};
+    if (Array.isArray(children)) {
+      if (children.length === 0) {
+        return null;
+      }
+      result.children = children;
+    }
+    return result;
   };
   const fileTree = goThroughDir<SearchFileResultMapItem>(dirPath, cb, goThroughDirOptions);
   const fileList = flatChildren(fileTree, {includeDir: false});

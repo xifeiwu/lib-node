@@ -1,13 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import assert from 'assert';
-import {
-  flatChildren,
-  getFileInfoTree,
-  getFileList,
-  getLineCountMap,
-  searchFileInDir,
-} from './go-through-dir';
+import {flatChildren, getFileInfoTree, getFileList, getLineCountMap, searchFileInDir} from './go-through-dir';
 import {isString} from '../external';
 import {runFuncTestCases} from '../service';
 import {FileInfoTreeItem} from '../types';
@@ -134,7 +128,8 @@ export function testGetFileSizeTree() {
 }
 
 export function runSearchFileInDir() {
-  const dir = '/Users/wuxifei/code/react/start/small-apps-wrapper/static/dom-examples';
+  // const dir = '/Users/wuxifei/code/react/start/small-apps-wrapper/static/dom-examples';
+  const dir = '/Users/wuxifei/code/react/start/small-apps-wrapper/static/dom-examples/static/dom-examples';
   const fileList = searchFileInDir(dir, {filter: 'resize-observer'});
   logColorful({}, fileList);
 }
