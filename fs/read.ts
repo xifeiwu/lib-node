@@ -286,18 +286,11 @@ export function searchFileInDir(dir: string, options?: SearchFileOptions) {
     },
   };
   const dirPath = path.resolve(dir);
-  const fileTree = goThroughDir<SearchFileResultMapItem>(
-    dirPath,
-    (err, {pathInfo: {relativePath, depth}, children}) => {
-      const fullpath = path.join(dirPath, relativePath);
-      if (Array.isArray(children)) {
-        return {relativePath, fullpath, children};
-      } else {
-        return {relativePath, fullpath};
-      }
-    },
-    goThroughDirOptions
-  );
+  const cb: GoThroughDirCb = (err, {pathInfo: {relativePath, depth}, children}) => {
+    const fullpath = path.join(dirPath, relativePath);
+    return {relativePath, fullpath, children};
+  };
+  const fileTree = goThroughDir<SearchFileResultMapItem>(dirPath, cb, goThroughDirOptions);
   const fileList = flatChildren(fileTree, {includeDir: false});
   return fileList;
 }
