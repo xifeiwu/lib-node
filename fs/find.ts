@@ -1,6 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import {selectOption} from '../readline';
 import {isNumber} from '../external';
 import {
   PathInfoForRecur,
@@ -12,8 +11,6 @@ import {
   FileInfoTreeItem,
 } from '../types';
 import {HOME_PATH} from './service';
-import childProcess from 'child_process';
-import {rerequire} from '../service';
 
 /**
  * @returns go through dir, and return value returned from cb function
@@ -165,6 +162,7 @@ export function getFileInfoList(
 
 /**
  * Return relative path of file(dir is not included)
+ * It's a simple version of getFileInfoList
  * @param root
  * @param options
  * @returns relativePath list
@@ -284,60 +282,4 @@ export function findFileListByNameUpward(dir: string, name: string) {
   }
 
   return results;
-}
-
-export function findModulePath(moduleName: string, currentPath: string) {
-  const pathList = [];
-  try {
-    const globalDir = path.resolve(
-      childProcess.execSync(`which node`).toString(),
-      '../..',
-      'lib/node_modules'
-    );
-    pathList.push(globalDir);
-    pathList.push(path.resolve(currentPath, 'node_modules'));
-    do {
-      currentPath = path.resolve(currentPath, '..');
-      if (!/.*node_modules$/.test(currentPath)) {
-        pathList.push(path.resolve(currentPath, 'node_modules'));
-      }
-    } while (currentPath !== HOME_PATH);
-  } catch (err) {
-    console.log(err);
-  }
-  const fullPath = pathList.map(it => path.resolve(it, moduleName)).find(it => fs.existsSync(it));
-  return fullPath;
-}
-
-export async function selectFileFromDir(
-  targetDirInfoList: Array<GetFileListInfo>,
-  options?: {
-    /** sort file list before display */
-    handleFileList?: (fileList: FilePathInfo[]) => FilePathInfo[];
-  }
-) {
-  const {handleFileList = items => items} = options ?? {};
-  const fileList = getFileListOfMultipleDir(targetDirInfoList);
-  if (fileList.length === 0) {
-    throw new Error(`fileList is empty for dir: ${targetDirInfoList.map(it => it.targetDir).join(', ')}`);
-  }
-  const selectedFileInfo = await selectOption<FilePathInfo>(handleFileList(fileList), {
-    tips: ['Please select target file:'],
-  });
-  return selectedFileInfo;
-}
-
-export async function selectAndRequireFile<ContentType = any>(
-  targetDirInfoList: Array<GetFileListInfo>,
-  options?: {
-    /** sort file list before display */
-    handleFileList?: (fileList: FilePathInfo[]) => FilePathInfo[];
-  }
-) {
-  const fileInfo = await selectFileFromDir(targetDirInfoList, options);
-  if (!fileInfo.fullPath) {
-    throw new Error(`The file selected not exist`);
-  }
-  const content = rerequire(fileInfo.fullPath);
-  return content as ContentType;
 }
