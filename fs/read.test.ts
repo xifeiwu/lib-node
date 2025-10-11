@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import assert from 'assert';
-import {flatChildren, getFileInfoTree, getFileList, getLineCountMap} from './read';
+import {flatChildren, getFileInfoTree, getFileList, getLineCountMap, searchFileInDir} from './read';
 import {isString} from '../external';
 import {runFuncTestCases} from '../service';
 import {FileInfoTreeItem} from '../types';
@@ -78,9 +78,8 @@ export function testCostOfGetFileInfoTree() {
   dt = Date.now();
   const list = getFileList('/Users/wuxifei/code/node/tool/busybox');
   logColorful({}, `time consumed: ${Date.now() - dt}`);
-  logColorful({}, 'end')
+  logColorful({}, 'end');
 }
-
 
 export function readPermission() {
   const fileInfoTree = getFileInfoTree(process.env.HOME, {
@@ -119,4 +118,10 @@ export function testGetFileSizeTree() {
   }
   const fileSizeInfo = getFileSize(fileInfoTree);
   console.log(fileSizeInfo);
+}
+
+export function runSearchFileInDir() {
+  const dir = '/Users/wuxifei/code/react/start/small-apps-wrapper/static/dom-examples';
+  const fileList = searchFileInDir(dir, {filter: 'resize-observer'});
+  logColorful({}, fileList);
 }

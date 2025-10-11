@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import {isNumber} from '../external';
+import {FilterItem, isNumber, isString, matchFilter} from '../external';
 import {
   PathInfoForRecur,
   FileFilter,
@@ -9,6 +9,7 @@ import {
   GetFileListOption,
   GoThroughDirOptions,
   FileInfoTreeItem,
+  GoThroughDirCb,
 } from '../types';
 import {HOME_PATH} from './service';
 
@@ -23,7 +24,7 @@ export function goThroughDir<T = any>(
    * - Should return null if not want the item to be part of children list of parent dir
    * 2. If children passed to cb is array, it means current item is dir.
    */
-  cb: (err: Error | null, res: {pathInfo: PathInfoForRecur; children?: T[]}) => T | null,
+  cb: GoThroughDirCb<T>,
   /** option passed through each recursive without any change */
   options?: GoThroughDirOptions,
   /** use for recursive: pass path related info */
@@ -161,7 +162,7 @@ export function getFileInfoList(
 }
 
 /**
- * Return relative path of file(dir is not included)
+ * Only return relativepath of file, dir is not included
  * It's a simple version of getFileInfoList
  * @param root
  * @param options
@@ -263,23 +264,40 @@ export function findClosestFile(startDir: string, targetFileName: string): strin
   }
 }
 
-/**
- * @deprecated by findClosestFile
- * start from @param 'dir', find file list with @param'name' upwards
- * @param dir, start dir
- * @param name, target file name
- */
-export function findFileListByNameUpward(dir: string, name: string) {
-  const results = [];
-  let currentPath = dir;
-  while (currentPath !== HOME_PATH && currentPath !== '/' && currentPath !== null) {
-    // console.log(currentPath);
-    const toFind = path.resolve(currentPath, name);
-    if (fs.existsSync(toFind)) {
-      results.push(toFind);
-    }
-    currentPath = path.resolve(currentPath, '..');
-  }
-
-  return results;
+interface SearchFileOptions {
+  filter: FilterItem;
+}
+interface SearchFileResultMapItem {
+  relativePath: string;
+  fullpath: string;
+  children?: SearchFileResultMapItem[];
+}
+export function searchFileInDir(dir: string, options?: SearchFileOptions) {
+  const filter: FilterItem = isString(options.filter)
+    ? (str: string) => str.includes(options.filter as string)
+    : options.filter;
+  const goThroughDirOptions: GoThroughDirOptions = {
+    fileFilter({basename}) {
+      const match = filter ? matchFilter(filter, basename) : true;
+      return !basename.startsWith('.') && match;
+    },
+    dirFilter({basename}) {
+      return !basename.startsWith('.');
+    },
+  };
+  const dirPath = path.resolve(dir);
+  const fileTree = goThroughDir<SearchFileResultMapItem>(
+    dirPath,
+    (err, {pathInfo: {relativePath, depth}, children}) => {
+      const fullpath = path.join(dirPath, relativePath);
+      if (Array.isArray(children)) {
+        return {relativePath, fullpath, children};
+      } else {
+        return {relativePath, fullpath};
+      }
+    },
+    goThroughDirOptions
+  );
+  const fileList = flatChildren(fileTree, {includeDir: false});
+  return fileList;
 }
