@@ -1,7 +1,13 @@
 import fs from 'fs';
 import path from 'path';
 import assert from 'assert';
-import {flatChildren, getFileInfoTree, getFileList, getLineCountMap, searchFileInDir} from './go-through-dir';
+import {
+  flatChildren,
+  getFileInfoTree,
+  getFileList,
+  getLineCountMap,
+  searchFileInDir,
+} from './go-through-dir';
 import {isString} from '../external';
 import {runFuncTestCases} from '../service';
 import {FileInfoTreeItem} from '../types';
@@ -73,11 +79,15 @@ export function testGetFileInfoTree() {
 
 export function testCostOfGetFile() {
   let dt: number;
-  dt = Date.now();
   // const dir = path.join(process.env.HOME, 'code')
   const dir = '/Users/wuxifei/code/node/tool/busybox';
+  dt = Date.now();
   const list = getFileList(dir);
   logColorful({}, `getFileList: ${Date.now() - dt}`);
+  // dt = Date.now();
+  // const list2 = getFileList2(dir);
+  // logColorful({}, `getFileList2: ${Date.now() - dt}`);
+  // assert.deepEqual(list, list2);
   dt = Date.now();
   const tree = getFileInfoTree(dir);
   logColorful({}, `getFileInfoTree: ${Date.now() - dt}`);

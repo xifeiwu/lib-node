@@ -153,11 +153,11 @@ export function getFileInfoTree(root: string, options?: GoThroughDirOptions): Fi
 }
 
 export function getFileInfoList(
-  root: string,
+  dir: string,
   options?: FlatChildrenOptions<FileInfoTreeItem> & GoThroughDirOptions
 ): FileInfoTreeItem[] {
   const {includeDir, sortChildren, ...goThroughDirOptions} = options ?? {};
-  const fileInfoTree = getFileInfoTree(root, goThroughDirOptions);
+  const fileInfoTree = getFileInfoTree(dir, goThroughDirOptions);
   if (!fileInfoTree) {
     return [];
   }
@@ -168,34 +168,51 @@ export function getFileInfoList(
 /**
  * Only return relativepath of file, dir is not included
  * It's a simple version of getFileInfoList
- * @param root
+ * @param dir
  * @param options
  * @returns relativePath list
  */
-export function getFileList(root: string, options?: GetFileListOption) {
-  const {includeDir, ...goThroughDirOptions} = options ?? {};
-  const fileList: string[] = [];
-  goThroughDir(
-    root,
-    (err, {pathInfo: {relativePath}, children}) => {
-      if (err) {
-        return null;
-      }
-      const isDir = Array.isArray(children);
-      if (isDir && !includeDir) {
-        return null;
-      }
-      fileList.push(relativePath);
-    },
-    goThroughDirOptions
-  );
-  return fileList;
+// export function getFileList(dir: string, options?: GetFileListOption) {
+//   const {includeDir, ...goThroughDirOptions} = options ?? {};
+//   const fileList: string[] = [];
+//   goThroughDir(
+//     dir,
+//     (err, {pathInfo: {relativePath}, children}) => {
+//       if (err) {
+//         return null;
+//       }
+//       const isDir = Array.isArray(children);
+//       if (isDir && !includeDir) {
+//         return null;
+//       }
+//       fileList.push(relativePath);
+//     },
+//     goThroughDirOptions
+//   );
+//   return fileList;
+// }
+export function getFileList(
+  dir: string,
+  options?: FlatChildrenOptions<FileInfoTreeItem> & GoThroughDirOptions
+): string[] {
+  const {includeDir = false, sortChildren, ...goThroughDirOptions} = options ?? {};
+  const fileInfoTree = getFileInfoTree(dir, goThroughDirOptions);
+  if (!fileInfoTree) {
+    return [];
+  }
+  const fileInfoList = flatChildren(fileInfoTree, {includeDir, sortChildren});
+  return fileInfoList.map(it => it.relativePath);
 }
 
 function getLabelDefault(pathInfo: Omit<FilePathInfo, 'label'>) {
   const {relativePath} = pathInfo;
   return relativePath;
 }
+/**
+ * @deprecated by getFileListOfDirs
+ * @param targetDirInfoList
+ * @returns
+ */
 export function getFileListOfMultipleDir(targetDirInfoList: Array<GetFileListInfo>): Array<FilePathInfo> {
   const allFiles = targetDirInfoList.reduce<Array<FilePathInfo>>((sum, it) => {
     const {targetDir, options, getLabel = getLabelDefault} = it;
@@ -213,6 +230,9 @@ export function getFileListOfMultipleDir(targetDirInfoList: Array<GetFileListInf
     ];
   }, []);
   return allFiles;
+}
+export function getFileListOfDirs(targetDirInfoList: Array<GetFileListInfo>): Array<FilePathInfo> {
+  return getFileListOfMultipleDir(targetDirInfoList);
 }
 
 interface LineCountMapItem {
