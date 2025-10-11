@@ -4,7 +4,7 @@ import {selectOption} from '../readline';
 import {rerequire} from '../service';
 import {FilePathInfo, GetFileListInfo} from '../types';
 import childProcess from 'child_process';
-import {getFileListOfMultipleDir} from './find';
+import {getFileListOfMultipleDir} from './read';
 import {HOME_PATH} from './service';
 
 export async function selectFileFromDir(
