@@ -5,7 +5,7 @@ import {flatChildren, getFileInfoTree, getFileList, getLineCountMap} from './rea
 import {isString} from '../external';
 import {runFuncTestCases} from '../service';
 import {FileInfoTreeItem} from '../types';
-import { logColorful } from '../log';
+import {logColorful} from '../log';
 
 export function testGetFileList() {
   const fileList = getFileList(__dirname, {
@@ -19,10 +19,9 @@ export function testGetFileList() {
 }
 
 export function testFilteroutHiddenFiles() {
-  const filterOutHiddenFile = (info) => {
-    console.log(info);
+  const filterOutHiddenFile = info => {
     const {basename} = info;
-    return basename.startsWith('.')
+    return basename.startsWith('.');
   };
   const fullPath = '/Users/wuxifei/code/react/start/small-apps-wrapper/apps/browser-feature';
   const files = getFileList(fullPath, {
@@ -34,18 +33,6 @@ export function testFilteroutHiddenFiles() {
     },
   });
   logColorful({}, files);
-}
-/**
- * Just used to check data, can modify anytime.
- */
-export function testGetFileListByDir() {
-  const targetDir = path.resolve(__dirname, 'net');
-  const relativeFileList = getFileList(targetDir, {
-    fileFilter({relativePath}) {
-      return relativePath.endsWith('test.ts');
-    },
-  });
-  console.log(relativeFileList);
 }
 
 export function filePathForGetLineCountMap() {
@@ -62,14 +49,6 @@ export function testGetLineCountMap() {
   });
   console.log(lineCountList);
 }
-
-// export function testGetLineCount() {
-//   const fileList = getLineCountList(__dirname);
-//   console.log(fileList);
-//   // assert.ok(Array.isArray(fileList));
-//   // assert.equal(fileList.length, 2);
-//   // assert.ok(isString(fileList[0]));
-// }
 
 export function testGetFileInfoTree() {
   runFuncTestCases(getFileInfoTree, [
@@ -91,6 +70,17 @@ export function testGetFileInfoTree() {
     },
   ]);
 }
+export function testCostOfGetFileInfoTree() {
+  let dt = Date.now();
+  // path.join(process.env.HOME, 'code')
+  const tree = getFileInfoTree('/Users/wuxifei/code/node/tool/busybox');
+  logColorful({}, `time consumed: ${Date.now() - dt}`);
+  dt = Date.now();
+  const list = getFileList('/Users/wuxifei/code/node/tool/busybox');
+  logColorful({}, `time consumed: ${Date.now() - dt}`);
+  logColorful({}, 'end')
+}
+
 
 export function readPermission() {
   const fileInfoTree = getFileInfoTree(process.env.HOME, {
