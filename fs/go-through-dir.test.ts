@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import assert from 'assert';
-import {flatChildren, getFileInfoTree, getFileList, getLineCountMap, searchFileInDir} from './read';
+import {flatChildren, getFileInfoTree, getFileList, getLineCountMap, searchFileInDir} from './go-through-dir';
 import {isString} from '../external';
 import {runFuncTestCases} from '../service';
 import {FileInfoTreeItem} from '../types';
