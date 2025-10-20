@@ -296,3 +296,30 @@ export function makeSureHttpRequestOptionsSerializable(options: HttpRequestOptio
   const {agent, ...restProps} = options;
   return restProps;
 }
+
+/**
+ * Merge typed request, the type format is:
+ * {
+ *   'get /api/list': {
+ *      request: {},
+ *      resData: {},
+ *    }
+ * }
+ * @param apiKey
+ * @param typedRequestInfo
+ * @param moreRequestOptions
+ * @returns
+ */
+export function mergeTypedRequestOptions(
+  apiKey: string,
+  typedRequestInfo: HttpRequestOptions,
+  moreRequestOptions?: HttpRequestOptions
+): HttpRequestOptions {
+  const [method, pathname] = apiKey.split(' ');
+  const requestOptions: HttpRequestOptions = {
+    method,
+    pathname,
+    ...typedRequestInfo,
+  };
+  return mergeHttpRequestOptions(requestOptions, moreRequestOptions);
+}
