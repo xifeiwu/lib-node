@@ -88,13 +88,15 @@ export function mergeHttpHeaders(
   if (headers1 && headers2) {
     const {cookie: cookie1, ...rest1} = headers1;
     const {cookie: cookie2, ...rest2} = headers2;
-    const cookie = mergeCookie(cookie1, cookie2);
-    // use deepMergeByConcat???
-    return {
-      cookie,
+    const result = {
       ...rest1,
       ...rest2,
     };
+    if (cookie1 || cookie2) {
+      result.cookie = mergeCookie(cookie1, cookie2);
+    }
+    // use deepMergeByConcat???
+    return result;
   }
   if (headers1) {
     return deepClone(headers1);
