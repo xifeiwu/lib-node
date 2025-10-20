@@ -13,7 +13,7 @@ import {selectFileAndGetExports} from '../../utils';
 import {SendRequestWithResponseInfoResult} from '../../types';
 import {getHashDigest} from '../../crypto';
 import {convertToBuffer} from '../../transform';
-import { makeSureDirExist } from '../../path';
+import {makeSureDirExist} from '../../path';
 
 export function convertObjectToCjsContent<T extends HttpRecordContent>(info: T) {
   const lines = Object.entries(info).map(([key, value]) => {
@@ -38,8 +38,9 @@ function getMockFileBaseName(requestResult: SendRequestWithResponseInfoResult) {
 
   const dataKey = data ? getHashDigest(convertToBuffer(data), {algorithm: 'md5', maxDigestLength: 8}) : '';
   return (
-    [method ?? '', encodeURIComponent(pathname), searchKey, dataKey].filter(it => it.trim().length > 0).join('-') +
-    MOCK_FILE_SUFFIX
+    [method ?? '', encodeURIComponent(pathname), searchKey, dataKey]
+      .filter(it => it.trim().length > 0)
+      .join('-') + MOCK_FILE_SUFFIX
   );
 }
 /**
@@ -53,7 +54,7 @@ function getFullPath(
   requestResult: SendRequestWithResponseInfoResult
 ) {
   const {fullPath, outputDir, getBasename = getMockFileBaseName} = info;
-  const finalPath = fullPath ?? outputDir ? path.join(outputDir, getBasename(requestResult)) : undefined;
+  const finalPath = (fullPath ?? outputDir) ? path.join(outputDir, getBasename(requestResult)) : undefined;
   if (!finalPath) {
     throw new Error(`Can not generate full path by options provided`);
   }
@@ -61,20 +62,11 @@ function getFullPath(
   return finalPath;
 }
 
-/**
- * send a http request, and save all request info to a file, include request info and response info
- */
-export async function recordHttpRequest<ResData = any>(
-  requestOptions: HttpRequestOptions,
+export function recordHttpRequestResult(
+  requestResult: Awaited<ReturnType<typeof requestAndGetResponseInfo>>,
   options: RecordHttpOptions
 ) {
   const {defaultRequestOptions, moreMockItems} = options;
-  const mergedOptions = mergeHttpRequestOptions(requestOptions, defaultRequestOptions);
-  const {validateStatus, printCurlCommandOnError} = options;
-  const requestResult = await requestAndGetResponseInfo<ResData>(mergedOptions, {
-    validateStatus,
-    printCurlCommandOnError,
-  });
   const {responseInfo, requestOptions: finalRequestOptions} = requestResult;
   const fullPath = getFullPath(options, requestResult);
   console.log(`writing mock file ${fullPath}`);
@@ -98,6 +90,22 @@ export async function recordHttpRequest<ResData = any>(
   };
   fs.writeFileSync(fullPath, convertObjectToCjsContent(content));
   return {content, fullPath};
+}
+/**
+ * send a http request, and save all request info to a file, include request info and response info
+ */
+export async function recordHttpRequest<ResData = any>(
+  requestOptions: HttpRequestOptions,
+  options: RecordHttpOptions
+) {
+  const {defaultRequestOptions, moreMockItems} = options;
+  const mergedOptions = mergeHttpRequestOptions(requestOptions, defaultRequestOptions);
+  const {validateStatus, printCurlCommandOnError} = options;
+  const requestResult = await requestAndGetResponseInfo<ResData>(mergedOptions, {
+    validateStatus,
+    printCurlCommandOnError,
+  });
+  return recordHttpRequestResult(requestResult, options);
 }
 
 /**

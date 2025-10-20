@@ -4,5 +4,10 @@ export {
   FindRecordFileOptions as FindRecordFileOptions,
   HttpRecordContentWithPathInfo,
 } from './types';
-export {recordHttpRequest, recordHttpRequestBySelectConfigFile, recordHttpRequestByDir} from './generate';
+export {
+  recordHttpRequestResult,
+  recordHttpRequest,
+  recordHttpRequestBySelectConfigFile,
+  recordHttpRequestByDir,
+} from './generate';
 export {getHttpRecordFinder as getHttpRecordFinder, findRecordFile} from './find';
