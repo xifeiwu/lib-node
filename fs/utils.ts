@@ -1,9 +1,7 @@
-import fs from 'fs';
-import path from 'path';
 import {selectOption} from '../readline';
 import {rerequire} from '../service';
 import {FilePathInfo, GetFileListInfo} from '../types';
-import {getFileListOfMultipleDir} from './go-through-dir';
+import {getFileListOfDirs} from './go-through-dir';
 
 export async function selectFileFromDir(
   targetDirInfoList: Array<GetFileListInfo>,
@@ -13,7 +11,7 @@ export async function selectFileFromDir(
   }
 ) {
   const {handleFileList = items => items} = options ?? {};
-  const fileList = getFileListOfMultipleDir(targetDirInfoList);
+  const fileList = getFileListOfDirs(targetDirInfoList);
   if (fileList.length === 0) {
     throw new Error(`fileList is empty for dir: ${targetDirInfoList.map(it => it.targetDir).join(', ')}`);
   }
