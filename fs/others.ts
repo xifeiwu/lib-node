@@ -86,12 +86,19 @@ export function link(sourceFile: string, targetFile: string) {
   return {sourceFile, targetFile, relativePath};
 }
 export function linkFile(sourceFile: string, targetFile: string) {
-  return link(sourceFile, targetFile)
+  return link(sourceFile, targetFile);
 }
 
-export function writeFileSync(fullPath: string, data: string | NodeJS.ArrayBufferView) {
+export function writeFileSync(
+  fullPath: string,
+  data: string | NodeJS.ArrayBufferView,
+  options?: {
+    createDirIfNotExist?: boolean;
+  }
+) {
+  const {createDirIfNotExist = true} = options ?? {};
   const dirName = path.dirname(fullPath);
-  if (!fs.existsSync(dirName)) {
+  if (createDirIfNotExist && !fs.existsSync(dirName)) {
     fs.mkdirSync(dirName, {recursive: true});
   }
   fs.writeFileSync(fullPath, data);
