@@ -27,7 +27,7 @@ export function writeFileSync(
   fs.writeFileSync(fullPath, data);
 }
 
-export function getFullPath(config: Pick<DataWriterOptions, 'dir' | 'subdir' | 'basename' | 'dtFormat'>) {
+export function getDataFilePath(config: Pick<DataWriterOptions, 'dir' | 'subdir' | 'basename' | 'dtFormat'>) {
   const {dir, subdir = '', basename, dtFormat} = config;
   const fullpath = addDtSuffixToBareBasename(path.join(dir, subdir, basename), {dtFormat});
   return fullpath;
@@ -39,8 +39,10 @@ export function getDataWriter(globalConfig: PartialExcept<DataWriterOptions, 'di
       ...globalConfig,
       ...config,
     };
-    const fullpath = getFullPath(mergedConfig);
-    writeFileSync(fullpath, convertObjectToCjsExport(obj));
+    const fullpath = getDataFilePath(mergedConfig);
+    const content = convertObjectToCjsExport(obj);
+    writeFileSync(fullpath, content);
+    return {fullpath, content};
   }
   return dataWriter;
 }
