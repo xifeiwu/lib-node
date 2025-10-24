@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import {FilePathSegement} from './types';
-import {formatDate} from './external';
+import {formatDate, getDtStrInFormat} from './external';
 
 export function parseBasename(basename: string) {
   const extname = path.extname(basename);
@@ -50,7 +50,7 @@ export function addSuffixToBareBasename(filePath: string, suffix: string) {
  * @param suffix
  * @returns
  */
-export function getPathWithBasenaneSuffix(fullPath: string, suffix: string) {
+export function getPathWithBasenameSuffix(fullPath: string, suffix: string) {
   const {dirname, bareBasename, extname} = getFilePathInfo(fullPath);
   return path.join(dirname, bareBasename + suffix + extname);
 }
@@ -60,14 +60,22 @@ export function getPathWithBasenaneSuffix(fullPath: string, suffix: string) {
  * get full path with bareBasename suffixed with date-time string
  */
 export function getPathWithDtSuffix(filePath: string) {
-  const suffix = formatDate(new Date(), '-yyyy-MM-ddThh:mm:ss');
+  const suffix = formatDate(new Date(), 'yyyy-MM-ddThh:mm:ss');
   return addSuffixToBareBasename(filePath, suffix);
 }
-export function addDtSuffixToBareBasename(filePath) {
-  return getPathWithDtSuffix(filePath);
+
+export function addDtSuffixToBareBasename(
+  filePath,
+  options?: {
+    dtFormat?: string;
+    dt?: string | number | Date;
+  }
+) {
+  const dtSuffix = getDtStrInFormat(options?.dtFormat, options?.dt);
+  return addSuffixToBareBasename(filePath, dtSuffix);
 }
 
-/**
+/*
  * @deprecated by getDtFromBasename
  * @param filePath
  * @returns

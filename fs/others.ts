@@ -89,21 +89,6 @@ export function linkFile(sourceFile: string, targetFile: string) {
   return link(sourceFile, targetFile);
 }
 
-export function writeFileSync(
-  fullPath: string,
-  data: string | NodeJS.ArrayBufferView,
-  options?: {
-    createDirIfNotExist?: boolean;
-  }
-) {
-  const {createDirIfNotExist = true} = options ?? {};
-  const dirName = path.dirname(fullPath);
-  if (createDirIfNotExist && !fs.existsSync(dirName)) {
-    fs.mkdirSync(dirName, {recursive: true});
-  }
-  fs.writeFileSync(fullPath, data);
-}
-
 export function isInSameDevice(fullPath1: string, fullPath2: string) {
   try {
     const stat1 = fs.statSync(fullPath1);

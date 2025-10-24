@@ -64,6 +64,7 @@ export {
   REG_BASE64,
   getSequenceMatcher,
   isAsyncFunction,
+  getDtStrInFormat,
 } from '../fe/common';
 export {AstAOptions, listAUsingUl} from '../fe/lib/html-parser';
 
