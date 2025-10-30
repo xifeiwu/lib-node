@@ -281,7 +281,9 @@ export function httpRequestOptionsToCurlCommand(options: HttpRequestOptions) {
     ...Object.entries(headers).map(([k, v]) => {
       return `-H '${k}: ${v}'`;
     }),
-    data !== undefined ? `-d ${isObject(data) ? "'" + JSON.stringify(data) + "'" : data}` : '',
+    data !== undefined
+      ? `-d ${isObject(data) ? "'" + JSON.stringify(data) + "'" : JSON.stringify(data)}`
+      : '',
   ].join(' ');
   return command;
 }
