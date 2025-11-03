@@ -1,21 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-
-/**
- * NOTICE:
- * for link file, fs.existsSync or fs.statSync will throw error even link file exist,
- * so here use fs.lstatSync to check existence of link file
- */
-export function isFileExist(filePath: string) {
-  try {
-    const stat = fs.lstatSync(filePath);
-    if (stat) {
-      return true;
-    }
-  } catch {
-    return false;
-  }
-}
+import {isFileExist} from './read';
 
 /**
  * Remove file, directory, link

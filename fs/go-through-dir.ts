@@ -11,6 +11,7 @@ import {
   FileInfoTreeItem,
   GoThroughDirCb,
 } from '../types';
+import {getFileStat} from './read';
 
 const filterOutHiddenFile: FileFilter = info => {
   const {basename} = info;
@@ -50,11 +51,11 @@ export function goThroughDir<T = any>(
     return null;
   }
   const fullpath = path.join(root, relativePath);
-  if (!fs.existsSync(fullpath)) {
+  const stats = getFileStat(fullpath);
+  if (!stats) {
     // @ts-ignore
     return cb(new Error(`File not exist: ${fullpath}`), {pathInfo});
   }
-  const stats = fs.statSync(fullpath);
   if (stats.isDirectory()) {
     if (depth === 0 || dirFilter(pathInfo, stats)) {
       let error = null;
