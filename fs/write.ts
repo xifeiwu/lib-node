@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import {addDtSuffixToBareBasename, addSuffixToBareBasename} from '../path';
+import {addSuffixToBareBasename} from '../path';
 import {PartialExcept} from '../types/external';
 import {convertObjectToCjsExport} from '../transform';
 import {getDtStrInFormat} from '../external';
@@ -10,7 +10,7 @@ interface DataWriterOptions {
   subdir?: string;
   basename: string;
   basenameSuffix?: string;
-  dtFormat?: string;
+  dtSuffixFormat?: string;
   createDirIfNotExist?: boolean;
 }
 
@@ -30,10 +30,10 @@ export function writeFileSync(
 }
 
 export function getDataFilePath(
-  config: Pick<DataWriterOptions, 'dir' | 'subdir' | 'basename' | 'basenameSuffix' | 'dtFormat'>
+  config: Pick<DataWriterOptions, 'dir' | 'subdir' | 'basename' | 'basenameSuffix' | 'dtSuffixFormat'>
 ) {
-  const {dir, subdir = '', basename, dtFormat, basenameSuffix} = config;
-  const finalSuffix = basenameSuffix ?? getDtStrInFormat(dtFormat);
+  const {dir, subdir = '', basename, dtSuffixFormat, basenameSuffix} = config;
+  const finalSuffix = basenameSuffix ?? getDtStrInFormat(dtSuffixFormat);
   const fullpath = addSuffixToBareBasename(path.join(dir, subdir, basename), finalSuffix);
   return fullpath;
 }
