@@ -9,8 +9,9 @@ interface DataWriterOptions {
   dir: string;
   subdir?: string;
   basename: string;
-  basenameSuffix?: string;
-  dtSuffixFormat?: string;
+  dataCategory?: string;
+  dtForamtAsCategory?: string;
+  categoryWay?: 'folder' | 'basenameSuffix';
   createDirIfNotExist?: boolean;
 }
 
@@ -30,11 +31,21 @@ export function writeFileSync(
 }
 
 export function getDataFilePath(
-  config: Pick<DataWriterOptions, 'dir' | 'subdir' | 'basename' | 'basenameSuffix' | 'dtSuffixFormat'>
+  config: Pick<
+    DataWriterOptions,
+    'dir' | 'subdir' | 'basename' | 'dataCategory' | 'dtForamtAsCategory' | 'categoryWay'
+  >
 ) {
-  const {dir, subdir = '', basename, dtSuffixFormat, basenameSuffix} = config;
-  const finalSuffix = basenameSuffix ?? getDtStrInFormat(dtSuffixFormat);
-  const fullpath = addSuffixToBareBasename(path.join(dir, subdir, basename), finalSuffix);
+  const {dir, subdir, basename, dtForamtAsCategory, dataCategory, categoryWay = 'basenameSuffix'} = config;
+  const tag = dataCategory ?? getDtStrInFormat(dtForamtAsCategory);
+  let tagDir = '';
+  let finalBasename = basename;
+  if (categoryWay === 'basenameSuffix') {
+    finalBasename = addSuffixToBareBasename(basename, tag);
+  } else if (categoryWay === 'folder') {
+    tagDir = tag;
+  }
+  const fullpath = path.join(dir, subdir, tagDir, finalBasename);
   return fullpath;
 }
 
