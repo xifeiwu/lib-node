@@ -34,7 +34,7 @@ function mergeTwoHttpRequestOptions(
   options1: HttpRequestOptions,
   options2: HttpRequestOptions
 ): HttpRequestOptions {
-  if (options2 === undefined) {
+  if (!options2) {
     return options1;
   }
   const {headers: headers1 = {}, ...restOptions1} = options1;

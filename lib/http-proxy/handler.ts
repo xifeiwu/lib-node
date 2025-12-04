@@ -1,6 +1,6 @@
 import https from 'https';
 import http, {IncomingMessage, ServerResponse} from 'http';
-import {toUrlInstance, deepClone, deepMerge, getUrlPropsFromConfig} from '../../external';
+import {toUrlInstance, deepClone, getUrlPropsFromConfig} from '../../external';
 import {HttpProxyConfig, ProxyStatus} from './types';
 import {toReadable, getDataByTransform} from '../../stream';
 import {toBuffer} from '../../transform';
