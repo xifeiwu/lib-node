@@ -273,12 +273,16 @@ export async function requestAndGetConnectInfo<Payload extends ConnectionPayload
 export function httpRequestOptionsToCurlCommand(options: HttpRequestOptions) {
   const {urlProps, restProps} = getUrlPropsFromConfig(options);
   const href = urlPropsToHref(urlProps);
-  const {method = 'GET', headers = {}, data} = restProps;
+  const {method = 'GET', headers = {}, data, auth} = restProps;
+  const finalHeaders = {...headers};
+  if (auth) {
+    finalHeaders.Authorization = 'Basic ' + Buffer.from(auth).toString('base64');
+  }
   const command = [
     'curl',
     `-X ${method.toUpperCase()}`,
     href,
-    ...Object.entries(headers).map(([k, v]) => {
+    ...Object.entries(finalHeaders).map(([k, v]) => {
       return `-H '${k}: ${v}'`;
     }),
     data !== undefined
