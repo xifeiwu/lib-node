@@ -20,7 +20,7 @@ export function toBuffer(data: CanConvertToBuffer | Array<CanConvertToBuffer>, l
           return toBuffer(it, level + 1);
         })
         .filter(Buffer.isBuffer);
-      return Buffer.concat(bufAll);
+      return Buffer.concat(bufAll.map(it => new Uint8Array(it)));
     }
   }
   let buffer: Buffer = Buffer.alloc(0);
@@ -33,12 +33,12 @@ export function toBuffer(data: CanConvertToBuffer | Array<CanConvertToBuffer>, l
   } else if (Buffer.isBuffer(data)) {
     buffer = data;
   } else if (ArrayBuffer.isView(data)) {
-    buffer = Buffer.from(data as ArrayBuffer);
+    buffer = Buffer.from(data as Uint8Array);
   }
   return buffer;
 }
 
-export function convertToBuffer(...args: Array<CanConvertToBuffer>) {
+export function convertToBuffer(...args: Array<CanConvertToBuffer>): Buffer<ArrayBuffer> {
   const bufList: Buffer[] = [];
   for (const data of args) {
     let buffer: Buffer = data as Buffer;
@@ -60,7 +60,7 @@ export function convertToBuffer(...args: Array<CanConvertToBuffer>) {
     } else if (isNumber(data)) {
       buffer = Buffer.from([data as number]);
     } else if (ArrayBuffer.isView(data)) {
-      buffer = Buffer.from(data as ArrayBuffer);
+      buffer = Buffer.from(data as Uint8Array);
     }
     if (Buffer.isBuffer(buffer)) {
       bufList.push(buffer);
@@ -71,9 +71,9 @@ export function convertToBuffer(...args: Array<CanConvertToBuffer>) {
     return undefined;
   } else if (bufList.length === 1) {
     /** concat will allocate new space */
-    return bufList[0];
+    return bufList[0] as Buffer<ArrayBuffer>;
   } else {
-    return Buffer.concat(bufList);
+    return Buffer.concat(bufList.map(it => new Uint8Array(it)));
   }
 }
 
@@ -167,11 +167,11 @@ export function getBufferGenerator(config?: BufferGeneratorConfig) {
         while (result.byteLength < chunkSize) {
           let diff = chunkSize - result.byteLength;
           if (diff <= sourceBufferLength) {
-            result = Buffer.concat([result, sourceBuffer.subarray(0, diff)]);
+            result = Buffer.concat([result, sourceBuffer.subarray(0, diff)].map(it => new Uint8Array(it)));
             indexOfSourceBuffer = diff;
             break;
           } else {
-            result = Buffer.concat([result, sourceBuffer]);
+            result = Buffer.concat([result, sourceBuffer].map(it => new Uint8Array(it)));
           }
         }
       }

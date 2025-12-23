@@ -10,7 +10,7 @@
   "author": "Xifei Wu",
   "license": "ISC",
   "devDependencies": {
-    "@types/node": "18.14.3"
+    "@types/node": "22.13.14"
   },
   "dependencies": {}
 }

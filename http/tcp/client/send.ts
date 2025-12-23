@@ -69,7 +69,7 @@ export async function sendHttpRequestByTcp(
   const supplementHeaders: OutgoingHttpHeaders = {
     host: urlInst.host,
   };
-  let bufferData = Buffer.alloc(0);
+  let bufferData = new Uint8Array(Buffer.alloc(0));
   if (dataIsStream) {
     supplementHeaders['transfer-encoding'] = 'chunked';
   } else {
@@ -91,7 +91,7 @@ export async function sendHttpRequestByTcp(
     }
   );
   if (dataIsStream) {
-    client.write(headerPart);
+    client.write(new Uint8Array(headerPart));
     (data as Readable)
       .pipe(
         new Transform({
@@ -116,10 +116,10 @@ export async function sendHttpRequestByTcp(
       .pipe(client);
   } else {
     if (bufferData.byteLength > 0) {
-      client.write(headerPart);
-      client.write(bufferData);
+      client.write(new Uint8Array(headerPart));
+      client.write(new Uint8Array(bufferData));
     } else {
-      client.write(headerPart);
+      client.write(new Uint8Array(headerPart));
     }
   }
   return client;
