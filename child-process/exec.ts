@@ -4,7 +4,7 @@ import {convertToBuffer} from '../transform';
 import {ExecCmdOptions} from '../types';
 
 /**
- * @deprecated by execSyncAndLog
+ * @deprecated by execCmdWithOptions
  * @param cmd
  * @param options
  * @returns
