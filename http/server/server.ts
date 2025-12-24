@@ -5,10 +5,16 @@ import {IncomingMessage} from 'http';
 import {HttpServerConfig, LogColors} from '../../types';
 import {getAFreePort, isOverTls, watchSocketState} from '../../net';
 import {getHttpRequestHeaderPartInfo, handleConnectEvent} from './service';
-import {customResponseByRequest, response404, responseEmpty, responseHttpRequestInfo} from './utils';
+import {
+  customResponseByRequest,
+  response404,
+  responseEmpty,
+  responseHtml,
+  responseHttpRequestInfo,
+} from './utils';
 import {logColorful} from '../../log';
-import {toNormalizedUrlProps, unifyNull} from '../../external';
-import { httpResponseInfoToBuffer } from '../tcp';
+import {listAUsingUl, toNormalizedUrlProps, unifyNull} from '../../external';
+import {httpResponseInfoToBuffer} from '../tcp';
 
 function createServer(options: HttpServerConfig['options']) {
   if (isOverTls(options)) {
@@ -77,6 +83,14 @@ export async function startHttpDebugServer(
   options?: {logRequestHeaderInfo?: LogColors; logSocketState?: LogColors}
 ) {
   const {logRequestHeaderInfo, logSocketState} = options ?? {};
+  const apiListHtml = listAUsingUl({
+    infoList: Object.entries(DebugServerPathname).map(([key, value]) => {
+      return {
+        href: value,
+        text: value,
+      };
+    }),
+  });
   const {host, port, origin, server} = await startHttpServer(
     {
       async request(request, response) {
@@ -88,8 +102,12 @@ export async function startHttpDebugServer(
           );
         logSocketState && watchSocketState(request.socket, {colorStyle: {color: 'yellow'}});
         const {pathname} = toNormalizedUrlProps(request.url);
-        const func = pathnameToHandler[pathname] ?? response404;
-        func(request, response);
+        if (pathname === '/') {
+          responseHtml(response, apiListHtml);
+        } else {
+          const func = pathnameToHandler[pathname] ?? response404;
+          func(request, response);
+        }
       },
       async connect(req, socket, head) {
         const {responseInfo} = handleConnectEvent(req);

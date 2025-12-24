@@ -27,9 +27,7 @@ export async function startDetachedDaemon(
   const spawnConfig4Daemon = getSpawnAndIpcConfigByScript<Daemon.DaemonConfig>(scriptPath, {
     /** args key is used for killing Zombie Daemon Process */
     params: [daemonKey],
-    infoToCp: {
-      config: daemonConfig,
-    },
+    infoToCp: daemonConfig,
     maxWaitTime4Ipc: MAX_WAIT_TIME_DEBUG_MODE,
     spawnOptions: {stdio: debug ? [0, 1, 2, 'ipc'] : ['ignore', 'ignore', 'ignore', 'ipc']},
   });

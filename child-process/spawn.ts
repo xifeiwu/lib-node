@@ -4,7 +4,6 @@ import {Serializable, spawn} from 'child_process';
 import {findClosestFile} from '../fs';
 import {isBoolean, isNumber, isString} from '../external';
 import {
-  SpawnAndIpcConfig,
   SpawnAndTryIpcResponse,
   SerializableSpawnInfo,
   IpcConfig,
@@ -14,6 +13,7 @@ import {
   SpawnResult,
 } from '../types';
 import {getFilePathInfo} from '../path';
+import {waitIpcMessageOnce} from './service';
 
 /**
  * Infer ts-node params by script if it run on ts-node runtime
@@ -87,7 +87,7 @@ export function getSpawnConfigByScript<RunTimeOptions = any>(
   const {extname} = getFilePathInfo(fullPath);
   let command = '';
   let args: string[] = [];
-  const {runtimeOptions, params = [], spawnOptions} = options ?? {};
+  const {runtimeOptions, params = [], ...rest} = options ?? {};
   /** params should follow after fullPath */
   if (extname === '.ts') {
     command = 'ts-node';
@@ -101,7 +101,7 @@ export function getSpawnConfigByScript<RunTimeOptions = any>(
   return {
     command,
     args,
-    spawnOptions,
+    ...rest,
   };
 }
 
@@ -118,6 +118,12 @@ export function getSpawnConfigByScriptPath<RunTimeOptions = any>(
   return getSpawnConfigByScript<RunTimeOptions>(scriptPath, options);
 }
 
+/**
+ * @deprecated by spawnAndTryIpc
+ * @param scriptPath
+ * @param options
+ * @returns
+ */
 export function spawnScript<RunTimeOptions = any>(
   scriptPath: string,
   options?: SpawnScriptOptions<RunTimeOptions>
@@ -149,7 +155,7 @@ export function spawnTsFile(tsFilePath: string, options?: SpawnScriptOptions) {
 export function getCpConfigByScriptPath<CpConfig = any>(
   fullPath: string,
   options?: SpawnScriptOptions & IpcConfig<CpConfig>
-): SpawnAndIpcConfig<CpConfig> {
+): SpawnConfig<CpConfig> {
   return getSpawnAndIpcConfigByScript(fullPath, options);
 }
 
@@ -160,10 +166,11 @@ export function getCpConfigByScriptPath<CpConfig = any>(
  * @param config
  * @returns
  */
-export async function spawnAndTryIpc<CpConfig extends Serializable= any, ResponseFromCp = any>(
-  config: SpawnAndIpcConfig<CpConfig>
+export async function spawnAndTryIpc<CpConfig extends Serializable = any, ResponseFromCp = any>(
+  config: SpawnConfig<CpConfig>
 ): Promise<SpawnAndTryIpcResponse<ResponseFromCp>> {
-  const {command, args, spawnOptions, maxWaitTime4Ipc, infoToCp} = config;
+  const {command, args, spawnOptions, minUptime = 0, infoToCp} = config;
+  const maxWaitCpResInSec = config.maxWaitCpResInSec ?? config.maxWaitTime4Ipc;
   const childProcess = spawn(command, args, spawnOptions);
   const supportIpc = Boolean(childProcess.send);
   if (infoToCp && !supportIpc) {
@@ -175,44 +182,57 @@ export async function spawnAndTryIpc<CpConfig extends Serializable= any, Respons
   if (supportIpc && infoToCp) {
     childProcess.send(infoToCp);
   }
-  const info: SpawnAndTryIpcResponse<ResponseFromCp> = {
-    spawnTime: '',
+  const wholeScript = `${command} ${args.join(' ')}`;
+  const info: SpawnAndTryIpcResponse = {
+    wholeScript,
     childProcess,
+    supportIpc,
+    spawnTime: '',
   };
+  let timeoutToResolve: NodeJS.Timeout;
+  function handleException(errInfo: {code: number; event: string}) {
+    if (timeoutToResolve) {
+      clearTimeout(timeoutToResolve);
+    }
+    const {event, code} = errInfo;
+    return new Error(
+      `child process ${event} with status code: ${code}, you can debug using command: ${wholeScript}`
+    );
+  }
+  let waitResPromise: Promise<ResponseFromCp>;
   await new Promise<void>((res, rej) => {
     childProcess.once('spawn', () => {
       info.spawnTime = new Date().toLocaleString();
-      res();
+      timeoutToResolve = setTimeout(() => {
+        res();
+      }, minUptime);
+      waitResPromise = new Promise<ResponseFromCp>(async (res, rej) => {
+        /** Wait message of child process from IPC channel when supportIpc and maxWaitTime4Ipc is not undefined */
+        if (supportIpc && isNumber(maxWaitCpResInSec)) {
+          const responseFromCp = await waitIpcMessageOnce({
+            p: childProcess,
+            maxWaitInSec: maxWaitCpResInSec,
+          });
+          res(responseFromCp);
+        } else {
+          res(undefined);
+        }
+      });
+    });
+    childProcess.once('exit', (code, signal) => {
+      rej(handleException({event: 'exit', code}));
+    });
+    childProcess.once('close', (code, signal) => {
+      rej(handleException({event: 'close', code}));
     });
     childProcess.once('error', err => {
       rej(err);
     });
   });
-  /**
-   * Take care: child process **must** send response to IPC channel, or main process will hang here.
-   */
-  return new Promise<SpawnAndTryIpcResponse<ResponseFromCp>>((res, rej) => {
-    /** Wait message of child process from IPC channel when supportIpc and maxWaitTime4Ipc is not undefined */
-    if (supportIpc && isNumber(maxWaitTime4Ipc)) {
-      const timeOutTag = setTimeout(
-        () =>
-          res({
-            ...info,
-            responseFromCp: new Error(
-              `No message received from child process within ${maxWaitTime4Ipc}s`
-            ) as ResponseFromCp,
-          }),
-        Math.abs(maxWaitTime4Ipc) * 1000
-      );
-      childProcess.once('message', chunk => {
-        info.responseFromCp = chunk as ResponseFromCp;
-        res(info);
-        clearTimeout(timeOutTag);
-      });
-    } else {
-      res(info);
-    }
-  });
+  if (waitIpcMessageOnce) {
+    info.responseFromCp = await waitResPromise;
+  }
+  return info;
 }
 
 export function serializeSpawnResponse<ResponseFromCp = any>(
@@ -229,25 +249,21 @@ export function serializeSpawnResponse<ResponseFromCp = any>(
 }
 
 /**
+ * @deprecated by getSpawnConfigByScript
  * Get params for spawnAndTryIpc by scriptPath
  */
 export function getSpawnAndIpcConfigByScript<CpConfig = any>(
   scriptPath: string,
-  options?: SpawnScriptOptions & IpcConfig<CpConfig>
-): SpawnAndIpcConfig<CpConfig> {
-  const {infoToCp, maxWaitTime4Ipc, ...spawnTsFileOptions} = options;
-  const spawnConfig = getSpawnConfigByScript(scriptPath, spawnTsFileOptions);
-  return {
-    ...spawnConfig,
-    infoToCp,
-    maxWaitTime4Ipc,
-  };
+  options?: SpawnScriptOptions
+): SpawnConfig<CpConfig> {
+  const spwanAndIpcConfig = getSpawnConfigByScript<CpConfig>(scriptPath, options);
+  return spwanAndIpcConfig;
 }
 
-export async function spawnScriptAndTryIpc<CpConfig = any, ResponseFromCp = any>(
+export async function spawnScriptAndTryIpc<CpConfig extends Serializable = any, ResponseFromCp = any>(
   scriptPath: string,
-  options?: SpawnScriptOptions & IpcConfig<CpConfig>
+  options?: SpawnScriptOptions
 ) {
-  const spwanAndIpcConfig = getSpawnAndIpcConfigByScript<CpConfig>(scriptPath, options);
+  const spwanAndIpcConfig = getSpawnConfigByScript<CpConfig>(scriptPath, options);
   return spawnAndTryIpc<CpConfig, ResponseFromCp>(spwanAndIpcConfig);
 }

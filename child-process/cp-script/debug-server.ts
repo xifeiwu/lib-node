@@ -1,4 +1,5 @@
 import {startHttpDebugServer} from '../../http';
+import {logColorful} from '../../log';
 import {HttpServerConfig} from '../../types';
 import {waitIpcMessageOnce} from '../service';
 
@@ -9,6 +10,7 @@ async function start() {
   if (supportIpc) {
     process.send(serverInfo);
   }
+  logColorful({color: 'yellow'}, {origin: serverInfo.origin});
 }
 
 start();

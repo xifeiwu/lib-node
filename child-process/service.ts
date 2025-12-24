@@ -1,6 +1,7 @@
 import fs from 'fs';
 import {InfoToCp} from '../types';
 import {isNumber} from '../external';
+import {ChildProcess} from 'child_process';
 
 /**
  * For the case .ts file compiled to .js file, will use .js file first when running logic for the consideration of saving cost.
@@ -21,21 +22,28 @@ export function tryUseJsFile(scriptPath: string) {
  * @param config
  * @returns
  */
-export async function waitIpcMessageOnce<T = any>(config?: {maxWaitInSec?: number}) {
-  const {maxWaitInSec: maxWait} = config ?? {};
+export async function waitIpcMessageOnce<T = any>(config?: {
+  p?: NodeJS.Process | ChildProcess;
+  maxWaitInSec?: number;
+}) {
+  const {p = process, maxWaitInSec} = config ?? {};
   let ipcMessage: T;
-  if (!process.send) {
+  if (!p.send) {
     return undefined;
   }
+  let timeoutTag: NodeJS.Timeout;
   ipcMessage = await new Promise<T>(res => {
-    process.once('message', (chunk: T) => {
+    p.once('message', (chunk: T) => {
       res(chunk);
+      if (timeoutTag) {
+        clearTimeout(timeoutTag);
+      }
     });
-    if (isNumber(maxWait)) {
+    if (isNumber(maxWaitInSec)) {
       /** Wait message for one second at most */
-      setTimeout(() => {
+      timeoutTag = setTimeout(() => {
         res(undefined);
-      }, maxWait * 1000);
+      }, maxWaitInSec * 1000);
     }
   });
   return ipcMessage;

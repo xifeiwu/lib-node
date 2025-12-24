@@ -61,3 +61,10 @@ export function response404(request: http.IncomingMessage, response: http.Server
   response.setHeader('content-type', 'text/plain');
   response.end('NOT Found');
 }
+
+export function responseHtml(response: http.ServerResponse, html: string) {
+  response.statusCode = 200;
+  response.statusMessage = 'OK';
+  response.setHeader('content-type', 'text/html');
+  response.end(html);
+}

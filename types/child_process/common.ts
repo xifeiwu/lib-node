@@ -7,19 +7,48 @@ export interface TsNodeOptions {
   '--transpileOnly'?: boolean;
   '--swc'?: boolean;
 }
+interface CommonSpawnOptions {
+  spawnOptions?: SpawnOptions;
+  minUptime?: number;
+}
+
+/**
+ * For many cases, parent process need communication with child process by:
+ * 1. send params to child process
+ * 2. wait for response from child process
+ */
+export interface IpcConfig<CpConfig = any> {
+  /** Info send to child process if process.send is enabled */
+  infoToCp?: CpConfig;
+  /**
+   * @deprecated by maxWaitCpResInSec
+   */
+  maxWaitTime4Ipc?: number;
+  /**
+   * Max wait time for ipc message from Child Process, the unit is second
+   * If maxWaitTime4Ipc is not equal undefined, main process will wait response from child process
+   * until maxWaitTime4Ipc second is passed
+   * Else main process will not wait for response from child process.
+   */
+  maxWaitCpResInSec?: number;
+}
+
+interface SpawnScriptOnlyOptions<RuntimeOptions> {
+  /** param for runtime */
+  runtimeOptions?: RuntimeOptions;
+  /** param for script */
+  params?: string[];
+}
 /**
  * Spawn config specially for file
  * command get from file extname
  * args of SpawnConfig split into two parts: tsNodeOptions for ts-node, params for ts script
  */
-export interface SpawnScriptOptions<RuntimeOptions = any> {
-  /** param for runtime */
-  runtimeOptions?: RuntimeOptions;
-  /** param for script */
-  params?: string[];
-  spawnOptions?: SpawnOptions;
-  // printCommand?: boolean;
-}
+export interface SpawnScriptOptions<RuntimeOptions = any, CpConfig = any>
+  extends SpawnScriptOnlyOptions<RuntimeOptions>,
+    CommonSpawnOptions,
+    IpcConfig<CpConfig> {}
+
 /**
  * @deprecated by SpawnScriptOptions
  */
@@ -29,19 +58,18 @@ export type SpawnFileOptions = SpawnScriptOptions;
  * Configs used for node spwan function in format:
  * spawn(command, args, spawnOptions)
  */
-export interface SpawnConfig {
+export interface SpawnConfig<CpConfig = any> extends CommonSpawnOptions, IpcConfig<CpConfig> {
   command: string;
   /**
    * all args used for command include:
    * runtimeOptions, script path, script params
    */
   args?: ReadonlyArray<string>;
-  spawnOptions?: SpawnOptions;
   /**
    * @deprecated as this property should be part of SpawnFileOptions
    * args are argument for command, params are for script
    */
-  params?: string[];
+  // params?: string[];
 }
 
 export interface SpawnResult {
@@ -61,35 +89,15 @@ export interface InfoToCp<CpConfig = any> {
    * Set it as Partial value as some config may be provided on child process
    */
   // spawnConfig?: Partial<SpawnAndTryIpcConfig>;
-  spawnConfig?: SpawnAndIpcConfig;
+  spawnConfig?: SpawnConfig;
 }
-
-/**
- * For many cases, parent process need communication with child process by:
- * 1. send params to child process
- * 2. wait for response from child process
- */
-export interface IpcConfig<CpConfig = any> {
-  /** Info send to child process if process.send is enabled */
-  infoToCp?: CpConfig;
-  /**
-   * Max wait time for ipc message from Child Process, the unit is second
-   * If maxWaitTime4Ipc is not equal undefined, main process will wait response from child process
-   * until maxWaitTime4Ipc second is passed
-   * Else main process will not wait for response from child process.
-   */
-  maxWaitTime4Ipc?: number;
-}
-
-/**
- * Do a communication by IpcConfig during spwan process
- */
-export interface SpawnAndIpcConfig<CpConfig = any> extends SpawnConfig, IpcConfig<CpConfig> {}
 
 export interface SpawnAndTryIpcResponse<ResponseFromCp = any> {
   /** original config passed */
   // config: SpawnAndTryIpcConfig;
+  wholeScript: string;
   childProcess: ChildProcess;
+  supportIpc: boolean;
   /** The time spawn event is triggered */
   spawnTime: string;
   deadTime?: string;
