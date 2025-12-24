@@ -1,7 +1,7 @@
 import {Daemon, InfoToCp} from '../../types';
 import {CpDaemon, getErrorResponse} from '../daemon/daemon';
 import {waitParentMessageFromIPC} from '../spawn';
-import {out} from './service';
+import {out} from './service/base';
 
 async function start() {
   try {

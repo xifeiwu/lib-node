@@ -1,3 +1,4 @@
+import path from 'path';
 import assert from 'assert';
 import {
   CP,
@@ -13,7 +14,7 @@ export async function testDebugServer() {
   const tag = 'testSpawnTsScript';
   const port = await getAFreePort(4000);
   const spawnInfo = await spawnScriptAndTryIpc<CP.DebugServerConfig, CP.DebugServerResponse>(
-    'debug-server.ts',
+    path.join(__dirname, 'debug-server.ts'),
     {
       params: [tag],
       spawnOptions: {

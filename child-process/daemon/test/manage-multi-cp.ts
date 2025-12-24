@@ -1,8 +1,16 @@
-import {getCpScript} from '../../cp-script/service';
+import fs from 'fs';
+import path from 'path';
 import {logColorful, CP, getSocketPath, Daemon, getSpawnAndIpcConfigByScript} from '../../../index';
 import {startDetachedDaemon} from '../service';
 import {SocketClientToDaemon} from '../client';
 
+function getCpScript(basename: string) {
+  const fullpath = path.join(__dirname, basename);
+  if (!fs.existsSync(fullpath)) {
+    throw new Error(`file not exist: ${fullpath}`);
+  }
+  return fullpath;
+}
 // const debugMode = true;
 // const stdio: SpawnOptions['stdio'] = debugMode ? [0, 1, 2, 'ipc'] : ['ignore', 'ignore', 'ignore', 'ipc'];
 
