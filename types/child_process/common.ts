@@ -50,6 +50,9 @@ export interface SpawnResult {
   wholeScript: string;
 }
 
+/**
+ * @deprecated as it meaningless
+ */
 export interface InfoToCp<CpConfig = any> {
   /** Config passed to child process */
   config?: CpConfig;
@@ -68,7 +71,7 @@ export interface InfoToCp<CpConfig = any> {
  */
 export interface IpcConfig<CpConfig = any> {
   /** Info send to child process if process.send is enabled */
-  infoToCp?: InfoToCp<CpConfig>;
+  infoToCp?: CpConfig;
   /**
    * Max wait time for ipc message from Child Process, the unit is second
    * If maxWaitTime4Ipc is not equal undefined, main process will wait response from child process

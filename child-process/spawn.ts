@@ -1,10 +1,9 @@
 import fs from 'fs';
 import path from 'path';
-import {spawn} from 'child_process';
+import {Serializable, spawn} from 'child_process';
 import {findClosestFile} from '../fs';
 import {isBoolean, isNumber, isString} from '../external';
 import {
-  InfoToCp,
   SpawnAndIpcConfig,
   SpawnAndTryIpcResponse,
   SerializableSpawnInfo,
@@ -155,35 +154,13 @@ export function getCpConfigByScriptPath<CpConfig = any>(
 }
 
 /**
- * Child Process wait ipc message frm Parent Process.
- * @param config
- * @returns
- */
-export async function waitParentMessageFromIPC<CpConfig>(config?: {maxWait?: number}) {
-  const {maxWait = 6000} = config ?? {};
-  let ipcMessage: InfoToCp<CpConfig> = {};
-  if (process.send) {
-    ipcMessage = await new Promise<InfoToCp<CpConfig>>(res => {
-      process.once('message', (chunk: InfoToCp<CpConfig>) => {
-        res(chunk);
-      });
-      /** Wait message for one second at most */
-      setTimeout(() => {
-        res({});
-      }, maxWait);
-    });
-  }
-  return ipcMessage;
-}
-
-/**
  * Focus on first conversation between Main and Child process:
  * Pass param from Main to Child process if supportIpc and infoToCp is not undefined
  * Return status from Child to Main process if supportIpc and maxWaitTime4Ipc is not undefined
  * @param config
  * @returns
  */
-export async function spawnAndTryIpc<CpConfig = any, ResponseFromCp = any>(
+export async function spawnAndTryIpc<CpConfig extends Serializable= any, ResponseFromCp = any>(
   config: SpawnAndIpcConfig<CpConfig>
 ): Promise<SpawnAndTryIpcResponse<ResponseFromCp>> {
   const {command, args, spawnOptions, maxWaitTime4Ipc, infoToCp} = config;
@@ -215,10 +192,6 @@ export async function spawnAndTryIpc<CpConfig = any, ResponseFromCp = any>(
    * Take care: child process **must** send response to IPC channel, or main process will hang here.
    */
   return new Promise<SpawnAndTryIpcResponse<ResponseFromCp>>((res, rej) => {
-    const messageLisnter = chunk => {
-      info.responseFromCp = chunk as ResponseFromCp;
-      res(info);
-    };
     /** Wait message of child process from IPC channel when supportIpc and maxWaitTime4Ipc is not undefined */
     if (supportIpc && isNumber(maxWaitTime4Ipc)) {
       const timeOutTag = setTimeout(
@@ -232,7 +205,8 @@ export async function spawnAndTryIpc<CpConfig = any, ResponseFromCp = any>(
         Math.abs(maxWaitTime4Ipc) * 1000
       );
       childProcess.once('message', chunk => {
-        messageLisnter(chunk);
+        info.responseFromCp = chunk as ResponseFromCp;
+        res(info);
         clearTimeout(timeOutTag);
       });
     } else {

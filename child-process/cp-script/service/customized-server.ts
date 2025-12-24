@@ -3,7 +3,7 @@ import {handleCpCustomization, out} from './base';
 import {getAFreePort} from '../../../net';
 import {responseHttpRequestInfo, startHttpServer} from '../../../http';
 import {convertToBuffer} from '../../../transform';
-import {CP, InfoToCp} from '../../../types';
+import {CP} from '../../../types';
 
 const pathnameDesc: Record<string, {pathname: string; desc?: string}> = {
   apiList: {pathname: '/api/list'},
@@ -24,11 +24,11 @@ const apiListHtml = listAUsingUl({
 /**
  * This is a http server target to run on child process to explore feature of child_process
  */
-export async function start() {
-  let ipcMessage: InfoToCp<CP.DebugServerConfig> = {};
+export async function startCustomizedServer() {
+  let ipcMessage: CP.DebugServerConfig = {};
   if (process.send) {
-    ipcMessage = await new Promise<InfoToCp<CP.DebugServerConfig>>(res => {
-      process.once('message', (chunk: InfoToCp<CP.DebugServerConfig>) => {
+    ipcMessage = await new Promise<CP.DebugServerConfig>(res => {
+      process.once('message', (chunk: CP.DebugServerConfig) => {
         res(chunk);
       });
       /** Wait message for one second at most */
@@ -37,7 +37,7 @@ export async function start() {
       }, 8000);
     });
   }
-  const {config = {}} = ipcMessage;
+  const config = ipcMessage;
   /** Make sure port property exist */
   if (config['port'] === undefined) {
     config['port'] = await getAFreePort();
