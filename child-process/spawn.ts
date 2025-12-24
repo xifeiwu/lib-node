@@ -11,12 +11,13 @@ import {
   IpcConfig,
   SpawnConfig,
   TsNodeOptions,
-  SpawnFileOptions,
+  SpawnScriptOptions,
   SpawnResult,
 } from '../types';
 import {getFilePathInfo} from '../path';
 
 /**
+ * Infer ts-node params by script if it run on ts-node runtime
  * -r, and --project are must to have params for ts-node, for its value:
  * 1. null means should have this value, but is unknown at current phase
  * 2. undefined means the param is not needed
@@ -27,7 +28,7 @@ const defaultTsNodeOptions: TsNodeOptions = {
 };
 export function getTsNodeParams(
   tsFilePath: string,
-  options?: Pick<SpawnFileOptions<TsNodeOptions>, 'runtimeOptions'>
+  options?: Pick<SpawnScriptOptions<TsNodeOptions>, 'runtimeOptions'>
 ) {
   const {runtimeOptions = {}} = options ?? {};
   const fullPath = path.resolve(process.cwd(), tsFilePath);
@@ -72,14 +73,13 @@ export function getTsNodeParams(
 }
 
 /**
- * @deprecated by getSpawnConfigByScript as it's more simple
  * Convert from SpawnFileOptions to SpawnConfig
  * spawn a script by info get from its path:
  * get command by file extname
  */
-export function getSpawnConfigByScriptPath<RunTimeOptions = any>(
+export function getSpawnConfigByScript<RunTimeOptions = any>(
   scriptPath: string,
-  options?: SpawnFileOptions<RunTimeOptions>
+  options?: SpawnScriptOptions<RunTimeOptions>
 ): SpawnConfig {
   const fullPath = path.resolve(process.cwd(), scriptPath);
   if (!fs.existsSync(fullPath)) {
@@ -107,20 +107,21 @@ export function getSpawnConfigByScriptPath<RunTimeOptions = any>(
 }
 
 /**
+ * @deprecated by getSpawnConfigByScript as it's more simple
  * Convert from SpawnFileOptions to SpawnConfig
  * spawn a script by info get from its path:
  * get command by file extname
  */
-export function getSpawnConfigByScript<RunTimeOptions = any>(
+export function getSpawnConfigByScriptPath<RunTimeOptions = any>(
   scriptPath: string,
-  options?: SpawnFileOptions<RunTimeOptions>
+  options?: SpawnScriptOptions<RunTimeOptions>
 ): SpawnConfig {
-  return getSpawnConfigByScriptPath<RunTimeOptions>(scriptPath, options);
+  return getSpawnConfigByScript<RunTimeOptions>(scriptPath, options);
 }
 
 export function spawnScript<RunTimeOptions = any>(
   scriptPath: string,
-  options?: SpawnFileOptions<RunTimeOptions>
+  options?: SpawnScriptOptions<RunTimeOptions>
 ): SpawnResult {
   const spawnConfig = getSpawnConfigByScript(scriptPath, options);
   const {command, args, spawnOptions = {}} = spawnConfig;
@@ -133,12 +134,12 @@ export function spawnScript<RunTimeOptions = any>(
 }
 
 /**
- * @deprecated by spawnScript, as the name is not very accurate
+ * @deprecated by spawnScript, as this name is not very accurate
  * @param tsFilePath
  * @param options
  * @returns
  */
-export function spawnTsFile(tsFilePath: string, options?: SpawnFileOptions) {
+export function spawnTsFile(tsFilePath: string, options?: SpawnScriptOptions) {
   const {childProcess} = spawnScript(tsFilePath, options);
   return childProcess;
 }
@@ -148,9 +149,9 @@ export function spawnTsFile(tsFilePath: string, options?: SpawnFileOptions) {
  */
 export function getCpConfigByScriptPath<CpConfig = any>(
   fullPath: string,
-  options?: SpawnFileOptions & IpcConfig<CpConfig>
+  options?: SpawnScriptOptions & IpcConfig<CpConfig>
 ): SpawnAndIpcConfig<CpConfig> {
-  return getSpawnConfigByScriptPath(fullPath, options);
+  return getSpawnAndIpcConfigByScript(fullPath, options);
 }
 
 /**
@@ -258,10 +259,10 @@ export function serializeSpawnResponse<ResponseFromCp = any>(
  */
 export function getSpawnAndIpcConfigByScript<CpConfig = any>(
   scriptPath: string,
-  options?: SpawnFileOptions & IpcConfig<CpConfig>
+  options?: SpawnScriptOptions & IpcConfig<CpConfig>
 ): SpawnAndIpcConfig<CpConfig> {
   const {infoToCp, maxWaitTime4Ipc, ...spawnTsFileOptions} = options;
-  const spawnConfig = getSpawnConfigByScriptPath(scriptPath, spawnTsFileOptions);
+  const spawnConfig = getSpawnConfigByScript(scriptPath, spawnTsFileOptions);
   return {
     ...spawnConfig,
     infoToCp,
@@ -271,7 +272,7 @@ export function getSpawnAndIpcConfigByScript<CpConfig = any>(
 
 export async function spawnScriptAndTryIpc<CpConfig = any, ResponseFromCp = any>(
   scriptPath: string,
-  options?: SpawnFileOptions & IpcConfig<CpConfig>
+  options?: SpawnScriptOptions & IpcConfig<CpConfig>
 ) {
   const spwanAndIpcConfig = getSpawnAndIpcConfigByScript<CpConfig>(scriptPath, options);
   return spawnAndTryIpc<CpConfig, ResponseFromCp>(spwanAndIpcConfig);

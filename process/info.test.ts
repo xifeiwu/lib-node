@@ -3,21 +3,14 @@ import {getProcessInfo, getProcessInfoByPort, killProcessByPid} from './info';
 // import {DebugServerResponse, runTsScriptInChildProcess} from './child-process';
 import {logColorful} from '../log';
 
-// export async function testFilterProcessInfo() {
-//   const {command, params, spawnOptions, pid} = await runTsScriptInChildProcess('debug-server', {
-//     args: ['testFilterProcessInfo'],
-//   });
-//   logColorful({}, {command, params, spawnOptions});
-//   const {infoList: infoListByPid} = await getProcessInfo({filter: {pid}});
-//   const {infoList: infoListByCmd} = await getProcessInfo({filter: {command: 'testFilterProcessInfo'}});
-//   assert.equal(infoListByPid.length, 1);
-//   assert.equal(infoListByPid[0].pid, pid);
-//   assert.deepEqual(infoListByPid[0].pid, infoListByCmd[0].pid);
-// }
-
 export async function testGetProcessInfo() {
   const processList = await getProcessInfo();
   console.log(processList);
+}
+
+export async function testGetProcessInfoByPort() {
+  const processList = await getProcessInfoByPort(6379);
+  logColorful({}, processList);
 }
 
 export async function testGetProcessInfoWithFilter() {

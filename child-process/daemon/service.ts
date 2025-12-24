@@ -1,6 +1,6 @@
 import path from 'path';
 import {Daemon} from '../../types';
-import {getCpConfigByScriptPath, serializeSpawnResponse, spawnAndTryIpc} from '../spawn';
+import {getSpawnAndIpcConfigByScript, serializeSpawnResponse, spawnAndTryIpc} from '../spawn';
 import {tryUseJsFile} from '../service';
 
 const MAX_WAIT_TIME_DEBUG_MODE = 120;
@@ -24,7 +24,7 @@ export async function startDetachedDaemon(
     }
   }
   const scriptPath = tryUseJsFile(path.resolve(__dirname, '../cp-script/daemon.ts'));
-  const spawnConfig4Daemon = getCpConfigByScriptPath<Daemon.DaemonConfig>(scriptPath, {
+  const spawnConfig4Daemon = getSpawnAndIpcConfigByScript<Daemon.DaemonConfig>(scriptPath, {
     /** args key is used for killing Zombie Daemon Process */
     params: [daemonKey],
     infoToCp: {

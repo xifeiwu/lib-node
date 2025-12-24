@@ -12,7 +12,7 @@ export interface TsNodeOptions {
  * command get from file extname
  * args of SpawnConfig split into two parts: tsNodeOptions for ts-node, params for ts script
  */
-export interface SpawnFileOptions<RuntimeOptions = any> {
+export interface SpawnScriptOptions<RuntimeOptions = any> {
   /** param for runtime */
   runtimeOptions?: RuntimeOptions;
   /** param for script */
@@ -20,6 +20,10 @@ export interface SpawnFileOptions<RuntimeOptions = any> {
   spawnOptions?: SpawnOptions;
   // printCommand?: boolean;
 }
+/**
+ * @deprecated by SpawnScriptOptions
+ */
+export type SpawnFileOptions = SpawnScriptOptions;
 
 /**
  * Configs used for node spwan function in format:
@@ -27,6 +31,10 @@ export interface SpawnFileOptions<RuntimeOptions = any> {
  */
 export interface SpawnConfig {
   command: string;
+  /**
+   * all args used for command include:
+   * runtimeOptions, script path, script params
+   */
   args?: ReadonlyArray<string>;
   spawnOptions?: SpawnOptions;
   /**
