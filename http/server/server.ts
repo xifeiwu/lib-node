@@ -7,10 +7,12 @@ import {getAFreePort, isOverTls, watchSocketState} from '../../net';
 import {getHttpRequestHeaderPartInfo, handleConnectEvent} from './service';
 import {
   customResponseByRequest,
+  stopServer,
   response404,
   responseEmpty,
   responseHtml,
   responseHttpRequestInfo,
+  responseServerEnv,
 } from './utils';
 import {logColorful} from '../../log';
 import {listAUsingUl, toNormalizedUrlProps, unifyNull} from '../../external';
@@ -45,18 +47,22 @@ export async function startHttpServer(
     port: number;
     server: http.Server;
   }>((res, rej) => {
-    const server = createServer(options).listen(port, host);
-    const origin = `${isOverTls(options) ? 'https' : 'http'}://${host}:${port}`;
-    server.on('listening', () => {
-      res({host, port, origin, server});
-    });
-    handleConnection && server.on('connection', handleConnection);
-    handleRequest && server.on('request', handleRequest);
-    handleUpgrade && server.on('upgrade', handleUpgrade);
-    handleConnect && server.on('connect', handleConnect);
-    server.on('error', err => {
+    try {
+      const server = createServer(options).listen(port, host);
+      const origin = `${isOverTls(options) ? 'https' : 'http'}://${host}:${port}`;
+      server.on('listening', () => {
+        res({host, port, origin, server});
+      });
+      handleConnection && server.on('connection', handleConnection);
+      handleRequest && server.on('request', handleRequest);
+      handleUpgrade && server.on('upgrade', handleUpgrade);
+      handleConnect && server.on('connect', handleConnect);
+      server.on('error', err => {
+        rej(err);
+      });
+    } catch (err) {
       rej(err);
-    });
+    }
   });
 }
 
@@ -64,14 +70,24 @@ export enum DebugServerPathname {
   echo = '/api/echo',
   customResponse = '/api/custom-response',
   empty = '/api/empty',
+  env = '/api/env',
+  stop = '/api/stop',
 }
 
 const pathnameToHandler: {
-  [key in DebugServerPathname]: (request: http.IncomingMessage, response: http.ServerResponse) => void;
+  [key in DebugServerPathname]: {
+    handler: (response: http.ServerResponse, request?: http.IncomingMessage) => void;
+    desc?: string;
+  };
 } = {
-  [DebugServerPathname.echo]: responseHttpRequestInfo,
-  [DebugServerPathname.customResponse]: customResponseByRequest,
-  [DebugServerPathname.empty]: responseEmpty,
+  [DebugServerPathname.echo]: {handler: responseHttpRequestInfo, desc: 'echo content of request'},
+  [DebugServerPathname.customResponse]: {
+    handler: customResponseByRequest,
+    desc: 'get customized response by config send from request',
+  },
+  [DebugServerPathname.env]: {handler: responseServerEnv, desc: 'get server env'},
+  [DebugServerPathname.stop]: {handler: stopServer, desc: 'stop running of server'},
+  [DebugServerPathname.empty]: {handler: responseEmpty},
 };
 /**
  * It is a raw node http debug server, not depend on any third-party(like Koa), it handle pathname in two ways:
@@ -84,13 +100,16 @@ export async function startHttpDebugServer(
 ) {
   const {logRequestHeaderInfo, logSocketState} = options ?? {};
   const apiListHtml = listAUsingUl({
-    infoList: Object.entries(DebugServerPathname).map(([key, value]) => {
+    infoList: Object.entries(pathnameToHandler).map(([pathname, value]) => {
+      const {desc} = value;
       return {
-        href: value,
-        text: value,
+        href: pathname,
+        text: pathname,
+        desc
       };
     }),
   });
+  
   const {host, port, origin, server} = await startHttpServer(
     {
       async request(request, response) {
@@ -105,8 +124,8 @@ export async function startHttpDebugServer(
         if (pathname === '/') {
           responseHtml(response, apiListHtml);
         } else {
-          const func = pathnameToHandler[pathname] ?? response404;
-          func(request, response);
+          const func = pathnameToHandler[pathname]?.handler ?? response404;
+          func(response, request);
         }
       },
       async connect(req, socket, head) {

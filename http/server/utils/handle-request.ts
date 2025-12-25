@@ -11,7 +11,7 @@ import {toNormalizedUrlProps, isPlainObject, unifyNull} from '../../../external'
 /**
  * response/echo requestInfo
  */
-export async function responseHttpRequestInfo(request: http.IncomingMessage, response: http.ServerResponse) {
+export async function responseHttpRequestInfo(response: http.ServerResponse, request: http.IncomingMessage) {
   const requestInfo = await getHttpRequestInfo(request);
   const resData = convertToBuffer(requestInfo);
   response.setHeader('content-length', resData.byteLength);
@@ -23,8 +23,8 @@ export async function responseHttpRequestInfo(request: http.IncomingMessage, res
  * return data or config
  */
 export async function customResponseByRequest(
-  request: http.IncomingMessage,
   response: http.ServerResponse,
+  request: http.IncomingMessage,
   config?: CustomizeResponseOptions
 ) {
   const {url, data} = await getHttpRequestInfo(request);
@@ -48,14 +48,14 @@ export async function customResponseByRequest(
 /**
  * Test buffer content of empty response
  */
-export function responseEmpty(request: http.IncomingMessage, response: http.ServerResponse) {
+export function responseEmpty(response: http.ServerResponse) {
   response.statusCode = 404;
   response.statusMessage = 'Not Found';
   response.setHeader('content-type', 'text/plain');
   response.end('');
 }
 
-export function response404(request: http.IncomingMessage, response: http.ServerResponse) {
+export function response404(response: http.ServerResponse) {
   response.statusCode = 404;
   response.statusMessage = 'Not Found';
   response.setHeader('content-type', 'text/plain');
@@ -67,4 +67,21 @@ export function responseHtml(response: http.ServerResponse, html: string) {
   response.statusMessage = 'OK';
   response.setHeader('content-type', 'text/html');
   response.end(html);
+}
+
+export function responseServerEnv(response: http.ServerResponse) {
+  response.statusCode = 200;
+  response.setHeader('content-type', 'application/json; charset=utf-8');
+  const env = process.env;
+  response.end(JSON.stringify(env));
+}
+
+export function stopServer(response: http.ServerResponse) {
+  response.statusCode = 302;
+  response.setHeader('Location', '/');
+  response.setHeader('content-type', 'text/plain; charset=utf-8');
+  response.end(convertToBuffer(`Redirecting to <a href="/">index</a>.`));
+  setTimeout(() => {
+    process.exit(0);
+  }, 2000);
 }
