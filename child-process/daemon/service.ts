@@ -1,6 +1,6 @@
 import path from 'path';
 import {Daemon} from '../../types';
-import {getSpawnAndIpcConfigByScript, serializeSpawnResponse, spawnAndTryIpc} from '../spawn';
+import {getSpawnConfigByScript, serializeSpawnResponse, spawnAndTryIpc} from '../spawn';
 import {tryUseJsFile} from '../service';
 
 const MAX_WAIT_TIME_DEBUG_MODE = 120;
@@ -20,11 +20,11 @@ export async function startDetachedDaemon(
         spawnConfig.spawnOptions = {};
       }
       spawnConfig.spawnOptions.stdio = [0, 1, 2, 'ipc'];
-      spawnConfig.maxWaitTime4Ipc = MAX_WAIT_TIME_DEBUG_MODE;
+      spawnConfig.maxWaitCpResInSec = MAX_WAIT_TIME_DEBUG_MODE;
     }
   }
   const scriptPath = tryUseJsFile(path.resolve(__dirname, '../cp-script/daemon.ts'));
-  const spawnConfig4Daemon = getSpawnAndIpcConfigByScript<Daemon.DaemonConfig>(scriptPath, {
+  const spawnConfig4Daemon = getSpawnConfigByScript<Daemon.DaemonConfig>(scriptPath, {
     /** args key is used for killing Zombie Daemon Process */
     params: [daemonKey],
     infoToCp: daemonConfig,

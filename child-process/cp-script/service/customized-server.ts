@@ -4,6 +4,7 @@ import {getAFreePort} from '../../../net';
 import {responseHttpRequestInfo, startHttpServer} from '../../../http';
 import {convertToBuffer} from '../../../transform';
 import {CP} from '../../../types';
+import {waitIpcMessageOnce} from '../../service';
 
 const pathnameDesc: Record<string, {pathname: string; desc?: string}> = {
   apiList: {pathname: '/api/list'},
@@ -25,18 +26,18 @@ const apiListHtml = listAUsingUl({
  * This is a http server target to run on child process to explore feature of child_process
  */
 export async function startCustomizedServer() {
-  let ipcMessage: CP.DebugServerConfig = {};
-  if (process.send) {
-    ipcMessage = await new Promise<CP.DebugServerConfig>(res => {
-      process.once('message', (chunk: CP.DebugServerConfig) => {
-        res(chunk);
-      });
-      /** Wait message for one second at most */
-      setTimeout(() => {
-        res({});
-      }, 8000);
-    });
-  }
+  let ipcMessage: CP.DebugServerConfig = await waitIpcMessageOnce<CP.DebugServerConfig>({maxWaitInSec: 9});
+  // if (process.send) {
+  //   ipcMessage = await new Promise<CP.DebugServerConfig>(res => {
+  //     process.once('message', (chunk: CP.DebugServerConfig) => {
+  //       res(chunk);
+  //     });
+  //     /** Wait message for one second at most */
+  //     setTimeout(() => {
+  //       res({});
+  //     }, 8000);
+  //   });
+  // }
   const config = ipcMessage;
   /** Make sure port property exist */
   if (config['port'] === undefined) {
