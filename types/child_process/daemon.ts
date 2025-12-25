@@ -1,5 +1,5 @@
 import {SpawnConfig, SpawnAndTryIpcResponse} from './common';
-import {SocketServerInfo, TcpServerConfig} from '../net';
+import {TcpServerInfo, TcpServerConfig} from '../net';
 
 /**
  * Types for child process of Daemon
@@ -64,14 +64,14 @@ export namespace Daemon {
   }
 
   export interface DaemonConnectStatus {
-    socket?: SocketServerInfo;
+    socket?: TcpServerInfo;
   }
 
   export interface DaemonInfo {
     pid: number;
     config: Omit<DaemonConfig, 'cpConfigList'>;
     status: {
-      connection?: {socket?: Partial<Pick<SocketServerInfo, 'host' | 'port' | 'path'>>};
+      connection?: {socket?: Partial<Pick<TcpServerInfo, 'host' | 'port' | 'path'>>};
     };
     cpInfoList: CpManagerInfo[];
   }
