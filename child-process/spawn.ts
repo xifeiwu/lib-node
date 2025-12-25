@@ -173,10 +173,10 @@ export async function spawnAndTryIpc<CpConfig extends Serializable = any, Respon
   const maxWaitCpResInSec = config.maxWaitCpResInSec ?? config.maxWaitTime4Ipc;
   const childProcess = spawn(command, args, spawnOptions);
   const supportIpc = Boolean(childProcess.send);
-  if (infoToCp && !supportIpc) {
+  if (!supportIpc && [infoToCp, maxWaitCpResInSec].some(it => it !== undefined)) {
     /** Shoule kill child process created when throw Error */
     childProcess.kill();
-    throw new Error(`Please set ipc channel in spawnOption.stdio, or set infoToCp to false.`);
+    throw new Error(`params infoToCp and maxWaitCpResInSec not work while ipc channel is off`);
   }
   /** Send message to child process when supportIpc and infoToCp exist */
   if (supportIpc && infoToCp) {
@@ -229,7 +229,7 @@ export async function spawnAndTryIpc<CpConfig extends Serializable = any, Respon
       rej(err);
     });
   });
-  if (waitIpcMessageOnce) {
+  if (waitResPromise) {
     info.responseFromCp = await waitResPromise;
   }
   return info;
