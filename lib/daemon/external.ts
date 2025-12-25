@@ -32,10 +32,9 @@ export {tryUseJsFile, waitIpcMessageOnce, outOnAllChannels} from '../../child-pr
 export {DAEMON_SOCKET_DIR, SOCKET_FILE_SUFFIX} from '../../service/constants';
 
 // From types
-export {SocketServerInfo, CP, InfoToCp} from '../../types';
+export {CP, InfoToCp, TcpServerInfo, TcpServerConfig} from '../../types';
 // Re-export types used in daemon types
 export {SpawnConfig, SpawnAndTryIpcResponse} from '../../types/child_process/common';
-export {TcpServerInfo, TcpServerConfig} from '../../types/net';
 
 // From external (utility functions)
 export {isNumber, isObject, isPlainObject, isString, waitFor, get} from '../../external';

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import {logColorful, CP, getSocketPath, getSpawnAndIpcConfigByScript} from '../../../index';
-import {startDetachedDaemon} from '../service';
+import {startDetachedDaemon} from '../utils';
 import {SocketClientToDaemon} from '../client';
 import {CpManagerConfig} from '../types';
 
