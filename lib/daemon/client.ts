@@ -1,13 +1,18 @@
 import fs from 'fs';
 import path from 'path';
+import {NetConnectOpts, Socket} from 'net';
 import {
   getFileList,
   startSocketClient,
   oneChatFromSocketClient,
-} from '../../index';
-import {NetConnectOpts, Socket} from 'net';
-import {CP, Daemon, InfoToCp} from '../../types';
-import {DAEMON_SOCKET_DIR, SOCKET_FILE_SUFFIX} from '../../service';
+  DAEMON_SOCKET_DIR,
+  SOCKET_FILE_SUFFIX,
+} from './external';
+import {
+  Command2Daemon,
+  CommandCommon,
+  Command2Process,
+} from './types';
 
 interface CheckSocketActivityConfig {
   closeActive?: boolean;
@@ -63,18 +68,19 @@ export class SocketClientToDaemon {
     this.connectOpts = connectOpts;
   }
   async ping() {
-    return await oneChatFromSocketClient<Daemon.Command2Daemon>({action: 'ping'}, this.connectOpts);
+    return await oneChatFromSocketClient<Command2Daemon>({action: 'ping'}, this.connectOpts);
   }
   async info(id: string) {
-    return await oneChatFromSocketClient<Daemon.CommandCommon>({action: 'info', data: id}, this.connectOpts);
+    return await oneChatFromSocketClient<CommandCommon>({action: 'info', data: id}, this.connectOpts);
   }
-  async start(data?: Daemon.Command2Process['data']) {
-    return await oneChatFromSocketClient<Daemon.Command2Process>({action: 'start', data}, this.connectOpts);
+  async start(data?: Command2Process['data']) {
+    return await oneChatFromSocketClient<Command2Process>({action: 'start', data}, this.connectOpts);
   }
   async stop(id: string) {
-    return await oneChatFromSocketClient<Daemon.CommandCommon>({action: 'stop', data: id}, this.connectOpts);
+    return await oneChatFromSocketClient<CommandCommon>({action: 'stop', data: id}, this.connectOpts);
   }
-  async restart(data?: Daemon.Command2Process['data']) {
-    return await oneChatFromSocketClient<Daemon.Command2Process>({action: 'restart', data}, this.connectOpts);
+  async restart(data?: Command2Process['data']) {
+    return await oneChatFromSocketClient<Command2Process>({action: 'restart', data}, this.connectOpts);
   }
 }
+

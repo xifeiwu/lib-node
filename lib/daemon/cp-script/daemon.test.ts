@@ -1,13 +1,12 @@
-import {CP, Daemon} from '../../types';
-import {logColorful, oneChatFromSocketClient} from '../../index';
-import {spawnAndTryIpc, getSpawnAndIpcConfigByScript} from '../spawn';
+import {DaemonConfig, DaemonInfo, CommandCommon, CpManagerConfig} from '../types';
+import {logColorful, oneChatFromSocketClient, spawnAndTryIpc, getSpawnAndIpcConfigByScript, CP} from '../external';
 
 /**
  * Make sure daemon process is through
  */
 export async function runEmptyDaemon() {
   const daemonKey = 'runEmptyDaemon';
-  const spawnConfig4Daemon = getSpawnAndIpcConfigByScript<Daemon.DaemonConfig>('daemon.ts', {
+  const spawnConfig4Daemon = getSpawnAndIpcConfigByScript<DaemonConfig>('daemon.ts', {
     params: ['runEmptyDaemon'],
     spawnOptions: {stdio: [0, 1, 2, 'ipc']},
     infoToCp: {
@@ -17,12 +16,12 @@ export async function runEmptyDaemon() {
     },
     maxWaitTime4Ipc: 60,
   });
-  const {childProcess, responseFromCp} = await spawnAndTryIpc<Daemon.DaemonConfig, Daemon.DaemonInfo>(
+  const {childProcess, responseFromCp} = await spawnAndTryIpc<DaemonConfig, DaemonInfo>(
     spawnConfig4Daemon
   );
   logColorful({}, responseFromCp);
   const socketPath = responseFromCp.status.connection.socket.path;
-  const infoCommand: Daemon.CommandCommon = {action: 'info'};
+  const infoCommand: CommandCommon = {action: 'info'};
   const socketResponse = await oneChatFromSocketClient(infoCommand, {path: socketPath});
   logColorful({}, socketResponse);
 }
@@ -38,11 +37,11 @@ export async function daemonDebugServer() {
     infoToCp: {},
     maxWaitTime4Ipc: 600,
   });
-  const cpConfig4DebugServer: Daemon.CpManagerConfig = {
+  const cpConfig4DebugServer: CpManagerConfig = {
     ...spawnConfigDebugServer,
     id: daemonKey,
   };
-  const spawnConfig4Daemon = getSpawnAndIpcConfigByScript<Daemon.DaemonConfig>('daemon.ts', {
+  const spawnConfig4Daemon = getSpawnAndIpcConfigByScript<DaemonConfig>('daemon.ts', {
     params: [daemonKey],
     spawnOptions: {stdio: [0, 1, 2, 'ipc']},
     infoToCp: {
@@ -53,7 +52,7 @@ export async function daemonDebugServer() {
     },
     maxWaitTime4Ipc: 600,
   });
-  const {childProcess, responseFromCp} = await spawnAndTryIpc<Daemon.DaemonConfig, Daemon.DaemonInfo>(
+  const {childProcess, responseFromCp} = await spawnAndTryIpc<DaemonConfig, DaemonInfo>(
     spawnConfig4Daemon
   );
   logColorful({}, responseFromCp);
@@ -73,7 +72,7 @@ export async function daemon2DebugServer() {
     infoToCp: {},
     maxWaitTime4Ipc: 600,
   });
-  const spawnConfig4Daemon = getSpawnAndIpcConfigByScript<Daemon.DaemonConfig>('daemon.ts', {
+  const spawnConfig4Daemon = getSpawnAndIpcConfigByScript<DaemonConfig>('daemon.ts', {
     params: [daemonKey],
     spawnOptions: {stdio: [0, 1, 2, 'ipc']},
     infoToCp: {
@@ -87,7 +86,7 @@ export async function daemon2DebugServer() {
     },
     maxWaitTime4Ipc: 600,
   });
-  const {childProcess, responseFromCp} = await spawnAndTryIpc<Daemon.DaemonConfig, Daemon.DaemonInfo>(
+  const {childProcess, responseFromCp} = await spawnAndTryIpc<DaemonConfig, DaemonInfo>(
     spawnConfig4Daemon
   );
   logColorful({}, responseFromCp);

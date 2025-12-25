@@ -2,7 +2,7 @@ import {isNumber, waitFor} from '../../../external';
 import {logColorful} from '../../../log';
 import {CP} from '../../../types';
 
-export function out(value: any) {
+export function outOnAllChannels(value: any) {
   logColorful({}, value);
   if (process.connected && process.send) {
     /** Child process will exit by the error EPipe if the error is not catched here */

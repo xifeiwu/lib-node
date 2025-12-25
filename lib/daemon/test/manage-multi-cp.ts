@@ -1,8 +1,9 @@
 import fs from 'fs';
 import path from 'path';
-import {logColorful, CP, getSocketPath, Daemon, getSpawnAndIpcConfigByScript} from '../../../index';
+import {logColorful, CP, getSocketPath, getSpawnAndIpcConfigByScript} from '../../../index';
 import {startDetachedDaemon} from '../service';
 import {SocketClientToDaemon} from '../client';
+import {CpManagerConfig} from '../types';
 
 function getCpScript(basename: string) {
   const fullpath = path.join(__dirname, basename);
@@ -15,7 +16,7 @@ function getCpScript(basename: string) {
 // const stdio: SpawnOptions['stdio'] = debugMode ? [0, 1, 2, 'ipc'] : ['ignore', 'ignore', 'ignore', 'ipc'];
 
 const debugServer1Id = 'debug-server-1';
-const spawnDebugServer1: Daemon.CpManagerConfig = {
+const spawnDebugServer1: CpManagerConfig = {
   id: debugServer1Id,
   managerConfig: {
     retry: {
@@ -32,7 +33,7 @@ const spawnDebugServer1: Daemon.CpManagerConfig = {
 };
 
 const debugServer2Id = 'debug-server-2';
-const spawnDebugServer2: Daemon.CpManagerConfig = {
+const spawnDebugServer2: CpManagerConfig = {
   id: debugServer2Id,
   // managerConfig: {
   //   retry: {
@@ -109,3 +110,4 @@ export async function stopDaemon() {
   const response = await socketClient.stop(daemonKey);
   logColorful({}, response);
 }
+

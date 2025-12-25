@@ -8,7 +8,7 @@ import {
   htmlUlItems,
   spawnScriptAndTryIpc,
 } from '../../index';
-import {out} from './service/base';
+import {outOnAllChannels} from './service/base';
 import {CP} from '../../types';
 
 // export interface DebugServerInfo extends ChildProcessInfo, CP.DebugServerResponse {}
@@ -93,9 +93,9 @@ export async function start() {
       },
       slaves,
     };
-    out(info);
+    outOnAllChannels(info);
   } catch (err) {
-    out(err.stack);
+    outOnAllChannels(err.stack);
   }
 }
 

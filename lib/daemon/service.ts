@@ -1,11 +1,18 @@
 import path from 'path';
-import {Daemon} from '../../types';
-import {getSpawnConfigByScript, serializeSpawnResponse, spawnAndTryIpc} from '../spawn';
-import {tryUseJsFile} from '../service';
+import {
+  getSpawnConfigByScript,
+  serializeSpawnResponse,
+  spawnAndTryIpc,
+  tryUseJsFile,
+} from './external';
+import {
+  DaemonConfig,
+  DaemonResponse,
+} from './types';
 
 const MAX_WAIT_TIME_DEBUG_MODE = 120;
 export async function startDetachedDaemon(
-  daemonConfig: Daemon.DaemonConfig,
+  daemonConfig: DaemonConfig,
   featureConfig?: {debug?: boolean}
 ) {
   const {id: daemonKey, cpManagerConfigList} = daemonConfig;
@@ -23,15 +30,15 @@ export async function startDetachedDaemon(
       spawnConfig.maxWaitCpResInSec = MAX_WAIT_TIME_DEBUG_MODE;
     }
   }
-  const scriptPath = tryUseJsFile(path.resolve(__dirname, '../cp-script/daemon.ts'));
-  const spawnConfig4Daemon = getSpawnConfigByScript<Daemon.DaemonConfig>(scriptPath, {
+  const scriptPath = tryUseJsFile(path.resolve(__dirname, './cp-script/daemon.ts'));
+  const spawnConfig4Daemon = getSpawnConfigByScript<DaemonConfig>(scriptPath, {
     /** args key is used for killing Zombie Daemon Process */
     params: [daemonKey],
     infoToCp: daemonConfig,
     maxWaitTime4Ipc: MAX_WAIT_TIME_DEBUG_MODE,
     spawnOptions: {stdio: debug ? [0, 1, 2, 'ipc'] : ['ignore', 'ignore', 'ignore', 'ipc']},
   });
-  const spawnResponse = await spawnAndTryIpc<Daemon.DaemonConfig, Daemon.DaemonResponse>(spawnConfig4Daemon);
+  const spawnResponse = await spawnAndTryIpc<DaemonConfig, DaemonResponse>(spawnConfig4Daemon);
   const {childProcess, responseFromCp} = spawnResponse;
   if (responseFromCp.type === 'error') {
     console.log(responseFromCp.data);
@@ -45,3 +52,4 @@ export async function startDetachedDaemon(
   // console.log(responseFromCp instanceof Error);
   return serializeSpawnResponse(spawnResponse);
 }
+

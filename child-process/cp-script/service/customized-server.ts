@@ -1,5 +1,5 @@
 import {listAUsingUl, toNormalizedUrlProps} from '../../../external';
-import {handleCpCustomization, out} from './base';
+import {handleCpCustomization, outOnAllChannels} from './base';
 import {getAFreePort} from '../../../net';
 import {responseHttpRequestInfo, startHttpServer} from '../../../http';
 import {convertToBuffer} from '../../../transform';
@@ -80,9 +80,9 @@ export async function startCustomizedServer() {
           {port: config[key]}
         );
         const info: CP.DebugServerResponse = {origin, host, port};
-        out(info);
+        outOnAllChannels(info);
       } catch (err) {
-        out(err.message);
+        outOnAllChannels(err.message);
       }
     } else {
       await handleCpCustomization(config, key);
