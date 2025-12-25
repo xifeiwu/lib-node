@@ -28,7 +28,10 @@ export async function waitIpcMessageOnce<T = any>(config?: {
 }) {
   const {p = process, maxWaitInSec} = config ?? {};
   let ipcMessage: T;
-  if (!p.send) {
+  // if (process.env.spawnBy !== 'node') {
+  //   return undefined;
+  // }
+  if (!p.connected || !p.send) {
     return undefined;
   }
   let timeoutTag: NodeJS.Timeout;

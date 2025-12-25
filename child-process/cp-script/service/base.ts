@@ -30,3 +30,15 @@ export async function handleCpCustomization(config?: CP.CpCustomization, key?: s
     return;
   }
 }
+
+export function getErrorResponse(err: Error | string) {
+  let message = err as string;
+  if (err instanceof Error) {
+    message = err.stack ? err.stack : err.message;
+  }
+  const errorResponse = {
+    type: 'error',
+    data: message,
+  };
+  return errorResponse;
+}
