@@ -9,7 +9,7 @@ export interface TsNodeOptions {
 }
 interface CommonSpawnOptions {
   spawnOptions?: SpawnOptions;
-  /** Only when child proces not exit or close after minUptime seconds, the spawn is success */
+  /** Only when child proces not exit or close after minUptime seconds, the spawn is considered as success */
   minUptime?: number;
 }
 

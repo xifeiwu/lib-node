@@ -3,6 +3,7 @@ import {getAFreePort} from '../../../net';
 import {startHttpDebugServer} from '../../../http';
 import {CP} from '../../../types';
 import {waitIpcMessageOnce} from '../../service';
+import {getProcessInfoByInst} from '../../../process';
 
 /**
  * This is a http server target to run on child process to explore feature of child_process
@@ -18,8 +19,17 @@ export async function startDebugServer() {
     if (key === 'port') {
       try {
         const serverInfo = await startHttpDebugServer(config, {logRequestHeaderInfo: 'black'});
+        const {host, port, origin} = serverInfo;
         delete serverInfo['server'];
-        outOnAllChannels(serverInfo);
+        outOnAllChannels({
+          serverInfo: {
+            host,
+            port,
+            origin,
+            config: serverInfo.config,
+          },
+          processInfo: getProcessInfoByInst(process),
+        });
       } catch (err) {
         outOnAllChannels(getErrorResponse(err));
       }

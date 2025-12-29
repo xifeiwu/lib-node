@@ -1,5 +1,7 @@
 import {Server} from 'net';
 import {InfoToCp, SerializableSpawnInfo, SpawnConfig, SpawnAndTryIpcResponse} from './common';
+import {HttpServerConfig} from '../http';
+import {ProcessInfo} from '../process';
 
 /**
  * Type for ts script run in child process
@@ -25,6 +27,15 @@ export namespace CP {
   /** Config and Info for script debug-server.ts */
   export interface DebugServerConfig extends CpCustomization {
     port?: number;
+  }
+  export interface DebugServerIpcResponse {
+    serverInfo: {
+      host: string;
+      port: number;
+      origin: string;
+      config: HttpServerConfig;
+    };
+    processInfo: ProcessInfo;
   }
   export interface DebugServerResponse {
     origin: string;

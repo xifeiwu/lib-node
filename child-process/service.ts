@@ -1,5 +1,4 @@
 import fs from 'fs';
-import {InfoToCp} from '../types';
 import {isNumber} from '../external';
 import {ChildProcess} from 'child_process';
 
@@ -18,9 +17,9 @@ export function tryUseJsFile(scriptPath: string) {
 }
 
 /**
- * Child Process wait ipc message frm Parent Process.
- * @param config
- * @returns
+ * Wait for ipc message once, until maxWaitInSec elapsed.
+ * One point need to take care about is when maxWaitInSec is passed, the whole process will be 
+ * blocked for maxWaitInSec seconds if message event is not triggered on process
  */
 export async function waitIpcMessageOnce<T = any>(config?: {
   p?: NodeJS.Process | ChildProcess;
