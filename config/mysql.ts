@@ -12,7 +12,7 @@ interface GeneralConfig {
     root: 'mysql';
     project: 'assist';
     explorer: 'explore' | 'employees' | 'employees2';
-    portaldb: 'portaldb_penguin' | 'portaldb_turtle';
+    portaldb: 'portaldb_penguin' | 'portaldb_turtle' | 'portaldb_lion';
   };
   elif: {
     root: 'mysql';
@@ -68,7 +68,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, RELOAD, SHUTDOWN, PROCESS, R
 const DB_INFO: DBInfo = {
   local: {
     root: {
-      password: 'local__mysql',
+      password: 'local_mysql',
       databaseList: ['mysql'],
     },
     explorer: {
@@ -81,7 +81,7 @@ const DB_INFO: DBInfo = {
     },
     portaldb: {
       password: 'portaldb',
-      databaseList: ['portaldb_penguin', 'portaldb_turtle'],
+      databaseList: ['portaldb_penguin', 'portaldb_turtle', 'portaldb_lion'],
     },
   },
   elif: {
