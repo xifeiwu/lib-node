@@ -27,7 +27,7 @@ export class Daemon {
   /**
    * If daemon run as a seperate child process, it must have at least one connection channel
    */
-  async startConnectionServer() {
+  private async startConnectionServer() {
     const {id: daemonKey, connection} = this.config;
     const {socketConfig} = connection ?? {};
     let finalSocketConfig = socketConfig;

@@ -1,5 +1,5 @@
-import {DaemonConfig, DaemonInfo, CommandCommon, CpManagerConfig} from '../types';
-import {logColorful, oneChatFromSocketClient, spawnAndTryIpc, getSpawnAndIpcConfigByScript, CP} from '../external';
+import {DaemonConfig, DaemonInfo, CommandCommon, CpManagerConfig} from '../../types';
+import {logColorful, oneChatFromSocketClient, spawnAndTryIpc, getSpawnAndIpcConfigByScript, CP} from '../../external';
 
 /**
  * Make sure daemon process is through

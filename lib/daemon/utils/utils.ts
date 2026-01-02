@@ -1,18 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import {NetConnectOpts, Socket} from 'net';
-import {
-  getFileList,
-  startSocketClient,
-  oneChatFromSocketClient,
-  DAEMON_SOCKET_DIR,
-  SOCKET_FILE_SUFFIX,
-} from './external';
-import {
-  Command2Daemon,
-  CommandCommon,
-  Command2Process,
-} from './types';
+import {Socket} from 'net';
+import {getFileList, startSocketClient, DAEMON_SOCKET_DIR, SOCKET_FILE_SUFFIX} from '../external';
 
 interface CheckSocketActivityConfig {
   closeActive?: boolean;
@@ -61,26 +50,3 @@ export async function checkDaemonSocketActivityByDir(dirname?: string, config?: 
   }
   return {active, deactive};
 }
-
-export class SocketClientToDaemon {
-  connectOpts: NetConnectOpts;
-  constructor(connectOpts: NetConnectOpts) {
-    this.connectOpts = connectOpts;
-  }
-  async ping() {
-    return await oneChatFromSocketClient<Command2Daemon>({action: 'ping'}, this.connectOpts);
-  }
-  async info(id: string) {
-    return await oneChatFromSocketClient<CommandCommon>({action: 'info', data: id}, this.connectOpts);
-  }
-  async start(data?: Command2Process['data']) {
-    return await oneChatFromSocketClient<Command2Process>({action: 'start', data}, this.connectOpts);
-  }
-  async stop(id: string) {
-    return await oneChatFromSocketClient<CommandCommon>({action: 'stop', data: id}, this.connectOpts);
-  }
-  async restart(data?: Command2Process['data']) {
-    return await oneChatFromSocketClient<Command2Process>({action: 'restart', data}, this.connectOpts);
-  }
-}
-

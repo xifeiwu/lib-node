@@ -1,7 +1,7 @@
-import {DaemonConfig} from '../types';
-import {waitIpcMessageOnce, outOnAllChannels} from '../external';
-import {Daemon} from '../daemon';
-import {getErrorResponse} from '../service';
+import {DaemonConfig} from '../../types';
+import {waitIpcMessageOnce, outOnAllChannels} from '../../external';
+import {Daemon} from '../../daemon';
+import {getErrorResponse} from '../../service';
 
 async function start() {
   try {

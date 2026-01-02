@@ -15,7 +15,7 @@ export {oneChatFromSocketClient, startOneChatSocketServer} from '../../net/one-c
 export {fromBuffer} from '../../transform/buffer';
 
 // From process
-export {killProcessByPid} from '../../process/service/info';
+export {killProcessByPid} from '../../process/service';
 
 // From child-process/spawn
 export {
