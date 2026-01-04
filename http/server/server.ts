@@ -1,8 +1,8 @@
 import {Socket} from 'net';
-import http, {RequestListener, ServerOptions} from 'http';
+import http, {RequestListener} from 'http';
 import https from 'https';
 import {IncomingMessage} from 'http';
-import {HttpServerConfig, LogColors} from '../../types';
+import {HttpServerConfig, HttpsServerConfig, LogColors} from '../../types';
 import {getAFreePort, isOverTls, watchSocketState} from '../../net';
 import {getHttpRequestHeaderPartInfo, handleConnectEvent} from './service';
 import {
@@ -15,43 +15,27 @@ import {
   responseServerEnv,
 } from './utils';
 import {logColorful} from '../../log';
-import {listAUsingUl, toNormalizedUrlProps, unifyNull} from '../../external';
+import {listAUsingUl, toNormalizedUrlProps} from '../../external';
 import {httpResponseInfoToBuffer} from '../tcp';
 
-function createServer(options: HttpServerConfig['options']) {
-  if (isOverTls(options)) {
-    return https.createServer(options);
-  } else {
-    return http.createServer(options as ServerOptions);
-  }
+interface ServerHandler {
+  request?: RequestListener;
+  upgrade?: (req: IncomingMessage, socket: Socket, head: Buffer) => void;
+  connect?: (req: IncomingMessage, socket: Socket, head: Buffer) => void;
+  connection?: (socket: Socket) => void;
 }
-export async function startHttpServer(
-  handler: {
-    request?: RequestListener;
-    upgrade?: (req: IncomingMessage, socket: Socket, head: Buffer) => void;
-    connect?: (req: IncomingMessage, socket: Socket, head: Buffer) => void;
-    connection?: (socket: Socket) => void;
-  },
-  config?: HttpServerConfig
-) {
+
+function wrapServer(server: http.Server | https.Server, handler: ServerHandler) {
   const {
     request: handleRequest,
     upgrade: handleUpgrade,
     connect: handleConnect,
     connection: handleConnection,
   } = handler;
-  const {host = '0.0.0.0', port = await getAFreePort(), options} = config ?? {};
-  return new Promise<{
-    origin: string;
-    host: string;
-    port: number;
-    server: http.Server;
-  }>((res, rej) => {
+  return new Promise<boolean>((res, rej) => {
     try {
-      const server = createServer(options).listen(port, host);
-      const origin = `${isOverTls(options) ? 'https' : 'http'}://${host}:${port}`;
       server.on('listening', () => {
-        res({host, port, origin, server});
+        res(true);
       });
       handleConnection && server.on('connection', handleConnection);
       handleRequest && server.on('request', handleRequest);
@@ -64,6 +48,47 @@ export async function startHttpServer(
       rej(err);
     }
   });
+}
+
+export async function startHttpServer(
+  handler: ServerHandler,
+  config?: HttpServerConfig
+): Promise<{
+  origin: string;
+  host: string;
+  port: number;
+  server: http.Server;
+}> {
+  const {host = '0.0.0.0', port = await getAFreePort(), options} = config ?? {};
+  const server = http.createServer(options).listen(port, host);
+  await wrapServer(server, handler);
+  const origin = `http://${host}:${port}`;
+  return {
+    host,
+    port,
+    origin,
+    server,
+  };
+}
+export async function startHttpsServer(
+  handler: ServerHandler,
+  config?: HttpsServerConfig
+): Promise<{
+  origin: string;
+  host: string;
+  port: number;
+  server: https.Server;
+}> {
+  const {host = '0.0.0.0', port = await getAFreePort(), options} = config ?? {};
+  const server = https.createServer(options).listen(port, host);
+  await wrapServer(server, handler);
+  const origin = `https://${host}:${port}`;
+  return {
+    host,
+    port,
+    origin,
+    server,
+  };
 }
 
 export enum DebugServerPathname {
@@ -105,11 +130,11 @@ export async function startHttpDebugServer(
       return {
         href: pathname,
         text: pathname,
-        desc
+        desc,
       };
     }),
   });
-  
+
   const {host, port, origin, server} = await startHttpServer(
     {
       async request(request, response) {
