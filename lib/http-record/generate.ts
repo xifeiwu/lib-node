@@ -13,7 +13,7 @@ import {selectFileAndGetExports} from '../../utils';
 import {SendRequestWithResponseInfoResult} from '../../types';
 import {getHashDigest} from '../../crypto';
 import {convertToBuffer} from '../../transform';
-import {makeSureDirExist} from '../../path';
+import {makeSureDirExistForFile} from '../../path';
 
 export function convertObjectToCjsContent<T extends HttpRecordContent>(info: T) {
   const lines = Object.entries(info).map(([key, value]) => {
@@ -58,7 +58,7 @@ function getFullPath(
   if (!finalPath) {
     throw new Error(`Can not generate full path by options provided`);
   }
-  makeSureDirExist(finalPath);
+  makeSureDirExistForFile(finalPath);
   return finalPath;
 }
 

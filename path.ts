@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import {FilePathSegement} from './types';
 import {formatDate, getDtStrInFormat} from './external';
+import {isFileExist} from './fs';
 
 export function parseBasename(basename: string) {
   const extname = path.extname(basename);
@@ -109,27 +110,35 @@ export function isDirExistForFile(fullPath: string) {
 }
 
 /**
- * Make sure @param fullPath exist
- * fullPath can be a path to file or dir
+ * @param dirpath
+ * if dirpath not exist, create this dir. if dirpath exist but is not a directory, throw Error
  */
 export function makeSureDirExist(
-  fullPath: string,
+  dirpath: string,
+  /**
+   * @deprecated will deprecate options
+   */
   options?: {
+    /**
+     * @deprecated will deprecate options
+     */
     isDir?: boolean;
   }
 ) {
-  const {isDir} = options ?? {};
-  const dir = isDir ? fullPath : getDir(fullPath);
-  const dirExist = fs.existsSync(dir);
-  if (!dirExist) {
-    const res = fs.mkdirSync(dir, {recursive: true});
-    return res;
+  const stat = isFileExist(dirpath);
+  if (!stat) {
+    fs.mkdirSync(dirpath, {recursive: true});
+    return true;
   }
+  if (!stat.isDirectory()) {
+    throw new Error(`dir(${dirpath}) exist but is not a directory`);
+  }
+  return true;
 }
 /**
  * Make sure dirPath of @param filePath exist
  */
 export function makeSureDirExistForFile(filePath: string) {
   const {dirname} = getFilePathInfo(filePath);
-  return makeSureDirExist(dirname, {isDir: true});
+  return makeSureDirExist(dirname);
 }
