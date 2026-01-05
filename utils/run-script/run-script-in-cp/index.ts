@@ -8,6 +8,7 @@ import {
   tryUseJsFile,
 } from '../../../child-process';
 import {logColorful} from '../../../log';
+import {RunScriptInCpParams} from './types';
 /**
  * make sure ./child.ts is compiled to child.js also
  * NOTICE: Remove the import here as this file will run anyway and will block the existing of process
@@ -25,7 +26,7 @@ const defaultTsNodeOptions: TsNodeOptions = {
  * Get ts-node options by targetScript
  * Run cp
  */
-export async function runTsScriptInCP(targetScript: string, options?: RunScriptInCPOptions) {
+export async function runScriptInCP(targetScript: string, options?: RunScriptInCPOptions) {
   const {
     dryRun,
     preScript,
@@ -47,7 +48,7 @@ export async function runTsScriptInCP(targetScript: string, options?: RunScriptI
    * args: [-r, node/start/feature/node_modules/tsconfig-paths/register.js, --project, node/start/feature/tsconfig.json, --swc, /Users/wuxifei/code/node/start/feature/1-js/object/defineProperty/get-set.ts]
    */
   const spawnAndIpcConfig = getSpawnConfigByScript<TsNodeOptions>(targetScript, {
-    runtimeOptions: targetIsTsFile ? (tsNodeOptions ?? defaultTsNodeOptions) : {},
+    runtimeOptions: targetIsTsFile ? tsNodeOptions ?? defaultTsNodeOptions : {},
   });
   const {command, args} = spawnAndIpcConfig;
 
@@ -76,6 +77,11 @@ export async function runTsScriptInCP(targetScript: string, options?: RunScriptI
   }
 
   process.stdin.setRawMode(false);
+  const infoToCp: RunScriptInCpParams = {
+    scriptPath: targetScript,
+    runScriptOptions,
+    preScript,
+  };
   const response = await spawnAndTryIpc({
     command: finalCommand,
     args: finalArgs,
@@ -88,9 +94,7 @@ export async function runTsScriptInCP(targetScript: string, options?: RunScriptI
         SPAWNED_BY: __filename,
       },
     },
-    infoToCp: {
-      config: [targetScript, runScriptOptions],
-    },
+    infoToCp,
     maxWaitTime4Ipc: 30,
   });
   const {childProcess} = response;

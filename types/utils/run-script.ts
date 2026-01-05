@@ -14,13 +14,10 @@ export interface RunScriptOptions extends GetFuncNameOptions {
 }
 
 export interface RunScriptInCPOptions {
-  spawnOptions?: SpawnOptions;
-  tsNodeOptions?: TsNodeOptions;
   dryRun?: boolean;
   /** run this scritp before main script, to do some pre logic */
   preScript?: string;
+  spawnOptions?: SpawnOptions;
+  tsNodeOptions?: TsNodeOptions;
   runScriptOptions?: RunScriptOptions;
 }
-
-// [scriptPath, RunScriptExportOptions]
-export type RunScriptParams = [string, RunScriptOptions];

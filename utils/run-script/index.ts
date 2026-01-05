@@ -1,2 +1,2 @@
 export {runScriptByPath} from './run-script-by-path';
-export {runTsScriptInCP} from './run-in-cp/main';
+export {runScriptInCP as runTsScriptInCP} from './run-script-in-cp';

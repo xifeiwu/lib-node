@@ -1,6 +1,9 @@
+import fs from 'fs';
+import path from 'path';
 import {logColorful} from '../../../log';
-import {InfoToCp, RunScriptOptions, RunScriptParams} from '../../../types';
+import {RunScriptOptions} from '../../../types';
 import {runScriptByPath} from '../run-script-by-path';
+import {RunScriptInCpParams} from './types';
 
 const TAG = 'OUT_OF_FUNCTION';
 
@@ -8,10 +11,10 @@ const TAG = 'OUT_OF_FUNCTION';
  * This script works together with main.ts, it can't be used directly
  */
 export async function start() {
-  let ipcMessage: InfoToCp<RunScriptParams>;
+  let ipcMessage: RunScriptInCpParams;
   if (process.send) {
-    ipcMessage = await new Promise<InfoToCp<RunScriptParams>>(res => {
-      process.once('message', (chunk: InfoToCp<RunScriptParams>) => {
+    ipcMessage = await new Promise<RunScriptInCpParams>(res => {
+      process.once('message', (chunk: RunScriptInCpParams) => {
         res(chunk);
       });
       /** Wait message for one second at most */
@@ -27,9 +30,13 @@ export async function start() {
    */
   let scriptPath: string;
   let options: RunScriptOptions;
+  let preScript: string;
   if (ipcMessage) {
-    const {config} = ipcMessage;
-    [scriptPath, options] = config;
+    scriptPath = ipcMessage.scriptPath;
+    options = ipcMessage.runScriptOptions;
+    if (ipcMessage.preScript) {
+      preScript = path.resolve(process.cwd(), ipcMessage.preScript);
+    }
   } else {
     [, , scriptPath] = process.argv;
     options = {
@@ -48,6 +55,14 @@ export async function start() {
   }
 
   try {
+    if (preScript !== undefined) {
+      if (!fs.existsSync(preScript)) {
+        throw new Error(`preScript not exist: ${preScript}`);
+      }
+      await runScriptByPath(preScript, {
+        selectExportedFunc: false,
+      });
+    }
     const result = await runScriptByPath(scriptPath, options);
     console.log('');
     console.log(TAG);
