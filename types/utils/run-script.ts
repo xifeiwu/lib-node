@@ -17,6 +17,8 @@ export interface RunScriptInCPOptions {
   spawnOptions?: SpawnOptions;
   tsNodeOptions?: TsNodeOptions;
   dryRun?: boolean;
+  /** run this scritp before main script, to do some pre logic */
+  preScript?: string;
   runScriptOptions?: RunScriptOptions;
 }
 

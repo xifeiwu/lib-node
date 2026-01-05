@@ -28,6 +28,7 @@ const defaultTsNodeOptions: TsNodeOptions = {
 export async function runTsScriptInCP(targetScript: string, options?: RunScriptInCPOptions) {
   const {
     dryRun,
+    preScript,
     spawnOptions: {env = {}, ...restSpawnOptions} = {},
     tsNodeOptions,
     runScriptOptions,
@@ -41,12 +42,12 @@ export async function runTsScriptInCP(targetScript: string, options?: RunScriptI
   const targetIsTsFile = extname === '.ts';
 
   /**
-   * get command and args by targetScript:
+   * get command and args for targetScript:
    * command: ts-node
    * args: [-r, node/start/feature/node_modules/tsconfig-paths/register.js, --project, node/start/feature/tsconfig.json, --swc, /Users/wuxifei/code/node/start/feature/1-js/object/defineProperty/get-set.ts]
    */
   const spawnAndIpcConfig = getSpawnConfigByScript<TsNodeOptions>(targetScript, {
-    runtimeOptions: targetIsTsFile ? tsNodeOptions ?? defaultTsNodeOptions : {},
+    runtimeOptions: targetIsTsFile ? (tsNodeOptions ?? defaultTsNodeOptions) : {},
   });
   const {command, args} = spawnAndIpcConfig;
 

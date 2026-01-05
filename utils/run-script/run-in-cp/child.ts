@@ -1,6 +1,6 @@
 import {logColorful} from '../../../log';
 import {InfoToCp, RunScriptOptions, RunScriptParams} from '../../../types';
-import {runTsScript} from '../run-ts-script';
+import {runScriptByPath} from '../run-script-by-path';
 
 const TAG = 'OUT_OF_FUNCTION';
 
@@ -48,7 +48,7 @@ export async function start() {
   }
 
   try {
-    const result = await runTsScript(scriptPath, options);
+    const result = await runScriptByPath(scriptPath, options);
     console.log('');
     console.log(TAG);
     console.log(result);

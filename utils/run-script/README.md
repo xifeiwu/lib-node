@@ -1,4 +1,6 @@
-## Intro
+## Target
+
+Support run .ts/.js file in any project,
 
 run ts script by providing script path.
 

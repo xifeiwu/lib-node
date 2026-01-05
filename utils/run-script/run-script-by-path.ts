@@ -78,9 +78,10 @@ async function handleClass(Module: {new (): any; prototype: any}, functionAndPar
 }
 
 /**
- * run exported function from .ts/.js file
+ * Run .ts/.js script by script path
+ * For .ts, it can only run script in same project, as different project use different ts-node params
  */
-export async function runTsScript(scriptPath: string, options?: RunScriptOptions) {
+export async function runScriptByPath(scriptPath: string, options?: RunScriptOptions) {
   const {selectExportedFunc, funcName, funcParams} = options ?? {};
   const fullPath = path.resolve(process.cwd(), scriptPath);
   if (!fs.existsSync(fullPath)) {
