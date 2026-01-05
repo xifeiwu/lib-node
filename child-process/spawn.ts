@@ -171,7 +171,7 @@ export async function spawnAndTryIpc<CpConfig extends Serializable = any, Respon
 ): Promise<SpawnAndTryIpcResponse<ResponseFromCp>> {
   const {command, args, spawnOptions, minUptime = 0, infoToCp} = config;
   const maxWaitCpResInSec = config.maxWaitCpResInSec ?? config.maxWaitTime4Ipc;
-  const childProcess = spawn(command, args, {...spawnOptions, env: {...process.env, spawnBy: 'node'}});
+  const childProcess = spawn(command, args, {...spawnOptions});
   const supportIpc = Boolean(childProcess.connected && childProcess.send);
   if (!supportIpc && [infoToCp, maxWaitCpResInSec].some(it => it !== undefined)) {
     /** Shoule kill child process created when throw Error */
