@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import {logColorful} from '../../../log';
 import {RunScriptOptions} from '../../../types';
-import {runScriptByPath} from '../run-script-by-path';
+import {runScriptOnNode} from '../run-script';
 import {RunScriptInCpParams} from './types';
 
 const TAG = 'OUT_OF_FUNCTION';
@@ -62,12 +62,12 @@ export async function start() {
       /**
        * the main script should run after the end of pre-script, so selectExportedFunc should be set true
        */
-      await runScriptByPath(preScript, {
+      await runScriptOnNode(preScript, {
         selectExportedFunc: true,
         runTheOnlyFuncDirectly: true,
       });
     }
-    const result = await runScriptByPath(scriptPath, options);
+    const result = await runScriptOnNode(scriptPath, options);
     console.log('');
     console.log(TAG);
     console.log(result);
