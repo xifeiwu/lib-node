@@ -68,7 +68,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, RELOAD, SHUTDOWN, PROCESS, R
 const DB_INFO: DBInfo = {
   local: {
     root: {
-      password: 'local_mysql',
+      password: 'local--mysql',
       databaseList: ['mysql'],
     },
     explorer: {
