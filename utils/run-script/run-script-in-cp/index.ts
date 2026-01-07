@@ -39,7 +39,7 @@ export async function runScriptInCP(targetScript: string, options?: RunScriptInC
   if (!['.ts', '.js'].includes(extname)) {
     throw new Error(`Can only run .ts or .js script`);
   }
-  const mainScript = tryUseJsFile(path.join(__dirname, 'child.ts'));
+  const mainScript = tryUseJsFile(path.join(__dirname, 'cp-script.ts'));
   const targetIsTsFile = extname === '.ts';
 
   /**

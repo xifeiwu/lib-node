@@ -59,8 +59,12 @@ export async function start() {
       if (!fs.existsSync(preScript)) {
         throw new Error(`preScript not exist: ${preScript}`);
       }
+      /**
+       * the main script should run after the end of pre-script, so selectExportedFunc should be set true
+       */
       await runScriptByPath(preScript, {
-        selectExportedFunc: false,
+        selectExportedFunc: true,
+        runTheOnlyFuncDirectly: true,
       });
     }
     const result = await runScriptByPath(scriptPath, options);
