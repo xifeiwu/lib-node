@@ -1,9 +1,9 @@
 import fs from 'fs';
 import path from 'path';
-import {logColorful, CP, getSocketPath, getSpawnAndIpcConfigByScript} from '../../../index';
-import {startDetachedDaemon} from '../utils/server';
-import {SocketClientToDaemon} from '../utils/client';
-import {CpManagerConfig} from '../types';
+import {logColorful, CP, getSocketPath, getSpawnAndIpcConfigByScript} from '../../../../index';
+import {startDetachedDaemon} from '../../utils/server';
+import {SocketClientToDaemon} from '../../utils/client';
+import {CpManagerConfig} from '../../types';
 
 function getCpScript(basename: string) {
   const fullpath = path.join(__dirname, basename);

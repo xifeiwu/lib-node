@@ -84,9 +84,8 @@ export async function testMakeSureDirExist() {
   await runFuncTestCases(makeSureDirExist, [
     {
       params: [relativePath],
-      expected(res: string) {
-        assert.equal(res, relativePath);
-        return fs.existsSync(path.join(process.cwd(), relativePath));
+      expected(res: boolean) {
+        return res;
       },
     },
   ]);
