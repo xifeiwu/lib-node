@@ -1,37 +1,29 @@
 import path from 'path';
 import {getFileList} from '../../fs';
 import {parseBasename} from '../../path';
-import {selectOption} from '../../readline';
 
-export {outOnAllChannels} from './service/base';
+export {outOnAllChannels} from './service';
 
-export async function getFullPathOfCpScript(
-  basename: 'io-test' | 'debug-server' | 'io-transparent' | 'customized-http-server',
+export function getFullPathOfCpScript(
+  basename: 'chat' | 'debug-server' | 'io-transparent',
   options?: {
+    /** try js first if exist */
     tryJsFirst?: boolean;
   }
 ) {
   const {tryJsFirst} = options ?? {};
-  const scriptList = await getFileList(__dirname, {
+  const cpScriptDir = __dirname;
+  const scriptList = getFileList(cpScriptDir, {
     fileFilter({basename}) {
       const {bareBasename, extname} = parseBasename(basename);
-      return (
-        ['.ts', '.js'].includes(extname) &&
-        !bareBasename.endsWith('.test') &&
-        !['service'].includes(bareBasename)
-      );
+      return ['.ts', '.js'].includes(extname) && !bareBasename.endsWith('.test');
     },
+    maxDepth: 1,
   });
-  const bareBasenameList = scriptList.map(it => parseBasename(it).bareBasename);
-  let target: string;
-  if (bareBasenameList.includes(basename)) {
-    basename += tryJsFirst ? '.js' : '.ts';
-  }
-  if (scriptList.includes(basename)) {
-    target = basename;
-  }
+  const preferredScriptList = (tryJsFirst ? ['.js', '.ts'] : ['.ts', '.js']).map(it => `${basename}${it}`);
+  const target = scriptList.find(it => preferredScriptList.includes(it));
   if (!target) {
-    ({label: target} = await selectOption(scriptList.map(it => ({label: it}))));
+    throw new Error(`Script ${basename} not found`);
   }
-  return path.resolve(__dirname, target);
+  return path.resolve(cpScriptDir, target);
 }

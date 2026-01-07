@@ -8,7 +8,7 @@ import {
   htmlUlItems,
   spawnScriptAndTryIpc,
 } from '../../index';
-import {outOnAllChannels} from './service/base';
+import {outOnAllChannels} from './service';
 import {CP} from '../../types';
 
 // export interface DebugServerInfo extends ChildProcessInfo, CP.DebugServerResponse {}

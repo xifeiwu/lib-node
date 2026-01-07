@@ -1,4 +1,4 @@
-import {getErrorResponse, handleCpCustomization, outOnAllChannels} from './base';
+import {getErrorResponse, handleCpCustomization, outOnAllChannels} from '.';
 import {getAFreePort} from '../../../net';
 import {startHttpDebugServer} from '../../../http';
 import {CP} from '../../../types';

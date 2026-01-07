@@ -65,10 +65,6 @@ export {
   getSequenceMatcher,
   isAsyncFunction,
   getDtStrInFormat,
-  getChatter,
-  ChatMiddleware,
-  ChatReq,
-  ChatRes,
 } from '../fe/common';
 export {AstAOptions, listAUsingUl} from '../fe/lib/html-parser';
 
