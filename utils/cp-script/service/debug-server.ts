@@ -2,7 +2,7 @@ import {getErrorResponse, handleCpCustomization, outOnAllChannels} from './base'
 import {getAFreePort} from '../../../net';
 import {startHttpDebugServer} from '../../../http';
 import {CP} from '../../../types';
-import {waitIpcMessageOnce} from '../../service';
+import {waitIpcMessageOnce} from '../../../child-process/service';
 import {getProcessInfoByInst} from '../../../process';
 
 /**

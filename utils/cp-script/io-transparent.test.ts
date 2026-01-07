@@ -1,5 +1,5 @@
 import path from 'path';
-import {spawnScript} from '../spawn';
+import {spawnScript} from '../../../child-process/spawn';
 import {logColorful} from '../../log';
 
 export async function run() {

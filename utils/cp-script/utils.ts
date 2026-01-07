@@ -3,6 +3,8 @@ import {getFileList} from '../../fs';
 import {parseBasename} from '../../path';
 import {selectOption} from '../../readline';
 
+export {outOnAllChannels} from './service/base';
+
 export async function getFullPathOfCpScript(
   basename: 'io-test' | 'debug-server' | 'io-transparent' | 'customized-http-server',
   options?: {
