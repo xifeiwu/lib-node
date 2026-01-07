@@ -1,6 +1,10 @@
 import {ChildProcess, SpawnOptions} from 'child_process';
 
-/** Existing key with a null value means should give a default value by program */
+/**
+ * Explain the type: string | null
+ * string: we can get the value at start of logic, pass a string
+ * null means we can't get the value at start, and it can be inferred from script path in later phase
+ */
 export interface TsNodeOptions {
   '-r'?: string | null;
   '--project'?: string | null;
