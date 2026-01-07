@@ -4,7 +4,7 @@ import {parseBasename} from '../../path';
 import {selectOption} from '../../readline';
 
 export async function getFullPathOfCpScript(
-  basename: 'debug-server' | 'io-transparent' | 'customized-http-server',
+  basename: 'io-test' | 'debug-server' | 'io-transparent' | 'customized-http-server',
   options?: {
     tryJsFirst?: boolean;
   }
