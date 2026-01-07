@@ -1,12 +1,13 @@
 import readline from 'readline';
-import {isNumber, isObject, isString} from './external';
-import {coloringContent, inspect, loggableContentToStr, toContentWithStyle} from './log';
+import {isNumber} from './external';
+import {coloringContent, loggableContentToStr, toContentWithStyle} from './log';
 import {ColorStyle, ContentWitStyle, LoggableContent} from './types';
 
 export async function showQuestionAndGetAnswer(question: string, defaultAnswer?: string): Promise<string> {
   const interact = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
+    // terminal: false,
   });
   const answer = await new Promise<string>(res => {
     interact.question(question, (answer: string) => {
