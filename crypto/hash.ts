@@ -1,34 +1,54 @@
-import {BinaryToTextEncoding, createHash} from 'crypto';
-import {isReadable, Readable} from 'stream';
+import {BinaryLike, BinaryToTextEncoding, createHash, createHmac, Hash, Hmac, KeyObject} from 'crypto';
+import {Readable} from 'stream';
 import {toReadable} from '../stream';
 import {CanConvertToBuffer} from '../types';
 import {convertToBuffer} from '../transform';
 import {getSubstring} from '../external';
 
-type hashAlgorithm = 'sha1' | 'md5' | 'sha256';
-interface GetHashOptions {
-  algorithm: hashAlgorithm;
+type digestAlgorithm = 'sha1' | 'md5' | 'sha256';
+interface GetDigestOptions {
+  algorithm: digestAlgorithm;
   encode?: BinaryToTextEncoding;
   maxDigestLength?: number;
 }
-const DEFAULT_ALGORITHM: GetHashOptions['algorithm'] = 'sha1';
-const DEFAULT_ENCODE: GetHashOptions['encode'] = 'base64url';
-/**
- * @deprecated by hashData
- */
-export async function hashStream(data: Readable | CanConvertToBuffer, config: GetHashOptions) {
-  const {algorithm = DEFAULT_ALGORITHM, encode = DEFAULT_ENCODE, maxDigestLength} = config;
-  const hash = createHash(algorithm);
+const DEFAULT_ALGORITHM: GetDigestOptions['algorithm'] = 'sha1';
+const DEFAULT_ENCODE: GetDigestOptions['encode'] = 'base64url';
+
+function getDigest(
+  inst: Hash | Hmac,
+  data: CanConvertToBuffer,
+  options?: Omit<GetDigestOptions, 'algorithm'>
+) {
+  const {encode = DEFAULT_ENCODE, maxDigestLength} = options ?? {};
+  inst.update(convertToBuffer(data));
+  const result = inst.digest(encode);
+  return getSubstring(result, maxDigestLength);
+}
+
+function getDigestFromReadable(
+  inst: Hash | Hmac,
+  data: Readable | CanConvertToBuffer,
+  options?: Omit<GetDigestOptions, 'algorithm'>
+) {
+  const {encode = DEFAULT_ENCODE, maxDigestLength} = options ?? {};
   const readable: Readable = toReadable(data);
   return new Promise<string>(res => {
     readable.on('data', (chunk: Buffer) => {
-      hash.update(chunk);
+      inst.update(chunk);
     });
     readable.on('end', () => {
-      const digest = hash.digest(encode);
+      const digest = inst.digest(encode);
       res(getSubstring(digest, maxDigestLength));
     });
   });
+}
+/**
+ * @deprecated by hashData
+ */
+export async function hashStream(data: Readable | CanConvertToBuffer, config: GetDigestOptions) {
+  const {algorithm = DEFAULT_ALGORITHM, ...restOptions} = config;
+  const hash = createHash(algorithm);
+  return getDigestFromReadable(hash, data, restOptions);
 }
 
 /**
@@ -36,7 +56,7 @@ export async function hashStream(data: Readable | CanConvertToBuffer, config: Ge
  */
 export async function hashData(
   data: CanConvertToBuffer | Readable,
-  config: {algorithm: hashAlgorithm; encode?: BinaryToTextEncoding}
+  config: {algorithm: digestAlgorithm; encode?: BinaryToTextEncoding}
 ) {
   return await hashStream(data, config);
 }
@@ -44,13 +64,17 @@ export async function hashData(
 /**
  * Get hash digest in sync way
  */
-export function getHashDigest(
-  data: CanConvertToBuffer,
-  config?: {algorithm: hashAlgorithm; encode?: BinaryToTextEncoding; maxDigestLength?: number}
-) {
-  const {algorithm = DEFAULT_ALGORITHM, encode = DEFAULT_ENCODE, maxDigestLength} = config ?? {};
+export function getHashDigest(data: CanConvertToBuffer, config?: GetDigestOptions) {
+  const {algorithm = DEFAULT_ALGORITHM, ...restOptions} = config ?? {};
   const hash = createHash(algorithm);
-  hash.update(convertToBuffer(data));
-  const digest = hash.digest(encode);
-  return getSubstring(digest, maxDigestLength);
+  return getDigest(hash, data, restOptions);
+}
+
+interface GetHmacOptions extends GetDigestOptions {
+  key: BinaryLike | KeyObject;
+}
+export function getHmacDigest(data: CanConvertToBuffer, config?: GetHmacOptions) {
+  const {algorithm = DEFAULT_ALGORITHM, key, ...restOptions} = config ?? {};
+  const inst = createHmac(algorithm, key);
+  return getDigest(inst, data, restOptions);
 }
