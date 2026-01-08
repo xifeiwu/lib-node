@@ -1,2 +1,2 @@
-export {runScriptOnNode as runScriptByPath} from './run-script';
-export {runScriptInCP} from './run-script-in-cp';
+export {runTargetScriptOnNode} from './on-node/run-target-script';
+export {runScriptInCP} from './main';

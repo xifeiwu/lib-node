@@ -3,15 +3,15 @@
  */
 import fs from 'fs';
 import path from 'path';
-import {logColorful} from '../../log';
-import {goOnOrNot, selectOption} from '../../readline';
-import {isNumber, isAsyncFunction, isObject, isFunction} from '../../external';
-import {rerequire} from '../../service';
-import {RunScriptOptions, GetFuncNameOptions} from '../../types';
+import {logColorful} from '../../../log';
+import {goOnOrNot, selectOption} from '../../../readline';
+import {isNumber, isAsyncFunction, isObject, isFunction} from '../../../external';
+import {rerequire} from '../../../service';
+import {RunTargetScriptOptions, GetTargetScriptFuncNameOptions} from '../../../types';
 
 const RUN_ALL_EXPORTED_FUNCTIONS = '_all';
 
-async function getFuncNameToRun(funcNameList: string[], options?: GetFuncNameOptions) {
+async function getFuncNameToRun(funcNameList: string[], options?: GetTargetScriptFuncNameOptions) {
   const {funcName, runTheOnlyFuncDirectly} = options ?? {};
   if (!Array.isArray(funcNameList) || funcNameList.length === 0) {
     logColorful({color: 'red'}, `funcNameList length is zero`);
@@ -81,14 +81,14 @@ async function handleClass(Module: {new (): any; prototype: any}, functionAndPar
  * Run .ts/.js script by script path
  * For .ts, it can only run script in same project, as different project use different ts-node params
  */
-export async function runScriptOnNode(scriptPath: string, options?: RunScriptOptions) {
-  const {selectExportedFunc, funcName, funcParams} = options ?? {};
+export async function runTargetScriptOnNode(scriptPath: string, options?: RunTargetScriptOptions) {
+  const {runExportedFunc, funcName, funcParams} = options ?? {};
   const fullPath = path.resolve(process.cwd(), scriptPath);
   if (!fs.existsSync(fullPath)) {
     throw new Error(`file ${fullPath} not exist`);
   }
   const Module = rerequire(fullPath);
-  if (!selectExportedFunc && !funcName) {
+  if (!runExportedFunc && !funcName) {
     return;
   }
   if (!isObject(Module)) {

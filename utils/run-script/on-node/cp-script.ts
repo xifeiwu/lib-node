@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import {logColorful} from '../../../log';
-import {RunScriptOptions} from '../../../types';
-import {runScriptOnNode} from '../run-script';
+import {RunTargetScriptOptions} from '../../../types';
+import {runTargetScriptOnNode} from './run-target-script';
 import {RunScriptInCpParams} from './types';
 
 const TAG = 'OUT_OF_FUNCTION';
@@ -29,7 +29,7 @@ export async function start() {
    * 2. parsed from process.argv
    */
   let scriptPath: string;
-  let options: RunScriptOptions;
+  let options: RunTargetScriptOptions;
   let preScript: string;
   if (ipcMessage) {
     scriptPath = ipcMessage.scriptPath;
@@ -40,7 +40,7 @@ export async function start() {
   } else {
     [, , scriptPath] = process.argv;
     options = {
-      selectExportedFunc: true,
+      runExportedFunc: true,
       funcParams: process.argv.slice(3),
     };
   }
@@ -62,12 +62,12 @@ export async function start() {
       /**
        * the main script should run after the end of pre-script, so selectExportedFunc should be set true
        */
-      await runScriptOnNode(preScript, {
-        selectExportedFunc: true,
+      await runTargetScriptOnNode(preScript, {
+        runExportedFunc: true,
         runTheOnlyFuncDirectly: true,
       });
     }
-    const result = await runScriptOnNode(scriptPath, options);
+    const result = await runTargetScriptOnNode(scriptPath, options);
     console.log('');
     console.log(TAG);
     console.log(result);

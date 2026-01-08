@@ -1,5 +1,5 @@
 import path from 'path';
-import {runScriptOnNode} from '../run-script';
+import {runScriptOnNode} from '../on-node/run-script';
 import {logColorful} from '../../../log';
 
 export async function runTsFileExport() {

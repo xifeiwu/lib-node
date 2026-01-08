@@ -1,14 +1,14 @@
 import path from 'path';
-import {RunScriptInCPOptions, TsNodeOptions} from '../../../types';
-import {getFilePathInfo} from '../../../path';
+import {RunScriptInCPOptions, TsNodeOptions} from '../../types';
+import {getFilePathInfo} from '../../path';
 import {
   getSpawnConfigByScript,
   serializeSpawnResponse,
   spawnAndTryIpc,
   tryUseJsFile,
-} from '../../../child-process';
-import {logColorful} from '../../../log';
-import {RunScriptInCpParams} from './types';
+} from '../../child-process';
+import {logColorful} from '../../log';
+import {RunScriptInCpParams} from './on-node/types';
 /**
  * make sure ./child.ts is compiled to child.js also
  * NOTICE: Remove the import here as this file will run anyway and will block the existing of process
@@ -26,20 +26,21 @@ const defaultTsNodeOptions: TsNodeOptions = {
  * Get ts-node options by targetScript
  * Run cp
  */
-export async function runScriptInCP(targetScript: string, options?: RunScriptInCPOptions) {
+export async function runScriptInCP(options: RunScriptInCPOptions) {
   const {
     dryRun,
     preScript,
+    runtimeOptions,
+    targetScript,
+    runTargetScriptOptions,
     spawnOptions: {env = {}, ...restSpawnOptions} = {},
-    tsNodeOptions,
-    runScriptOptions,
   } = options ?? {};
 
   const {extname} = getFilePathInfo(targetScript);
   if (!['.ts', '.js'].includes(extname)) {
     throw new Error(`Can only run .ts or .js script`);
   }
-  const mainScript = tryUseJsFile(path.join(__dirname, 'cp-script.ts'));
+  const mainScript = tryUseJsFile(path.join(__dirname, 'on-node/cp-script.ts'));
   const targetIsTsFile = extname === '.ts';
 
   /**
@@ -48,7 +49,7 @@ export async function runScriptInCP(targetScript: string, options?: RunScriptInC
    * args: [-r, node/start/feature/node_modules/tsconfig-paths/register.js, --project, node/start/feature/tsconfig.json, --swc, /Users/wuxifei/code/node/start/feature/1-js/object/defineProperty/get-set.ts]
    */
   const spawnAndIpcConfig = getSpawnConfigByScript<TsNodeOptions>(targetScript, {
-    runtimeOptions: targetIsTsFile ? tsNodeOptions ?? defaultTsNodeOptions : {},
+    runtimeOptions: targetIsTsFile ? runtimeOptions ?? defaultTsNodeOptions : {},
   });
   const {command, args} = spawnAndIpcConfig;
 
@@ -66,8 +67,8 @@ export async function runScriptInCP(targetScript: string, options?: RunScriptInC
   const wholeScript = [
     finalCommand,
     ...finalArgs,
-    runScriptOptions?.funcName,
-    ...(runScriptOptions?.funcParams ?? []),
+    runTargetScriptOptions?.funcName,
+    ...(runTargetScriptOptions?.funcParams ?? []),
   ]
     .filter(Boolean)
     .join(' ');
@@ -79,7 +80,7 @@ export async function runScriptInCP(targetScript: string, options?: RunScriptInC
   process.stdin.setRawMode(false);
   const infoToCp: RunScriptInCpParams = {
     scriptPath: targetScript,
-    runScriptOptions,
+    runScriptOptions: runTargetScriptOptions,
     preScript,
   };
   const response = await spawnAndTryIpc({
@@ -108,3 +109,4 @@ export async function runScriptInCP(targetScript: string, options?: RunScriptInC
   });
   return serializeSpawnResponse(response);
 }
+
