@@ -3,6 +3,7 @@ import {isNumber} from '../external';
 import {ChildProcess} from 'child_process';
 
 /**
+ * @deprecated by getPreferredFileByExt
  * For the case .ts file compiled to .js file, will use .js file first when running logic for the consideration of saving cost.
  */
 export function tryUseJsFile(scriptPath: string) {

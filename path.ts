@@ -142,3 +142,27 @@ export function makeSureDirExistForFile(filePath: string) {
   const {dirname} = getFilePathInfo(filePath);
   return makeSureDirExist(dirname);
 }
+
+export function getPreferredFileByExt(
+  filePath: string,
+  options: {
+    preferredExtSequence: string[];
+  }
+) {
+  if (!options) {
+    return filePath;
+  }
+  const {preferredExtSequence} = options;
+  if (!Array.isArray(preferredExtSequence) || preferredExtSequence.length === 0) {
+    return filePath;
+  }
+  const fullPath = path.resolve(filePath);
+  const {dirname, bareBasename} = getFilePathInfo(fullPath);
+  for (const ext of preferredExtSequence) {
+    const p = path.join(dirname, bareBasename + ext);
+    if (fs.existsSync(p)) {
+      return p;
+    }
+  }
+  return filePath;
+}
