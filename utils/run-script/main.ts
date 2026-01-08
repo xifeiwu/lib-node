@@ -1,103 +1,23 @@
-import path from 'path';
-import {RunScriptInCPOptions, TsNodeOptions} from '../../types';
-import {getFilePathInfo} from '../../path';
-import {
-  getSpawnConfigByScript,
-  serializeSpawnResponse,
-  spawnAndTryIpc,
-  tryUseJsFile,
-} from '../../child-process';
+import {RunScriptInCPOptions} from '../../types';
+import {serializeSpawnResponse, spawnAndTryIpc} from '../../child-process';
 import {logColorful} from '../../log';
-import {RunScriptInCpParams} from './on-node/types';
-/**
- * make sure ./child.ts is compiled to child.js also
- * NOTICE: Remove the import here as this file will run anyway and will block the existing of process
- */
-// import './child';
-
-const defaultTsNodeOptions: TsNodeOptions = {
-  // '--transpileOnly': true,
-  '--swc': true,
-  '-r': null,
-  '--project': null,
-};
+import {getSpawnConfigForCpWrapScript} from './on-node/utils';
 
 /**
- * Get ts-node options by targetScript
- * Run cp
+ * Run target script in child process, the script should can be run on any runtime, like ts-node, python, etc.
+ * In order to run target script on any runtime, we need to get the runtime options by targetScript.
+ * In order to select the exported function from target script, which is very useful for debug script,
+ * we didn't spawn the script directly, but spawn a cp-script.ts to run the target script.
  */
 export async function runScriptInCP(options: RunScriptInCPOptions) {
-  const {
-    dryRun,
-    preScript,
-    runtimeOptions,
-    targetScript,
-    runTargetScriptOptions,
-    spawnOptions: {env = {}, ...restSpawnOptions} = {},
-  } = options ?? {};
-
-  const {extname} = getFilePathInfo(targetScript);
-  if (!['.ts', '.js'].includes(extname)) {
-    throw new Error(`Can only run .ts or .js script`);
-  }
-  const mainScript = tryUseJsFile(path.join(__dirname, 'on-node/cp-script.ts'));
-  const targetIsTsFile = extname === '.ts';
-
-  /**
-   * get command and args for targetScript:
-   * command: ts-node
-   * args: [-r, node/start/feature/node_modules/tsconfig-paths/register.js, --project, node/start/feature/tsconfig.json, --swc, /Users/wuxifei/code/node/start/feature/1-js/object/defineProperty/get-set.ts]
-   */
-  const spawnAndIpcConfig = getSpawnConfigByScript<TsNodeOptions>(targetScript, {
-    runtimeOptions: targetIsTsFile ? runtimeOptions ?? defaultTsNodeOptions : {},
-  });
-  const {command, args} = spawnAndIpcConfig;
-
-  /**
-   * targetScript     mainScript        runtime
-   * .ts              .ts               ts-node
-   * .ts              .js               ts-node
-   * .js              .ts               ts-node
-   * .js              .js               node
-   */
-  const finalCommand = getFilePathInfo(mainScript).extname === '.ts' ? 'ts-node' : command;
-  const finalArgs = [...args];
-  finalArgs.splice(args.length - 1, 0, mainScript);
-
-  const wholeScript = [
-    finalCommand,
-    ...finalArgs,
-    runTargetScriptOptions?.funcName,
-    ...(runTargetScriptOptions?.funcParams ?? []),
-  ]
-    .filter(Boolean)
-    .join(' ');
+  const {dryRun} = options ?? {};
+  const {wholeScript, spwanConfig} = await getSpawnConfigForCpWrapScript(options);
   logColorful({color: 'magenta'}, wholeScript);
   if (dryRun) {
     return;
   }
-
   process.stdin.setRawMode(false);
-  const infoToCp: RunScriptInCpParams = {
-    scriptPath: targetScript,
-    runScriptOptions: runTargetScriptOptions,
-    preScript,
-  };
-  const response = await spawnAndTryIpc({
-    command: finalCommand,
-    args: finalArgs,
-    spawnOptions: {
-      ...restSpawnOptions,
-      stdio: [0, 1, 2, 'ipc'],
-      env: {
-        ...process.env,
-        ...env,
-        SPAWNED_BY: __filename,
-      },
-    },
-    infoToCp,
-    maxWaitTime4Ipc: 30,
-  });
+  const response = await spawnAndTryIpc(spwanConfig);
   const {childProcess} = response;
   logColorful({color: 'magenta'}, `pid of main/child process: ${process.pid}/${childProcess.pid}`);
 
@@ -109,4 +29,3 @@ export async function runScriptInCP(options: RunScriptInCPOptions) {
   });
   return serializeSpawnResponse(response);
 }
-

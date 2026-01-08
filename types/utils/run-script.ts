@@ -12,12 +12,19 @@ export interface RunTargetScriptOptions extends GetTargetScriptFuncNameOptions {
   funcParams?: Array<any>;
 }
 
-export interface RunScriptInCPOptions<RuntimeOptions = any> {
+export interface SpawnCpWrapScriptOptions<RuntimeOptions = any> {
   dryRun?: boolean;
+  targetScript: string;
+  runtimeOptions?: RuntimeOptions;
+  spawnOptions?: SpawnOptions;
+}
+
+export interface CpWrapScriptOptions {
   /** run this scritp before main script, to do some pre logic */
   preScript?: string;
   targetScript: string;
-  runtimeOptions?: RuntimeOptions;
   runTargetScriptOptions?: RunTargetScriptOptions;
-  spawnOptions?: SpawnOptions;
 }
+
+export type RunScriptInCPOptions<RuntimeOptions = any> = SpawnCpWrapScriptOptions<RuntimeOptions> &
+  CpWrapScriptOptions;
