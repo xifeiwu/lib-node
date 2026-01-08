@@ -27,7 +27,7 @@ export {
 
 // From child-process/service
 export {tryUseJsFile, waitIpcMessageOnce} from '../../child-process';
-export {outOnAllChannels} from '../../utils/cp-script/utils';
+export {outOnAllChannels} from '../../utils/cp-script';
 
 // From service/constants
 export {DAEMON_SOCKET_DIR, SOCKET_FILE_SUFFIX} from '../../service/constants';

@@ -46,6 +46,7 @@ export async function startChatServer() {
   });
   process.stdin.on('data', async chunk => {
     let req = fromBuffer(chunk, 'json') as ChatReq;
+    /** set echoByStdout as default action if only payload is passed */
     if (!isObject(req) || req.action === undefined) {
       req = {
         action: 'echoByStdout',

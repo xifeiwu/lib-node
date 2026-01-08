@@ -1,22 +1,30 @@
-import {spawnScriptAndTryIpc} from '../../child-process/spawn';
+import {getSpawnConfigByScript, spawnScriptAndTryIpc} from '../../child-process/spawn';
 import {logColorful} from '../../log';
 import {echoArgvs, echoByIpc, echoByStderr, echoByStdout} from './service/chat';
 import {convertToBuffer, fromBuffer} from '../../transform';
-import {getFullPathOfCpScript} from './utils';
-import {waitFor} from '../../external';
+import {getFullPathOfCpScript} from '.';
 import {ChatReq, ChatRes} from './service/external';
+import { exec } from 'child_process';
 
 /**
- * When use inherit stdio, process.stdin.push will not trigger data event on child process.
- * childProcess.stdin.write will conbine two write action into one, so 
+ * Summary:
+ * 1. When use inherit stdio, process.stdin.push will not trigger data event on child process.
+ * 2. childProcess.stdin.write will conbine two write action into one, so do the communication in on chat
+ * way which is implemented in function oneChat
  */
 export async function run() {
   const scriptPath = getFullPathOfCpScript('chat', {tryJsFirst: true});
-  const {childProcess, wholeScript} = await spawnScriptAndTryIpc(scriptPath, {
-    spawnOptions: {
-      stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
-    },
-  });
+  /** Way1: Start child process by exec */
+  const {command, args} = getSpawnConfigByScript(scriptPath);
+  const wholeScript = [command, ...args].join(' ');
+  const childProcess = exec(wholeScript);
+
+  /** Way2: Start child process by spawn */
+  // const {childProcess, wholeScript} = await spawnScriptAndTryIpc(scriptPath, {
+  //   spawnOptions: {
+  //     stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
+  //   },
+  // });
   logColorful({}, childProcess.pid, wholeScript);
   childProcess.on('error', err => {
     logColorful({color: 'yellow'}, 'error', err.message);

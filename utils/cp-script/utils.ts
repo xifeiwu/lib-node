@@ -2,8 +2,6 @@ import path from 'path';
 import {getFileList} from '../../fs';
 import {parseBasename} from '../../path';
 
-export {outOnAllChannels} from './service';
-
 export function getFullPathOfCpScript(
   basename: 'chat' | 'debug-server' | 'io-transparent',
   options?: {
