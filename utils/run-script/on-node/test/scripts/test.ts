@@ -1,4 +1,4 @@
-import {logColorful} from '../../../../log';
+import {logColorful} from '../../../../../log';
 
 export function add1(value?: number) {
   const result = (value ?? 0) + 1;

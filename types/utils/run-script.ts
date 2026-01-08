@@ -20,7 +20,7 @@ export interface SpawnCpWrapScriptOptions<RuntimeOptions = any> {
 }
 
 export interface CpWrapScriptOptions {
-  /** run this scritp before main script, to do some pre logic */
+  /** run this scritp before main script, to do some pre logic, such as select and set global env */
   preScript?: string;
   targetScript: string;
   runTargetScriptOptions?: RunTargetScriptOptions;

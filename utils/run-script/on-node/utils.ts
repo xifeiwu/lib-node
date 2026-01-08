@@ -1,6 +1,6 @@
 import path from 'path';
 import {CpWrapScriptOptions, RunScriptInCPOptions, SpawnConfig, TsNodeOptions} from '../../../types';
-import {getFilePathInfo} from '../../../path';
+import {getFilePathInfo, getPreferredFileByExt} from '../../../path';
 import {getSpawnConfigByScript, tryUseJsFile} from '../../../child-process';
 
 const defaultTsNodeOptions: TsNodeOptions = {
@@ -26,7 +26,9 @@ export async function getSpawnConfigForCpWrapScript(options: RunScriptInCPOption
   if (!['.ts', '.js'].includes(extname)) {
     throw new Error(`Can only run .ts or .js script`);
   }
-  const wrapScript = tryUseJsFile(path.join(__dirname, 'cp-wrap-script.ts'));
+  const wrapScript = getPreferredFileByExt(path.join(__dirname, 'cp-wrap-script.ts'), {
+    preferredExtSequence: ['.js'],
+  });
   const targetIsTsFile = extname === '.ts';
 
   /**
