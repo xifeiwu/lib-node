@@ -1,6 +1,7 @@
 import {goOnOrNot, selectOption} from '../readline';
 import {logColorful} from '../log';
 import {MysqlConfig} from '../types';
+import {PartialExcept} from '../external';
 
 /**
  * A basic type model, it has a type map: dbService -> username -> database of the user
@@ -75,11 +76,12 @@ GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, RELOAD, SHUTDOWN, PROCESS, R
 const SERVICE_TO_USER_INFO: UserInfoPerService = {
   local: {
     root: {
-      password: 'local--mysql',
+      password: 'local-mysql-root',
       databaseList: ['mysql'],
     },
     explore: {
-      password: 'test',
+      // password: 'test',
+      password: 'local-mysql-explore',
       databaseList: [
         'explore',
         'employees',
@@ -110,6 +112,21 @@ const SERVICE_TO_USER_INFO: UserInfoPerService = {
   },
 };
 
+interface GetDbConfigOptions<Service extends keyof DbTypeModel, UserName extends keyof DbTypeModel[Service]> {
+  service?: Service;
+  username: UserName;
+  database?: DbTypeModel[Service][UserName];
+  level?: 'service' | 'user' | 'database';
+}
+
+export function getUserInfoOfDbService<
+  Service extends keyof DbTypeModel,
+  UserName extends keyof UserInfoPerService[Service]
+>(options: {service: Service}): Record<UserName, UserConfig> {
+  const {service} = options;
+  return SERVICE_TO_USER_INFO[service] as Record<UserName, UserConfig>;
+}
+
 function getAllDatabasesOfService<Service extends keyof DbTypeModel>(service: Service) {
   const userInfo = SERVICE_TO_USER_INFO[service];
   if (!userInfo) {
@@ -124,14 +141,12 @@ function getAllDatabasesOfService<Service extends keyof DbTypeModel>(service: Se
   );
   return allDatabases;
 }
-
 /**
  * Get db config by provide site/username/database
  */
-export function getDbConfig<
-  Service extends keyof DbTypeModel,
-  UserName extends keyof DbTypeModel[Service]
->(options: {service: Service; username: UserName; database?: DbTypeModel[Service][UserName]}): MysqlConfig {
+export function getDbConfig<Service extends keyof DbTypeModel, UserName extends keyof DbTypeModel[Service]>(
+  options: Omit<GetDbConfigOptions<Service, UserName>, 'includeDatabase'>
+): MysqlConfig {
   let {service, username, database} = options;
   const serviceInfo = SERVICE_INFO[service];
   // @ts-ignore
@@ -155,9 +170,10 @@ export function getDbConfig<
 export function getDbConfigListOfService<
   Service extends keyof DbTypeModel,
   UserName extends keyof DbTypeModel[Service]
->(options: {service: Service; username?: UserName; database?: DbTypeModel[Service][UserName]}) {
+>(options: PartialExcept<GetDbConfigOptions<Service, UserName>, 'service'>) {
   const result: MysqlConfig[] = [];
-  const {service} = options;
+  /** set database as default level */
+  const {service, level = 'database'} = options;
   const serviceInfo = SERVICE_TO_USER_INFO[service];
   if (!serviceInfo) {
     throw new Error(`Can't find serviceInfo for service: ${service}`);
@@ -165,9 +181,14 @@ export function getDbConfigListOfService<
 
   for (const [username, info] of Object.entries(serviceInfo)) {
     if (options.username !== undefined) {
+      /** filter out username if options.username is passed */
       if (username !== options.username) {
         continue;
       }
+    }
+    if (level === 'user') {
+      result.push(getDbConfig({service, username: username as UserName}));
+      continue;
     }
     const {databaseList} = info as UserConfig;
     let finalDatabaseList = databaseList;
@@ -176,6 +197,7 @@ export function getDbConfigListOfService<
       finalDatabaseList = [...databaseList, ...getAllDatabasesOfService(service)];
     }
     for (const database of finalDatabaseList) {
+      /** filter out database if options.database is passed */
       if (options.database !== undefined) {
         if (database !== options.database) {
           continue;
@@ -192,7 +214,7 @@ export function getDbConfigListOfService<
 export function getDbConfigList<
   Service extends keyof DbTypeModel,
   UserName extends keyof DbTypeModel[Service]
->(options?: {service?: Service; username?: UserName; database?: DbTypeModel[Service][UserName]}) {
+>(options?: GetDbConfigOptions<Service, UserName>) {
   const {service, username, database} = options ?? {};
   const result: MysqlConfig[] = [];
   if (service !== undefined) {
@@ -200,7 +222,7 @@ export function getDbConfigList<
     return getDbConfigListOfService(options);
   }
   for (const it of Object.keys(SERVICE_TO_USER_INFO)) {
-    const configListOfService = getDbConfigListOfService({service: it as Service});
+    const configListOfService = getDbConfigListOfService({...(options ?? {}), service: it as Service});
     result.push(...(configListOfService ?? []));
   }
   return result;
