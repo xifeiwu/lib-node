@@ -12,14 +12,14 @@ import {getSpawnConfigForCpWrapScript} from './on-node/utils';
 export async function runScriptInCP(options: RunScriptInCPOptions) {
   const {dryRun} = options ?? {};
   const {wholeScript, spwanConfig} = await getSpawnConfigForCpWrapScript(options);
-  logColorful({color: 'magenta'}, wholeScript);
+  logColorful({color: 'magenta'}, 'Whole script to run in child process:', wholeScript);
   if (dryRun) {
     return;
   }
   process.stdin.setRawMode(false);
   const response = await spawnAndTryIpc(spwanConfig);
   const {childProcess} = response;
-  logColorful({color: 'magenta'}, `pid of main/child process: ${process.pid}/${childProcess.pid}`);
+  // logColorful({color: 'magenta'}, `pid of main/child process: ${process.pid}/${childProcess.pid}`);
 
   childProcess.on('exit', () => {
     // console.log('exit child process');
