@@ -18,6 +18,7 @@ interface DbTypeModel {
       | 'portaldb_lion';
     /** db for project feature development */
     project: 'assist';
+    test: 'test';
     root: string;
   };
   elif: {
@@ -55,6 +56,7 @@ interface UserInfoPerService {
   local: {
     explore: UserConfig<'local', 'explore'>;
     project: UserConfig<'local', 'project'>;
+    test: UserConfig<'local', 'test'>;
     root: UserConfig<'local', 'root'>;
   };
   elif: {
@@ -75,9 +77,9 @@ GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, RELOAD, SHUTDOWN, PROCESS, R
  */
 const SERVICE_TO_USER_INFO: UserInfoPerService = {
   local: {
-    root: {
-      password: 'local-mysql-root',
-      databaseList: ['mysql'],
+    test: {
+      password: 'test',
+      databaseList: ['test'],
     },
     explore: {
       // password: 'test',
@@ -94,6 +96,10 @@ const SERVICE_TO_USER_INFO: UserInfoPerService = {
     project: {
       password: 'Elifxifei2023_',
       databaseList: ['assist'],
+    },
+    root: {
+      password: 'local-mysql-root',
+      databaseList: ['mysql'],
     },
   },
   elif: {
