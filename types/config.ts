@@ -5,5 +5,5 @@ export interface MysqlConfig {
   dialect: 'mysql';
   username: string;
   password: string;
-  database: string;
+  database?: string;
 }

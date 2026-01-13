@@ -120,17 +120,9 @@ const SERVICE_TO_USER_INFO: UserInfoPerService = {
 
 interface GetDbConfigOptions<Service extends keyof DbTypeModel, UserName extends keyof DbTypeModel[Service]> {
   service?: Service;
-  username: UserName;
+  username?: UserName;
   database?: DbTypeModel[Service][UserName];
-  level?: 'service' | 'user' | 'database';
-}
-
-export function getUserInfoOfDbService<
-  Service extends keyof DbTypeModel,
-  UserName extends keyof UserInfoPerService[Service]
->(options: {service: Service}): Record<UserName, UserConfig> {
-  const {service} = options;
-  return SERVICE_TO_USER_INFO[service] as Record<UserName, UserConfig>;
+  level?: 'user' | 'database';
 }
 
 function getAllDatabasesOfService<Service extends keyof DbTypeModel>(service: Service) {
@@ -186,8 +178,8 @@ export function getDbConfigListOfService<
   }
 
   for (const [username, info] of Object.entries(serviceInfo)) {
+    /** filter out username if options.username is passed */
     if (options.username !== undefined) {
-      /** filter out username if options.username is passed */
       if (username !== options.username) {
         continue;
       }
@@ -235,6 +227,17 @@ export function getDbConfigList<
 }
 
 /**
+ * @returns user-info other than db config
+ */
+export function getUserInfoOfDbService<
+  Service extends keyof DbTypeModel,
+  UserName extends keyof UserInfoPerService[Service]
+>(options: {service: Service}): Record<UserName, UserConfig> {
+  const {service} = options;
+  return SERVICE_TO_USER_INFO[service] as Record<UserName, UserConfig>;
+}
+/**
+ * @deprecated result of getDbConfigList should be more flexible for choose database
  * Get db config by select site/username/database
  */
 export async function selectDbConfig<
