@@ -1,3 +1,6 @@
+/**
+ * Mainly used for io testing between main and child process
+ */
 import {convertToBuffer, fromBuffer} from '../../../index';
 import {getChatter, ChatMiddleware, ChatReq, ChatRes} from './external';
 import {isNumber, isObject} from '../../../external';

@@ -1,31 +1,25 @@
-import {getSpawnConfigByScript, spawnScriptAndTryIpc} from '../../child-process/spawn';
+import {getSpawnConfigByScript, spawnAndTryIpc, spawnScriptAndTryIpc} from '../../child-process/spawn';
 import {logColorful} from '../../log';
 import {echoArgvs, echoByIpc, echoByStderr, echoByStdout} from './service/chat';
 import {convertToBuffer, fromBuffer} from '../../transform';
 import {getFullPathOfCpScript} from '.';
 import {ChatReq, ChatRes} from './service/external';
-import { exec } from 'child_process';
+import {ChildProcess, exec} from 'child_process';
 
+function getSpawnConfig() {
+  const scriptPath = getFullPathOfCpScript('chat', {tryJsFirst: true});
+  /** Way1: Start child process by exec */
+  const spawnConfig = getSpawnConfigByScript(scriptPath);
+  return spawnConfig;
+}
 /**
+ * The cp script chat.ts can be used for testing io between main and child process
  * Summary:
  * 1. When use inherit stdio, process.stdin.push will not trigger data event on child process.
  * 2. childProcess.stdin.write will conbine two write action into one, so do the communication in on chat
  * way which is implemented in function oneChat
  */
-export async function run() {
-  const scriptPath = getFullPathOfCpScript('chat', {tryJsFirst: true});
-  /** Way1: Start child process by exec */
-  const {command, args} = getSpawnConfigByScript(scriptPath);
-  const wholeScript = [command, ...args].join(' ');
-  const childProcess = exec(wholeScript);
-
-  /** Way2: Start child process by spawn */
-  // const {childProcess, wholeScript} = await spawnScriptAndTryIpc(scriptPath, {
-  //   spawnOptions: {
-  //     stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
-  //   },
-  // });
-  logColorful({}, childProcess.pid, wholeScript);
+async function communication(childProcess: ChildProcess) {
   childProcess.on('error', err => {
     logColorful({color: 'yellow'}, 'error', err.message);
   });
@@ -72,14 +66,43 @@ export async function run() {
       });
     });
   }
-  const reqList = [echoArgvs(), echoByStdout('through stdout'), echoByStderr('through stderr'), echoByIpc('through ipc')];
+  const reqList = [
+    echoArgvs(),
+    echoByStdout('through stdout'),
+    echoByStderr('through stderr'),
+    echoByIpc('through ipc'),
+  ];
   for (const req of reqList) {
     const res = await oneChat(req);
     logColorful({color: 'green'}, res);
   }
   process.stdin.resume();
   process.stdin.on('data', async (chunk: Buffer | string) => {
-    const res = await oneChat({action: 'echoByIpc', payload: fromBuffer(chunk, 'json')});
+    // const res = await oneChat({action: 'echoByIpc', payload: fromBuffer(chunk, 'json')});
+    const res = await oneChat({action: 'echoByStdout', payload: fromBuffer(chunk, 'json')});
     logColorful({color: 'green'}, res);
   });
+}
+
+/**
+ * Nearly the same as spawn with stdio: ['pipe', 'pipe', 'pipe', 'ipc'], but ipc channel is not open
+ */
+export async function startByExec() {
+  const config = getSpawnConfig();
+  const {command, args} = config;
+  const wholeScript = [command, ...args].join(' ');
+  const childProcess = exec(wholeScript, (err, stdout, stderr) => {
+    logColorful({color: 'red'}, 'stdout', stdout);
+    logColorful({color: 'red'}, 'stderr', stderr);
+  });
+  await communication(childProcess);
+}
+
+export async function startBySpawn() {
+  const config = getSpawnConfig();
+  config.spawnOptions = {
+    stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
+  };
+  const {childProcess} = await spawnAndTryIpc(config);
+  await communication(childProcess);
 }
