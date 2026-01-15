@@ -126,3 +126,34 @@ export function compareHttpRequestOptions(refer: HttpRequestOptions, options?: H
   });
   return isSame;
 }
+
+/**
+ * We can define request and response data type of each api in this way:
+ * {
+ *   'get /api/list': {
+ *      request: {
+ *        method: 'get',
+ *        pathname: '/api/list',
+ *        ...requestInfo,
+ *      },
+ *      resData: {
+ *        code: 0,
+ *        message: 'success',
+ *        data: [],
+ *      },
+ *    }
+ * }
+ * This api is used to merge request options with api key, and return the final request options.
+ */
+export function mergeRequestOptionsWithApiKey(
+  apiKey: string,
+  requestOptions: HttpRequestOptions
+): HttpRequestOptions {
+  const [method, pathname] = apiKey.split(' ');
+  const result: HttpRequestOptions = {
+    method,
+    pathname,
+    ...requestOptions,
+  };
+  return result;
+}
