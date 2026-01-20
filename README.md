@@ -7,7 +7,7 @@ A cluster of commonly-used small-granularity logic based on nodejs native module
 
 # Folder Structure
 
-1. The logic not based on any native module, it should be platform-independent logic, and belongs to lib/fe or service layer of this project.
+1. The logic not based on any native module, it should be platform-independent logic, and belongs to lib/js or service layer of this project.
 2. The logic only based on a single native module, it should be placed in the folder named with that native module, they are called single-native-module-based logic
 3. The logic based on multiple modules or functions from multiple dirs should be placed in dir utils.
 4. The complex logic for some distinct target, like lib/socks, can place in a seperate dir of lib dir.
