@@ -65,7 +65,7 @@ export {
   getSequenceMatcher,
   isAsyncFunction,
   getDtStrInFormat,
-} from '../fe/common';
+} from '../js/common';
 export {AstAOptions, listAUsingUl} from '../fe/lib/html-parser';
 
 export {GitRepoInfo, GitRepoInfoTree, GitRepoConfigFileExport, PartialExcept} from '../../types/common';
