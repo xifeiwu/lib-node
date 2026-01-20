@@ -8,7 +8,7 @@ import {PartialExcept} from '../external';
  */
 interface DbTypeModel {
   local: {
-    /** explore usage and feature of db */
+    /** explore usage and feature of db, these db may removed at any time */
     explore:
       | 'explore'
       | 'employees'
