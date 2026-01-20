@@ -66,6 +66,6 @@ export {
   isAsyncFunction,
   getDtStrInFormat,
 } from '../js/common';
-export {AstAOptions, listAUsingUl} from '../fe/lib/html-parser';
+export {AstAOptions, listAUsingUl} from '../js/lib/html-parser';
 
 export {GitRepoInfo, GitRepoInfoTree, GitRepoConfigFileExport, PartialExcept} from '../../types/common';
