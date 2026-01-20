@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import {addSuffixToBareBasename} from '../path';
-import {PartialExcept} from '../types/external';
+import {PartialExcept} from '../external';
 import {convertObjectToCjsExport} from '../transform';
 import {getDtStrInFormat} from '../external';
 

@@ -11,7 +11,7 @@ import {
 } from '../../../../types';
 import {convertToBuffer} from '../../../../transform';
 import {OutgoingHttpHeaders, STATUS_CODES} from 'http';
-import {PickPartial} from '../../../../types/external';
+import {PickPartial} from '../../../../external';
 import {LINE_BREAK} from '../../../../external';
 import {updateHeadersByHttpInfo} from '../common';
 

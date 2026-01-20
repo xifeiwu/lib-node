@@ -1,7 +1,7 @@
 import https from 'https';
 import http from 'http';
 import {HttpResponseInfo} from '../../types';
-import {PlainObject} from '../external';
+import {PlainObject} from '../../external';
 
 export interface HttpServerConfig {
   host?: string;

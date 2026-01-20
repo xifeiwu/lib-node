@@ -68,4 +68,11 @@ export {
 } from '../js/common';
 export {AstAOptions, listAUsingUl} from '../js/lib/html-parser';
 
-export {GitRepoInfo, GitRepoInfoTree, GitRepoConfigFileExport, PartialExcept} from '../../types/common';
+export {
+  GitRepoInfo,
+  GitRepoInfoTree,
+  GitRepoConfigFileExport,
+  PartialExcept,
+  PickPartial,
+  PlainObject,
+} from '../../types/common';
