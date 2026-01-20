@@ -1,5 +1,5 @@
 /**
- * @deprecated move to lib/fe
+ * @deprecated move to lib/js
  */
 export interface LiProps {
   href?: string;
@@ -7,7 +7,7 @@ export interface LiProps {
   style?: object;
 }
 /**
- * @deprecated move to lib/fe
+ * @deprecated move to lib/js
  */
 export interface HtmlProps {
   title?: string;
