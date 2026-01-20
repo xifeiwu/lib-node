@@ -2,8 +2,8 @@
 
 A cluster of commonly-used small-granularity logic based on nodejs native modules, the logic not depend on any third party modules except:
 
-- modules/lib/fe
-- modules/types/fe
+- modules/lib/js
+- modules/types/common
 
 # Folder Structure
 
@@ -15,7 +15,7 @@ A cluster of commonly-used small-granularity logic based on nodejs native module
 
 # Notice
 
-1. To avoid use dependency of `@types/node` on `lib/fe`, unit test case of `lib/fe` is located in dir `fe.test`.
+1. To avoid use dependency of `@types/node` on `lib/js`, unit test case of `lib/js` is located in dir `fe.test`.
 2. Take care about export format: export * from './file'. When using this format, when tsc will compile all logic and the logic they referred. As this module is a common module that used widely, so index.ts should export as less logic as possible.
 
 # TODO
