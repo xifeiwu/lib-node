@@ -1,2 +1,2 @@
-export {getChatter} from '../../../../fe/utils/chat';
-export {ChatMiddleware, ChatReq, ChatRes} from '../../../../fe/types/utils/chat';
+export {getChatter} from '../../../../js/utils/chat';
+export {ChatMiddleware, ChatReq, ChatRes} from '../../../../js/types/utils/chat';
