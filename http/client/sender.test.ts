@@ -34,6 +34,12 @@ export async function contentTypeAndStream() {
     } = responseInfo;
     assert.equal(data.type, 'Buffer');
   }
+  /**
+   * Take care about connection, keep-alive field on response headers part, like this:
+   * connection: 'keep-alive',
+   * 'keep-alive': 'timeout=5'
+   * If the debug time is longer than 5 seconds, the connection will be closed.
+  */
   {
     const {requestOptions, responseInfo, request} = await requestAndGetResponseInfo({
       ...originRequestOptions,
