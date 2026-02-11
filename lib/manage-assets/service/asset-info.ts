@@ -34,6 +34,9 @@ export async function getAssetInfo(options?: GetAssetInfoParams): Promise<AssetI
   const {ctime, mtime, size: sizeInByte} = stat;
   let sha1: string;
   let shortId = shortIdFromName;
+  /**
+   * Should take care about calculate hash as it will cost lots of resource for big file
+   */
   if (reCalcId) {
     if (logging) {
       logColorful({}, `calculating sha1 for file ${fullPath}[${byteToWord(sizeInByte)}]`);
@@ -80,6 +83,13 @@ export async function getPartialAssetInfo(options: GetAssetInfoParams) {
   return assetInfo;
 }
 
+/**
+ * Convert from partial asset info to full asset info
+ * @param assetInfo
+ * @param rootDir
+ * @param options
+ * @returns
+ */
 export async function toFullAssetInfo(
   assetInfo: AssetInfoPartial,
   rootDir: string,
@@ -99,22 +109,22 @@ export async function toFullAssetInfo(
 }
 
 function compareAssetProp(
-  fileValue: Date | boolean | number | string,
-  dbValue: Date | boolean | number | string
+  firstValue: Date | boolean | number | string,
+  secondValue: Date | boolean | number | string
 ) {
-  if (isDate(fileValue)) {
+  if (isDate(firstValue)) {
     /** accurate is millisecond */
-    const fileDateInMs = toDate(fileValue as Date | string).getTime();
-    const dbDateInMs = toDate(dbValue as Date | string).getTime();
+    const fileDateInMs = toDate(firstValue as Date | string).getTime();
+    const dbDateInMs = toDate(secondValue as Date | string).getTime();
     return fileDateInMs === dbDateInMs;
-  } else if (isBoolean(fileValue)) {
-    return fileValue == Boolean(dbValue);
+  } else if (isBoolean(firstValue)) {
+    return firstValue == Boolean(secondValue);
   } else {
-    return fileValue === dbValue;
+    return firstValue === secondValue;
   }
 }
 /**
- * Get the diff between these two assetInfo, to get what should be changed if we want make properties of item the same as properties of refer
+ * Get the diff between these two assetInfo, to get what should be changed if we want align asset info with refer
  * @param refer only compare props of refer
  * @param item asset info on db
  */
