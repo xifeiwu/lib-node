@@ -8,7 +8,7 @@ export {
   formatDate,
   getRandomBase64String,
   getSequentialBase64String,
-} from '../../../fe/common';
+} from '../../../js/common';
 export {
   logColorful,
   hashData,
