@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 import fs from 'fs';
 import path from 'path';
@@ -11,9 +11,6 @@ import {
   writeFileSync,
 } from '../../external';
 
-/**
- * TODO: move to fs/test???
- */
 interface FileOperationResult {
   fullPath;
   relativePath;
