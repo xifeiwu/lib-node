@@ -1,10 +1,13 @@
+/**
+ * 
+ */
 import fs from 'fs';
 import path from 'path';
 import {
   getFileInfoList,
   getRandomBase64String,
   getSequentialBase64String,
-  recursiveDeleteFile,
+  removeFile,
   writeFileSync,
 } from '../../external';
 
@@ -46,7 +49,7 @@ function getIndex(size: number) {
 
 export function removeDataDir(rootDir: string) {
   if (fs.existsSync(rootDir)) {
-    recursiveDeleteFile(rootDir);
+    removeFile(rootDir);
   }
 }
 
