@@ -9,11 +9,12 @@ import {
 } from '../../types';
 import {doActionsToAssetsAndMeta, getAssetsPartailInfoListOfDir, getMetaDir} from '../../service';
 import {diffAssetInfoList} from './service';
-import {logColorful, goOnOrNot, getPathWithDtSuffix} from '../../external';
+import {logColorful, goOnOrNot, addDtSuffixToBareBasename} from '../../external';
 
 export async function getAssetStateChange(metaHandlers: MetaHandlers) {
   const {rootDir} = metaHandlers;
   let assetInfoListMeta: AssetInfoFull[] = await metaHandlers.getAllItems();
+  /** only get partial asset info to reduce cost */
   let latestAssetInfoList: AssetInfoFull[] = await getAssetsPartailInfoListOfDir(rootDir);
   return {
     assetInfoListMeta,
@@ -106,7 +107,7 @@ async function syncUpAssetsChangeToMeta(metaHandlers: MetaHandlers, options?: Ac
       const content = JSON.stringify(stateChangeInfo.stateChange, null, 2);
       const size = Buffer.from(content).byteLength;
       if (size > 1024) {
-        const logFilePath = getPathWithDtSuffix(path.join(getMetaDir(rootDir), 'state-change.ts'));
+        const logFilePath = addDtSuffixToBareBasename(path.join(getMetaDir(rootDir), 'state-change.ts'));
         fs.writeFileSync(logFilePath, content);
         logColorful({color: 'red'}, `syncUpAssetsChangeToMeta actions are saved to file`, logFilePath);
       } else {

@@ -34,6 +34,7 @@ export type AssetInfoFull = Pick<
 export type AssetInfoPartial = PickPartial<AssetInfoFull, 'sha1' | 'shortId'>;
 
 export type ShortIdToAssetInfo = Record<string, AssetInfoFull | AssetInfoFull[]>;
+export type Sha1ToAssetInfo = Record<string, AssetInfoFull | AssetInfoFull[]>;
 
 /**
  * @deprecated by ShortIdToAssetInfo

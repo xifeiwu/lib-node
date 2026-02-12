@@ -21,7 +21,9 @@ export interface MetaHandlers {
   rootDir: string;
   getKey: () => string;
   getMetaLocation: () => string;
+  /** @deprecated by checkMeta */
   haveMeta: () => boolean;
+  checkMeta: () => void;
   resetMeta: (options?: GetDirAssetOptions) => Promise<AssetInfoFull[]>;
   cleanUpMeta: () => Promise<boolean>;
   insertOrUpdateItem: (assetInfo: AssetInfoFull) => Promise<AssetInfoFull>;

@@ -3,7 +3,7 @@ import path from 'path';
 import {makeSureMetaIsUptodate} from '../assets-meta';
 import {
   appendShortIdToFilePath,
-  getAssetInfoByShortId,
+  getAssetInfoById,
   getFullAssetInfo,
   getMetaDir,
   needActionToAssetsAndMeta,
@@ -62,7 +62,7 @@ export async function getActionForImportNewAssets(
   const toAdd: ShortIdToAssetInfo = {};
   /** Handle asset in files but not in db */
   for (const shortId of id1Only) {
-    toAdd[shortId] = getAssetInfoByShortId(idToInfo1, shortId);
+    toAdd[shortId] = getAssetInfoById(idToInfo1, shortId);
   }
 
   const allActions = {

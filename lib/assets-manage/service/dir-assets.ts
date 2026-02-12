@@ -16,6 +16,7 @@ import {
   ShortIdToAssetInfo,
   AssetInfoPartial,
   GetDirAssetOptions,
+  Sha1ToAssetInfo,
 } from '../types';
 import {getAssetInfo} from './asset-info';
 
@@ -156,15 +157,20 @@ export async function getAssetsPartailInfoListOfDir(
   return assetInfoTreeToList(infoTree);
 }
 
+/**
+ * @deprecated by getSha1ToAssetInfo
+ * @param infoList
+ * @returns
+ */
 export function getShortIdToAssetInfo(infoList: AssetInfoFull[]): ShortIdToAssetInfo {
   const results: ShortIdToAssetInfo = {};
   for (const info of infoList) {
     const {shortId} = info;
     if (results[shortId]) {
       if (!Array.isArray(results[shortId])) {
-        results[shortId] = [results[shortId]];
+        results[shortId] = [results[shortId]] as AssetInfoFull[];
       }
-      results[shortId].push(info);
+      (results[shortId] as AssetInfoFull[]).push(info);
     } else {
       results[shortId] = info;
     }
@@ -172,17 +178,29 @@ export function getShortIdToAssetInfo(infoList: AssetInfoFull[]): ShortIdToAsset
   return results;
 }
 
+export function getSha1ToAssetInfo(infoList: AssetInfoFull[]): Sha1ToAssetInfo {
+  const results: Sha1ToAssetInfo = {};
+  for (const info of infoList) {
+    const {sha1} = info;
+    if (results[sha1]) {
+      if (!Array.isArray(results[sha1])) {
+        results[sha1] = [results[sha1]] as AssetInfoFull[];
+      }
+      (results[sha1] as AssetInfoFull[]).push(info);
+    } else {
+      results[sha1] = info;
+    }
+  }
+  return results;
+}
 /**
  * Return the first item of assetInfo list
  * @param shortIdToAssetInfo
- * @param shortId
+ * @param id
  * @returns
  */
-export function getAssetInfoByShortId(
-  shortIdToAssetInfo: ShortIdToAssetInfo,
-  shortId: string
-): AssetInfoFull {
-  const info = shortIdToAssetInfo[shortId];
+export function getAssetInfoById(shortIdToAssetInfo: ShortIdToAssetInfo, id: string): AssetInfoFull {
+  const info = shortIdToAssetInfo[id];
   if (!info) {
     return null;
   }
