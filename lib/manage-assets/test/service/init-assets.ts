@@ -6,7 +6,7 @@ import {
   removeDataDir,
   syncUpExistingFiles,
   updateFile,
-} from './util';
+} from './assets-generator';
 
 export async function initAsset(rootDir: string) {
   removeDataDir(rootDir);

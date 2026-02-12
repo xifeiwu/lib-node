@@ -5,7 +5,6 @@ import fs from 'fs';
 import path from 'path';
 import {getRandomBase64String, getSequentialBase64String, removeFile, writeFileSync} from '../../external';
 import {
-  STEP,
   addToExistingFile,
   getFileSizeByIndex,
   getFullPath,
@@ -73,7 +72,7 @@ export function deleteFile(rootDir: string, folder: Folder, index: number) {
   return {fullPath, relativePath, size: getFileStat(fullPath)?.size};
 }
 
-export function link(rootDir: string, folder: Folder, sourceIndex: number, targetName: string) {
+export function createLinkFile(rootDir: string, folder: Folder, sourceIndex: number, targetName: string) {
   const sourceRelativePath = getRelativePath(folder, sourceIndex);
   const sourceFile = path.join(rootDir, sourceRelativePath);
   if (!fs.existsSync(sourceFile)) {

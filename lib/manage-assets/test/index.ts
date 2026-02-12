@@ -1,1 +1,3 @@
-export * from './service/assets-operation';
+// TODO: remove ./service/init-assets
+export * from './service/init-assets';
+export * from './generator';
