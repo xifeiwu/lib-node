@@ -15,17 +15,14 @@ export function removeFile(filepath: string) {
   } = {
     fullpath,
   };
-  try {
-    const stat = fs.lstatSync(filepath);
-    result.stat = stat;
-    if (stat.isSymbolicLink() || stat.isFile()) {
-      fs.unlinkSync(filepath);
-    } else if (stat.isDirectory()) {
-      fs.rmdirSync(filepath, {recursive: true});
-    }
-  } catch (err) {
-    return result;
+  const stat = fs.lstatSync(filepath);
+  result.stat = stat;
+  if (stat.isSymbolicLink() || stat.isFile()) {
+    fs.unlinkSync(filepath);
+  } else if (stat.isDirectory()) {
+    fs.rmdirSync(filepath, {recursive: true});
   }
+  return result;
 }
 
 /**
