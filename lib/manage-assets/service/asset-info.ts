@@ -5,6 +5,10 @@ import {SHORT_ID_LENGTH} from './constant';
 import {AssetInfoPartial, AssetInfoFull, GetAssetInfoParams} from '../types';
 import {appendShortIdToFilePath, parseFilePath} from './short-id';
 
+function getShortId(sha1: string): string {
+  return sha1.slice(0, SHORT_ID_LENGTH);
+}
+
 export async function getSha1AsId(fullPath: string): Promise<Pick<AssetInfoFull, 'sha1' | 'shortId'>> {
   if (!fs.existsSync(fullPath)) {
     throw new Error(`file not exist: ${fullPath}`);
@@ -12,13 +16,22 @@ export async function getSha1AsId(fullPath: string): Promise<Pick<AssetInfoFull,
   const sha1 = await hashData(fs.createReadStream(fullPath), {algorithm: 'sha1', encode: 'base64url'});
   return {
     sha1,
-    shortId: sha1.substring(0, SHORT_ID_LENGTH),
+    shortId: getShortId(sha1),
   };
 }
 
+function getAssetInfoFromStat(stat: fs.Stats): Pick<AssetInfoPartial, 'changeDate' | 'modifyDate' | 'size'> {
+  const info = {
+    changeDate: stat.ctime,
+    modifyDate: stat.mtime,
+    size: stat.size,
+  };
+  return info;
+}
 /**
  * Get info from asset, try to avoid sha1 calculation as much as possible
- * @returns
+ * 1. only cal sha1 when reCalcId is true
+ * 2. only cal shortId when shortIdFromName is not exist
  */
 export async function getAssetInfo(options?: GetAssetInfoParams): Promise<AssetInfoPartial> {
   const {relativePath, rootDir, reCalcId, appendShortId, logging} = options ?? {};
@@ -27,50 +40,40 @@ export async function getAssetInfo(options?: GetAssetInfoParams): Promise<AssetI
     throw new Error(`File not exist: ${fullPath}`);
   }
   const {shortId: shortIdFromName, extname} = parseFilePath(fullPath);
-  let newRelativePath = relativePath;
-  /** file stat may be change by action of appendIdToFile */
-  const newFullPath = path.resolve(rootDir, newRelativePath);
-  const stat = fs.statSync(newFullPath);
-  const {ctime, mtime, size: sizeInByte} = stat;
+  const stat = options?.stat ?? fs.statSync(path.resolve(rootDir, relativePath));
+  let fileStatInfo = getAssetInfoFromStat(stat);
+
+  let fixedRelativePath: string | undefined;
   let sha1: string;
   let shortId = shortIdFromName;
-  /**
-   * Should take care about calculate hash as it will cost lots of resource for big file
-   */
+  /** SHA-1 computation should be avoided because it is resource-intensive. */
   if (reCalcId) {
     if (logging) {
-      logColorful({}, `calculating sha1 for file ${fullPath}[${byteToWord(sizeInByte)}]`);
+      logColorful({}, `calculating sha1 for file ${fullPath}[${byteToWord(fileStatInfo.size)}]`);
     }
     const sha1Info = await getSha1AsId(fullPath);
     sha1 = sha1Info.sha1;
+    /** fix shortId when it's not correct after sha1 calculation */
     if (shortIdFromName !== sha1Info.shortId) {
       shortId = sha1Info.shortId;
-      /**
-       * If shortIdFromBaseName exist and it's vlaue is different from shortId calculated
-       * we should update shortId on file basename
-       */
+      /** append correct shortId to filename */
       if (shortIdFromName || appendShortId) {
-        newRelativePath = appendShortIdToFilePath(relativePath, shortId);
-        if (newRelativePath !== relativePath) {
-          fs.renameSync(path.resolve(rootDir, fullPath), path.resolve(rootDir, newRelativePath));
+        const fixedRelativePath = appendShortIdToFilePath(relativePath, shortId);
+        if (fixedRelativePath !== relativePath) {
+          fs.renameSync(path.resolve(rootDir, fullPath), path.resolve(rootDir, fixedRelativePath));
         }
       }
     }
   }
   const assetInfo: AssetInfoPartial = {
-    relativePath: newRelativePath,
-    changeDate: ctime,
-    modifyDate: mtime,
-    size: sizeInByte,
+    relativePath: fixedRelativePath ?? relativePath,
     extname,
+    ...(fixedRelativePath
+      ? getAssetInfoFromStat(fs.statSync(path.resolve(rootDir, fixedRelativePath)))
+      : fileStatInfo),
+    sha1,
+    shortId,
   };
-  /** add prop id only when id exist, as all props of assetInfo will be used for asset compare */
-  if (sha1) {
-    assetInfo.sha1 = sha1;
-  }
-  if (shortId) {
-    assetInfo.shortId = shortId;
-  }
   return assetInfo;
 }
 
@@ -85,10 +88,6 @@ export async function getPartialAssetInfo(options: GetAssetInfoParams) {
 
 /**
  * Convert from partial asset info to full asset info
- * @param assetInfo
- * @param rootDir
- * @param options
- * @returns
  */
 export async function toFullAssetInfo(
   assetInfo: AssetInfoPartial,
@@ -98,14 +97,21 @@ export async function toFullAssetInfo(
   const {sha1, shortId, relativePath} = assetInfo;
   /** id is undefined means, shortId is got from filePath, which is not correct maybe. */
   if (sha1 === undefined) {
-    return getAssetInfo({
+    return getFullAssetInfo({
       relativePath,
       rootDir,
       ...(options ?? {}),
       reCalcId: true,
-    }) as Promise<Required<AssetInfoPartial>>;
+    });
   }
-  return {...assetInfo, sha1, shortId};
+  if (shortId === undefined) {
+    return {
+      ...assetInfo,
+      sha1,
+      shortId: getShortId(sha1),
+    } as AssetInfoFull;
+  }
+  return assetInfo as AssetInfoFull;
 }
 
 function compareAssetProp(
@@ -124,15 +130,15 @@ function compareAssetProp(
   }
 }
 /**
- * Get the diff between these two assetInfo, to get what should be changed if we want align asset info with refer
- * @param refer only compare props of refer
- * @param item asset info on db
+ * Get the diff between these two assetInfo, to get what should be changed if we want align @param item info with @param refer info
+ * @param refer only compare props of refer info
+ * @param current asset info on db
  */
-export function diffAssets(refer: AssetInfoFull, item: AssetInfoFull) {
+export function diffAssets(refer: AssetInfoFull, current: AssetInfoFull) {
   const diff: Partial<AssetInfoFull> = {};
   for (const key of ['sha1', 'shortId', 'relativePath', 'extname', 'size', 'modifyDate', 'changeDate']) {
-    if (refer[key] !== undefined && !compareAssetProp(refer[key], item[key])) {
-      diff[key] = refer[key];
+    if (refer[key] !== undefined && !compareAssetProp(refer[key], current[key])) {
+      diff[key] = current[key];
     }
   }
   if (Object.keys(diff).length > 0) {
