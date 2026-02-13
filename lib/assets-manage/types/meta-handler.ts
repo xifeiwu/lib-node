@@ -29,7 +29,4 @@ export interface MetaHandlers {
   // saveState: () => Promise<AssetInfoFull[]>;
   snapshot?: () => Promise<string | false>;
 }
-export type GetMetaHandlers = (
-  rootDir: string,
-  options?: {initMetaIfNotExist?: boolean} & GetDirAssetOptions
-) => Promise<MetaHandlers>;
+export type GetMetaHandlers = (rootDir: string, options?: GetDirAssetOptions) => Promise<MetaHandlers>;

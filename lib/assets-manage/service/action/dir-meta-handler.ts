@@ -5,23 +5,26 @@ import {
   GetDirAssetOptions,
   CreateOrUpdateItemOptions,
   MetaHandlers,
+  AssetTree,
 } from '../../types';
 import {
   assetInfoTreeToList,
   getAssetFullInfoListOfDir,
+  getAssetFullInfoTreeOfDir,
   getMetaDir,
   getMetaFilePath,
   getMetaOfDir,
   saveDirMetaToFile,
 } from '../dir-assets';
-import {addDtSuffixToBareBasename, removeFile} from '../../external';
+import {addDtSuffixToBareBasename, goOnOrNot, removeFile} from '../../external';
 
 export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, globalOptions) => {
   if (!fs.existsSync(rootDir)) {
     throw new Error(`rootDir not exist: ${rootDir}`);
   }
 
-  const {initMetaIfNotExist, getAssetInfoParams, goThroughDirOptions} = globalOptions ?? {};
+  const {getAssetInfoParams, goThroughDirOptions} = globalOptions ?? {};
+  let meta: AssetTree;
   let assetInfoList: AssetInfoFull[];
 
   function getKey() {
@@ -31,25 +34,33 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, global
   function haveMeta() {
     return Array.isArray(assetInfoList);
   }
+
+  async function resetMeta(options?: GetDirAssetOptions) {
+    meta = await getAssetFullInfoTreeOfDir(rootDir, options ?? globalOptions);
+    saveDirMetaToFile(rootDir, meta, {backupOutdatedMeta: true});
+    return meta;
+  }
   async function checkMeta() {
     let meta = getMetaOfDir(rootDir);
     if (!meta) {
-      assetInfoList = await resetMeta({getAssetInfoParams, goThroughDirOptions});
-    } else {
-      assetInfoList = assetInfoTreeToList(meta);
+      if (
+        !(await goOnOrNot({
+          tips: [`Meta not found for dir: ${rootDir}, do you want to create it now?`],
+          style: {color: 'red'},
+          defaultValue: true,
+        }))
+      ) {
+        throw new Error(`Meta not found, and user not want to create it`);
+      }
+      meta = await resetMeta({getAssetInfoParams, goThroughDirOptions});
     }
-    return assetInfoList;
+    return meta;
   }
 
   function getMetaLocation() {
     return getMetaFilePath(rootDir);
   }
 
-  async function resetMeta(options?: GetDirAssetOptions) {
-    assetInfoList = await getAssetFullInfoListOfDir(rootDir, options ?? globalOptions);
-    saveDirMetaToFile(rootDir, assetInfoList, {toNewFile: true});
-    return assetInfoList;
-  }
   async function cleanUpMeta() {
     assetInfoList = [];
     const metaDir = getMetaDir(rootDir);

@@ -6,8 +6,10 @@ import {
   makeSureDirExist,
   rerequire,
   logColorful,
-  getPathWithDtSuffix,
+  addDtSuffixToBareBasename,
   makeSureDirExistForFile,
+  toDate,
+  formatDate,
 } from '../external';
 import {
   AssetInfoFull,
@@ -17,9 +19,8 @@ import {
   AssetInfoPartial,
   GetDirAssetOptions,
   Sha1ToAssetInfo,
-  AssetsChangeByReferMeta,
 } from '../types';
-import {diffAssets, getAssetInfo, toFullAssetInfo} from './asset-info';
+import {getAssetInfo} from './asset-info';
 
 async function getOneAssetMeta(
   item: FileInfoTreeItem,
@@ -238,10 +239,17 @@ export function getMetaOfDir(rootDir: string): AssetTree | undefined {
   const metaFile = getMetaFilePath(rootDir);
   if (!fs.existsSync(metaFile)) {
     return undefined;
-    // throw new Error(`Can't found meta file: ${metaFile}`);
-    // return {rootDir, relativePath: '.'};
   }
+  const convertToDate = (item: AssetTree | AssetInfoFull) => {
+    if ('children' in item && Array.isArray(item.children)) {
+      item.children.forEach(convertToDate);
+    } else {
+      (item as AssetInfoFull).modifyDate = toDate((item as AssetInfoFull).modifyDate);
+      (item as AssetInfoFull).changeDate = toDate((item as AssetInfoFull).changeDate);
+    }
+  };
   const meta = rerequire(metaFile).meta as AssetTree;
+  convertToDate(meta);
   return meta;
 }
 
@@ -249,18 +257,30 @@ export function saveDirMetaToFile(
   rootDir: string,
   assetMeta: AssetInfoFull[] | AssetTree,
   options?: {
-    toNewFile?: boolean;
+    /** override existing meta file or not */
+    backupOutdatedMeta?: boolean;
   }
 ) {
-  const {toNewFile} = options ?? {};
+  const {backupOutdatedMeta} = options ?? {};
   if (Array.isArray(assetMeta)) {
     assetMeta = assetInfoListToTree(assetMeta, rootDir);
   }
   const metaFile = getMetaFilePath(rootDir);
-  if (toNewFile && fs.existsSync(metaFile)) {
-    fs.renameSync(metaFile, getPathWithDtSuffix(metaFile));
+  if (backupOutdatedMeta && fs.existsSync(metaFile)) {
+    fs.renameSync(metaFile, addDtSuffixToBareBasename(metaFile));
   }
   makeSureDirExistForFile(metaFile);
+  /** convert date to string before save to file */
+  const convertDateToString = (item: AssetTree | AssetInfoFull) => {
+    if ('children' in item && Array.isArray(item.children)) {
+      item.children.forEach(convertDateToString);
+    } else {
+      // @ts-ignore
+      (item as AssetInfoFull).modifyDate = formatDate((item as AssetInfoFull).modifyDate);
+      // @ts-ignore
+      (item as AssetInfoFull).changeDate = formatDate((item as AssetInfoFull).changeDate);
+    }
+  };
+  convertDateToString(assetMeta);
   fs.writeFileSync(metaFile, `export const meta = ${JSON.stringify(assetMeta, null, 2)}`);
 }
-
