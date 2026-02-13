@@ -17,27 +17,6 @@ export interface ActionToAssetsAndMeta {
   deleteFiles?: Array<AssetInfoFull>;
 }
 
-export interface MetaHandlers {
-  rootDir: string;
-  getKey: () => string;
-  getMetaLocation: () => string;
-  /** @deprecated by checkMeta */
-  haveMeta: () => boolean;
-  checkMeta: () => void;
-  resetMeta: (options?: GetDirAssetOptions) => Promise<AssetInfoFull[]>;
-  cleanUpMeta: () => Promise<boolean>;
-  insertOrUpdateItem: (assetInfo: AssetInfoFull) => Promise<AssetInfoFull>;
-  findItems: (assetInfo: Partial<AssetInfoFull>) => Promise<AssetInfoFull[]>;
-  removeItem: (relativePath: string) => Promise<AssetInfoFull>;
-  getAllItems: (options?: {paranoid?: boolean}) => Promise<AssetInfoFull[]>;
-  saveState: () => Promise<AssetInfoFull[]>;
-  snapshot?: () => Promise<string | false>;
-}
-export type GetMetaHandlers = (
-  rootDir: string,
-  options?: {initMetaIfNotExist?: boolean} & GetDirAssetOptions
-) => Promise<MetaHandlers>;
-
 export interface ActionOptions {
   logging?: boolean;
   needConfirm?: boolean;

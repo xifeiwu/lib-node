@@ -1,5 +1,11 @@
 import fs from 'fs';
-import {AssetInfoFull, GetMetaHandlers, GetDirAssetOptions} from '../../types';
+import {
+  AssetInfoFull,
+  GetMetaHandlers,
+  GetDirAssetOptions,
+  CreateOrUpdateItemOptions,
+  MetaHandlers,
+} from '../../types';
 import {
   assetInfoTreeToList,
   getAssetFullInfoListOfDir,
@@ -18,25 +24,21 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, global
   const {initMetaIfNotExist, getAssetInfoParams, goThroughDirOptions} = globalOptions ?? {};
   let assetInfoList: AssetInfoFull[];
 
-  try {
-    const meta = getMetaOfDir(rootDir);
-    assetInfoList = assetInfoTreeToList(meta);
-  } catch (err) {
-    console.error(err);
-    if (initMetaIfNotExist) {
-      await resetMeta({getAssetInfoParams, goThroughDirOptions});
-    }
-  }
   function getKey() {
     return getMetaDir(rootDir);
   }
+
   function haveMeta() {
     return Array.isArray(assetInfoList);
   }
-  function checkMeta() {
-    if (!haveMeta()) {
-      throw new Error(`Not found meta, please init it first`);
+  async function checkMeta() {
+    let meta = getMetaOfDir(rootDir);
+    if (!meta) {
+      assetInfoList = await resetMeta({getAssetInfoParams, goThroughDirOptions});
+    } else {
+      assetInfoList = assetInfoTreeToList(meta);
     }
+    return assetInfoList;
   }
 
   function getMetaLocation() {
@@ -57,23 +59,62 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, global
     return true;
   }
 
-  async function insertOrUpdateItem(assetInfo: AssetInfoFull) {
-    checkMeta();
-    let target = assetInfoList.find(it => it.relativePath === assetInfo.relativePath);
-    if (target) {
-      Object.entries(assetInfo).forEach(([key, value]) => {
+  async function createOrUpdateItem(options?: CreateOrUpdateItemOptions & {archive?: boolean}) {
+    const {info, prevInfo, archive = true} = options ?? {};
+    const target = findItemByRelativePath(prevInfo?.relativePath ?? info.relativePath);
+    if (!target) {
+      assetInfoList.push(info);
+    } else {
+      Object.entries(info).forEach(([key, value]) => {
         target[key] = value;
       });
-    } else {
-      assetInfoList.push(assetInfo);
-      target = assetInfo;
     }
-    saveState();
+    if (archive) {
+      saveState();
+    }
     return target;
   }
 
+  async function createItem(info: AssetInfoFull) {
+    const target = await createOrUpdateItem({info});
+    return target;
+  }
+  async function createItems(infoList: AssetInfoFull[]) {
+    const results: AssetInfoFull[] = [];
+    for (const info of infoList) {
+      const target = await createOrUpdateItem({info, archive: false});
+      results.push(target);
+    }
+    saveState();
+    return results;
+  }
+
+  async function updateItem(item: CreateOrUpdateItemOptions) {
+    const target = await createOrUpdateItem(item);
+    return target;
+  }
+  async function updateItems(items: CreateOrUpdateItemOptions[]) {
+    const results: AssetInfoFull[] = [];
+    for (const item of items) {
+      const target = await createOrUpdateItem({...item, archive: false});
+      results.push(target);
+    }
+    saveState();
+    return results;
+  }
+
+  // TODO: optimize this function
+  async function createOrUpdateItems(optionList: CreateOrUpdateItemOptions[]) {
+    const results: AssetInfoFull[] = [];
+    for (const option of optionList) {
+      const target = await createOrUpdateItem({...option, archive: false});
+      results.push(target);
+    }
+    saveState();
+    return results;
+  }
+
   async function findItems(filter: Partial<AssetInfoFull>) {
-    checkMeta();
     const match = (item: AssetInfoFull) => {
       return Object.entries(filter).every(([key, value]) => {
         return value === item[key];
@@ -81,6 +122,15 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, global
     };
     return assetInfoList.filter(match);
   }
+  function findItemByRelativePath(relativePath: string) {
+    return assetInfoList.find(it => it.relativePath === relativePath);
+  }
+  // function findItemByShortId(shortId: string) {
+  //   return assetInfoList.find(it => it.shortId === shortId);
+  // }
+  // function findItemBySha1(sha1: string) {
+  //   return assetInfoList.find(it => it.sha1 === sha1);
+  // }
 
   async function removeItem(relativePath: string) {
     checkMeta();
@@ -91,12 +141,22 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, global
     return item;
   }
 
+  async function removeItems(relativePathList: string[]) {
+    checkMeta();
+    const results: AssetInfoFull[] = [];
+    for (const relativePath of relativePathList) {
+      const result = await removeItem(relativePath);
+      results.push(result);
+    }
+    return results;
+  }
+
   async function getAllItems(options: {paranoid?: boolean}) {
     checkMeta();
     return assetInfoList;
   }
-  async function saveState() {
-    checkMeta();
+  function saveState() {
+    // checkMeta();
     saveDirMetaToFile(rootDir, assetInfoList);
     return assetInfoList;
   }
@@ -110,18 +170,25 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, global
     return backUpMetaFile;
   }
 
-  return {
+  const handlers: MetaHandlers = {
     rootDir,
     getKey,
     getMetaLocation,
+    checkMeta,
     haveMeta,
     resetMeta,
     cleanUpMeta,
-    insertOrUpdateItem,
+    createOrUpdateItem,
+    createOrUpdateItems,
+    createItem,
+    createItems,
+    updateItem,
+    updateItems,
     findItems,
     removeItem,
+    removeItems,
     getAllItems,
-    saveState,
     snapshot,
   };
+  return handlers;
 };

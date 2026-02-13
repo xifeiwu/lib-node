@@ -72,7 +72,7 @@ export async function doActionsToAssetsAndMeta(
     throw new Error(`dir4DeletedFile not exist: ${dir4DeletedFile}`);
   }
   const softDeleteFile = getSoftDeleteFileHandler(dir4DeletedFile);
-  const {rootDir, insertOrUpdateItem, removeItem, snapshot} = metaHandlers;
+  const {rootDir, createOrUpdateItems: insertOrUpdateItems, removeItem, snapshot} = metaHandlers;
   if (snapShotMetaBeforeAction && snapshot) {
     const filePath = await snapshot();
     logging && logColorful({color: 'yellow'}, `snapshot meta in ${filePath}`);
@@ -121,12 +121,14 @@ export async function doActionsToAssetsAndMeta(
         logging && logColorful({color: 'blue'}, `copy file from ${fromPath} to ${toPath}`);
         fs.copyFileSync(fromPath, toPath);
       }
-      Boolean(insertOrUpdateItem) &&
-        (await insertOrUpdateItem({
-          ...(await getPartialAssetInfo({rootDir: to.rootDir, relativePath: relativePath2})),
-          sha1,
-          shortId,
-        }));
+      Boolean(insertOrUpdateItems) &&
+        (await insertOrUpdateItems([
+          {
+            ...(await getPartialAssetInfo({rootDir: to.rootDir, relativePath: relativePath2})),
+            sha1,
+            shortId,
+          },
+        ]));
 
       /** remove the moveFile.from.asset when referCnt is zero */
       if (referMoveCntMap[relativePath] !== undefined) {

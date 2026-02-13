@@ -11,12 +11,12 @@ import {AssetInfoFull, AssetInfoPartial, DirAssetsStateChange} from '../../types
  * Get asset state changed by compare file meta with exsiting files of target dir.
  * ONLY limited to the same rootDir, so use relativePath as id
  * @param referAssetInfoList, get from dir meta file
- * @param currentAssetInfoList, get from lastest content, use AssetInfoPartial here to reduce cost, get full asset info only necessary.
+ * @param latestAssetInfoList, get from lastest content, use AssetInfoPartial here to reduce cost, get full asset info only necessary.
  * @returns
  */
 export async function diffAssetInfoList(
   referAssetInfoList: AssetInfoFull[],
-  currentAssetInfoList: AssetInfoPartial[],
+  latestAssetInfoList: AssetInfoPartial[],
   config: {
     rootDir: string;
   }
@@ -24,7 +24,7 @@ export async function diffAssetInfoList(
   const {rootDir} = config;
   const pathToInfo1 = getRelativePathToAssetInfo(referAssetInfoList);
   const sha1ToAssetInfo1 = getSha1ToAssetInfo(referAssetInfoList);
-  const pathToInfo2 = getRelativePathToAssetInfo(currentAssetInfoList as AssetInfoFull[]);
+  const pathToInfo2 = getRelativePathToAssetInfo(latestAssetInfoList as AssetInfoFull[]);
 
   const paths1 = Object.keys(pathToInfo1);
   const paths2 = Object.keys(pathToInfo2);

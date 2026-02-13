@@ -233,10 +233,11 @@ export function getMetaFilePath(rootDir: string) {
   return path.resolve(metaDir, 'index.ts');
 }
 
-export function getMetaOfDir(rootDir: string): AssetTree {
+export function getMetaOfDir(rootDir: string): AssetTree | undefined {
   const metaFile = getMetaFilePath(rootDir);
   if (!fs.existsSync(metaFile)) {
-    throw new Error(`Can't found meta file: ${metaFile}`);
+    return undefined;
+    // throw new Error(`Can't found meta file: ${metaFile}`);
     // return {rootDir, relativePath: '.'};
   }
   const meta = rerequire(metaFile).meta as AssetTree;

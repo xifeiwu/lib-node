@@ -2,8 +2,10 @@ import path from 'path';
 import {createDuplicateFile, createNewFiles, createLinkFile, removeDataDir} from './generator';
 import {getAssetFullInfoTreeOfDir} from '../service/dir-assets';
 import {logColorful} from '../../../log';
+import {DIR_TMP_DATA} from './service/config';
+import {getDirMetaHandler} from '../service';
 
-const rootDir = path.join(__dirname, '.tmp');
+const rootDir = DIR_TMP_DATA;
 
 export async function initAsset() {
   removeDataDir(rootDir);
@@ -29,4 +31,9 @@ export async function runGetDirAssetMeta() {
     },
   });
   logColorful({}, assetInfoTree);
+}
+
+export async function testGetDirMetaHandler() {
+  const metaHandlers = await getDirMetaHandler(DIR_TMP_DATA);
+  await metaHandlers.checkMeta();
 }
