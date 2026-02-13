@@ -1,13 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 import {AssetInfoFull} from '../types';
-import {
-  MetaHandlers,
-} from '../types';
+import {MetaHandlers} from '../types';
 import {getActionsFromAssetsChange, getAssetsPartailInfoListOfDir} from '../service';
 import {diffAssetInfoList} from '../service';
 import {goOnOrNot, addDtSuffixToBareBasename, makeSureDirExistForFile} from '../external';
-import {DIR_ASSET_MANAGE_TMP_DIR} from '../service/config';
+import {DIR_ASSET_MANAGE_TMP_DIR, DT_FORMAT} from '../service';
 
 // export async function getAssetStateChange(metaHandlers: MetaHandlers) {
 //   const {rootDir} = metaHandlers;
@@ -37,7 +35,9 @@ export async function alignMetaWithAssets(
     return true;
   }
   const action = getActionsFromAssetsChange(stateChange);
-  const stateFile = addDtSuffixToBareBasename(path.join(tmpDir, 'align-meta-with-assets.ts'));
+  const stateFile = addDtSuffixToBareBasename(path.join(tmpDir, 'align-meta-with-assets.ts'), {
+    dtFormat: DT_FORMAT,
+  });
   makeSureDirExistForFile(stateFile);
   fs.writeFileSync(stateFile, JSON.stringify({stateChange, action}, null, 2));
   if (

@@ -1,3 +1,4 @@
+export * from './config';
 export * from './short-id';
 export * from './asset-info';
 export * from './dir-assets';

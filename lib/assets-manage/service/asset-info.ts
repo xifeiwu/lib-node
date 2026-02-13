@@ -20,6 +20,11 @@ export async function getSha1AsId(fullPath: string): Promise<Pick<AssetInfoFull,
   };
 }
 
+/**
+ * Get asset info from stat, that can used to check whether asset is changed by asset info compare
+ * @param stat
+ * @returns
+ */
 function getAssetInfoFromStat(stat: fs.Stats): Pick<AssetInfoPartial, 'changeDate' | 'modifyDate' | 'size'> {
   const info = {
     changeDate: stat.ctime,
@@ -28,6 +33,42 @@ function getAssetInfoFromStat(stat: fs.Stats): Pick<AssetInfoPartial, 'changeDat
   };
   return info;
 }
+
+function compareAssetProp(
+  firstValue: Date | boolean | number | string,
+  secondValue: Date | boolean | number | string,
+  key: keyof AssetInfoFull
+) {
+  if (['modifyDate', 'changeDate'].includes(key)) {
+    /** accurate is millisecond */
+    const fileDateInMs = toDate(firstValue as Date | string).getTime();
+    const dbDateInMs = toDate(secondValue as Date | string).getTime();
+    return fileDateInMs === dbDateInMs;
+  } else if (isBoolean(firstValue)) {
+    return firstValue == Boolean(secondValue);
+  } else {
+    return firstValue === secondValue;
+  }
+}
+/**
+ * Get the diff between these two assetInfo, to get what should be changed if we want align @param item info with @param refer info
+ * @param refer only compare props in @param refer
+ * @param current asset info on db
+ */
+export function diffAssets(refer: AssetInfoFull, current: AssetInfoFull) {
+  const diff: Partial<AssetInfoFull> = {};
+  for (const key of ['sha1', 'shortId', 'relativePath', 'extname', 'size', 'modifyDate', 'changeDate']) {
+    if (refer[key] !== undefined && !compareAssetProp(refer[key], current[key], key as keyof AssetInfoFull)) {
+      diff[key] = current[key];
+    }
+  }
+  if (Object.keys(diff).length > 0) {
+    return diff;
+  } else {
+    return null;
+  }
+}
+
 /**
  * Get info from asset, try to avoid sha1 calculation as much as possible
  * 1. only cal sha1 when reCalcId is true
@@ -112,40 +153,6 @@ export async function toFullAssetInfo(
     } as AssetInfoFull;
   }
   return assetInfo as AssetInfoFull;
-}
-
-function compareAssetProp(
-  firstValue: Date | boolean | number | string,
-  secondValue: Date | boolean | number | string
-) {
-  if (isDate(firstValue)) {
-    /** accurate is millisecond */
-    const fileDateInMs = toDate(firstValue as Date | string).getTime();
-    const dbDateInMs = toDate(secondValue as Date | string).getTime();
-    return fileDateInMs === dbDateInMs;
-  } else if (isBoolean(firstValue)) {
-    return firstValue == Boolean(secondValue);
-  } else {
-    return firstValue === secondValue;
-  }
-}
-/**
- * Get the diff between these two assetInfo, to get what should be changed if we want align @param item info with @param refer info
- * @param refer only compare props in @param refer
- * @param current asset info on db
- */
-export function diffAssets(refer: AssetInfoFull, current: AssetInfoFull) {
-  const diff: Partial<AssetInfoFull> = {};
-  for (const key of ['sha1', 'shortId', 'relativePath', 'extname', 'size', 'modifyDate', 'changeDate']) {
-    if (refer[key] !== undefined && !compareAssetProp(refer[key], current[key])) {
-      diff[key] = current[key];
-    }
-  }
-  if (Object.keys(diff).length > 0) {
-    return diff;
-  } else {
-    return null;
-  }
 }
 
 export function toAssetInfoArray(info: AssetInfoFull[] | AssetInfoFull) {

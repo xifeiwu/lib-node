@@ -1,4 +1,4 @@
-import {alignMetaWithAssets} from '../utils/assets-meta';
+import {alignMetaWithAssets} from '../meta-handler';
 import {getDirMetaHandler} from '../service';
 import {DIR_TMP_DATA} from './service/config';
 
