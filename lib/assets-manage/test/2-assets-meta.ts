@@ -4,6 +4,6 @@ import {DIR_TMP_DATA} from './service/config';
 
 export async function testAlignMetaWithAssetChange() {
   const metaHandlers = await getDirMetaHandler(DIR_TMP_DATA);
-  await metaHandlers.checkMeta();
+  await metaHandlers.getMeta();
   await alignMetaWithAssets(metaHandlers);
 }

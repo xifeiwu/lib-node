@@ -1,9 +1,15 @@
 import path from 'path';
 import {createDuplicateFile, createNewFiles, createLinkFile, removeDataDir} from './generator';
-import {getAssetFullInfoTreeOfDir} from '../service/dir-assets';
+import {
+  assetInfoListToTree,
+  assetInfoTreeToList,
+  deleteItemFromAssetTree,
+  getAssetFullInfoTreeOfDir,
+  isSameAssetMeta,
+} from '../service';
 import {logColorful} from '../../../log';
 import {DIR_TMP_DATA} from './service/config';
-import {getDirMetaHandler} from '../service';
+import {diffAssets, getDirMetaHandler} from '../service';
 
 const rootDir = DIR_TMP_DATA;
 
@@ -31,9 +37,19 @@ export async function runGetDirAssetMeta() {
     },
   });
   logColorful({}, assetInfoTree);
+  /** test convert between tree and list */
+  const assetInfoList = assetInfoTreeToList(assetInfoTree);
+  const newTree = assetInfoListToTree(assetInfoList, rootDir);
+  // test delete item from tree
+  const deletedItme = deleteItemFromAssetTree(newTree, 'a/10.txt');
+  logColorful({}, deletedItme);
+  const isSame = isSameAssetMeta(assetInfoTree, newTree);
+  logColorful({}, isSame);
+  // logColorful({}, newTree);
+  // diffAssets
 }
 
 export async function testGetDirMetaHandler() {
   const metaHandlers = await getDirMetaHandler(DIR_TMP_DATA);
-  await metaHandlers.checkMeta();
+  await metaHandlers.getMeta();
 }

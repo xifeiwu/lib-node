@@ -127,12 +127,12 @@ async function syncUpAssetsChangeToMeta(metaHandlers: MetaHandlers, options?: Ac
 }
 
 export async function makeSureMetaIsUptodate(metaHandlers: MetaHandlers, options?: ActionOptions) {
-  const {getKey, haveMeta, resetMeta} = metaHandlers;
-  options?.logging && logColorful({color: 'yellow'}, `${getKey()} hasMeta: ${haveMeta()}`);
-  if (!haveMeta()) {
-    options?.logging && logColorful({color: 'yellow'}, `start resetMeta for: ${getKey()}`);
-    await resetMeta();
-  } else {
-    return await syncUpAssetsChangeToMeta(metaHandlers, options);
-  }
+  const {getKey, resetMeta} = metaHandlers;
+  // options?.logging && logColorful({color: 'yellow'}, `${getKey()} hasMeta: ${haveMeta()}`);
+  // if (!haveMeta()) {
+  //   options?.logging && logColorful({color: 'yellow'}, `start resetMeta for: ${getKey()}`);
+  //   await resetMeta();
+  // } else {
+  //   return await syncUpAssetsChangeToMeta(metaHandlers, options);
+  // }
 }

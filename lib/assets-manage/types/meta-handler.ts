@@ -1,4 +1,5 @@
 import {AssetInfoFull, GetDirAssetOptions} from './asset';
+import {AssetTree} from './dir-asset';
 
 export interface CreateOrUpdateItemOptions {
   info: AssetInfoFull;
@@ -8,11 +9,9 @@ export interface MetaHandlers {
   rootDir: string;
   getKey: () => string;
   getMetaLocation: () => string;
-  /** @deprecated by checkMeta */
-  haveMeta: () => boolean;
-  /** get meta and sync up with assets, or create meta from assets if not exist */
-  checkMeta: () => void;
-  resetMeta: (options?: GetDirAssetOptions) => Promise<AssetInfoFull[]>;
+  /** get existingmeta */
+  getMeta: () => void;
+  resetMeta: (options?: GetDirAssetOptions) => Promise<AssetTree>;
   cleanUpMeta: () => Promise<boolean>;
   // insertOrUpdateItem: (assetInfo: AssetInfoFull) => Promise<AssetInfoFull>;
   createOrUpdateItem: (item: CreateOrUpdateItemOptions) => Promise<AssetInfoFull>;

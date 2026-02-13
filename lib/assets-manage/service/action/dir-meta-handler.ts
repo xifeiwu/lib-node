@@ -14,6 +14,7 @@ import {
   getMetaDir,
   getMetaFilePath,
   getMetaOfDir,
+  getRelativePathToAssetInfo,
   saveDirMetaToFile,
 } from '../dir-assets';
 import {addDtSuffixToBareBasename, goOnOrNot, removeFile} from '../../external';
@@ -25,24 +26,36 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, global
 
   const {getAssetInfoParams, goThroughDirOptions} = globalOptions ?? {};
   let meta: AssetTree;
+  let relativePathToAssetInfo: Record<string, AssetInfoFull> = {};
+
   let assetInfoList: AssetInfoFull[];
+  function updateMeta(options?: {newValue?: AssetTree | null; archive?: boolean}) {
+    const {newValue, archive} = options ?? {};
+    if (newValue !== undefined) {
+      meta = newValue;
+      if (newValue !== null) {
+        relativePathToAssetInfo = getRelativePathToAssetInfo(assetInfoTreeToList(meta));
+      } else {
+        relativePathToAssetInfo = {};
+      }
+    }
+    if (archive) {
+      saveDirMetaToFile(rootDir, meta, {backupOutdatedMeta: true});
+    }
+  }
 
   function getKey() {
     return getMetaDir(rootDir);
   }
 
-  function haveMeta() {
-    return Array.isArray(assetInfoList);
-  }
-
   async function resetMeta(options?: GetDirAssetOptions) {
-    meta = await getAssetFullInfoTreeOfDir(rootDir, options ?? globalOptions);
-    saveDirMetaToFile(rootDir, meta, {backupOutdatedMeta: true});
-    return meta;
+    const result = await getAssetFullInfoTreeOfDir(rootDir, options ?? globalOptions);
+    updateMeta({newValue: result, archive: true});
+    return result;
   }
-  async function checkMeta() {
-    let meta = getMetaOfDir(rootDir);
-    if (!meta) {
+  async function getMeta() {
+    let result = getMetaOfDir(rootDir);
+    if (!result) {
       if (
         !(await goOnOrNot({
           tips: [`Meta not found for dir: ${rootDir}, do you want to create it now?`],
@@ -52,9 +65,10 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, global
       ) {
         throw new Error(`Meta not found, and user not want to create it`);
       }
-      meta = await resetMeta({getAssetInfoParams, goThroughDirOptions});
+      result = await resetMeta({getAssetInfoParams, goThroughDirOptions});
     }
-    return meta;
+    updateMeta({newValue: result});
+    return result;
   }
 
   function getMetaLocation() {
@@ -62,12 +76,16 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, global
   }
 
   async function cleanUpMeta() {
-    assetInfoList = [];
     const metaDir = getMetaDir(rootDir);
     if (fs.existsSync(metaDir)) {
       removeFile(metaDir);
     }
+    updateMeta({newValue: null});
     return true;
+  }
+
+  function findItemByRelativePath(relativePath: string) {
+    return relativePathToAssetInfo[relativePath];
   }
 
   async function createOrUpdateItem(options?: CreateOrUpdateItemOptions & {archive?: boolean}) {
@@ -80,9 +98,7 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, global
         target[key] = value;
       });
     }
-    if (archive) {
-      saveState();
-    }
+    updateMeta({archive});
     return target;
   }
 
@@ -96,7 +112,7 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, global
       const target = await createOrUpdateItem({info, archive: false});
       results.push(target);
     }
-    saveState();
+    updateMeta({archive: true});
     return results;
   }
 
@@ -110,7 +126,7 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, global
       const target = await createOrUpdateItem({...item, archive: false});
       results.push(target);
     }
-    saveState();
+    updateMeta({archive: true});
     return results;
   }
 
@@ -121,7 +137,7 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, global
       const target = await createOrUpdateItem({...option, archive: false});
       results.push(target);
     }
-    saveState();
+    updateMeta({archive: true});
     return results;
   }
 
@@ -133,27 +149,18 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, global
     };
     return assetInfoList.filter(match);
   }
-  function findItemByRelativePath(relativePath: string) {
-    return assetInfoList.find(it => it.relativePath === relativePath);
-  }
-  // function findItemByShortId(shortId: string) {
-  //   return assetInfoList.find(it => it.shortId === shortId);
-  // }
-  // function findItemBySha1(sha1: string) {
-  //   return assetInfoList.find(it => it.sha1 === sha1);
-  // }
 
   async function removeItem(relativePath: string) {
-    checkMeta();
+    getMeta();
     const index = assetInfoList.findIndex(it => it.relativePath === relativePath);
     const item = assetInfoList[index];
     assetInfoList.splice(index, 1);
-    saveState();
+    updateMeta({archive: true});
     return item;
   }
 
   async function removeItems(relativePathList: string[]) {
-    checkMeta();
+    getMeta();
     const results: AssetInfoFull[] = [];
     for (const relativePath of relativePathList) {
       const result = await removeItem(relativePath);
@@ -163,12 +170,7 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, global
   }
 
   async function getAllItems(options: {paranoid?: boolean}) {
-    checkMeta();
-    return assetInfoList;
-  }
-  function saveState() {
-    // checkMeta();
-    saveDirMetaToFile(rootDir, assetInfoList);
+    getMeta();
     return assetInfoList;
   }
   async function snapshot() {
@@ -185,8 +187,7 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, global
     rootDir,
     getKey,
     getMetaLocation,
-    checkMeta,
-    haveMeta,
+    getMeta: getMeta,
     resetMeta,
     cleanUpMeta,
     createOrUpdateItem,

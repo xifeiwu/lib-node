@@ -20,7 +20,7 @@ import {
   GetDirAssetOptions,
   Sha1ToAssetInfo,
 } from '../types';
-import {getAssetInfo} from './asset-info';
+import {diffAssets, getAssetInfo} from './asset-info';
 
 async function getOneAssetMeta(
   item: FileInfoTreeItem,
@@ -90,6 +90,135 @@ export async function getAssetPartialInfoTreeOfDir(
   });
 }
 
+function getPathParts(relativePath: string) {
+  const normalized = path.normalize(relativePath);
+  const parts = normalized.split(path.sep);
+  return parts;
+}
+function insertItemToAssetTree(assetInfo: AssetInfoPartial, tree: AssetTree) {
+  const {relativePath} = assetInfo;
+  if (!relativePath) {
+    throw new Error(`relativePath not found for: ${assetInfo}`);
+  }
+  const parts = getPathParts(assetInfo.relativePath);
+  let i = 1;
+  let curItem: AssetTree | AssetInfoFull = tree;
+  while (i <= parts.length) {
+    const curPath = parts.slice(0, i).join(path.sep);
+    if (!Array.isArray((curItem as AssetTree).children)) {
+      (curItem as AssetTree).children = [];
+    }
+    let target = (curItem as AssetTree).children.find(it => it.relativePath === curPath);
+    if (!target) {
+      if (i === parts.length) {
+        (curItem as AssetTree).children.push(assetInfo);
+      } else {
+        target = {relativePath: curPath, children: []};
+        (curItem as AssetTree).children.push(target);
+        curItem = target;
+      }
+    } else {
+      curItem = target;
+    }
+    i++;
+  }
+}
+
+export function findItemFromAssetTree(tree: AssetTree, relativePath: string) {
+  const parts = getPathParts(relativePath);
+  let i = 1;
+  let curItem: AssetTree | AssetInfoFull = tree;
+  while (i <= parts.length) {
+    const curPath = parts.slice(0, i).join(path.sep);
+    let target = (curItem as AssetTree).children.find(it => it.relativePath === curPath);
+    if (!target) {
+      break;
+    }
+    if (i === parts.length) {
+      return target;
+    }
+    curItem = target;
+    i++;
+  }
+}
+
+export function updateItemOfAssetTree(
+  tree: AssetTree,
+  params: {
+    newInfo: AssetInfoPartial;
+    preInfo?: AssetInfoPartial;
+  }
+) {
+  const {newInfo, preInfo} = params;
+  const relavivePath = preInfo?.relativePath ?? newInfo.relativePath;
+  const target = findItemFromAssetTree(tree, relavivePath);
+  if (!target) {
+    throw new Error(`Item not found for: ${relavivePath}`);
+  }
+  Object.entries(newInfo).forEach(([key, value]) => {
+    target[key] = value;
+  });
+  return target;
+}
+
+export function deleteItemFromAssetTree(tree: AssetTree, relativePath: string): AssetInfoFull | undefined {
+  let result: AssetInfoFull | undefined = undefined;
+  const parts = getPathParts(relativePath);
+  let i = 1;
+  let parentItem: AssetTree | AssetInfoFull = tree;
+  let curItem: AssetTree | AssetInfoFull = tree;
+  while (i <= parts.length) {
+    const curPath = parts.slice(0, i).join(path.sep);
+    let target = (curItem as AssetTree).children.find(it => it.relativePath === curPath);
+    if (!target) {
+      break;
+    }
+    if (i === parts.length) {
+      (curItem as AssetTree).children = (curItem as AssetTree).children.filter(it => it !== target);
+      if ((curItem as AssetTree).children.length === 0) {
+        (parentItem as AssetTree).children = (parentItem as AssetTree).children.filter(it => it !== curItem);
+      }
+      result = target;
+      break;
+    }
+    parentItem = curItem;
+    curItem = target;
+    i++;
+  }
+  return result;
+}
+
+export function isSameAssetMeta(tree1: AssetTree, tree2: AssetTree) {
+  if (Array.isArray((tree1 as AssetTree).children) !== Array.isArray((tree2 as AssetTree).children)) {
+    return false;
+  }
+  if (Array.isArray((tree1 as AssetTree).children)) {
+    if ((tree1 as AssetTree).children.length !== (tree2 as AssetTree).children.length) {
+      return false;
+    }
+    for (let i = 0; i < (tree1 as AssetTree).children.length; i++) {
+      if (!isSameAssetMeta((tree1 as AssetTree).children[i], (tree2 as AssetTree).children[i])) {
+        return false;
+      }
+    }
+    return true;
+  } else {
+    return diffAssets(tree1 as AssetInfoFull, tree2 as AssetInfoFull) === null;
+  }
+}
+
+export function assetInfoListToTree(assetInfoList: AssetInfoPartial[], rootDir: string) {
+  const tree: AssetTree = {rootDir, relativePath: '.', children: []};
+  for (const info of assetInfoList) {
+    const {relativePath} = info;
+    if (!relativePath) {
+      throw new Error(`relativePath not found for: ${relativePath}`);
+    }
+    insertItemToAssetTree(info, tree);
+  }
+  return tree;
+}
+
 export function assetInfoTreeToList(tree: AssetTree) {
   const results: AssetInfoFull[] = [];
   function traverse(meta: AssetTree | AssetInfoFull) {
@@ -102,39 +231,6 @@ export function assetInfoTreeToList(tree: AssetTree) {
   }
   traverse(tree);
   return results;
-}
-
-export function assetInfoListToTree(assetInfoList: AssetInfoPartial[], rootDir: string) {
-  const tree: AssetTree = {rootDir, relativePath: '.', children: []};
-  function insertOne(relativePath, info: AssetInfoPartial) {
-    const normalized = path.normalize(relativePath);
-    const parts = normalized.split(path.sep).slice(0, -1);
-    let tmpChildren = tree.children;
-    let part: string;
-    while ((part = parts.shift()) !== undefined) {
-      const target = tmpChildren.find(it => it.relativePath === part);
-      if (!target) {
-        const children: AssetTree['children'] = [];
-        tmpChildren.push({relativePath: part, children});
-        tmpChildren = children;
-      } else {
-        tmpChildren = (target as AssetTree).children;
-      }
-    }
-    let target: AssetTree | AssetInfoPartial;
-    if ((target = tmpChildren.find(it => it.relativePath === info.relativePath))) {
-      logColorful({color: 'red'}, `There shouldn't be two child have same relativePath, how to handle this?`);
-    }
-    tmpChildren.push(info);
-  }
-  for (const info of assetInfoList) {
-    const {relativePath} = info;
-    if (!relativePath) {
-      throw new Error(`relativePath not found for: ${relativePath}`);
-    }
-    insertOne(relativePath, info);
-  }
-  return tree;
 }
 
 /**
