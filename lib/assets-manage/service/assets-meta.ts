@@ -1,14 +1,12 @@
 import {
-  diffAssets,
-  getAssetInfoById,
-  getRelativePathToAssetInfo,
-  getSha1ToAssetInfo,
-  toFullAssetInfo,
-} from '../../service';
-import {AssetInfoFull, AssetInfoPartial, DirAssetsStateChange} from '../../types';
-
+  AssetInfoFull,
+  AssetInfoPartial,
+  AssetsChangeByReferMeta,
+} from '../types';
+import {diffAssets, toFullAssetInfo} from './asset-info';
+import { getAssetInfoById, getRelativePathToAssetInfo, getSha1ToAssetInfo } from './dir-assets';
 /**
- * Get asset state changed by compare file meta with exsiting files of target dir.
+ * Get what should be changed to align refer asset info list with latest asset info list.
  * ONLY limited to the same rootDir, so use relativePath as id
  * @param referAssetInfoList, get from dir meta file
  * @param latestAssetInfoList, get from lastest content, use AssetInfoPartial here to reduce cost, get full asset info only necessary.
@@ -20,7 +18,7 @@ export async function diffAssetInfoList(
   config: {
     rootDir: string;
   }
-): Promise<DirAssetsStateChange> {
+): Promise<AssetsChangeByReferMeta> {
   const {rootDir} = config;
   const pathToInfo1 = getRelativePathToAssetInfo(referAssetInfoList);
   const sha1ToAssetInfo1 = getSha1ToAssetInfo(referAssetInfoList);
@@ -136,7 +134,7 @@ export async function diffAssetInfoList(
   };
 }
 
-export function getActionToMetaByStateChange(stateChange: DirAssetsStateChange) {
+export function getActionsFromAssetsChange(stateChange: AssetsChangeByReferMeta) {
   const {added = [], copied = [], moved = [], modified = [], deleted = [], isNeedAction} = stateChange;
   const toAdd: AssetInfoFull[] = [...added, ...copied.map(it => it.to), ...moved.map(it => it.to)];
   const toDelete: AssetInfoFull[] = [...deleted, ...moved.map(it => it.from)];

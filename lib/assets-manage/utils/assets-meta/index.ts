@@ -8,9 +8,8 @@ import {
   MetaHandlers,
 } from '../../types';
 import {doActionsToAssetsAndMeta, getAssetsPartailInfoListOfDir, getMetaDir} from '../../service';
-import {diffAssetInfoList, getActionToMetaByStateChange} from './service';
-import {logColorful, goOnOrNot, addDtSuffixToBareBasename, makeSureDirExistForFile} from '../../external';
-import {DIR_ASSET_MANAGE_TMP_DIR} from '../../service/config';
+import {diffAssetInfoList} from '../../service';
+import {logColorful, goOnOrNot, addDtSuffixToBareBasename} from '../../external';
 
 export async function getAssetStateChange(metaHandlers: MetaHandlers) {
   const {rootDir} = metaHandlers;
@@ -22,37 +21,6 @@ export async function getAssetStateChange(metaHandlers: MetaHandlers) {
     latestAssetInfoList,
     stateChange: await diffAssetInfoList(assetInfoListMeta, latestAssetInfoList, {rootDir}),
   };
-}
-
-export async function alignMetaWithAssets(
-  metaHandlers: MetaHandlers,
-  options?: {
-    tmpDir?: string;
-  }
-) {
-  const {tmpDir = DIR_ASSET_MANAGE_TMP_DIR} = options ?? {};
-  const {stateChange} = await getAssetStateChange(metaHandlers);
-  if (!stateChange.isNeedAction) {
-    return true;
-  }
-  const action = getActionToMetaByStateChange(stateChange);
-  const stateFile = addDtSuffixToBareBasename(path.join(tmpDir, 'align-meta-with-assets.ts'));
-  makeSureDirExistForFile(stateFile);
-  fs.writeFileSync(stateFile, JSON.stringify({stateChange, action}, null, 2));
-  if (
-    !(await goOnOrNot({
-      tips: [`state change is saved to file: ${stateFile}`, `Are you sure to apply state change above?`],
-      style: {color: 'red'},
-      defaultValue: true,
-    }))
-  ) {
-    return false;
-  }
-  const {toAdd, toDelete, toModify} = action;
-  await metaHandlers.createItems(toAdd);
-  await metaHandlers.updateItems(toModify.map(it => ({info: it.to, prevInfo: it.from})));
-  await metaHandlers.removeItems(toDelete.map(it => it.relativePath));
-  return true;
 }
 
 export async function applyStateChange(

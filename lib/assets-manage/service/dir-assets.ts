@@ -17,8 +17,9 @@ import {
   AssetInfoPartial,
   GetDirAssetOptions,
   Sha1ToAssetInfo,
+  AssetsChangeByReferMeta,
 } from '../types';
-import {getAssetInfo} from './asset-info';
+import {diffAssets, getAssetInfo, toFullAssetInfo} from './asset-info';
 
 async function getOneAssetMeta(
   item: FileInfoTreeItem,
@@ -262,3 +263,4 @@ export function saveDirMetaToFile(
   makeSureDirExistForFile(metaFile);
   fs.writeFileSync(metaFile, `export const meta = ${JSON.stringify(assetMeta, null, 2)}`);
 }
+

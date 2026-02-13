@@ -1,6 +1,6 @@
 import {AssetInfoFull, AssetInfoPartial} from './asset';
 
-export interface DirAssetsStateChange {
+export interface AssetsChangeByReferMeta {
   added: AssetInfoFull[];
   copied: {
     from: AssetInfoFull;
@@ -22,5 +22,5 @@ export interface DirAssetsStateChange {
 export interface AssetStateChangeInfo {
   assetInfoListMeta: AssetInfoFull[];
   latestAssetInfoList: AssetInfoPartial[];
-  stateChange: DirAssetsStateChange;
+  stateChange: AssetsChangeByReferMeta;
 }

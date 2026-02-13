@@ -1,0 +1,57 @@
+import fs from 'fs';
+import path from 'path';
+import {AssetInfoFull} from '../types';
+import {
+  MetaHandlers,
+} from '../types';
+import {getActionsFromAssetsChange, getAssetsPartailInfoListOfDir} from '../service';
+import {diffAssetInfoList} from '../service';
+import {goOnOrNot, addDtSuffixToBareBasename, makeSureDirExistForFile} from '../external';
+import {DIR_ASSET_MANAGE_TMP_DIR} from '../service/config';
+
+// export async function getAssetStateChange(metaHandlers: MetaHandlers) {
+//   const {rootDir} = metaHandlers;
+//   let assetInfoListMeta: AssetInfoFull[] = await metaHandlers.getAllItems();
+//   /** only get partial asset info to reduce cost */
+//   let latestAssetInfoList: AssetInfoFull[] = await getAssetsPartailInfoListOfDir(rootDir);
+//   return {
+//     assetInfoListMeta,
+//     latestAssetInfoList,
+//     stateChange: await diffAssetInfoList(assetInfoListMeta, latestAssetInfoList, {rootDir}),
+//   };
+// }
+
+export async function alignMetaWithAssets(
+  metaHandlers: MetaHandlers,
+  options?: {
+    outputDir?: string;
+  }
+) {
+  const {outputDir: tmpDir = DIR_ASSET_MANAGE_TMP_DIR} = options ?? {};
+  const {rootDir} = metaHandlers;
+  const assetInfoListMeta: AssetInfoFull[] = await metaHandlers.getAllItems();
+  /** only get partial asset info to reduce cost */
+  let latestAssetInfoList: AssetInfoFull[] = await getAssetsPartailInfoListOfDir(rootDir);
+  const stateChange = await diffAssetInfoList(assetInfoListMeta, latestAssetInfoList, {rootDir});
+  if (!stateChange.isNeedAction) {
+    return true;
+  }
+  const action = getActionsFromAssetsChange(stateChange);
+  const stateFile = addDtSuffixToBareBasename(path.join(tmpDir, 'align-meta-with-assets.ts'));
+  makeSureDirExistForFile(stateFile);
+  fs.writeFileSync(stateFile, JSON.stringify({stateChange, action}, null, 2));
+  if (
+    !(await goOnOrNot({
+      tips: [`state change is saved to file: ${stateFile}`, `Are you sure to apply state change above?`],
+      style: {color: 'red'},
+      defaultValue: true,
+    }))
+  ) {
+    return false;
+  }
+  const {toAdd, toDelete, toModify} = action;
+  await metaHandlers.createItems(toAdd);
+  await metaHandlers.updateItems(toModify.map(it => ({info: it.to, prevInfo: it.from})));
+  await metaHandlers.removeItems(toDelete.map(it => it.relativePath));
+  return true;
+}
