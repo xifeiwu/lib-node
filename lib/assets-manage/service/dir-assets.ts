@@ -95,7 +95,60 @@ function getPathParts(relativePath: string) {
   const parts = normalized.split(path.sep);
   return parts;
 }
-function insertItemToAssetTree(assetInfo: AssetInfoPartial, tree: AssetTree) {
+
+export function findItemFromAssetTree(
+  tree: AssetTree,
+  relativePath: string
+): AssetTree | AssetInfoFull | undefined {
+  const parts = getPathParts(relativePath);
+  let i = 1;
+  let curItem: AssetTree | AssetInfoFull = tree;
+  while (i <= parts.length) {
+    const curPath = parts.slice(0, i).join(path.sep);
+    let target = (curItem as AssetTree).children?.find(it => it.relativePath === curPath);
+    if (!target) {
+      break;
+    }
+    if (i === parts.length) {
+      return target;
+    }
+    curItem = target;
+    i++;
+  }
+  return undefined;
+}
+
+function goThroughAssetTree(tree: AssetTree, cb: (item: AssetTree | AssetInfoFull) => void) {
+  function traverse(item: AssetTree | AssetInfoFull) {
+    if ('children' in item && Array.isArray(item.children)) {
+      item.children.forEach(traverse);
+    }
+    cb(item);
+  }
+  traverse(tree);
+}
+export function findAssetItemsByFilter(
+  tree: AssetTree,
+  filter: (item: AssetTree | AssetInfoFull) => boolean
+) {
+  const results: AssetInfoFull[] = [];
+  goThroughAssetTree(tree, item => {
+    if (filter(item)) {
+      results.push(item as AssetInfoFull);
+    }
+  });
+  return results;
+}
+
+export function findAssetItemsByProps(tree: AssetTree, props: Partial<AssetInfoFull>) {
+  return findAssetItemsByFilter(tree, item => {
+    return Object.entries(props).every(([key, value]) => {
+      return item[key] === value;
+    });
+  });
+}
+
+function insertItemToAssetTree(tree: AssetTree, assetInfo: AssetInfoPartial) {
   const {relativePath} = assetInfo;
   if (!relativePath) {
     throw new Error(`relativePath not found for: ${assetInfo}`);
@@ -122,35 +175,18 @@ function insertItemToAssetTree(assetInfo: AssetInfoPartial, tree: AssetTree) {
     }
     i++;
   }
-}
-
-export function findItemFromAssetTree(tree: AssetTree, relativePath: string) {
-  const parts = getPathParts(relativePath);
-  let i = 1;
-  let curItem: AssetTree | AssetInfoFull = tree;
-  while (i <= parts.length) {
-    const curPath = parts.slice(0, i).join(path.sep);
-    let target = (curItem as AssetTree).children.find(it => it.relativePath === curPath);
-    if (!target) {
-      break;
-    }
-    if (i === parts.length) {
-      return target;
-    }
-    curItem = target;
-    i++;
-  }
+  return curItem as AssetInfoFull;
 }
 
 export function updateItemOfAssetTree(
   tree: AssetTree,
   params: {
     newInfo: AssetInfoPartial;
-    preInfo?: AssetInfoPartial;
+    prevInfo?: AssetInfoPartial;
   }
 ) {
-  const {newInfo, preInfo} = params;
-  const relavivePath = preInfo?.relativePath ?? newInfo.relativePath;
+  const {newInfo, prevInfo} = params;
+  const relavivePath = prevInfo?.relativePath ?? newInfo.relativePath;
   const target = findItemFromAssetTree(tree, relavivePath);
   if (!target) {
     throw new Error(`Item not found for: ${relavivePath}`);
@@ -158,7 +194,22 @@ export function updateItemOfAssetTree(
   Object.entries(newInfo).forEach(([key, value]) => {
     target[key] = value;
   });
-  return target;
+  return target as AssetInfoFull;
+}
+
+export function insertOrUpdateItemOfAssetTree(
+  tree: AssetTree,
+  assetInfo: AssetInfoPartial,
+  prevInfo?: AssetInfoPartial
+): AssetInfoFull {
+  let result: AssetInfoFull | undefined = undefined;
+  const target = findItemFromAssetTree(tree, prevInfo?.relativePath ?? assetInfo.relativePath);
+  if (!target) {
+    result = insertItemToAssetTree(tree, assetInfo);
+  } else {
+    result = updateItemOfAssetTree(tree, {newInfo: assetInfo, prevInfo});
+  }
+  return result as AssetInfoFull;
 }
 
 export function deleteItemFromAssetTree(tree: AssetTree, relativePath: string): AssetInfoFull | undefined {
@@ -214,7 +265,7 @@ export function assetInfoListToTree(assetInfoList: AssetInfoPartial[], rootDir: 
     if (!relativePath) {
       throw new Error(`relativePath not found for: ${relativePath}`);
     }
-    insertItemToAssetTree(info, tree);
+    insertItemToAssetTree(tree, info);
   }
   return tree;
 }
