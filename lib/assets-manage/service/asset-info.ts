@@ -56,10 +56,20 @@ function compareAssetProp(
  * @param refer only compare props in @param refer
  * @param current asset info on db
  */
-export function diffAssets(refer: AssetInfoFull, current: AssetInfoFull) {
+export function diffAssets(
+  refer: AssetInfoFull,
+  current: AssetInfoFull,
+  keyList?: Array<keyof AssetInfoFull>
+) {
+  keyList =
+    keyList ??
+    (['sha1', 'shortId', 'relativePath', 'extname', 'size', 'modifyDate', 'changeDate'] as Array<
+      keyof AssetInfoFull
+    >);
   const diff: Partial<AssetInfoFull> = {};
-  for (const key of ['sha1', 'shortId', 'relativePath', 'extname', 'size', 'modifyDate', 'changeDate']) {
+  for (const key of keyList) {
     if (refer[key] !== undefined && !compareAssetProp(refer[key], current[key], key as keyof AssetInfoFull)) {
+      // @ts-ignore
       diff[key] = current[key];
     }
   }
