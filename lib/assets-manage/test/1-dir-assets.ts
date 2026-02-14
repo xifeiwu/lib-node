@@ -1,11 +1,11 @@
 import path from 'path';
 import {createDuplicateFile, createNewFiles, createLinkFile, removeDataDir} from './generator';
 import {
-  assetInfoListToTree,
   assetInfoTreeToList,
   deleteItemFromAssetTree,
   getAssetFullInfoTreeOfDir,
   isSameAssetMeta,
+  toAssetTreeMeta,
 } from '../service';
 import {logColorful} from '../../../log';
 import {DIR_TMP_DATA} from './service/config';
@@ -39,7 +39,7 @@ export async function runGetDirAssetMeta() {
   logColorful({}, assetInfoTree);
   /** test convert between tree and list */
   const assetInfoList = assetInfoTreeToList(assetInfoTree);
-  const newTree = assetInfoListToTree(assetInfoList, rootDir);
+  const newTree = toAssetTreeMeta(assetInfoList, rootDir);
   // test delete item from tree
   const deletedItme = deleteItemFromAssetTree(newTree, 'a/10.txt');
   logColorful({}, deletedItme);

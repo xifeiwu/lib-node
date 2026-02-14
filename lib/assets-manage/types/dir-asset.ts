@@ -6,8 +6,17 @@ import {AssetInfoFull} from '.';
 
 // export type AssetMeta = DirAssetMeta | AssetInfoFull;
 export type AssetTree = {
-  /** only root AssetTree has rootDir */
-  rootDir?: string;
   relativePath: string;
   children?: Array<AssetTree | AssetInfoFull>;
 };
+
+export interface AssetTreeMeta extends AssetTree {
+  rootDir: string;
+}
+
+export interface AssetListMeta {
+  rootDir: string;
+  assetInfoList: AssetInfoFull[];
+}
+
+export type AssetMeta = AssetTreeMeta | AssetListMeta;

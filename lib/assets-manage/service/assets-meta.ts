@@ -7,6 +7,12 @@ import {
   getSha1ToAssetInfo,
 } from './dir-assets';
 
+type MetaInfo =
+  | AssetTree
+  | {
+      rootDir: string;
+      meta: AssetInfoFull[];
+    };
 /**
  * Get what should be changed to align refer asset info list with latest asset info list.
  * ONLY limited to the same rootDir, so use relativePath as id
@@ -14,7 +20,7 @@ import {
  * @param latestAssetInfoList, get from lastest content, use AssetInfoPartial here to reduce cost, get full asset info only necessary.
  * @returns
  */
-export async function diffAssetInfoList(
+export async function diffMeta(
   referAssetInfoList: AssetInfoFull[],
   latestAssetInfoList: AssetInfoPartial[],
   config: {
@@ -136,12 +142,7 @@ export async function diffAssetInfoList(
   };
 }
 
-// export function diffAssetMeta(referMeta: AssetTree | AssetInfoFull[], latestMeta: AssetTree | AssetInfoFull[]) {
-//   const referMetaList = Array.isArray(referMeta) ? referMeta : assetInfoTreeToList(referMeta);
-//   const latestMetaList = Array.isArray(latestMeta) ? latestMeta : assetInfoTreeToList(latestMeta);
-//   return diffAssetInfoList(referMetaList, latestMetaList, {rootDir: referMeta.rootDir as string});
-// }
-
+export function diffAssetMeta(from: MetaInfo, to: MetaInfo) {}
 export function serializeMetaAssetsDiff(stateChange: MetaAssetsDiff) {
   return {
     ...stateChange,

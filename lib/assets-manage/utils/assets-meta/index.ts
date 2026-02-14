@@ -8,19 +8,21 @@ import {
   MetaHandlers,
 } from '../../types';
 import {doActionsToAssetsAndMeta, getAssetsPartailInfoListOfDir, getMetaDir} from '../../service';
-import {diffAssetInfoList} from '../../service';
 import {logColorful, goOnOrNot, addDtSuffixToBareBasename} from '../../external';
 
+/**
+ * @deprecated by alignMetaWithAssets
+ */
 export async function getAssetStateChange(metaHandlers: MetaHandlers) {
-  const {rootDir} = metaHandlers;
-  let assetInfoListMeta: AssetInfoFull[] = await metaHandlers.getAllItems();
-  /** only get partial asset info to reduce cost */
-  let latestAssetInfoList: AssetInfoFull[] = await getAssetsPartailInfoListOfDir(rootDir);
-  return {
-    assetInfoListMeta,
-    latestAssetInfoList,
-    stateChange: await diffAssetInfoList(assetInfoListMeta, latestAssetInfoList, {rootDir}),
-  };
+  // const {rootDir} = metaHandlers;
+  // let assetInfoListMeta: AssetInfoFull[] = await metaHandlers.getAllItems();
+  // /** only get partial asset info to reduce cost */
+  // let latestAssetInfoList: AssetInfoFull[] = await getAssetsPartailInfoListOfDir(rootDir);
+  // return {
+  //   assetInfoListMeta,
+  //   latestAssetInfoList,
+  //   stateChange: await diffAssetInfoList(assetInfoListMeta, latestAssetInfoList, {rootDir}),
+  // };
 }
 
 export async function applyStateChange(

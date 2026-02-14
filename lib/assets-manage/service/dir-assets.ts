@@ -19,6 +19,8 @@ import {
   AssetInfoPartial,
   GetDirAssetOptions,
   Sha1ToAssetInfo,
+  AssetTreeMeta,
+  AssetListMeta,
 } from '../types';
 import {deserailizeAssetInfo, diffAssets, getAssetInfo, serailizeAssetInfo} from './asset-info';
 
@@ -44,7 +46,7 @@ async function getOneAssetMeta(
   return (await getAssetInfo({...getAssetInfoParams, relativePath})) as AssetInfoFull;
 }
 
-async function getDirAssetTree(rootDir: string, options?: GetDirAssetOptions): Promise<Required<AssetTree>> {
+async function getAssetTreeMeta(rootDir: string, options?: GetDirAssetOptions): Promise<AssetTreeMeta> {
   const {
     goThroughDirOptions = {
       dirFilter({basename}) {
@@ -60,17 +62,19 @@ async function getDirAssetTree(rootDir: string, options?: GetDirAssetOptions): P
     throw new Error(`Not exist or is not directory: ${rootDir}`);
   }
   const fileTree = getFileInfoTree(rootDir, goThroughDirOptions);
-  const meta = (await getOneAssetMeta(fileTree, {...getAssetInfoParams, rootDir})) as AssetTree;
-  meta.rootDir = rootDir;
-  return meta as Required<AssetTree>;
+  const meta: AssetTreeMeta = {
+    rootDir,
+    ...((await getOneAssetMeta(fileTree, {...getAssetInfoParams, rootDir})) as AssetTree),
+  };
+  return meta;
 }
 
 export async function getAssetFullInfoTreeOfDir(
   rootDir: string,
   options?: GetDirAssetOptions
-): Promise<Required<AssetTree>> {
+): Promise<AssetTreeMeta> {
   const {getAssetInfoParams = {}, goThroughDirOptions} = options ?? {};
-  return await getDirAssetTree(rootDir, {
+  return await getAssetTreeMeta(rootDir, {
     goThroughDirOptions,
     getAssetInfoParams: {...getAssetInfoParams, reCalcId: true},
   });
@@ -82,9 +86,9 @@ export async function getAssetFullInfoTreeOfDir(
 export async function getAssetPartialInfoTreeOfDir(
   rootDir: string,
   options?: GetDirAssetOptions
-): Promise<Required<AssetTree>> {
+): Promise<AssetTreeMeta> {
   const {getAssetInfoParams = {}, goThroughDirOptions} = options ?? {};
-  return await getDirAssetTree(rootDir, {
+  return await getAssetTreeMeta(rootDir, {
     goThroughDirOptions,
     getAssetInfoParams: {...getAssetInfoParams, reCalcId: false},
   });
@@ -258,8 +262,8 @@ export function isSameAssetMeta(tree1: AssetTree, tree2: AssetTree) {
   }
 }
 
-export function assetInfoListToTree(assetInfoList: AssetInfoPartial[], rootDir: string) {
-  const tree: AssetTree = {rootDir, relativePath: '.', children: []};
+export function assetInfoListToTree(assetInfoList: AssetInfoPartial[]) {
+  const tree: AssetTree = {relativePath: '.', children: []};
   for (const info of assetInfoList) {
     const {relativePath} = info;
     if (!relativePath) {
@@ -268,6 +272,12 @@ export function assetInfoListToTree(assetInfoList: AssetInfoPartial[], rootDir: 
     insertItemToAssetTree(tree, info);
   }
   return tree;
+}
+export function toAssetTreeMeta(assetInfoList: AssetInfoPartial[], rootDir: string) {
+  return {
+    rootDir,
+    ...assetInfoListToTree(assetInfoList),
+  };
 }
 
 export function assetInfoTreeToList(tree: AssetTree) {
@@ -282,6 +292,15 @@ export function assetInfoTreeToList(tree: AssetTree) {
   }
   traverse(tree);
   return results;
+}
+
+export function toAssetListMeta(treeMeta: AssetTreeMeta): AssetListMeta {
+  const {rootDir, ...tree} = treeMeta;
+  const assetInfoList = assetInfoTreeToList(tree);
+  return {
+    rootDir,
+    assetInfoList,
+  };
 }
 
 /**
@@ -421,7 +440,7 @@ export function saveDirMetaToFile(
 ) {
   const {backupOutdatedMeta} = options ?? {};
   if (Array.isArray(assetMeta)) {
-    assetMeta = assetInfoListToTree(assetMeta, rootDir);
+    assetMeta = toAssetTreeMeta(assetMeta, rootDir);
   }
   const metaFile = getMetaFilePath(rootDir);
   if (backupOutdatedMeta && fs.existsSync(metaFile)) {

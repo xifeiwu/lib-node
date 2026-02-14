@@ -3,7 +3,7 @@ import path from 'path';
 import {AssetInfoFull} from '../types';
 import {MetaHandlers} from '../types';
 import {getActionsFromAssetsChange, getAssetsPartailInfoListOfDir} from '../service';
-import {diffAssetInfoList} from '../service';
+import {diffMeta} from '../service';
 import {
   goOnOrNot,
   addDtSuffixToBareBasename,
@@ -36,7 +36,7 @@ export async function alignMetaWithAssets(
   const assetInfoListMeta: AssetInfoFull[] = await metaHandlers.getAllItems();
   /** only get partial asset info to reduce cost */
   let latestAssetInfoList: AssetInfoFull[] = await getAssetsPartailInfoListOfDir(rootDir);
-  const metaAssetsDiff = await diffAssetInfoList(assetInfoListMeta, latestAssetInfoList, {rootDir});
+  const metaAssetsDiff = await diffMeta(assetInfoListMeta, latestAssetInfoList, {rootDir});
   if (!metaAssetsDiff.isNeedAction) {
     return true;
   }
