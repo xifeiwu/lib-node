@@ -21,7 +21,7 @@ export interface MetaDiff {
   modified?: {
     from: AssetInfoFull;
     to: AssetInfoFull;
-    changed: Partial<AssetInfoFull>;
+    changed?: Partial<AssetInfoFull>;
   }[];
   deleted?: AssetInfoFull[];
 }

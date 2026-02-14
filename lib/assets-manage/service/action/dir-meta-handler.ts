@@ -157,6 +157,7 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, global
       const result = await removeItem(relativePath, {archive: false});
       results.push(result);
     }
+    updateMeta({archive: true});
     return results;
   }
 

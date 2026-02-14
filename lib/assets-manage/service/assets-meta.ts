@@ -369,6 +369,7 @@ export function getSha1ToAssetInfo(infoList: AssetInfoFull[]): Sha1ToAssetInfo {
   }
   return results;
 }
+
 /**
  * Return the first item of assetInfo list
  * @param shortIdToAssetInfo
