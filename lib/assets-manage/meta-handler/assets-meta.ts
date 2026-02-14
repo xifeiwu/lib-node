@@ -2,7 +2,13 @@ import fs from 'fs';
 import path from 'path';
 import {AssetInfoFull} from '../types';
 import {MetaHandlers} from '../types';
-import {getActionsFromAssetsChange, getAssetsPartailInfoListOfDir} from '../service';
+import {
+  getActionsFromAssetsChange,
+  getAssetFullInfoTreeMeta,
+  getAssetPartialInfoTreeMeta,
+  getAssetsPartailInfoListOfDir,
+  serializeMetaDiff,
+} from '../service';
 import {diffMeta} from '../service';
 import {
   goOnOrNot,
@@ -33,18 +39,21 @@ export async function alignMetaWithAssets(
 ) {
   const {outputDir: tmpDir = DIR_ASSET_MANAGE_TMP_DIR} = options ?? {};
   const {rootDir} = metaHandlers;
-  const assetInfoListMeta: AssetInfoFull[] = await metaHandlers.getAllItems();
+  const toMeta = await metaHandlers.getMeta();
   /** only get partial asset info to reduce cost */
-  let latestAssetInfoList: AssetInfoFull[] = await getAssetsPartailInfoListOfDir(rootDir);
-  const metaAssetsDiff = await diffMeta(assetInfoListMeta, latestAssetInfoList, {rootDir});
-  if (!metaAssetsDiff.isNeedAction) {
+  const fromMeta = await getAssetPartialInfoTreeMeta(rootDir);
+  const difference = await diffMeta(toMeta, fromMeta);
+  if (!difference.isNeedAction) {
     return true;
   }
-  const action = getActionsFromAssetsChange(metaAssetsDiff);
+  const action = getActionsFromAssetsChange(difference);
   const stateFile = addDtSuffixToBareBasename(path.join(tmpDir, 'meta-assets-diff.js'), {
     dtFormat: DT_FORMAT,
   });
-  writeFileSync(stateFile, convertObjectToCjsExport({metaAssetsDiff, action}, {format: true}));
+  writeFileSync(
+    stateFile,
+    convertObjectToCjsExport({difference: serializeMetaDiff(difference), action}, {format: true})
+  );
   if (
     !(await goOnOrNot({
       tips: [`state change is saved to file: ${stateFile}`, `Are you sure to apply state change above?`],

@@ -156,23 +156,28 @@ export async function diffMeta(
   toMeta: AssetMeta,
   fromMeta: AssetMeta,
   options?: {
-    usedFor: 'syncUp' | 'importNew';
+    diffFor: 'syncUp' | 'importNew';
   }
-): Promise<MetaDiff> {
+): Promise<MetaDiff & {diffFor: 'syncUp' | 'importNew'}> {
   const {rootDir: rootDir1} = toMeta;
   const {rootDir: rootDir2} = fromMeta;
-  const usedFor = options?.usedFor ?? (rootDir1 === rootDir2 ? 'syncUp' : 'importNew');
-  if (usedFor === 'syncUp') {
-    return diffMetaForSyncUp(toMeta, fromMeta);
-  } else if (usedFor === 'importNew') {
-    return diffMetaForImportNew(toMeta, fromMeta);
+  const diffFor = options?.diffFor ?? (rootDir1 === rootDir2 ? 'syncUp' : 'importNew');
+  let diff: MetaDiff;
+  if (diffFor === 'syncUp') {
+    diff = await diffMetaForSyncUp(toMeta, fromMeta);
+  } else if (diffFor === 'importNew') {
+    diff = await diffMetaForImportNew(toMeta, fromMeta);
   } else {
-    throw new Error(`Invalid usedFor: ${usedFor}`);
+    throw new Error(`Invalid usedFor: ${diffFor}`);
   }
+  return {
+    diffFor,
+    ...diff,
+  };
 }
 
 // export function diffAssetMeta(from: MetaInfo, to: MetaInfo) {}
-export function serializeMetaAssetsDiff(stateChange: MetaDiff) {
+export function serializeMetaDiff(stateChange: MetaDiff) {
   return {
     ...stateChange,
     added: stateChange.added?.map(it => serailizeAssetInfo(it)),

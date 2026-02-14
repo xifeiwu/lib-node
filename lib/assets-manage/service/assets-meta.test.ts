@@ -1,9 +1,9 @@
 import path from 'path';
-import {getAssetFullInfoTreeOfDir} from './assets-meta';
+import {getAssetFullInfoTreeMeta} from './assets-meta';
 import {logColorful} from '../external';
 export async function runGetDirAssetMeta() {
   const rootDir = path.resolve(__dirname, '..');
-  const assetInfoTree = await getAssetFullInfoTreeOfDir(rootDir, {
+  const assetInfoTree = await getAssetFullInfoTreeMeta(rootDir, {
     goThroughDirOptions: {
       maxDepth: 3,
       fileFilter({basename}) {

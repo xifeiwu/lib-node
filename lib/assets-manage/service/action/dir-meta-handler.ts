@@ -11,10 +11,10 @@ import {
   assetInfoTreeToList,
   deleteItemFromAssetTree,
   findAssetItemsByFilter,
-  getAssetFullInfoTreeOfDir,
+  getAssetFullInfoTreeMeta,
   getMetaDir,
   getMetaFilePath,
-  getMetaOfDir,
+  readMetaFromDir,
   insertOrUpdateItemOfAssetTree,
   saveDirMetaToFile,
 } from '../assets-meta';
@@ -50,12 +50,12 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, global
   }
 
   async function resetMeta(options?: GetDirAssetOptions) {
-    const result = await getAssetFullInfoTreeOfDir(rootDir, options ?? globalOptions);
+    const result = await getAssetFullInfoTreeMeta(rootDir, options ?? globalOptions);
     updateMeta({newValue: result, archive: true});
     return result;
   }
   async function getMeta() {
-    let result = getMetaOfDir(rootDir);
+    let result = readMetaFromDir(rootDir);
     if (!result) {
       if (
         !(await goOnOrNot({
@@ -177,7 +177,7 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, global
     rootDir,
     getKey,
     getMetaLocation,
-    getMeta: getMeta,
+    getMeta,
     resetMeta,
     cleanUpMeta,
     createOrUpdateItem,

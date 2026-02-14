@@ -1,5 +1,5 @@
 import {AssetInfoFull, GetDirAssetOptions} from './asset';
-import {AssetTree} from './dir-asset';
+import {AssetMeta, AssetTree} from './dir-asset';
 
 export interface CreateOrUpdateItemOptions {
   info: AssetInfoFull;
@@ -10,8 +10,8 @@ export interface MetaHandlers {
   getKey: () => string;
   getMetaLocation: () => string;
   /** get existingmeta */
-  getMeta: () => void;
-  resetMeta: (options?: GetDirAssetOptions) => Promise<AssetTree>;
+  getMeta: () => Promise<AssetMeta>;
+  resetMeta: (options?: GetDirAssetOptions) => Promise<AssetMeta>;
   cleanUpMeta: () => Promise<boolean>;
   // insertOrUpdateItem: (assetInfo: AssetInfoFull) => Promise<AssetInfoFull>;
   createOrUpdateItem: (item: CreateOrUpdateItemOptions) => Promise<AssetInfoFull>;

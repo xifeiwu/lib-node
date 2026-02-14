@@ -3,7 +3,7 @@ import {createDuplicateFile, createNewFiles, createLinkFile, removeDataDir} from
 import {
   assetInfoTreeToList,
   deleteItemFromAssetTree,
-  getAssetFullInfoTreeOfDir,
+  getAssetFullInfoTreeMeta,
   isSameAssetMeta,
   toAssetTreeMeta,
 } from '../service';
@@ -31,7 +31,7 @@ export async function initAsset() {
  * asset info of link file can be calculated from the source file
  */
 export async function runGetDirAssetMeta() {
-  const assetInfoTree = await getAssetFullInfoTreeOfDir(rootDir, {
+  const assetInfoTree = await getAssetFullInfoTreeMeta(rootDir, {
     getAssetInfoParams: {
       reCalcId: true,
     },

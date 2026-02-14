@@ -70,7 +70,7 @@ async function getAssetTreeMeta(rootDir: string, options?: GetDirAssetOptions): 
   return meta;
 }
 
-export async function getAssetFullInfoTreeOfDir(
+export async function getAssetFullInfoTreeMeta(
   rootDir: string,
   options?: GetDirAssetOptions
 ): Promise<AssetTreeMeta> {
@@ -84,7 +84,7 @@ export async function getAssetFullInfoTreeOfDir(
 /**
  * dir assetPartialInfoMeta is mainly used for meta compare
  */
-export async function getAssetPartialInfoTreeOfDir(
+export async function getAssetPartialInfoTreeMeta(
   rootDir: string,
   options?: GetDirAssetOptions
 ): Promise<AssetTreeMeta> {
@@ -318,7 +318,7 @@ export async function getAssetFullInfoListOfDir(
   rootDir: string,
   options?: GetDirAssetOptions
 ): Promise<AssetInfoFull[]> {
-  const infoTree = await getAssetFullInfoTreeOfDir(rootDir, options);
+  const infoTree = await getAssetFullInfoTreeMeta(rootDir, options);
   return assetInfoTreeToList(infoTree);
 }
 
@@ -329,7 +329,7 @@ export async function getAssetsPartailInfoListOfDir(
   rootDir: string,
   options?: GetDirAssetOptions
 ): Promise<AssetInfoFull[]> {
-  const infoTree = await getAssetPartialInfoTreeOfDir(rootDir, options);
+  const infoTree = await getAssetPartialInfoTreeMeta(rootDir, options);
   return assetInfoTreeToList(infoTree);
 }
 
@@ -419,23 +419,23 @@ export function serializeMeta(meta: AssetTree) {
   return serailizeAssetInfo(meta as AssetInfoFull);
 }
 
-export function deserailizeMeta(meta: AssetTree) {
+export function deserailizeTreeMeta(meta: AssetTree) {
   if (meta.children) {
     return {
       ...meta,
-      children: meta.children.map(deserailizeMeta),
+      children: meta.children.map(deserailizeTreeMeta),
     };
   }
   return deserailizeAssetInfo(meta as AssetInfoFull);
 }
 
-export function getMetaOfDir(rootDir: string): AssetTree | undefined {
+export function readMetaFromDir(rootDir: string): AssetTreeMeta | undefined {
   const metaFile = getMetaFilePath(rootDir);
   if (!fs.existsSync(metaFile)) {
     return undefined;
   }
-  const meta = rerequire(metaFile).meta as AssetTree;
-  return deserailizeMeta(meta);
+  const meta = rerequire(metaFile).meta as AssetMeta;
+  return deserailizeTreeMeta(meta as AssetTreeMeta);
 }
 
 export function saveDirMetaToFile(
