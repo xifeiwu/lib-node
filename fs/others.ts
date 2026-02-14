@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import {isFileExist} from './read';
+import {makeSureDirExistForFile} from '../path';
 
 /**
  * Remove file, directory, link
@@ -84,6 +85,7 @@ export function isInSameDevice(fullPath1: string, fullPath2: string) {
 export function moveFile(fromPath: string, toPath: string) {
   fromPath = path.resolve(fromPath);
   toPath = path.resolve(toPath);
+  makeSureDirExistForFile(toPath);
   if (isInSameDevice(fromPath, toPath)) {
     fs.renameSync(fromPath, fromPath);
   } else {
