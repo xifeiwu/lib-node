@@ -15,7 +15,12 @@ type DiffResult = Pick<MetaDiff, 'added' | 'copied' | 'moved' | 'modified' | 'de
  * @param fromMeta
  * @returns
  */
-export async function diffMetaForSyncUp(toMeta: AssetMeta, fromMeta: AssetMeta): Promise<DiffResult> {
+export async function diffMetaForSyncUp(
+  toMeta: AssetMeta,
+  fromMeta: AssetMeta,
+  options: {isSameDir?: boolean}
+): Promise<DiffResult> {
+  const {isSameDir} = options ?? {};
   const {rootDir: rootDir2} = fromMeta;
   const assetInfoList1 = getAssetInfoListFromMeta(toMeta);
   const assetInfoList2 = getAssetInfoListFromMeta(fromMeta);
@@ -158,20 +163,20 @@ export async function diffMeta(
   toMeta: AssetMeta,
   fromMeta: AssetMeta,
   options?: {
-    diffFor: 'syncUp' | 'importNew';
+    forOperation: 'syncUp' | 'importNew';
   }
 ): Promise<MetaDiff> {
   const {rootDir: rootDir1} = toMeta;
   const {rootDir: rootDir2} = fromMeta;
   const isSameDir = rootDir1 === rootDir2;
-  const diffFor = options?.diffFor ?? (isSameDir ? 'syncUp' : 'importNew');
+  const forOperation = options?.forOperation ?? (isSameDir ? 'syncUp' : 'importNew');
   let diff: DiffResult;
-  if (diffFor === 'syncUp') {
-    diff = await diffMetaForSyncUp(toMeta, fromMeta);
-  } else if (diffFor === 'importNew') {
+  if (forOperation === 'syncUp') {
+    diff = await diffMetaForSyncUp(toMeta, fromMeta, {isSameDir});
+  } else if (forOperation === 'importNew') {
     diff = await diffMetaForImportNew(toMeta, fromMeta);
   } else {
-    throw new Error(`Invalid usedFor: ${diffFor}`);
+    throw new Error(`Invalid usedFor: ${forOperation}`);
   }
   const {added = [], copied = [], moved = [], modified = [], deleted = []} = diff;
   const isNeedAction =
@@ -180,7 +185,7 @@ export async function diffMeta(
     }, 0) > 0;
 
   return {
-    diffFor,
+    forOperation,
     toDir: rootDir1,
     fromDir: rootDir2,
     isNeedAction,
