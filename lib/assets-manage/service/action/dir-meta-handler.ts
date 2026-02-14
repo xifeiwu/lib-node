@@ -17,7 +17,7 @@ import {
   getMetaOfDir,
   insertOrUpdateItemOfAssetTree,
   saveDirMetaToFile,
-} from '../dir-assets';
+} from '../assets-meta';
 import {addDtSuffixToBareBasename, goOnOrNot, removeFile} from '../../external';
 
 export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, globalOptions) => {

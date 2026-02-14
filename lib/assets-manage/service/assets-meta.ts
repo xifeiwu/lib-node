@@ -1,182 +1,452 @@
-import {AssetInfoFull, AssetInfoPartial, AssetTree, MetaAssetsDiff} from '../types';
-import {diffAssets, serailizeAssetInfo, toFullAssetInfo} from './asset-info';
+import fs from 'fs';
+import path from 'path';
 import {
-  assetInfoTreeToList,
-  getAssetInfoById,
-  getRelativePathToAssetInfo,
-  getSha1ToAssetInfo,
-} from './dir-assets';
+  getFileInfoTree,
+  FileInfoTreeItem,
+  makeSureDirExist,
+  rerequire,
+  logColorful,
+  addDtSuffixToBareBasename,
+  makeSureDirExistForFile,
+  toDate,
+  formatDate,
+} from '../external';
+import {
+  AssetInfoFull,
+  GetAssetInfoParams,
+  AssetTree,
+  ShortIdToAssetInfo,
+  AssetInfoPartial,
+  GetDirAssetOptions,
+  Sha1ToAssetInfo,
+  AssetTreeMeta,
+  AssetListMeta,
+} from '../types';
+import {deserailizeAssetInfo, diffAssets, getAssetInfo, serailizeAssetInfo} from './asset-info';
 
-type MetaInfo =
-  | AssetTree
-  | {
-      rootDir: string;
-      meta: AssetInfoFull[];
+async function getOneAssetMeta(
+  item: FileInfoTreeItem,
+  getAssetInfoParams: Omit<GetAssetInfoParams, 'relativePath'>
+): Promise<AssetTree | AssetInfoFull> {
+  const {relativePath, children: fileList, stats} = item;
+  if (stats.isDirectory()) {
+    /** make sure children exist for dir path */
+    const children: Array<AssetTree | AssetInfoFull> = [];
+    for (const file of fileList) {
+      children.push(await getOneAssetMeta(file, getAssetInfoParams));
+    }
+    return {
+      relativePath,
+      children,
     };
+  }
+  if (Array.isArray(fileList)) {
+    throw new Error(`children should not exist in file`);
+  }
+  return (await getAssetInfo({...getAssetInfoParams, relativePath})) as AssetInfoFull;
+}
+
+async function getAssetTreeMeta(rootDir: string, options?: GetDirAssetOptions): Promise<AssetTreeMeta> {
+  const {
+    goThroughDirOptions = {
+      dirFilter({basename}) {
+        return !basename.startsWith('.');
+      },
+      fileFilter({basename}) {
+        return !basename.startsWith('.');
+      },
+    },
+    getAssetInfoParams = {},
+  } = options ?? {};
+  if (!fs.existsSync(rootDir) || !fs.statSync(rootDir).isDirectory()) {
+    throw new Error(`Not exist or is not directory: ${rootDir}`);
+  }
+  const fileTree = getFileInfoTree(rootDir, goThroughDirOptions);
+  const meta: AssetTreeMeta = {
+    rootDir,
+    ...((await getOneAssetMeta(fileTree, {...getAssetInfoParams, rootDir})) as AssetTree),
+  };
+  return meta;
+}
+
+export async function getAssetFullInfoTreeOfDir(
+  rootDir: string,
+  options?: GetDirAssetOptions
+): Promise<AssetTreeMeta> {
+  const {getAssetInfoParams = {}, goThroughDirOptions} = options ?? {};
+  return await getAssetTreeMeta(rootDir, {
+    goThroughDirOptions,
+    getAssetInfoParams: {...getAssetInfoParams, reCalcId: true},
+  });
+}
+
 /**
- * Get what should be changed to align refer asset info list with latest asset info list.
- * ONLY limited to the same rootDir, so use relativePath as id
- * @param referAssetInfoList, get from dir meta file
- * @param latestAssetInfoList, get from lastest content, use AssetInfoPartial here to reduce cost, get full asset info only necessary.
- * @returns
+ * dir assetPartialInfoMeta is mainly used for meta compare
  */
-export async function diffMeta(
-  referAssetInfoList: AssetInfoFull[],
-  latestAssetInfoList: AssetInfoPartial[],
-  config: {
-    rootDir: string;
-  }
-): Promise<MetaAssetsDiff> {
-  const {rootDir} = config;
-  const pathToInfo1 = getRelativePathToAssetInfo(referAssetInfoList);
-  const sha1ToAssetInfo1 = getSha1ToAssetInfo(referAssetInfoList);
-  const pathToInfo2 = getRelativePathToAssetInfo(latestAssetInfoList as AssetInfoFull[]);
+export async function getAssetPartialInfoTreeOfDir(
+  rootDir: string,
+  options?: GetDirAssetOptions
+): Promise<AssetTreeMeta> {
+  const {getAssetInfoParams = {}, goThroughDirOptions} = options ?? {};
+  return await getAssetTreeMeta(rootDir, {
+    goThroughDirOptions,
+    getAssetInfoParams: {...getAssetInfoParams, reCalcId: false},
+  });
+}
 
-  const paths1 = Object.keys(pathToInfo1);
-  const paths2 = Object.keys(pathToInfo2);
-  const pathAll = Array.from(new Set([...paths1, ...paths2]));
-  const pathOnlyIn2: string[] = [];
-  const pathOnlyIn1: string[] = [];
-  const pathCommon: string[] = [];
-  for (const p of pathAll) {
-    let cnt = 0;
-    cnt |= pathToInfo1[p] ? 1 : 0;
-    cnt |= pathToInfo2[p] ? 2 : 0;
-    if (cnt === 1) {
-      pathOnlyIn1.push(p);
-    } else if (cnt === 2) {
-      pathOnlyIn2.push(p);
-    } else if (cnt === 3) {
-      pathCommon.push(p);
+function getPathParts(relativePath: string) {
+  const normalized = path.normalize(relativePath);
+  const parts = normalized.split(path.sep);
+  return parts;
+}
+
+export function findItemFromAssetTree(
+  tree: AssetTree,
+  relativePath: string
+): AssetTree | AssetInfoFull | undefined {
+  const parts = getPathParts(relativePath);
+  let i = 1;
+  let curItem: AssetTree | AssetInfoFull = tree;
+  while (i <= parts.length) {
+    const curPath = parts.slice(0, i).join(path.sep);
+    let target = (curItem as AssetTree).children?.find(it => it.relativePath === curPath);
+    if (!target) {
+      break;
+    }
+    if (i === parts.length) {
+      return target;
+    }
+    curItem = target;
+    i++;
+  }
+  return undefined;
+}
+
+function goThroughAssetTree(tree: AssetTree, cb: (item: AssetTree | AssetInfoFull) => void) {
+  function traverse(item: AssetTree | AssetInfoFull) {
+    if ('children' in item && Array.isArray(item.children)) {
+      item.children.forEach(traverse);
+    }
+    cb(item);
+  }
+  traverse(tree);
+}
+export function findAssetItemsByFilter(
+  tree: AssetTree,
+  filter: (item: AssetTree | AssetInfoFull) => boolean
+) {
+  const results: AssetInfoFull[] = [];
+  goThroughAssetTree(tree, item => {
+    if (filter(item)) {
+      results.push(item as AssetInfoFull);
+    }
+  });
+  return results;
+}
+
+export function findAssetItemsByProps(tree: AssetTree, props: Partial<AssetInfoFull>) {
+  return findAssetItemsByFilter(tree, item => {
+    return Object.entries(props).every(([key, value]) => {
+      return item[key] === value;
+    });
+  });
+}
+
+function insertItemToAssetTree(tree: AssetTree, assetInfo: AssetInfoPartial) {
+  const {relativePath} = assetInfo;
+  if (!relativePath) {
+    throw new Error(`relativePath not found for: ${assetInfo}`);
+  }
+  const parts = getPathParts(assetInfo.relativePath);
+  let i = 1;
+  let curItem: AssetTree | AssetInfoFull = tree;
+  while (i <= parts.length) {
+    const curPath = parts.slice(0, i).join(path.sep);
+    if (!Array.isArray((curItem as AssetTree).children)) {
+      (curItem as AssetTree).children = [];
+    }
+    let target = (curItem as AssetTree).children.find(it => it.relativePath === curPath);
+    if (!target) {
+      if (i === parts.length) {
+        (curItem as AssetTree).children.push(assetInfo);
+      } else {
+        target = {relativePath: curPath, children: []};
+        (curItem as AssetTree).children.push(target);
+        curItem = target;
+      }
     } else {
-      throw new Error(`id should not equal to ${p}`);
+      curItem = target;
     }
+    i++;
   }
+  return curItem as AssetInfoFull;
+}
 
-  /** new assets */
-  const added: AssetInfoFull[] = [];
-  /** new assets generated by copy exist asset */
-  const copied: {
-    from: AssetInfoFull;
-    to: AssetInfoFull;
-  }[] = [];
-  /** new assets generated by move exist asset */
-  const moved: {
-    from: AssetInfoFull;
-    to: AssetInfoFull;
-  }[] = [];
-  /** assets that are modified */
-  const modified: {
-    from: AssetInfoFull;
-    to: AssetInfoFull;
-    changed: Partial<AssetInfoFull>;
-  }[] = [];
-  /** assets that are deleted */
-  let deleted: AssetInfoFull[] = [];
-
-  /**
-   * All cases:
-   * 1. new file
-   * 2. copied from file in 1: shortId exist in file of 1
-   * 3. move from file in 1:
-   */
-  /** go through relative path only in current assets meta */
-  for (const p of pathOnlyIn2) {
-    const info = pathToInfo2[p];
-    const fullInfo = await toFullAssetInfo(info, rootDir);
-    const {sha1} = fullInfo;
-    const info1 = getAssetInfoById(sha1ToAssetInfo1, sha1);
-
-    /** if can't find asset info by sha1 on referred assets meta, it's a new asset */
-    if (!info1) {
-      added.push(fullInfo);
-      continue;
-    }
-    const {relativePath} = info1;
-    if (pathCommon.includes(relativePath)) {
-      /** if the asset is in both referred and current assets meta, it's a copied asset */
-      copied.push({
-        from: info1,
-        to: fullInfo,
-      });
-    } else if (pathOnlyIn1.includes(relativePath)) {
-      /** if the asset is in referred assets meta but not in current assets meta, it's a moved asset */
-      moved.push({
-        from: info1,
-        to: fullInfo,
-      });
-    }
+export function updateItemOfAssetTree(
+  tree: AssetTree,
+  params: {
+    newInfo: AssetInfoPartial;
+    prevInfo?: AssetInfoPartial;
   }
-  for (const p of pathCommon) {
-    const info1 = pathToInfo1[p];
-    const info2 = pathToInfo2[p];
-    const changed = diffAssets(info2, info1);
-    if (changed) {
-      /** Once there are asset props change, should recalculate assets sha1 */
-      const newInfo2 = await toFullAssetInfo(info2, rootDir);
-      const changed2 = diffAssets(newInfo2, info1);
-      if (changed2) {
-        modified.push({
-          from: info1,
-          to: newInfo2,
-          changed,
-        });
+) {
+  const {newInfo, prevInfo} = params;
+  const relavivePath = prevInfo?.relativePath ?? newInfo.relativePath;
+  const target = findItemFromAssetTree(tree, relavivePath);
+  if (!target) {
+    throw new Error(`Item not found for: ${relavivePath}`);
+  }
+  Object.entries(newInfo).forEach(([key, value]) => {
+    target[key] = value;
+  });
+  return target as AssetInfoFull;
+}
+
+export function insertOrUpdateItemOfAssetTree(
+  tree: AssetTree,
+  assetInfo: AssetInfoPartial,
+  prevInfo?: AssetInfoPartial
+): AssetInfoFull {
+  let result: AssetInfoFull | undefined = undefined;
+  const target = findItemFromAssetTree(tree, prevInfo?.relativePath ?? assetInfo.relativePath);
+  if (!target) {
+    result = insertItemToAssetTree(tree, assetInfo);
+  } else {
+    result = updateItemOfAssetTree(tree, {newInfo: assetInfo, prevInfo});
+  }
+  return result as AssetInfoFull;
+}
+
+export function deleteItemFromAssetTree(tree: AssetTree, relativePath: string): AssetInfoFull | undefined {
+  let result: AssetInfoFull | undefined = undefined;
+  const parts = getPathParts(relativePath);
+  let i = 1;
+  let parentItem: AssetTree | AssetInfoFull = tree;
+  let curItem: AssetTree | AssetInfoFull = tree;
+  while (i <= parts.length) {
+    const curPath = parts.slice(0, i).join(path.sep);
+    let target = (curItem as AssetTree).children.find(it => it.relativePath === curPath);
+    if (!target) {
+      break;
+    }
+    if (i === parts.length) {
+      (curItem as AssetTree).children = (curItem as AssetTree).children.filter(it => it !== target);
+      if ((curItem as AssetTree).children.length === 0) {
+        (parentItem as AssetTree).children = (parentItem as AssetTree).children.filter(it => it !== curItem);
+      }
+      result = target;
+      break;
+    }
+    parentItem = curItem;
+    curItem = target;
+    i++;
+  }
+  return result;
+}
+
+export function isSameAssetMeta(tree1: AssetTree, tree2: AssetTree) {
+  if (Array.isArray((tree1 as AssetTree).children) !== Array.isArray((tree2 as AssetTree).children)) {
+    return false;
+  }
+  if (Array.isArray((tree1 as AssetTree).children)) {
+    if ((tree1 as AssetTree).children.length !== (tree2 as AssetTree).children.length) {
+      return false;
+    }
+    for (let i = 0; i < (tree1 as AssetTree).children.length; i++) {
+      if (!isSameAssetMeta((tree1 as AssetTree).children[i], (tree2 as AssetTree).children[i])) {
+        return false;
       }
     }
+    return true;
+  } else {
+    return diffAssets(tree1 as AssetInfoFull, tree2 as AssetInfoFull) === null;
   }
+}
 
-  const pathOfMovedIn1 = moved.map(it => it.from.relativePath);
-  deleted = pathOnlyIn1.filter(p => !pathOfMovedIn1.includes(p)).map(p => pathToInfo1[p]);
-
-  const isNeedAction =
-    [added, copied, moved, modified, deleted].reduce<number>((sum, it) => {
-      return sum + it.length;
-    }, 0) > 0;
+export function assetInfoListToTree(assetInfoList: AssetInfoPartial[]) {
+  const tree: AssetTree = {relativePath: '.', children: []};
+  for (const info of assetInfoList) {
+    const {relativePath} = info;
+    if (!relativePath) {
+      throw new Error(`relativePath not found for: ${relativePath}`);
+    }
+    insertItemToAssetTree(tree, info);
+  }
+  return tree;
+}
+export function toAssetTreeMeta(assetInfoList: AssetInfoPartial[], rootDir: string) {
   return {
-    added,
-    copied,
-    moved,
-    modified,
-    deleted,
-    isNeedAction,
+    rootDir,
+    ...assetInfoListToTree(assetInfoList),
   };
 }
 
-export function diffAssetMeta(from: MetaInfo, to: MetaInfo) {}
-export function serializeMetaAssetsDiff(stateChange: MetaAssetsDiff) {
+export function assetInfoTreeToList(tree: AssetTree) {
+  const results: AssetInfoFull[] = [];
+  function traverse(meta: AssetTree | AssetInfoFull) {
+    const {children} = meta as AssetTree;
+    if (!Array.isArray(children)) {
+      results.push(meta as AssetInfoFull);
+    } else {
+      children.map(traverse);
+    }
+  }
+  traverse(tree);
+  return results;
+}
+
+export function toAssetListMeta(treeMeta: AssetTreeMeta): AssetListMeta {
+  const {rootDir, ...tree} = treeMeta;
+  const assetInfoList = assetInfoTreeToList(tree);
   return {
-    ...stateChange,
-    added: stateChange.added.map(it => serailizeAssetInfo(it)),
-    deleted: stateChange.deleted.map(it => serailizeAssetInfo(it)),
-    copied: stateChange.copied.map(it => {
-      return {
-        ...it,
-        from: serailizeAssetInfo(it.from),
-        to: serailizeAssetInfo(it.to),
-      };
-    }),
-    moved: stateChange.moved.map(it => {
-      return {
-        ...it,
-        from: serailizeAssetInfo(it.from),
-        to: serailizeAssetInfo(it.to),
-      };
-    }),
-    modified: stateChange.modified.map(it => {
-      return {
-        ...it,
-        from: serailizeAssetInfo(it.from),
-        to: serailizeAssetInfo(it.to),
-        changed: serailizeAssetInfo(it.changed),
-      };
-    }),
+    rootDir,
+    assetInfoList,
   };
 }
 
-export function getActionsFromAssetsChange(stateChange: MetaAssetsDiff) {
-  const {added = [], copied = [], moved = [], modified = [], deleted = [], isNeedAction} = stateChange;
-  const toAdd: AssetInfoFull[] = [...added, ...copied.map(it => it.to), ...moved.map(it => it.to)];
-  const toDelete: AssetInfoFull[] = [...deleted, ...moved.map(it => it.from)];
-  const toModify = modified;
-  return {toAdd, toDelete, toModify, isNeedAction};
+/**
+ * Mainly used for init dir meta
+ */
+export async function getAssetFullInfoListOfDir(
+  rootDir: string,
+  options?: GetDirAssetOptions
+): Promise<AssetInfoFull[]> {
+  const infoTree = await getAssetFullInfoTreeOfDir(rootDir, options);
+  return assetInfoTreeToList(infoTree);
+}
+
+/**
+ * Mainly used for comparision between latest assets and meta
+ */
+export async function getAssetsPartailInfoListOfDir(
+  rootDir: string,
+  options?: GetDirAssetOptions
+): Promise<AssetInfoFull[]> {
+  const infoTree = await getAssetPartialInfoTreeOfDir(rootDir, options);
+  return assetInfoTreeToList(infoTree);
+}
+
+/**
+ * @deprecated by getSha1ToAssetInfo
+ * @param infoList
+ * @returns
+ */
+export function getShortIdToAssetInfo(infoList: AssetInfoFull[]): ShortIdToAssetInfo {
+  const results: ShortIdToAssetInfo = {};
+  for (const info of infoList) {
+    const {shortId} = info;
+    if (results[shortId]) {
+      if (!Array.isArray(results[shortId])) {
+        results[shortId] = [results[shortId]] as AssetInfoFull[];
+      }
+      (results[shortId] as AssetInfoFull[]).push(info);
+    } else {
+      results[shortId] = info;
+    }
+  }
+  return results;
+}
+
+export function getSha1ToAssetInfo(infoList: AssetInfoFull[]): Sha1ToAssetInfo {
+  const results: Sha1ToAssetInfo = {};
+  for (const info of infoList) {
+    const {sha1} = info;
+    if (results[sha1]) {
+      if (!Array.isArray(results[sha1])) {
+        results[sha1] = [results[sha1]] as AssetInfoFull[];
+      }
+      (results[sha1] as AssetInfoFull[]).push(info);
+    } else {
+      results[sha1] = info;
+    }
+  }
+  return results;
+}
+/**
+ * Return the first item of assetInfo list
+ * @param shortIdToAssetInfo
+ * @param id
+ * @returns
+ */
+export function getAssetInfoById(shortIdToAssetInfo: ShortIdToAssetInfo, id: string): AssetInfoFull {
+  const info = shortIdToAssetInfo[id];
+  if (!info) {
+    return null;
+  }
+  if (Array.isArray(info)) {
+    if (info.length > 0) {
+      return info[0];
+    }
+    return null;
+  }
+  return info;
+}
+
+export function getRelativePathToAssetInfo(infoList: AssetInfoFull[]) {
+  const results: Record<string, AssetInfoFull> = {};
+  for (const info of infoList) {
+    const {relativePath} = info;
+    results[relativePath] = info;
+  }
+  return results;
+}
+
+export function getMetaDir(rootDir: string) {
+  const metaDir = path.join(rootDir, '.meta');
+  makeSureDirExist(metaDir, {isDir: true});
+  return metaDir;
+}
+
+export function getMetaFilePath(rootDir: string) {
+  const metaDir = getMetaDir(rootDir);
+  return path.resolve(metaDir, 'index.ts');
+}
+
+export function serializeMeta(meta: AssetTree) {
+  if (meta.children) {
+    return {
+      ...meta,
+      children: meta.children.map(serializeMeta),
+    };
+  }
+  return serailizeAssetInfo(meta as AssetInfoFull);
+}
+
+export function deserailizeMeta(meta: AssetTree) {
+  if (meta.children) {
+    return {
+      ...meta,
+      children: meta.children.map(deserailizeMeta),
+    };
+  }
+  return deserailizeAssetInfo(meta as AssetInfoFull);
+}
+
+export function getMetaOfDir(rootDir: string): AssetTree | undefined {
+  const metaFile = getMetaFilePath(rootDir);
+  if (!fs.existsSync(metaFile)) {
+    return undefined;
+  }
+  const meta = rerequire(metaFile).meta as AssetTree;
+  return deserailizeMeta(meta);
+}
+
+export function saveDirMetaToFile(
+  rootDir: string,
+  assetMeta: AssetInfoFull[] | AssetTree,
+  options?: {
+    /** override existing meta file or not */
+    backupOutdatedMeta?: boolean;
+  }
+) {
+  const {backupOutdatedMeta} = options ?? {};
+  if (Array.isArray(assetMeta)) {
+    assetMeta = toAssetTreeMeta(assetMeta, rootDir);
+  }
+  const metaFile = getMetaFilePath(rootDir);
+  if (backupOutdatedMeta && fs.existsSync(metaFile)) {
+    fs.renameSync(metaFile, addDtSuffixToBareBasename(metaFile));
+  }
+  makeSureDirExistForFile(metaFile);
+  const serializedMeta = serializeMeta(assetMeta);
+  fs.writeFileSync(metaFile, `export const meta = ${JSON.stringify(serializedMeta, null, 2)}`);
 }
