@@ -1,35 +1,9 @@
-import fs from 'fs';
 import path from 'path';
-import {AssetInfoFull} from '../types';
 import {MetaHandlers} from '../types';
-import {
-  getActionsFromAssetsChange,
-  getAssetFullInfoTreeMeta,
-  getAssetPartialInfoTreeMeta,
-  getAssetsPartailInfoListOfDir,
-  serializeMetaDiff,
-} from '../service';
+import {getActions, getAssetPartialInfoTreeMeta, serializeMetaDiff} from '../service';
 import {diffMeta} from '../service';
-import {
-  goOnOrNot,
-  addDtSuffixToBareBasename,
-  makeSureDirExistForFile,
-  convertObjectToCjsExport,
-  writeFileSync,
-} from '../external';
+import {goOnOrNot, addDtSuffixToBareBasename, convertObjectToCjsExport, writeFileSync} from '../external';
 import {DIR_ASSET_MANAGE_TMP_DIR, DT_FORMAT} from '../service';
-
-// export async function getAssetStateChange(metaHandlers: MetaHandlers) {
-//   const {rootDir} = metaHandlers;
-//   let assetInfoListMeta: AssetInfoFull[] = await metaHandlers.getAllItems();
-//   /** only get partial asset info to reduce cost */
-//   let latestAssetInfoList: AssetInfoFull[] = await getAssetsPartailInfoListOfDir(rootDir);
-//   return {
-//     assetInfoListMeta,
-//     latestAssetInfoList,
-//     stateChange: await diffAssetInfoList(assetInfoListMeta, latestAssetInfoList, {rootDir}),
-//   };
-// }
 
 export async function alignMetaWithAssets(
   metaHandlers: MetaHandlers,
@@ -46,7 +20,7 @@ export async function alignMetaWithAssets(
   if (!difference.isNeedAction) {
     return true;
   }
-  const action = getActionsFromAssetsChange(difference);
+  const action = getActions(difference);
   const stateFile = addDtSuffixToBareBasename(path.join(tmpDir, 'meta-assets-diff.js'), {
     dtFormat: DT_FORMAT,
   });
@@ -69,3 +43,18 @@ export async function alignMetaWithAssets(
   await metaHandlers.removeItems(toDelete.map(it => it.relativePath));
   return true;
 }
+
+// export function getActions(stateChange: MetaDiff, options?: {newFileDir?: string}) {
+//   const {toDir, fromDir, added = [], copied = [], moved = [], modified = [], deleted = [], isNeedAction} = stateChange;
+//   const isSameDir = toDir === fromDir;
+//   if (!isSameDir && !options?.newFileDir) {
+//     throw new Error('newFileDir is required when import new assets');
+//   }
+//   if (isSameDir) {
+//     /** just need to upadte assetsMeta of current dir */
+//   }
+//   const toAdd: AssetInfoFull[] = [...added, ...copied.map(it => it.to), ...moved.map(it => it.to)];
+//   const toDelete: AssetInfoFull[] = [...deleted, ...moved.map(it => it.from)];
+//   const toModify = modified;
+//   return {toAdd, toDelete, toModify, isNeedAction};
+// }

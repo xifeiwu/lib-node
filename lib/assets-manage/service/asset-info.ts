@@ -51,7 +51,8 @@ function compareAssetProp(
   }
 }
 /**
- * Get the diff between these two assetInfo, to get what should be changed if we want align @param item info with @param refer info
+ * Get the diff between these two assetInfo, to get what should be changed
+ * if we want align @param item info with @param refer info
  * @param refer only compare props in @param refer
  * @param current asset info on db
  */

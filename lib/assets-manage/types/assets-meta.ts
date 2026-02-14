@@ -4,6 +4,10 @@ import {AssetInfoFull, AssetInfoPartial} from './asset';
  * Compared to Meta, what is changed in assets
  */
 export interface MetaDiff {
+  isNeedAction: boolean;
+  toDir: string;
+  fromDir: string;
+  diffFor: 'syncUp' | 'importNew';
   added?: AssetInfoFull[];
   copied?: {
     from: AssetInfoFull;
@@ -19,8 +23,18 @@ export interface MetaDiff {
     changed: Partial<AssetInfoFull>;
   }[];
   deleted?: AssetInfoFull[];
-  isNeedAction: boolean;
 }
+
+// export interface Actions {
+//   toAdd: AssetInfoFull[];
+//   toDelete: AssetInfoFull[];
+//   toModify: {
+//     from: AssetInfoFull;
+//     to: AssetInfoFull;
+//     changed: Partial<AssetInfoFull>;
+//   }[];
+//   isNeedAction: boolean;
+// }
 
 /**
  * @deprecated by getAssetStateChange

@@ -8,7 +8,14 @@ import {
   getSha1ToAssetInfo,
 } from './assets-meta';
 
-export async function diffMetaForSyncUp(toMeta: AssetMeta, fromMeta: AssetMeta): Promise<MetaDiff> {
+type DiffResult = Pick<MetaDiff, 'added' | 'copied' | 'moved' | 'modified' | 'deleted'>;
+/**
+ * use relativePath as id for assets syncup
+ * @param toMeta
+ * @param fromMeta
+ * @returns
+ */
+export async function diffMetaForSyncUp(toMeta: AssetMeta, fromMeta: AssetMeta): Promise<DiffResult> {
   const {rootDir: rootDir2} = fromMeta;
   const assetInfoList1 = getAssetInfoListFromMeta(toMeta);
   const assetInfoList2 = getAssetInfoListFromMeta(fromMeta);
@@ -64,27 +71,27 @@ export async function diffMetaForSyncUp(toMeta: AssetMeta, fromMeta: AssetMeta):
    * 2. copied from file in 1: shortId exist in file of 1
    * 3. move from file in 1:
    */
-  /** go through relative path only in current assets meta */
+  /** go through relative path only in from assets meta */
   for (const p of pathOnlyIn2) {
     const info = pathToInfo2[p];
     const fullInfo = await toFullAssetInfo(info, rootDir2);
     const {sha1} = fullInfo;
     const info1 = getAssetInfoById(sha1ToAssetInfo1, sha1);
 
-    /** if can't find asset info by sha1 on referred assets meta, it's a new asset */
+    /** if can't find asset info by sha1 on assets meta1 by sha1, it's a new asset */
     if (!info1) {
       added.push(fullInfo);
       continue;
     }
     const {relativePath} = info1;
     if (pathCommon.includes(relativePath)) {
-      /** if the asset is in both referred and current assets meta, it's a copied asset */
+      /** if the asset is in both assetMeta1 and assetMeta2, it's copied from existing file */
       copied.push({
         from: info1,
         to: fullInfo,
       });
     } else if (pathOnlyIn1.includes(relativePath)) {
-      /** if the asset is in referred assets meta but not in current assets meta, it's a moved asset */
+      /** if the asset is in assetMeta1 but not in assetMeta2, it's moved from existing file */
       moved.push({
         from: info1,
         to: fullInfo,
@@ -112,21 +119,16 @@ export async function diffMetaForSyncUp(toMeta: AssetMeta, fromMeta: AssetMeta):
   const pathOfMovedIn1 = moved.map(it => it.from.relativePath);
   deleted = pathOnlyIn1.filter(p => !pathOfMovedIn1.includes(p)).map(p => pathToInfo1[p]);
 
-  const isNeedAction =
-    [added, copied, moved, modified, deleted].reduce<number>((sum, it) => {
-      return sum + it.length;
-    }, 0) > 0;
   return {
     added,
     copied,
     moved,
     modified,
     deleted,
-    isNeedAction,
   };
 }
 
-export async function diffMetaForImportNew(toMeta: AssetMeta, fromMeta: AssetMeta): Promise<MetaDiff> {
+export async function diffMetaForImportNew(toMeta: AssetMeta, fromMeta: AssetMeta): Promise<DiffResult> {
   // const {rootDir: rootDir1} = toMeta;
   const {rootDir: rootDir2} = fromMeta;
   const assetInfoList1 = getAssetInfoListFromMeta(toMeta);
@@ -142,7 +144,7 @@ export async function diffMetaForImportNew(toMeta: AssetMeta, fromMeta: AssetMet
     }
     added.push(await toFullAssetInfo(getAssetInfoById(sha1ToAssetInfo2, key), rootDir2));
   }
-  return {added, isNeedAction: added.length > 0};
+  return {added};
 }
 
 /**
@@ -158,11 +160,12 @@ export async function diffMeta(
   options?: {
     diffFor: 'syncUp' | 'importNew';
   }
-): Promise<MetaDiff & {diffFor: 'syncUp' | 'importNew'}> {
+): Promise<MetaDiff> {
   const {rootDir: rootDir1} = toMeta;
   const {rootDir: rootDir2} = fromMeta;
-  const diffFor = options?.diffFor ?? (rootDir1 === rootDir2 ? 'syncUp' : 'importNew');
-  let diff: MetaDiff;
+  const isSameDir = rootDir1 === rootDir2;
+  const diffFor = options?.diffFor ?? (isSameDir ? 'syncUp' : 'importNew');
+  let diff: DiffResult;
   if (diffFor === 'syncUp') {
     diff = await diffMetaForSyncUp(toMeta, fromMeta);
   } else if (diffFor === 'importNew') {
@@ -170,8 +173,17 @@ export async function diffMeta(
   } else {
     throw new Error(`Invalid usedFor: ${diffFor}`);
   }
+  const {added = [], copied = [], moved = [], modified = [], deleted = []} = diff;
+  const isNeedAction =
+    [added, copied, moved, modified, deleted].reduce<number>((sum, it) => {
+      return sum + it.length;
+    }, 0) > 0;
+
   return {
     diffFor,
+    toDir: rootDir1,
+    fromDir: rootDir2,
+    isNeedAction,
     ...diff,
   };
 }
@@ -205,12 +217,4 @@ export function serializeMetaDiff(stateChange: MetaDiff) {
       };
     }),
   };
-}
-
-export function getActionsFromAssetsChange(stateChange: MetaDiff) {
-  const {added = [], copied = [], moved = [], modified = [], deleted = [], isNeedAction} = stateChange;
-  const toAdd: AssetInfoFull[] = [...added, ...copied.map(it => it.to), ...moved.map(it => it.to)];
-  const toDelete: AssetInfoFull[] = [...deleted, ...moved.map(it => it.from)];
-  const toModify = modified;
-  return {toAdd, toDelete, toModify, isNeedAction};
 }
