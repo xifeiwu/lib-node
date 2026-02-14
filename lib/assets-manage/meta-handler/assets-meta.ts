@@ -5,21 +5,8 @@ import {diffMeta} from '../service';
 import {goOnOrNot, addDtSuffixToBareBasename, convertObjectToCjsExport, writeFileSync} from '../external';
 import {DIR_ASSET_MANAGE_TMP_DIR, DT_FORMAT} from '../service';
 
-function getActions(stateChange: MetaDiff, options?: {newFileDir?: string}) {
-  const {
-    toDir,
-    fromDir,
-    added = [],
-    copied = [],
-    moved = [],
-    modified = [],
-    deleted = [],
-    isNeedAction,
-  } = stateChange;
-  const isSameDir = toDir === fromDir;
-  if (!isSameDir && !options?.newFileDir) {
-    throw new Error('newFileDir is required when import new assets');
-  }
+function getActions(stateChange: MetaDiff) {
+  const {added = [], copied = [], moved = [], modified = [], deleted = [], isNeedAction} = stateChange;
   const toAdd: AssetInfoFull[] = [...added, ...copied.map(it => it.to), ...moved.map(it => it.to)];
   const toDelete: AssetInfoFull[] = [...deleted, ...moved.map(it => it.from)];
   const toModify = modified;
