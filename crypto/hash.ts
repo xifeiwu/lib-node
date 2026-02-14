@@ -22,7 +22,7 @@ function getDigest(
   const {encode = DEFAULT_ENCODE, maxDigestLength} = options ?? {};
   inst.update(convertToBuffer(data));
   const result = inst.digest(encode);
-  return getSubstring(result, maxDigestLength);
+  return getSubstring(result.toString(), maxDigestLength);
 }
 
 function getDigestFromReadable(
@@ -38,7 +38,7 @@ function getDigestFromReadable(
     });
     readable.on('end', () => {
       const digest = inst.digest(encode);
-      res(getSubstring(digest, maxDigestLength));
+      res(getSubstring(digest.toString(), maxDigestLength));
     });
   });
 }
