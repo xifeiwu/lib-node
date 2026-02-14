@@ -1,6 +1,9 @@
 import {AssetInfoFull, AssetInfoPartial} from './asset';
 
-export interface AssetsChangeByReferMeta {
+/**
+ * Compared to Meta, what is changed in assets
+ */
+export interface MetaAssetsDiff {
   added: AssetInfoFull[];
   copied: {
     from: AssetInfoFull;
@@ -19,8 +22,11 @@ export interface AssetsChangeByReferMeta {
   isNeedAction: boolean;
 }
 
+/**
+ * @deprecated by getAssetStateChange
+ */
 export interface AssetStateChangeInfo {
   assetInfoListMeta: AssetInfoFull[];
   latestAssetInfoList: AssetInfoPartial[];
-  stateChange: AssetsChangeByReferMeta;
+  stateChange: MetaAssetsDiff;
 }

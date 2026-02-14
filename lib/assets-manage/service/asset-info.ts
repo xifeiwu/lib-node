@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import {hashData, logColorful, byteToWord, isBoolean, isDate, toDate} from '../external';
+import {hashData, logColorful, byteToWord, isBoolean, isDate, toDate, formatDate} from '../external';
 import {SHORT_ID_LENGTH} from './constant';
 import {AssetInfoPartial, AssetInfoFull, GetAssetInfoParams} from '../types';
 import {appendShortIdToFilePath, parseFilePath} from './short-id';
@@ -67,6 +67,37 @@ export function diffAssets(refer: AssetInfoFull, current: AssetInfoFull) {
   } else {
     return null;
   }
+}
+
+const dtFormat = 'yyyy-MM-ddThh:mm:ss.SSSz';
+export function serailizeAssetInfo(info: Partial<AssetInfoPartial>) {
+  if (!info) {
+    return null;
+  }
+  const result = {...info};
+  if (result.modifyDate) {
+    // @ts-ignore
+    result.modifyDate = formatDate(result.modifyDate, dtFormat);
+  }
+  if (result.changeDate) {
+    // @ts-ignore
+    result.changeDate = formatDate(result.changeDate, dtFormat);
+  }
+  return result;
+}
+
+export function deserailizeAssetInfo(info: Partial<AssetInfoPartial>) {
+  if (!info) {
+    return null;
+  }
+  const result = {...info};
+  if (result.modifyDate) {
+    result.modifyDate = toDate(result.modifyDate);
+  }
+  if (result.changeDate) {
+    result.changeDate = toDate(result.changeDate);
+  }
+  return result;
 }
 
 /**

@@ -4,7 +4,13 @@ import {AssetInfoFull} from '../types';
 import {MetaHandlers} from '../types';
 import {getActionsFromAssetsChange, getAssetsPartailInfoListOfDir} from '../service';
 import {diffAssetInfoList} from '../service';
-import {goOnOrNot, addDtSuffixToBareBasename, makeSureDirExistForFile} from '../external';
+import {
+  goOnOrNot,
+  addDtSuffixToBareBasename,
+  makeSureDirExistForFile,
+  convertObjectToCjsExport,
+  writeFileSync,
+} from '../external';
 import {DIR_ASSET_MANAGE_TMP_DIR, DT_FORMAT} from '../service';
 
 // export async function getAssetStateChange(metaHandlers: MetaHandlers) {
@@ -30,16 +36,15 @@ export async function alignMetaWithAssets(
   const assetInfoListMeta: AssetInfoFull[] = await metaHandlers.getAllItems();
   /** only get partial asset info to reduce cost */
   let latestAssetInfoList: AssetInfoFull[] = await getAssetsPartailInfoListOfDir(rootDir);
-  const stateChange = await diffAssetInfoList(assetInfoListMeta, latestAssetInfoList, {rootDir});
-  if (!stateChange.isNeedAction) {
+  const metaAssetsDiff = await diffAssetInfoList(assetInfoListMeta, latestAssetInfoList, {rootDir});
+  if (!metaAssetsDiff.isNeedAction) {
     return true;
   }
-  const action = getActionsFromAssetsChange(stateChange);
-  const stateFile = addDtSuffixToBareBasename(path.join(tmpDir, 'align-meta-with-assets.ts'), {
+  const action = getActionsFromAssetsChange(metaAssetsDiff);
+  const stateFile = addDtSuffixToBareBasename(path.join(tmpDir, 'meta-assets-diff.js'), {
     dtFormat: DT_FORMAT,
   });
-  makeSureDirExistForFile(stateFile);
-  fs.writeFileSync(stateFile, JSON.stringify({stateChange, action}, null, 2));
+  writeFileSync(stateFile, convertObjectToCjsExport({metaAssetsDiff, action}, {format: true}));
   if (
     !(await goOnOrNot({
       tips: [`state change is saved to file: ${stateFile}`, `Are you sure to apply state change above?`],

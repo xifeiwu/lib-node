@@ -20,7 +20,7 @@ import {
   GetDirAssetOptions,
   Sha1ToAssetInfo,
 } from '../types';
-import {diffAssets, getAssetInfo} from './asset-info';
+import {deserailizeAssetInfo, diffAssets, getAssetInfo, serailizeAssetInfo} from './asset-info';
 
 async function getOneAssetMeta(
   item: FileInfoTreeItem,
@@ -382,22 +382,33 @@ export function getMetaFilePath(rootDir: string) {
   return path.resolve(metaDir, 'index.ts');
 }
 
+export function serializeMeta(meta: AssetTree) {
+  if (meta.children) {
+    return {
+      ...meta,
+      children: meta.children.map(serializeMeta),
+    };
+  }
+  return serailizeAssetInfo(meta as AssetInfoFull);
+}
+
+export function deserailizeMeta(meta: AssetTree) {
+  if (meta.children) {
+    return {
+      ...meta,
+      children: meta.children.map(deserailizeMeta),
+    };
+  }
+  return deserailizeAssetInfo(meta as AssetInfoFull);
+}
+
 export function getMetaOfDir(rootDir: string): AssetTree | undefined {
   const metaFile = getMetaFilePath(rootDir);
   if (!fs.existsSync(metaFile)) {
     return undefined;
   }
-  const convertToDate = (item: AssetTree | AssetInfoFull) => {
-    if ('children' in item && Array.isArray(item.children)) {
-      item.children.forEach(convertToDate);
-    } else {
-      (item as AssetInfoFull).modifyDate = toDate((item as AssetInfoFull).modifyDate);
-      (item as AssetInfoFull).changeDate = toDate((item as AssetInfoFull).changeDate);
-    }
-  };
   const meta = rerequire(metaFile).meta as AssetTree;
-  convertToDate(meta);
-  return meta;
+  return deserailizeMeta(meta);
 }
 
 export function saveDirMetaToFile(
@@ -417,17 +428,6 @@ export function saveDirMetaToFile(
     fs.renameSync(metaFile, addDtSuffixToBareBasename(metaFile));
   }
   makeSureDirExistForFile(metaFile);
-  /** convert date to string before save to file */
-  const convertDateToString = (item: AssetTree | AssetInfoFull) => {
-    if ('children' in item && Array.isArray(item.children)) {
-      item.children.forEach(convertDateToString);
-    } else {
-      // @ts-ignore
-      (item as AssetInfoFull).modifyDate = formatDate((item as AssetInfoFull).modifyDate);
-      // @ts-ignore
-      (item as AssetInfoFull).changeDate = formatDate((item as AssetInfoFull).changeDate);
-    }
-  };
-  convertDateToString(assetMeta);
-  fs.writeFileSync(metaFile, `export const meta = ${JSON.stringify(assetMeta, null, 2)}`);
+  const serializedMeta = serializeMeta(assetMeta);
+  fs.writeFileSync(metaFile, `export const meta = ${JSON.stringify(serializedMeta, null, 2)}`);
 }

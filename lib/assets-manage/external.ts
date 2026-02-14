@@ -30,4 +30,5 @@ export {
   getFileInfoList,
   moveFile,
   writeFileSync,
+  convertObjectToCjsExport,
 } from '../../index';

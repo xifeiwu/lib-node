@@ -1,10 +1,12 @@
+import {AssetInfoFull, AssetInfoPartial, AssetTree, MetaAssetsDiff} from '../types';
+import {diffAssets, serailizeAssetInfo, toFullAssetInfo} from './asset-info';
 import {
-  AssetInfoFull,
-  AssetInfoPartial,
-  AssetsChangeByReferMeta,
-} from '../types';
-import {diffAssets, toFullAssetInfo} from './asset-info';
-import { getAssetInfoById, getRelativePathToAssetInfo, getSha1ToAssetInfo } from './dir-assets';
+  assetInfoTreeToList,
+  getAssetInfoById,
+  getRelativePathToAssetInfo,
+  getSha1ToAssetInfo,
+} from './dir-assets';
+
 /**
  * Get what should be changed to align refer asset info list with latest asset info list.
  * ONLY limited to the same rootDir, so use relativePath as id
@@ -18,7 +20,7 @@ export async function diffAssetInfoList(
   config: {
     rootDir: string;
   }
-): Promise<AssetsChangeByReferMeta> {
+): Promise<MetaAssetsDiff> {
   const {rootDir} = config;
   const pathToInfo1 = getRelativePathToAssetInfo(referAssetInfoList);
   const sha1ToAssetInfo1 = getSha1ToAssetInfo(referAssetInfoList);
@@ -134,7 +136,43 @@ export async function diffAssetInfoList(
   };
 }
 
-export function getActionsFromAssetsChange(stateChange: AssetsChangeByReferMeta) {
+// export function diffAssetMeta(referMeta: AssetTree | AssetInfoFull[], latestMeta: AssetTree | AssetInfoFull[]) {
+//   const referMetaList = Array.isArray(referMeta) ? referMeta : assetInfoTreeToList(referMeta);
+//   const latestMetaList = Array.isArray(latestMeta) ? latestMeta : assetInfoTreeToList(latestMeta);
+//   return diffAssetInfoList(referMetaList, latestMetaList, {rootDir: referMeta.rootDir as string});
+// }
+
+export function serializeMetaAssetsDiff(stateChange: MetaAssetsDiff) {
+  return {
+    ...stateChange,
+    added: stateChange.added.map(it => serailizeAssetInfo(it)),
+    deleted: stateChange.deleted.map(it => serailizeAssetInfo(it)),
+    copied: stateChange.copied.map(it => {
+      return {
+        ...it,
+        from: serailizeAssetInfo(it.from),
+        to: serailizeAssetInfo(it.to),
+      };
+    }),
+    moved: stateChange.moved.map(it => {
+      return {
+        ...it,
+        from: serailizeAssetInfo(it.from),
+        to: serailizeAssetInfo(it.to),
+      };
+    }),
+    modified: stateChange.modified.map(it => {
+      return {
+        ...it,
+        from: serailizeAssetInfo(it.from),
+        to: serailizeAssetInfo(it.to),
+        changed: serailizeAssetInfo(it.changed),
+      };
+    }),
+  };
+}
+
+export function getActionsFromAssetsChange(stateChange: MetaAssetsDiff) {
   const {added = [], copied = [], moved = [], modified = [], deleted = [], isNeedAction} = stateChange;
   const toAdd: AssetInfoFull[] = [...added, ...copied.map(it => it.to), ...moved.map(it => it.to)];
   const toDelete: AssetInfoFull[] = [...deleted, ...moved.map(it => it.from)];
