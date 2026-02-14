@@ -1,36 +1,20 @@
-import {AssetInfoFull, AssetInfoPartial, AssetTree, MetaAssetsDiff} from '../types';
+import {AssetInfoFull, AssetInfoPartial, AssetMeta, AssetTree, MetaDiff} from '../types';
 import {diffAssets, serailizeAssetInfo, toFullAssetInfo} from './asset-info';
 import {
   assetInfoTreeToList,
   getAssetInfoById,
+  getAssetInfoListFromMeta,
   getRelativePathToAssetInfo,
   getSha1ToAssetInfo,
 } from './assets-meta';
 
-type MetaInfo =
-  | AssetTree
-  | {
-      rootDir: string;
-      meta: AssetInfoFull[];
-    };
-/**
- * Get what should be changed to align refer asset info list with latest asset info list.
- * ONLY limited to the same rootDir, so use relativePath as id
- * @param referAssetInfoList, get from dir meta file
- * @param latestAssetInfoList, get from lastest content, use AssetInfoPartial here to reduce cost, get full asset info only necessary.
- * @returns
- */
-export async function diffMeta(
-  referAssetInfoList: AssetInfoFull[],
-  latestAssetInfoList: AssetInfoPartial[],
-  config: {
-    rootDir: string;
-  }
-): Promise<MetaAssetsDiff> {
-  const {rootDir} = config;
-  const pathToInfo1 = getRelativePathToAssetInfo(referAssetInfoList);
-  const sha1ToAssetInfo1 = getSha1ToAssetInfo(referAssetInfoList);
-  const pathToInfo2 = getRelativePathToAssetInfo(latestAssetInfoList as AssetInfoFull[]);
+export async function diffMetaForSyncUp(toMeta: AssetMeta, fromMeta: AssetMeta): Promise<MetaDiff> {
+  const {rootDir: rootDir2} = fromMeta;
+  const assetInfoList1 = getAssetInfoListFromMeta(toMeta);
+  const assetInfoList2 = getAssetInfoListFromMeta(fromMeta);
+  const pathToInfo1 = getRelativePathToAssetInfo(assetInfoList1);
+  const sha1ToAssetInfo1 = getSha1ToAssetInfo(assetInfoList1);
+  const pathToInfo2 = getRelativePathToAssetInfo(assetInfoList2);
 
   const paths1 = Object.keys(pathToInfo1);
   const paths2 = Object.keys(pathToInfo2);
@@ -83,7 +67,7 @@ export async function diffMeta(
   /** go through relative path only in current assets meta */
   for (const p of pathOnlyIn2) {
     const info = pathToInfo2[p];
-    const fullInfo = await toFullAssetInfo(info, rootDir);
+    const fullInfo = await toFullAssetInfo(info, rootDir2);
     const {sha1} = fullInfo;
     const info1 = getAssetInfoById(sha1ToAssetInfo1, sha1);
 
@@ -113,7 +97,7 @@ export async function diffMeta(
     const changed = diffAssets(info2, info1);
     if (changed) {
       /** Once there are asset props change, should recalculate assets sha1 */
-      const newInfo2 = await toFullAssetInfo(info2, rootDir);
+      const newInfo2 = await toFullAssetInfo(info2, rootDir2);
       const changed2 = diffAssets(newInfo2, info1);
       if (changed2) {
         modified.push({
@@ -142,27 +126,72 @@ export async function diffMeta(
   };
 }
 
-export function diffAssetMeta(from: MetaInfo, to: MetaInfo) {}
-export function serializeMetaAssetsDiff(stateChange: MetaAssetsDiff) {
+export async function diffMetaForImportNew(toMeta: AssetMeta, fromMeta: AssetMeta): Promise<MetaDiff> {
+  // const {rootDir: rootDir1} = toMeta;
+  const {rootDir: rootDir2} = fromMeta;
+  const assetInfoList1 = getAssetInfoListFromMeta(toMeta);
+  const assetInfoList2 = getAssetInfoListFromMeta(fromMeta);
+  const sha1ToAssetInfo1 = getSha1ToAssetInfo(assetInfoList1);
+  const sha1ToAssetInfo2 = getSha1ToAssetInfo(assetInfoList2);
+
+  const added: AssetInfoFull[] = [];
+  for (const key of Object.keys(sha1ToAssetInfo2)) {
+    const assetInfo1 = sha1ToAssetInfo1[key];
+    if (assetInfo1) {
+      continue;
+    }
+    added.push(await toFullAssetInfo(getAssetInfoById(sha1ToAssetInfo2, key), rootDir2));
+  }
+  return {added, isNeedAction: added.length > 0};
+}
+
+/**
+ * Get what should be changed to align refer asset info list with latest asset info list.
+ * ONLY limited to the same rootDir, so use relativePath as id
+ * @param referAssetInfoList, get from dir meta file
+ * @param latestAssetInfoList, get from lastest content, use AssetInfoPartial here to reduce cost, get full asset info only necessary.
+ * @returns
+ */
+export async function diffMeta(
+  toMeta: AssetMeta,
+  fromMeta: AssetMeta,
+  options?: {
+    usedFor: 'syncUp' | 'importNew';
+  }
+): Promise<MetaDiff> {
+  const {rootDir: rootDir1} = toMeta;
+  const {rootDir: rootDir2} = fromMeta;
+  const usedFor = options?.usedFor ?? (rootDir1 === rootDir2 ? 'syncUp' : 'importNew');
+  if (usedFor === 'syncUp') {
+    return diffMetaForSyncUp(toMeta, fromMeta);
+  } else if (usedFor === 'importNew') {
+    return diffMetaForImportNew(toMeta, fromMeta);
+  } else {
+    throw new Error(`Invalid usedFor: ${usedFor}`);
+  }
+}
+
+// export function diffAssetMeta(from: MetaInfo, to: MetaInfo) {}
+export function serializeMetaAssetsDiff(stateChange: MetaDiff) {
   return {
     ...stateChange,
-    added: stateChange.added.map(it => serailizeAssetInfo(it)),
-    deleted: stateChange.deleted.map(it => serailizeAssetInfo(it)),
-    copied: stateChange.copied.map(it => {
+    added: stateChange.added?.map(it => serailizeAssetInfo(it)),
+    deleted: stateChange.deleted?.map(it => serailizeAssetInfo(it)),
+    copied: stateChange.copied?.map(it => {
       return {
         ...it,
         from: serailizeAssetInfo(it.from),
         to: serailizeAssetInfo(it.to),
       };
     }),
-    moved: stateChange.moved.map(it => {
+    moved: stateChange.moved?.map(it => {
       return {
         ...it,
         from: serailizeAssetInfo(it.from),
         to: serailizeAssetInfo(it.to),
       };
     }),
-    modified: stateChange.modified.map(it => {
+    modified: stateChange.modified?.map(it => {
       return {
         ...it,
         from: serailizeAssetInfo(it.from),
@@ -173,7 +202,7 @@ export function serializeMetaAssetsDiff(stateChange: MetaAssetsDiff) {
   };
 }
 
-export function getActionsFromAssetsChange(stateChange: MetaAssetsDiff) {
+export function getActionsFromAssetsChange(stateChange: MetaDiff) {
   const {added = [], copied = [], moved = [], modified = [], deleted = [], isNeedAction} = stateChange;
   const toAdd: AssetInfoFull[] = [...added, ...copied.map(it => it.to), ...moved.map(it => it.to)];
   const toDelete: AssetInfoFull[] = [...deleted, ...moved.map(it => it.from)];

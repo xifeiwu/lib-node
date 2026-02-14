@@ -21,6 +21,7 @@ import {
   Sha1ToAssetInfo,
   AssetTreeMeta,
   AssetListMeta,
+  AssetMeta,
 } from '../types';
 import {deserailizeAssetInfo, diffAssets, getAssetInfo, serailizeAssetInfo} from './asset-info';
 
@@ -278,6 +279,13 @@ export function toAssetTreeMeta(assetInfoList: AssetInfoPartial[], rootDir: stri
     rootDir,
     ...assetInfoListToTree(assetInfoList),
   };
+}
+
+export function getAssetInfoListFromMeta(meta: AssetMeta): AssetInfoFull[] {
+  if (Array.isArray((meta as AssetListMeta).assetInfoList)) {
+    return (meta as AssetListMeta).assetInfoList;
+  }
+  return assetInfoTreeToList(meta as AssetTree);
 }
 
 export function assetInfoTreeToList(tree: AssetTree) {
