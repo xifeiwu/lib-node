@@ -68,6 +68,9 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, global
       }
       result = await resetMeta({getAssetInfoParams, goThroughDirOptions});
     }
+    if (result.rootDir !== rootDir) {
+      throw new Error(`rootDir from assetMeta is different from rootDir of meta handler!`);
+    }
     updateMeta({newValue: result});
     return result;
   }

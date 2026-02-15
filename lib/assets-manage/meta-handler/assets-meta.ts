@@ -39,7 +39,11 @@ export async function alignMetaWithAssets(
   );
   if (
     !(await goOnOrNot({
-      tips: [`state change is saved to file: ${stateFile}`, `Are you sure to apply state change above?`],
+      tips: [
+        `Need to do meta-asset sync up for dir: ${rootDir}`,
+        `state change is saved to file: ${stateFile}`,
+        `Are you sure to apply state change above?`,
+      ],
       style: {color: 'red'},
       defaultValue: true,
     }))
@@ -50,5 +54,12 @@ export async function alignMetaWithAssets(
   await metaHandlers.createItems(toAdd);
   await metaHandlers.updateItems(toModify.map(it => ({info: it.to, prevInfo: it.from})));
   await metaHandlers.removeItems(toDelete.map(it => it.relativePath));
+  // const {toAdd, toDelete, toModify} = action;
+  // for (const item of [...toAdd, ...toModify.map(it => it.to)]) {
+  //   if (!item.sha1) {
+  //     const fullInfo = await toFullAssetInfo(item, rootDir);
+  //     Object.assign(item, fullInfo);
+  //   }
+  // }
   return true;
 }

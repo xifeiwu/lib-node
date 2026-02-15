@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import {AssetInfoFull, MetaDiff, MetaHandlers} from '../types';
+import {AssetInfoFull, ForOperation, MetaDiff, MetaHandlers} from '../types';
 import {serializeMetaDiff, getPartialAssetInfo} from '../service';
 import {diffMeta} from '../service';
 import {
@@ -19,16 +19,16 @@ export async function alignAssets(
   fromMetaHandlers: MetaHandlers,
   options?: {
     outputDir?: string;
-    forOperation?: MetaDiff['forOperation'];
   }
 ) {
+  const forOperation: ForOperation = 'syncUp';
   const {rootDir: rootDir1} = toMetaHandlers;
   const {rootDir: rootDir2} = fromMetaHandlers;
   if (!rootDir1 || !rootDir2 || rootDir1 === rootDir2) {
     throw new Error(`rootDir check fail!`);
   }
 
-  const {outputDir = DIR_ASSET_MANAGE_TMP_DIR, forOperation} = options ?? {};
+  const {outputDir = DIR_ASSET_MANAGE_TMP_DIR} = options ?? {};
   const toMeta = await toMetaHandlers.getMeta();
   const fromMeta = await fromMetaHandlers.getMeta();
   const difference = await diffMeta(toMeta, fromMeta, {forOperation});
@@ -78,15 +78,16 @@ export async function alignAssets(
   }) => {
     const {relativePath: fromRelativePath, sha1, shortId} = from;
     const {relativePath: toRelativePath} = to;
-    const fromPath = path.join(toMetaHandlers.rootDir, fromRelativePath);
+    const fromPath = path.join(fromMetaHandlers.rootDir, fromRelativePath);
     const toPath = path.join(toMetaHandlers.rootDir, toRelativePath);
     makeSureDirExistForFile(toPath);
     if (action === 'copy') {
+      makeSureDirExistForFile(toPath);
       fs.copyFileSync(fromPath, toPath);
       await toMetaHandlers.createItem({
+        ...(await getPartialAssetInfo({rootDir: toMetaHandlers.rootDir, relativePath: toRelativePath})),
         sha1,
         shortId,
-        ...(await getPartialAssetInfo({rootDir: toMetaHandlers.rootDir, relativePath: toRelativePath})),
       } as AssetInfoFull);
     } else if (action === 'move') {
       moveFile(fromPath, toPath);
@@ -98,7 +99,7 @@ export async function alignAssets(
       await toMetaHandlers.removeItem(fromRelativePath);
     }
   };
-  for (const assetInfo of copied) {
+  for (const assetInfo of [...copied, ...modified]) {
     await operationOnToDir({from: assetInfo.from, to: assetInfo.to, action: 'copy'});
   }
   for (const assetInfo of moved) {
