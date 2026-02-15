@@ -157,6 +157,11 @@ export async function getAssetInfo(options?: GetAssetInfoParams): Promise<AssetI
     sha1,
     shortId,
   };
+  for (const key of Object.keys(assetInfo) as Array<keyof AssetInfoPartial>) {
+    if (assetInfo[key] === undefined) {
+      delete assetInfo[key];
+    }
+  }
   return assetInfo;
 }
 
