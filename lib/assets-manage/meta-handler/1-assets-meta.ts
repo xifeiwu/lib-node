@@ -44,7 +44,7 @@ export async function alignMetaWithAssets(
         `state change is saved to file: ${stateFile}`,
         `Are you sure to apply state change above?`,
       ],
-      style: {color: 'red'},
+      style: {color: 'yellow'},
       defaultValue: true,
     }))
   ) {
