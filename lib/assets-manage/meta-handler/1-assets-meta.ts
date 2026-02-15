@@ -1,6 +1,11 @@
 import path from 'path';
 import {AssetInfoFull, ForOperation, MetaDiff, MetaHandlers} from '../types';
-import {getAssetPartialInfoTreeMeta, serializeMetaDiff} from '../service';
+import {
+  getAssetInfoListFromMeta,
+  getAssetPartialInfoTreeMeta,
+  getSha1ToAssetInfo,
+  serializeMetaDiff,
+} from '../service';
 import {diffMeta} from '../service';
 import {goOnOrNot, addDtSuffixToBareBasename, convertObjectToCjsExport, writeFileSync} from '../external';
 import {DIR_ASSET_MANAGE_TMP_DIR, DT_FORMAT} from '../service';
@@ -62,4 +67,39 @@ export async function alignMetaWithAssets(
   //   }
   // }
   return true;
+}
+
+export async function handleDuplicateFile(
+  metaHandlers: MetaHandlers,
+  options?: {
+    outputDir?: string;
+  }
+) {
+  const {outputDir = DIR_ASSET_MANAGE_TMP_DIR} = options ?? {};
+  const meta = await metaHandlers.getMeta();
+  const assetInfoList = getAssetInfoListFromMeta(meta);
+  const sha1ToAssetInfo = getSha1ToAssetInfo(assetInfoList);
+  const duplicate: Record<string, AssetInfoFull[]> = {};
+  for (const key of Object.keys(sha1ToAssetInfo)) {
+    const assetInfoList = sha1ToAssetInfo[key];
+    if (Array.isArray(assetInfoList) && assetInfoList.length > 1) {
+      duplicate[key] = assetInfoList;
+    }
+  }
+  const stateFile = addDtSuffixToBareBasename(path.join(outputDir, 'duplicate.js'), {
+    dtFormat: DT_FORMAT,
+  });
+  writeFileSync(stateFile, convertObjectToCjsExport({duplicate}, {format: true}));
+  if (
+    !(await goOnOrNot({
+      tips: [
+        `Info of duplicate file is saved to file: ${stateFile}`,
+        `Do you want to remove duplicate file?`,
+      ],
+      style: {color: 'yellow'},
+      defaultValue: true,
+    }))
+  ) {
+    return false;
+  }
 }

@@ -1,1 +1,1 @@
-export * from './assets-meta';
+export * from './1-assets-meta';
