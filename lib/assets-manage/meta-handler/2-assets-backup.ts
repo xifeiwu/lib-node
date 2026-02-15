@@ -14,7 +14,7 @@ import {
 } from '../external';
 import {DIR_ASSET_MANAGE_TMP_DIR, DT_FORMAT} from '../service';
 
-export async function alignAssets(
+export async function assetsBackup(
   toMetaHandlers: MetaHandlers,
   fromMetaHandlers: MetaHandlers,
   options?: {
@@ -24,6 +24,13 @@ export async function alignAssets(
   const forOperation: ForOperation = 'syncUp';
   const {rootDir: rootDir1} = toMetaHandlers;
   const {rootDir: rootDir2} = fromMetaHandlers;
+  if (
+    !(await goOnOrNot({
+      tips: [`Will back up assets by meta?`, `from dir: ${rootDir2}`, `to dir: ${rootDir1}`],
+    }))
+  ) {
+    return;
+  }
   if (!rootDir1 || !rootDir2 || rootDir1 === rootDir2) {
     throw new Error(`rootDir check fail!`);
   }
