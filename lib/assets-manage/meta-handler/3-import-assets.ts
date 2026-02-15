@@ -9,24 +9,22 @@ import {
   convertObjectToCjsExport,
   writeFileSync,
   makeSureDirExistForFile,
-  moveFile,
-  removeFile,
 } from '../external';
 import {DIR_ASSET_MANAGE_TMP_DIR, DT_FORMAT} from '../service';
 
-export async function assetsBackup(
+export async function importAssetsFromDir(
   toMetaHandlers: MetaHandlers,
   fromMetaHandlers: MetaHandlers,
   options?: {
     outputDir?: string;
   }
 ) {
-  const forOperation: ForOperation = 'syncUp';
+  const forOperation: ForOperation = 'importNew';
   const {rootDir: rootDir1} = toMetaHandlers;
   const {rootDir: rootDir2} = fromMetaHandlers;
   if (
     !(await goOnOrNot({
-      tips: [`Will back up assets by meta?`, `from dir: ${rootDir2}`, `to dir: ${rootDir1}`],
+      tips: [`Will import assets?`, `from dir: ${rootDir2}`, `to dir: ${rootDir1}`],
     }))
   ) {
     return;
@@ -43,7 +41,7 @@ export async function assetsBackup(
     return true;
   }
 
-  const stateFile = addDtSuffixToBareBasename(path.join(outputDir, 'assets-assets-diff.js'), {
+  const stateFile = addDtSuffixToBareBasename(path.join(outputDir, 'new-assets-diff.js'), {
     dtFormat: DT_FORMAT,
   });
   writeFileSync(
@@ -72,50 +70,8 @@ export async function assetsBackup(
       ...(await getPartialAssetInfo({rootDir: toMetaHandlers.rootDir, relativePath})),
     } as AssetInfoFull);
   }
-  const operationOnToDir = async ({
-    from,
-    to,
-    action,
-  }: {
-    from: AssetInfoFull;
-    to: AssetInfoFull;
-    action: 'copy' | 'move';
-  }) => {
-    const {relativePath: fromRelativePath, sha1, shortId} = from;
-    const {relativePath: toRelativePath} = to;
-    const fromPath = path.join(fromMetaHandlers.rootDir, fromRelativePath);
-    const toPath = path.join(toMetaHandlers.rootDir, toRelativePath);
-    makeSureDirExistForFile(toPath);
-    if (action === 'copy') {
-      makeSureDirExistForFile(toPath);
-      fs.copyFileSync(fromPath, toPath);
-      await toMetaHandlers.createItem({
-        ...(await getPartialAssetInfo({rootDir: toMetaHandlers.rootDir, relativePath: toRelativePath})),
-        sha1,
-        shortId,
-      } as AssetInfoFull);
-    } else if (action === 'move') {
-      moveFile(fromPath, toPath);
-      await toMetaHandlers.createItem({
-        sha1,
-        shortId,
-        ...(await getPartialAssetInfo({rootDir: toMetaHandlers.rootDir, relativePath: toRelativePath})),
-      } as AssetInfoFull);
-      await toMetaHandlers.removeItem(fromRelativePath);
-    }
-  };
-  for (const assetInfo of [...copied, ...modified]) {
-    await operationOnToDir({from: assetInfo.from, to: assetInfo.to, action: 'copy'});
+  if ([...copied, ...moved, ...modified, ...deleted].length > 0) {
+    throw new Error(`copied, moved, modified, deleted should be empty`);
   }
-  for (const assetInfo of moved) {
-    await operationOnToDir({from: assetInfo.from, to: assetInfo.to, action: 'move'});
-  }
-  for (const assetInfo of deleted) {
-    const {relativePath} = assetInfo;
-    const fromPath = path.join(toMetaHandlers.rootDir, relativePath);
-    removeFile(fromPath);
-    await toMetaHandlers.removeItem(relativePath);
-  }
-
   return true;
 }
