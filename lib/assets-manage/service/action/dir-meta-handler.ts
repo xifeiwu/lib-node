@@ -20,25 +20,17 @@ import {
 } from '../assets-meta';
 import {addDtSuffixToBareBasename, goOnOrNot, removeFile} from '../../external';
 
-export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, globalOptions) => {
+export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string) => {
   if (!fs.existsSync(rootDir)) {
     throw new Error(`rootDir not exist: ${rootDir}`);
   }
 
-  const {getAssetInfoParams, goThroughDirOptions} = globalOptions ?? {};
   let meta: AssetTree;
-  // let relativePathToAssetInfo: Record<string, AssetInfoFull> = {};
 
-  // let assetInfoList: AssetInfoFull[];
   function updateMeta(options?: {newValue?: AssetTree | null; archive?: boolean}) {
     const {newValue, archive} = options ?? {};
     if (newValue !== undefined) {
       meta = newValue;
-      // if (newValue !== null) {
-      //   relativePathToAssetInfo = getRelativePathToAssetInfo(assetInfoTreeToList(meta));
-      // } else {
-      //   relativePathToAssetInfo = {};
-      // }
     }
     if (archive) {
       saveDirMetaToFile(rootDir, meta, {backupOutdatedMeta: true});
@@ -50,11 +42,12 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, global
   }
 
   async function resetMeta(options?: GetDirAssetOptions) {
-    const result = await getAssetFullInfoTreeMeta(rootDir, options ?? globalOptions);
+    const result = await getAssetFullInfoTreeMeta(rootDir, options);
     updateMeta({newValue: result, archive: true});
     return result;
   }
-  async function getMeta() {
+  async function getMeta(options?: GetDirAssetOptions) {
+    const {getAssetInfoParams = {}, goThroughDirOptions} = options ?? {};
     let result = readMetaFromDir(rootDir);
     if (!result) {
       if (
@@ -66,6 +59,7 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string, global
       ) {
         throw new Error(`Meta not found, and user not want to create it`);
       }
+      getAssetInfoParams.logging = true;
       result = await resetMeta({getAssetInfoParams, goThroughDirOptions});
     }
     if (result.rootDir !== rootDir) {

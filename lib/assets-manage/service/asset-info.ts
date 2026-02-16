@@ -136,6 +136,9 @@ export async function getAssetInfo(options?: GetAssetInfoParams): Promise<AssetI
     }
     const sha1Info = await getSha1AsId(fullPath);
     sha1 = sha1Info.sha1;
+    if (logging) {
+      logColorful({}, `sha1: ${sha1}`);
+    }
     /** fix shortId when it's not correct after sha1 calculation */
     if (shortIdFromName !== sha1Info.shortId) {
       shortId = sha1Info.shortId;

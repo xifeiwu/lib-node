@@ -10,7 +10,7 @@ export interface MetaHandlers {
   getKey: () => string;
   getMetaLocation: () => string;
   /** get existingmeta */
-  getMeta: () => Promise<AssetMeta>;
+  getMeta: (options?: GetDirAssetOptions) => Promise<AssetMeta>;
   resetMeta: (options?: GetDirAssetOptions) => Promise<AssetMeta>;
   cleanUpMeta: () => Promise<boolean>;
   // insertOrUpdateItem: (assetInfo: AssetInfoFull) => Promise<AssetInfoFull>;
@@ -28,4 +28,4 @@ export interface MetaHandlers {
   // saveState: () => Promise<AssetInfoFull[]>;
   snapshot?: () => Promise<string | false>;
 }
-export type GetMetaHandlers = (rootDir: string, options?: GetDirAssetOptions) => Promise<MetaHandlers>;
+export type GetMetaHandlers = (rootDir: string) => Promise<MetaHandlers>;
