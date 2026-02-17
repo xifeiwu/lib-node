@@ -8,6 +8,7 @@ export {
   formatDate,
   getRandomBase64String,
   getSequentialBase64String,
+  toDurationStr,
 } from '../../../js/common';
 export {
   logColorful,
