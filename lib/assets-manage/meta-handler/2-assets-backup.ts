@@ -27,6 +27,7 @@ export async function assetsBackup(
   if (
     !(await goOnOrNot({
       tips: [`Will back up assets by meta?`, `from dir: ${rootDir2}`, `to dir: ${rootDir1}`],
+      defaultValue: true,
     }))
   ) {
     return;
@@ -83,7 +84,7 @@ export async function assetsBackup(
   }) => {
     const {relativePath: fromRelativePath, sha1, shortId} = from;
     const {relativePath: toRelativePath} = to;
-    const fromPath = path.join(fromMetaHandlers.rootDir, fromRelativePath);
+    const fromPath = path.join(toMetaHandlers.rootDir, fromRelativePath);
     const toPath = path.join(toMetaHandlers.rootDir, toRelativePath);
     makeSureDirExistForFile(toPath);
     if (action === 'copy') {
