@@ -95,17 +95,15 @@ export async function diffMetaForSyncUp(
     }
     /** Try find move action to reduce disk cost */
     let moveFromFile: AssetInfoFull;
-    if (isSameDir) {
-      if (Array.isArray(info1)) {
-        moveFromFile = info1.find(it => {
-          const {relativePath} = it;
-          return pathOnlyIn1.includes(relativePath) && !pathOfMovedIn1.includes(relativePath);
-        });
-      } else {
-        const {relativePath} = info1;
-        if (pathOnlyIn1.includes(relativePath) && !pathOfMovedIn1.includes(relativePath)) {
-          moveFromFile = info1;
-        }
+    if (Array.isArray(info1)) {
+      moveFromFile = info1.find(it => {
+        const {relativePath} = it;
+        return pathOnlyIn1.includes(relativePath) && !pathOfMovedIn1.includes(relativePath);
+      });
+    } else {
+      const {relativePath} = info1;
+      if (pathOnlyIn1.includes(relativePath) && !pathOfMovedIn1.includes(relativePath)) {
+        moveFromFile = info1;
       }
     }
     if (moveFromFile) {
