@@ -12,7 +12,8 @@ import {DIR_TMP_DATA} from './service/config';
 import {getDirMetaHandler} from '../service';
 
 // const rootDir = DIR_TMP_DATA;
-const rootDir = path.resolve(process.env.HOME, 'Downloads');
+// const rootDir = path.resolve(process.env.HOME, 'Downloads');
+const rootDir = '/Volumes/ssd_4t/z-movie';
 
 export async function initAsset() {
   removeDataDir(rootDir);
@@ -48,9 +49,4 @@ export async function runGetDirAssetMeta() {
   logColorful({}, isSame);
   // logColorful({}, newTree);
   // diffAssets
-}
-
-export async function testGetDirMetaHandler() {
-  const metaHandlers = await getDirMetaHandler(DIR_TMP_DATA);
-  await metaHandlers.getMeta();
 }
