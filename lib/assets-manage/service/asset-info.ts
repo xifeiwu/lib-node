@@ -1,6 +1,15 @@
 import fs from 'fs';
 import path from 'path';
-import {hashData, logColorful, byteToWord, isBoolean, isDate, toDate, formatDate} from '../external';
+import {
+  hashData,
+  logColorful,
+  byteToWord,
+  isBoolean,
+  isDate,
+  toDate,
+  formatDate,
+  toDurationStr,
+} from '../external';
 import {SHORT_ID_LENGTH} from './constant';
 import {AssetInfoPartial, AssetInfoFull, GetAssetInfoParams} from '../types';
 import {appendShortIdToFilePath, parseFilePath} from './short-id';
@@ -131,20 +140,21 @@ export async function getAssetInfo(options?: GetAssetInfoParams): Promise<AssetI
   let shortId = shortIdFromName;
   /** SHA-1 computation should be avoided because it is resource-intensive. */
   if (reCalcId) {
+    const start = Date.now();
     if (logging) {
       logColorful({}, `calculating sha1 for file ${fullPath}[${byteToWord(fileStatInfo.size)}]`);
     }
     const sha1Info = await getSha1AsId(fullPath);
     sha1 = sha1Info.sha1;
     if (logging) {
-      logColorful({}, `sha1: ${sha1}`);
+      logColorful({}, `[${toDurationStr(Date.now() - start)}]sha1: ${sha1}`);
     }
     /** fix shortId when it's not correct after sha1 calculation */
     if (shortIdFromName !== sha1Info.shortId) {
       shortId = sha1Info.shortId;
       /** append correct shortId to filename */
       if (shortIdFromName || appendShortId) {
-        const fixedRelativePath = appendShortIdToFilePath(relativePath, shortId);
+        fixedRelativePath = appendShortIdToFilePath(relativePath, shortId);
         if (fixedRelativePath !== relativePath) {
           fs.renameSync(path.resolve(rootDir, fullPath), path.resolve(rootDir, fixedRelativePath));
         }
