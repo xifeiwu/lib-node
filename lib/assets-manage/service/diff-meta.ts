@@ -122,7 +122,7 @@ export async function diffMetaForSyncUp(
   for (const p of pathCommon) {
     const info1 = pathToInfo1[p];
     const info2 = pathToInfo2[p];
-    const changed = diffAssets(info2, info1, isSameDir ? ['changeDate', 'modifyDate', 'size'] : ['sha1']);
+    const changed = diffAssets(info2, info1, isSameDir ? ['modifyDate', 'size'] : ['sha1']);
     if (changed) {
       if (isSameDir) {
         /** Once there are asset props change, should recalculate assets sha1 */
