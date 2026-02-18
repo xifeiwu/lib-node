@@ -65,6 +65,7 @@ export {
   getSequenceMatcher,
   isAsyncFunction,
   getDtStrInFormat,
+  toDtStr,
 } from '../js/common';
 export {AstAOptions, listAUsingUl} from '../js/lib/html-parser';
 
