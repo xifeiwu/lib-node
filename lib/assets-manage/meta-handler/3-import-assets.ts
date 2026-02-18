@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
-import {AssetInfoFull, ForOperation, MetaHandlers} from '../types';
+import {AssetInfoFull, MetaHandlers} from '../types';
 import {serializeMetaDiff, getPartialAssetInfo} from '../service';
-import {diffMeta} from '../service';
+import {diffMetaForAssetsImport} from '../service';
 import {
   goOnOrNot,
   addDtSuffixToBareBasename,
@@ -19,7 +19,6 @@ export async function importAssetsFromDir(
     outputDir?: string;
   }
 ) {
-  const forOperation: ForOperation = 'importNew';
   const {rootDir: rootDir1} = toMetaHandlers;
   const {rootDir: rootDir2} = fromMetaHandlers;
   if (
@@ -36,12 +35,12 @@ export async function importAssetsFromDir(
   const {outputDir = DIR_ASSET_MANAGE_TMP_DIR} = options ?? {};
   const toMeta = await toMetaHandlers.getMeta();
   const fromMeta = await fromMetaHandlers.getMeta();
-  const difference = await diffMeta(toMeta, fromMeta, {forOperation});
+  const difference = await diffMetaForAssetsImport(toMeta, fromMeta);
   if (!difference.isNeedAction) {
     return true;
   }
 
-  const stateFile = addDtSuffixToBareBasename(path.join(outputDir, 'new-assets-diff.js'), {
+  const stateFile = addDtSuffixToBareBasename(path.join(outputDir, 'import-assets-diff.js'), {
     dtFormat: DT_FORMAT,
   });
   writeFileSync(
@@ -57,7 +56,7 @@ export async function importAssetsFromDir(
   ) {
     return false;
   }
-  const {added = [], copied = [], moved = [], modified = [], deleted = []} = difference;
+  const {added = [], duplicated} = difference;
   for (const assetInfo of added) {
     const {relativePath, sha1, shortId} = assetInfo;
     const fromPath = path.join(fromMetaHandlers.rootDir, relativePath);
@@ -69,9 +68,6 @@ export async function importAssetsFromDir(
       shortId,
       ...(await getPartialAssetInfo({rootDir: toMetaHandlers.rootDir, relativePath})),
     } as AssetInfoFull);
-  }
-  if ([...copied, ...moved, ...modified, ...deleted].length > 0) {
-    throw new Error(`copied, moved, modified, deleted should be empty`);
   }
   return true;
 }

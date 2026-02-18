@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
-import {AssetInfoFull, ForOperation, MetaHandlers} from '../types';
+import {AssetInfoFull, MetaHandlers} from '../types';
 import {serializeMetaDiff, getPartialAssetInfo} from '../service';
-import {diffMeta} from '../service';
+import {diffMetaForAssetsSyncUp} from '../service';
 import {
   goOnOrNot,
   addDtSuffixToBareBasename,
@@ -21,7 +21,6 @@ export async function assetsBackup(
     outputDir?: string;
   }
 ) {
-  const forOperation: ForOperation = 'syncUp';
   const {rootDir: rootDir1} = toMetaHandlers;
   const {rootDir: rootDir2} = fromMetaHandlers;
   if (
@@ -39,7 +38,7 @@ export async function assetsBackup(
   const {outputDir = DIR_ASSET_MANAGE_TMP_DIR} = options ?? {};
   const toMeta = await toMetaHandlers.getMeta();
   const fromMeta = await fromMetaHandlers.getMeta();
-  const difference = await diffMeta(toMeta, fromMeta, {forOperation});
+  const difference = await diffMetaForAssetsSyncUp(toMeta, fromMeta);
   if (!difference.isNeedAction) {
     return true;
   }

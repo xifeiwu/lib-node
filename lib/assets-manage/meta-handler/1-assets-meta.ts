@@ -1,13 +1,13 @@
 import fs from 'fs';
 import path from 'path';
-import {AssetInfoFull, ForOperation, MetaDiff, MetaHandlers} from '../types';
+import {AssetInfoFull, AssetsSyncUpMetaDiff, MetaHandlers} from '../types';
 import {
   getAssetInfoListFromMeta,
   getAssetPartialInfoTreeMeta,
   getSha1ToAssetInfo,
   serializeMetaDiff,
 } from '../service';
-import {diffMeta} from '../service';
+import {diffMetaForAssetsSyncUp} from '../service';
 import {
   goOnOrNot,
   addDtSuffixToBareBasename,
@@ -21,7 +21,7 @@ import {
 } from '../external';
 import {DIR_ASSET_MANAGE_TMP_DIR, DT_FORMAT} from '../service';
 
-function getActions(stateChange: MetaDiff) {
+function getActions(stateChange: AssetsSyncUpMetaDiff) {
   const {added = [], copied = [], moved = [], modified = [], deleted = [], isNeedAction} = stateChange;
   const toAdd: AssetInfoFull[] = [...added, ...copied.map(it => it.to), ...moved.map(it => it.to)];
   const toDelete: AssetInfoFull[] = [...deleted, ...moved.map(it => it.from)];
@@ -35,13 +35,12 @@ export async function alignMetaWithAssets(
     outputDir?: string;
   }
 ) {
-  const forOperation: ForOperation = 'syncUp';
   const {outputDir = DIR_ASSET_MANAGE_TMP_DIR} = options ?? {};
   const {rootDir} = metaHandlers;
   const toMeta = await metaHandlers.getMeta();
   /** only get partial asset info to reduce cost */
   const fromMeta = await getAssetPartialInfoTreeMeta(rootDir);
-  const difference = await diffMeta(toMeta, fromMeta, {forOperation});
+  const difference = await diffMetaForAssetsSyncUp(toMeta, fromMeta);
   if (!difference.isNeedAction) {
     return true;
   }

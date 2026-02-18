@@ -1,14 +1,13 @@
 import {AssetInfoFull, AssetInfoPartial} from './asset';
 
-export type ForOperation = 'syncUp' | 'importNew';
 /**
  * Compared to Meta, what is changed in assets
  */
-export interface MetaDiff {
+export interface AssetsSyncUpMetaDiff {
   isNeedAction: boolean;
   toDir: string;
   fromDir: string;
-  forOperation: ForOperation;
+  // forOperation: ForOperation;
   added?: AssetInfoFull[];
   copied?: {
     from: AssetInfoFull;
@@ -43,5 +42,5 @@ export interface MetaDiff {
 export interface AssetStateChangeInfo {
   assetInfoListMeta: AssetInfoFull[];
   latestAssetInfoList: AssetInfoPartial[];
-  stateChange: MetaDiff;
+  stateChange: AssetsSyncUpMetaDiff;
 }

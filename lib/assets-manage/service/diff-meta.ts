@@ -1,4 +1,4 @@
-import {AssetInfoFull, AssetMeta, MetaDiff} from '../types';
+import {AssetInfoFull, AssetMeta, AssetsSyncUpMetaDiff} from '../types';
 import {diffAssets, serailizeAssetInfo, toFullAssetInfo} from './asset-info';
 import {
   getAssetInfoById,
@@ -7,20 +7,19 @@ import {
   getSha1ToAssetInfo,
 } from './assets-meta';
 
-type DiffResult = Pick<MetaDiff, 'added' | 'copied' | 'moved' | 'modified' | 'deleted'>;
 /**
  * use relativePath as id for assets syncup
  * @param toMeta
  * @param fromMeta
  * @returns
  */
-export async function diffMetaForSyncUp(
+export async function diffMetaForAssetsSyncUp(
   toMeta: AssetMeta,
-  fromMeta: AssetMeta,
-  options: {isSameDir?: boolean}
-): Promise<DiffResult> {
-  const {isSameDir} = options ?? {};
+  fromMeta: AssetMeta
+): Promise<AssetsSyncUpMetaDiff> {
+  const {rootDir: rootDir1} = toMeta;
   const {rootDir: rootDir2} = fromMeta;
+  const isSameDir = rootDir1 === rootDir2;
   const assetInfoList1 = getAssetInfoListFromMeta(toMeta);
   const assetInfoList2 = getAssetInfoListFromMeta(fromMeta);
   const pathToInfo1 = getRelativePathToAssetInfo(assetInfoList1);
@@ -146,7 +145,15 @@ export async function diffMetaForSyncUp(
 
   deleted = pathOnlyIn1.filter(p => !pathOfMovedIn1.includes(p)).map(p => pathToInfo1[p]);
 
+  const isNeedAction =
+    [added, copied, moved, modified, deleted].reduce<number>((sum, it) => {
+      return sum + it.length;
+    }, 0) > 0;
+
   return {
+    toDir: rootDir1,
+    fromDir: rootDir2,
+    isNeedAction,
     added,
     copied,
     moved,
@@ -155,8 +162,8 @@ export async function diffMetaForSyncUp(
   };
 }
 
-export async function diffMetaForImportNew(toMeta: AssetMeta, fromMeta: AssetMeta): Promise<DiffResult> {
-  // const {rootDir: rootDir1} = toMeta;
+export async function diffMetaForAssetsImport(toMeta: AssetMeta, fromMeta: AssetMeta) {
+  const {rootDir: rootDir1} = toMeta;
   const {rootDir: rootDir2} = fromMeta;
   const assetInfoList1 = getAssetInfoListFromMeta(toMeta);
   const assetInfoList2 = getAssetInfoListFromMeta(fromMeta);
@@ -164,59 +171,22 @@ export async function diffMetaForImportNew(toMeta: AssetMeta, fromMeta: AssetMet
   const sha1ToAssetInfo2 = getSha1ToAssetInfo(assetInfoList2);
 
   const added: AssetInfoFull[] = [];
+  const duplicated: {origin: AssetInfoFull | AssetInfoFull[]; by: AssetInfoFull | AssetInfoFull[]}[] = [];
   for (const key of Object.keys(sha1ToAssetInfo2)) {
     const assetInfo1 = sha1ToAssetInfo1[key];
+    const assetInfo2 = sha1ToAssetInfo2[key];
     if (assetInfo1) {
-      continue;
+      duplicated.push({origin: assetInfo1, by: assetInfo2});
+    } else {
+      added.push(await toFullAssetInfo(Array.isArray(assetInfo2) ? assetInfo2[0] : assetInfo2, rootDir2));
     }
-    added.push(await toFullAssetInfo(getAssetInfoById(sha1ToAssetInfo2, key), rootDir2));
   }
-  return {added};
-}
-
-/**
- * Get what should be changed to align refer asset info list with latest asset info list.
- * ONLY limited to the same rootDir, so use relativePath as id
- * @param referAssetInfoList, get from dir meta file
- * @param latestAssetInfoList, get from lastest content, use AssetInfoPartial here to reduce cost, get full asset info only necessary.
- * @returns
- */
-export async function diffMeta(
-  toMeta: AssetMeta,
-  fromMeta: AssetMeta,
-  options?: {
-    forOperation: 'syncUp' | 'importNew';
-  }
-): Promise<MetaDiff> {
-  const {rootDir: rootDir1} = toMeta;
-  const {rootDir: rootDir2} = fromMeta;
-  const isSameDir = rootDir1 === rootDir2;
-  const forOperation = options?.forOperation ?? (isSameDir ? 'syncUp' : 'importNew');
-  let diff: DiffResult;
-  if (forOperation === 'syncUp') {
-    diff = await diffMetaForSyncUp(toMeta, fromMeta, {isSameDir});
-  } else if (forOperation === 'importNew') {
-    diff = await diffMetaForImportNew(toMeta, fromMeta);
-  } else {
-    throw new Error(`Invalid usedFor: ${forOperation}`);
-  }
-  const {added = [], copied = [], moved = [], modified = [], deleted = []} = diff;
-  const isNeedAction =
-    [added, copied, moved, modified, deleted].reduce<number>((sum, it) => {
-      return sum + it.length;
-    }, 0) > 0;
-
-  return {
-    forOperation,
-    toDir: rootDir1,
-    fromDir: rootDir2,
-    isNeedAction,
-    ...diff,
-  };
+  const isNeedAction = added.length > 0 || duplicated.length > 0;
+  return {fromDir: rootDir2, isNeedAction, toDir: rootDir1, added, duplicated};
 }
 
 // export function diffAssetMeta(from: MetaInfo, to: MetaInfo) {}
-export function serializeMetaDiff(stateChange: MetaDiff) {
+export function serializeMetaDiff(stateChange: AssetsSyncUpMetaDiff) {
   return {
     ...stateChange,
     added: stateChange.added?.map(it => serailizeAssetInfo(it)),
