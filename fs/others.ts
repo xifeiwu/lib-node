@@ -72,6 +72,12 @@ export function linkFile(sourceFile: string, targetFile: string) {
   return link(sourceFile, targetFile);
 }
 
+/**
+ * @deprecated there are some issues when fullPath2 not exist
+ * @param fullPath1
+ * @param fullPath2
+ * @returns
+ */
 export function isInSameDevice(fullPath1: string, fullPath2: string) {
   try {
     const stat1 = fs.statSync(fullPath1);
@@ -82,14 +88,26 @@ export function isInSameDevice(fullPath1: string, fullPath2: string) {
   }
 }
 
+/**
+ * Move file (same device: rename O(1); different device: copy + unlink).
+ * If rename fails with EXDEV (e.g. same disk but different filesystem/mount),
+ * falls back to copy+unlink so same-device move is still fast when rename works.
+ */
 export function moveFile(fromPath: string, toPath: string) {
   fromPath = path.resolve(fromPath);
   toPath = path.resolve(toPath);
   makeSureDirExistForFile(toPath);
-  if (isInSameDevice(fromPath, toPath)) {
-    fs.renameSync(fromPath, fromPath);
-  } else {
-    fs.copyFileSync(fromPath, toPath);
-    fs.unlinkSync(fromPath);
+  try {
+    fs.renameSync(fromPath, toPath);
+    return;
+  } catch (err: unknown) {
+    const code = err && typeof err === 'object' && 'code' in err ? (err as NodeJS.ErrnoException).code : '';
+    if (code === 'EXDEV') {
+      // Same dev but different filesystem (e.g. bind mount, overlay) → copy+unlink
+      fs.copyFileSync(fromPath, toPath);
+      fs.unlinkSync(fromPath);
+      return;
+    }
+    throw err;
   }
 }
