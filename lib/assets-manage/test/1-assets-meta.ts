@@ -5,15 +5,15 @@ import {DIR_TMP_DATA} from './service/config';
 
 // const rootDir = DIR_TMP_DATA;
 // const rootDir = path.resolve(process.env.HOME, 'Downloads');
-// const rootDir = '/Volumes/ssd_4t/z-movie';
-const rootDir = '/Volumes/12T_APFS/z-movie';
+const rootDir = '/Volumes/ssd_4t/z-movie';
+// const rootDir = '/Volumes/12T_APFS/z-movie';
 
 export async function testGetDirMetaHandler() {
   const metaHandlers = await getDirMetaHandler(rootDir);
   await metaHandlers.getMeta();
 }
 
-export async function testAlignMetaWithAssetChange() {
+export async function testAlignMetaWithAssets() {
   const metaHandlers = await getDirMetaHandler(rootDir);
   await metaHandlers.getMeta();
   await alignMetaWithAssets(metaHandlers);
@@ -23,5 +23,5 @@ export async function runHandleDuplicateFile() {
   const metaHandlers = await getDirMetaHandler(rootDir);
   await metaHandlers.getMeta();
   await alignMetaWithAssets(metaHandlers);
-  await handleDuplicateFile(metaHandlers);
+  await handleDuplicateFile(metaHandlers, {dir4DeletedFile: '../backup-deleted'});
 }

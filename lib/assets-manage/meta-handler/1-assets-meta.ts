@@ -1,3 +1,4 @@
+import fs from 'fs';
 import path from 'path';
 import {AssetInfoFull, ForOperation, MetaDiff, MetaHandlers} from '../types';
 import {
@@ -7,7 +8,17 @@ import {
   serializeMetaDiff,
 } from '../service';
 import {diffMeta} from '../service';
-import {goOnOrNot, addDtSuffixToBareBasename, convertObjectToCjsExport, writeFileSync} from '../external';
+import {
+  goOnOrNot,
+  addDtSuffixToBareBasename,
+  convertObjectToCjsExport,
+  writeFileSync,
+  moveFile,
+  makeSureDirExistForFile,
+  isInSameDevice,
+  selectOption,
+  makeSureDirExist,
+} from '../external';
 import {DIR_ASSET_MANAGE_TMP_DIR, DT_FORMAT} from '../service';
 
 function getActions(stateChange: MetaDiff) {
@@ -71,25 +82,39 @@ export async function alignMetaWithAssets(
 
 export async function handleDuplicateFile(
   metaHandlers: MetaHandlers,
-  options?: {
+  options: {
+    /** move the file to delete to a folder first, to double confirm before completely remove the file  */
+    dir4DeletedFile: string;
     outputDir?: string;
   }
 ) {
+  const rootDir = metaHandlers.rootDir;
+  if (!rootDir || !options.dir4DeletedFile) {
+    throw new Error(`rootDir or dir4DeletedFile is not set`);
+  }
+  const dir4DeletedFile = path.resolve(rootDir, options.dir4DeletedFile);
+  makeSureDirExist(dir4DeletedFile);
+  if (!isInSameDevice(rootDir, dir4DeletedFile)) {
+    throw new Error(`dir4DeletedFile should be in the same device as rootDir`);
+  }
   const {outputDir = DIR_ASSET_MANAGE_TMP_DIR} = options ?? {};
   const meta = await metaHandlers.getMeta();
   const assetInfoList = getAssetInfoListFromMeta(meta);
   const sha1ToAssetInfo = getSha1ToAssetInfo(assetInfoList);
-  const duplicate: Record<string, AssetInfoFull[]> = {};
+  const duplicateFiles: Record<string, AssetInfoFull[]> = {};
   for (const key of Object.keys(sha1ToAssetInfo)) {
     const assetInfoList = sha1ToAssetInfo[key];
     if (Array.isArray(assetInfoList) && assetInfoList.length > 1) {
-      duplicate[key] = assetInfoList;
+      duplicateFiles[key] = assetInfoList;
     }
+  }
+  if (Object.keys(duplicateFiles).length === 0) {
+    return true;
   }
   const stateFile = addDtSuffixToBareBasename(path.join(outputDir, 'duplicate.js'), {
     dtFormat: DT_FORMAT,
   });
-  writeFileSync(stateFile, convertObjectToCjsExport({duplicate}, {format: true}));
+  writeFileSync(stateFile, convertObjectToCjsExport({duplicate: duplicateFiles}, {format: true}));
   if (
     !(await goOnOrNot({
       tips: [
@@ -102,4 +127,35 @@ export async function handleDuplicateFile(
   ) {
     return false;
   }
+  let deletedAssets: AssetInfoFull[] = [];
+  const DELETE_ALL = 'delete all';
+  let index = 0;
+  const items = Object.entries(duplicateFiles);
+  const total = items.length;
+  for (const [sha1, assetInfoList] of items) {
+    const options: {label: string}[] = [
+      {label: DELETE_ALL},
+      ...assetInfoList.map(it => ({label: it.relativePath})),
+    ];
+    const {label} = await selectOption(options, {
+      tips: [`[${index++}/${total}]Which one do you want to keep?[${sha1}]`],
+    });
+    const assetsToDelete =
+      label === DELETE_ALL ? assetInfoList : assetInfoList.filter(it => it.relativePath !== label);
+    deletedAssets.push(...assetsToDelete);
+    let backUpDone = false;
+    for (const assetInfo of assetsToDelete) {
+      const {relativePath} = assetInfo;
+      const filePath = path.join(metaHandlers.rootDir, relativePath);
+      if (!backUpDone) {
+        const destFilePath = path.join(dir4DeletedFile, `${sha1}-${path.basename(relativePath)}`);
+        makeSureDirExistForFile(destFilePath);
+        moveFile(filePath, destFilePath);
+        backUpDone = true;
+        continue;
+      }
+      fs.unlinkSync(filePath);
+    }
+  }
+  await metaHandlers.removeItems(deletedAssets.map(it => it.relativePath));
 }

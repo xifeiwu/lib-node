@@ -453,7 +453,7 @@ export function saveDirMetaToFile(
   }
   const metaFile = getMetaFilePath(rootDir);
   if (backupOutdatedMeta && fs.existsSync(metaFile)) {
-    fs.renameSync(metaFile, addDtSuffixToBareBasename(metaFile));
+    fs.renameSync(metaFile, addDtSuffixToBareBasename(metaFile, {dtFormat: '-yyyy-MM-ddThh-mm-ss'}));
   }
   makeSureDirExistForFile(metaFile);
   const serializedMeta = serializeMeta(assetMeta);

@@ -32,4 +32,6 @@ export {
   moveFile,
   writeFileSync,
   convertObjectToCjsExport,
+  isInSameDevice,
+  selectOption,
 } from '../../index';
