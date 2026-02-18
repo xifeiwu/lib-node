@@ -14,7 +14,7 @@ import {
 } from '../external';
 import {DIR_ASSET_MANAGE_TMP_DIR, DT_FORMAT} from '../service';
 
-export async function assetsBackup(
+export async function backupAssets(
   toMetaHandlers: MetaHandlers,
   fromMetaHandlers: MetaHandlers,
   options?: {

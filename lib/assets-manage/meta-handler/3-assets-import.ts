@@ -12,7 +12,7 @@ import {
 } from '../external';
 import {DIR_ASSET_MANAGE_TMP_DIR, DT_FORMAT} from '../service';
 
-export async function importAssetsFromDir(
+export async function importAssets(
   toMetaHandlers: MetaHandlers,
   fromMetaHandlers: MetaHandlers,
   options?: {
@@ -24,6 +24,7 @@ export async function importAssetsFromDir(
   if (
     !(await goOnOrNot({
       tips: [`Will import assets?`, `from dir: ${rootDir2}`, `to dir: ${rootDir1}`],
+      defaultValue: true,
     }))
   ) {
     return;

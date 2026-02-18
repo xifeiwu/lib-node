@@ -2,18 +2,18 @@ import path from 'path';
 import {alignMetaWithAssets} from '../meta-handler';
 import {getDirMetaHandler} from '../service';
 import {DIR_TMP_DATA} from './service/config';
-import {backupAssets} from '../meta-handler/2-assets-backup';
+import { importAssets } from '../meta-handler/3-assets-import';
 
 const rootDir = '/Volumes/ssd_4t/z-movie';
-const bkrootDir = '/Volumes/12T_APFS/z-movie';
+const importFromDir = process.env.HOME + '/Downloads';
 // path.resolve(DIR_TMP_DATA, '../.tmp-bak')
 
-export async function runBackupAssets() {
+export async function runImportAssets() {
   const metaHandlers = await getDirMetaHandler(rootDir);
   await metaHandlers.getMeta();
   await alignMetaWithAssets(metaHandlers);
-  const bkMetaHandlers = await getDirMetaHandler(bkrootDir);
-  await bkMetaHandlers.getMeta();
-  await alignMetaWithAssets(bkMetaHandlers);
-  await backupAssets(bkMetaHandlers, metaHandlers);
+  const newAssetsMetaHandlers = await getDirMetaHandler(importFromDir);
+  await newAssetsMetaHandlers.getMeta();
+  await alignMetaWithAssets(newAssetsMetaHandlers);
+  await importAssets(metaHandlers, newAssetsMetaHandlers);
 }
