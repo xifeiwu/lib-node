@@ -82,6 +82,8 @@ export async function alignMetaWithAssets(
 export async function handleDuplicateFile(
   metaHandlers: MetaHandlers,
   options: {
+    /** solution to handle duplicate file */
+    solution?: 'short-name';
     /** move the file to delete to a folder first, to double confirm before completely remove the file  */
     dir4DeletedFile: string;
     outputDir?: string;
@@ -132,15 +134,24 @@ export async function handleDuplicateFile(
   const items = Object.entries(duplicateFiles);
   const total = items.length;
   for (const [sha1, assetInfoList] of items) {
-    const options: {label: string}[] = [
-      {label: DELETE_ALL},
-      ...assetInfoList.map(it => ({label: it.relativePath})),
-    ];
-    const {label} = await selectOption(options, {
-      tips: [`[${index++}/${total}]Which one do you want to keep?[${sha1}]`],
-    });
+    if (assetInfoList.length < 2) {
+      continue;
+    }
+    let selection: string;
+    if (options?.solution === 'short-name') {
+      selection = assetInfoList.sort((a, b) => a.relativePath.length - b.relativePath.length)[0].relativePath;
+    } else {
+      const optionsForSelect: {label: string}[] = [
+        {label: DELETE_ALL},
+        ...assetInfoList.map(it => ({label: it.relativePath})),
+      ];
+      const {label} = await selectOption(optionsForSelect, {
+        tips: [`[${index++}/${total}]Which one do you want to keep?[${sha1}]`],
+      });
+      selection = label;
+    }
     const assetsToDelete =
-      label === DELETE_ALL ? assetInfoList : assetInfoList.filter(it => it.relativePath !== label);
+      selection === DELETE_ALL ? assetInfoList : assetInfoList.filter(it => it.relativePath !== selection);
     deletedAssets.push(...assetsToDelete);
     let backUpDone = false;
     for (const assetInfo of assetsToDelete) {
