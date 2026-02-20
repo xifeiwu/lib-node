@@ -11,11 +11,6 @@ const rootDir = '/Volumes/ssd_4t/camera';
 // const rootDir = '/Volumes/12T_APFS/z-movie';
 // const rootDir = '/Volumes/HIKSEMI/xl-photo/';
 
-// export async function testGetDirMetaHandler() {
-//   const metaHandlers = await getDirMetaHandler(rootDir);
-//   await metaHandlers.getMeta();
-// }
-
 export async function testAlignMetaWithAssets() {
   const metaHandlers = await getDirMetaHandler(rootDir);
   await metaHandlers.getMeta();
