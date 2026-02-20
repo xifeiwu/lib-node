@@ -73,18 +73,24 @@ export async function importAssets(
   for (const assetInfo of added) {
     const {relativePath, sha1, shortId} = assetInfo;
     const fromPath = path.join(fromMetaHandlers.rootDir, relativePath);
-    const toPath = path.join(toMetaHandlers.rootDir, newAssetsDirRelativePath,  relativePath);
+    const toPath = path.join(toMetaHandlers.rootDir, newAssetsDirRelativePath, relativePath);
     makeSureDirExistForFile(toPath);
     fs.copyFileSync(fromPath, toPath);
     const info: AssetInfoFull = {
       sha1,
       shortId,
-      ...(await getPartialAssetInfo({rootDir: toMetaHandlers.rootDir, relativePath: path.relative(toMetaHandlers.rootDir, toPath)})),
-    }; 
+      ...(await getPartialAssetInfo({
+        rootDir: toMetaHandlers.rootDir,
+        relativePath: path.relative(toMetaHandlers.rootDir, toPath),
+      })),
+    };
     items.push(info);
     copiedSize += info.size;
     copiedCount++;
-    console.log(`copied size:${byteToWord(copiedSize)} / ${byteToWord(totalSize)} (${copiedSize / totalSize * 100}%), copied count:${items.length} / ${added.length}`);
+    // TODO: more graceful log
+    console.log(
+      `copied size:${byteToWord(copiedSize)} / ${byteToWord(totalSize)} (${((copiedSize / totalSize) * 100).toFixed(2)}%), copied count:${copiedCount} / ${added.length}`
+    );
     if (items.length > 800) {
       await toMetaHandlers.createItems(items);
       items.length = 0;

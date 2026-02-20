@@ -11,6 +11,7 @@ import {
   makeSureDirExistForFile,
   moveFile,
   removeFile,
+  byteToWord,
 } from '../external';
 import {DIR_ASSET_MANAGE_TMP_DIR, DT_FORMAT} from '../service';
 
@@ -60,12 +61,22 @@ export async function backupAssets(
     return false;
   }
   const {added = [], copied = [], moved = [], modified = [], deleted = []} = difference;
+  let copiedCount = 0;
+  const totalSize = added.reduce((acc, assetInfo) => acc + assetInfo.size, 0);
+  let copiedSize = 0;
   for (const assetInfo of added) {
     const {relativePath, sha1, shortId} = assetInfo;
     const fromPath = path.join(fromMetaHandlers.rootDir, relativePath);
     const toPath = path.join(toMetaHandlers.rootDir, relativePath);
     makeSureDirExistForFile(toPath);
+    console.log(
+      `[${++copiedCount}/${added.length}] copying [${byteToWord(assetInfo.size)}] from ${fromPath} to ${toPath}`
+    );
     fs.copyFileSync(fromPath, toPath);
+    copiedSize += assetInfo.size;
+    console.log(
+      `copied size:${byteToWord(copiedSize)} / ${byteToWord(totalSize)} (${((copiedSize / totalSize) * 100).toFixed(2)}%)`
+    );
     await toMetaHandlers.createItem({
       sha1,
       shortId,

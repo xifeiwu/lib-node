@@ -2,13 +2,16 @@ import path from 'path';
 import {alignMetaWithAssets} from '../meta-handler';
 import {getDirMetaHandler} from '../service';
 import {DIR_TMP_DATA} from './service/config';
-import { importAssets } from '../meta-handler/3-assets-import';
+import {importAssets} from '../meta-handler/3-assets-import';
 
 // const rootDir = '/Volumes/ssd_4t/z-movie';
 // const importFromDir = process.env.HOME + '/Downloads';
 
+// const rootDir = '/Volumes/ssd_4t/camera';
+// const importFromDir = '/Volumes/HIKSEMI/xl-photo/';
+
 const rootDir = '/Volumes/ssd_4t/camera';
-const importFromDir = '/Volumes/HIKSEMI/xl-photo/';
+const importFromDir = '/Volumes/ssd_4t/ruby';
 
 // path.resolve(DIR_TMP_DATA, '../.tmp-bak')
 
