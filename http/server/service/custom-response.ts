@@ -10,7 +10,7 @@ import {
   isString,
   isObject,
 } from '../../../external';
-import {getHttpRequestHeaderPartInfo} from '../service';
+import {getHttpRequestHeaderPartInfo} from '.';
 
 function setHeader(response: http.ServerResponse, key: string, value: string | number) {
   response.setHeader(key, value);
