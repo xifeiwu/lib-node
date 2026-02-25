@@ -57,41 +57,6 @@ export interface HttpConditionAndAction {
   requestOptions: Pick<HttpRequestOptions, 'method' | 'pathname' | 'query'>;
   action: CustomizeResponseOptions;
 }
-/**
- * @deprecated
- * TODO: rename to handleIncomingMessageByConfig
- * Do some actions by HttpConditionAndAction
- * @returns Whether the request is handled by this function or not
- */
-export async function handleIncomingMessage(
-  httpStream: {request: http.IncomingMessage; response?: http.ServerResponse},
-  configList?: HttpConditionAndAction[]
-) {
-  const {request, response} = httpStream;
-  const {method, url} = getHttpRequestHeaderPartInfo(request);
-  const {pathname, query} = toNormalizedUrlProps(url);
-  if (!Array.isArray(configList)) {
-    return false;
-  }
-  const matchedConfig = configList.find(config => {
-    const {requestOptions} = config;
-    if (
-      requestOptions.method.toLowerCase() !== method.toLowerCase() ||
-      requestOptions.pathname !== pathname
-    ) {
-      return false;
-    }
-    if (requestOptions.query) {
-      return deepEqual(requestOptions.query, query);
-    }
-    return true;
-  });
-  if (!matchedConfig) {
-    return false;
-  }
-  await customResponseByConfig(response, matchedConfig.action);
-  return false;
-}
 
 export async function handleIncomingMessageByConfig(
   httpStream: {request: http.IncomingMessage; response: http.ServerResponse},
@@ -132,4 +97,40 @@ export async function handleIncomingMessageByConfig(
   }
   response.setHeader('z-customize-response', matchedConfig.key ?? JSON.stringify(matchedConfig));
   return await customResponseByConfig(response, matchedConfig.action);
+}
+
+/**
+ * @deprecated
+ * TODO: rename to handleIncomingMessageByConfig, their logic is similar
+ * Do some actions by HttpConditionAndAction
+ * @returns Whether the request is handled by this function or not
+ */
+export async function handleIncomingMessage(
+  httpStream: {request: http.IncomingMessage; response?: http.ServerResponse},
+  configList?: HttpConditionAndAction[]
+) {
+  const {request, response} = httpStream;
+  const {method, url} = getHttpRequestHeaderPartInfo(request);
+  const {pathname, query} = toNormalizedUrlProps(url);
+  if (!Array.isArray(configList)) {
+    return false;
+  }
+  const matchedConfig = configList.find(config => {
+    const {requestOptions} = config;
+    if (
+      requestOptions.method.toLowerCase() !== method.toLowerCase() ||
+      requestOptions.pathname !== pathname
+    ) {
+      return false;
+    }
+    if (requestOptions.query) {
+      return deepEqual(requestOptions.query, query);
+    }
+    return true;
+  });
+  if (!matchedConfig) {
+    return false;
+  }
+  await customResponseByConfig(response, matchedConfig.action);
+  return false;
 }
