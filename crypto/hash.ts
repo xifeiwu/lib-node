@@ -14,6 +14,19 @@ interface GetDigestOptions {
 const DEFAULT_ALGORITHM: GetDigestOptions['algorithm'] = 'sha1';
 const DEFAULT_ENCODE: GetDigestOptions['encode'] = 'base64url';
 
+function sliceDigestResult(digest: string | Buffer, maxDigestLength?: number): string | Buffer {
+  if (maxDigestLength) {
+    return digest.slice(0, maxDigestLength);
+  }
+  return digest;
+}
+// function toStrDigest(value: string | Buffer): string {
+//   if (Buffer.isBuffer(value)) {
+//     return value.toString('hex');
+//   }
+//   return value;
+// }
+
 function getDigest(
   inst: Hash | Hmac,
   data: CanConvertToBuffer,
@@ -22,7 +35,7 @@ function getDigest(
   const {encode = DEFAULT_ENCODE, maxDigestLength} = options ?? {};
   inst.update(convertToBuffer(data));
   const result = inst.digest(encode);
-  return getSubstring(result.toString(), maxDigestLength);
+  return sliceDigestResult(result, maxDigestLength);
 }
 
 function getDigestFromReadable(
@@ -38,7 +51,7 @@ function getDigestFromReadable(
     });
     readable.on('end', () => {
       const digest = inst.digest(encode);
-      res(getSubstring(digest.toString(), maxDigestLength));
+      res(sliceDigestResult(digest, maxDigestLength) as string);
     });
   });
 }
