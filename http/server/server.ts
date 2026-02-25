@@ -4,16 +4,15 @@ import https from 'https';
 import {IncomingMessage} from 'http';
 import {HttpServerConfig, HttpsServerConfig, LogColors} from '../../types';
 import {getAFreePort, isOverTls, watchSocketState} from '../../net';
-import {getHttpRequestHeaderPartInfo, handleConnectEvent} from './service';
 import {
-  customResponseByRequest,
-  stopServer,
+  getHttpRequestHeaderPartInfo,
+  handleConnectEvent,
   response404,
   responseEmpty,
   responseHtml,
-  responseHttpRequestInfo,
   responseServerEnv,
-} from './utils';
+} from './service';
+import {customResponseByRequest, stopServer, responseHttpRequestInfo} from './utils';
 import {logColorful} from '../../log';
 import {listAUsingUl, toNormalizedUrlProps} from '../../external';
 import {httpResponseInfoToBuffer} from '../tcp';

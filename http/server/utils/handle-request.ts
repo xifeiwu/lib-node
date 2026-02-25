@@ -45,37 +45,6 @@ export async function customResponseByRequest(
   return finalConfig;
 }
 
-/**
- * Test buffer content of empty response
- */
-export function responseEmpty(response: http.ServerResponse) {
-  response.statusCode = 404;
-  response.statusMessage = 'Not Found';
-  response.setHeader('content-type', 'text/plain');
-  response.end('');
-}
-
-export function response404(response: http.ServerResponse) {
-  response.statusCode = 404;
-  response.statusMessage = 'Not Found';
-  response.setHeader('content-type', 'text/plain');
-  response.end('NOT Found');
-}
-
-export function responseHtml(response: http.ServerResponse, html: string) {
-  response.statusCode = 200;
-  response.statusMessage = 'OK';
-  response.setHeader('content-type', 'text/html');
-  response.end(html);
-}
-
-export function responseServerEnv(response: http.ServerResponse) {
-  response.statusCode = 200;
-  response.setHeader('content-type', 'application/json; charset=utf-8');
-  const env = process.env;
-  response.end(JSON.stringify(env));
-}
-
 export function stopServer(response: http.ServerResponse) {
   response.statusCode = 302;
   response.setHeader('Location', '/');
