@@ -1,1 +1,1 @@
-export {applyPathnameParams, getUrlPropsFromConfig, urlPropsToHref, isSameUrlTarget} from '../../fe/url';
+export {applyPathnameParams, getUrlPropsFromConfig, urlPropsToHref, isSameUrlTarget} from '../../js/url';
