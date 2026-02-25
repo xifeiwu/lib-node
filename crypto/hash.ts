@@ -14,11 +14,17 @@ interface GetDigestOptions {
 const DEFAULT_ALGORITHM: GetDigestOptions['algorithm'] = 'sha1';
 const DEFAULT_ENCODE: GetDigestOptions['encode'] = 'base64url';
 
-function sliceDigestResult(digest: string | Buffer, maxDigestLength?: number): string | Buffer {
+function sliceDigestResult(digest: string | Buffer, maxDigestLength?: number): string {
+  let result: string | Buffer;
   if (maxDigestLength) {
-    return digest.slice(0, maxDigestLength);
+    result = digest.slice(0, maxDigestLength);
+  } else {
+    result = digest;
   }
-  return digest;
+  if (Buffer.isBuffer(result)) {
+    return result.toString('base64url');
+  }
+  return result;
 }
 // function toStrDigest(value: string | Buffer): string {
 //   if (Buffer.isBuffer(value)) {
