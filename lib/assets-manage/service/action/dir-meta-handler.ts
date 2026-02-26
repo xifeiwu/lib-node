@@ -86,10 +86,6 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string) => {
     return {...meta, rootDir} as AssetTreeMeta;
   }
 
-  function getMetaLocation() {
-    return getMetaFilePath(rootDir);
-  }
-
   async function cleanUpMeta() {
     const metaDir = getMetaDir(rootDir);
     if (fs.existsSync(metaDir)) {
@@ -176,7 +172,6 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string) => {
   const handlers: MetaHandlers = {
     rootDir,
     getKey,
-    getMetaLocation,
     initMeta,
     getMeta,
     resetMeta,

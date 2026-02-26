@@ -13,7 +13,7 @@ export interface MoreOptions {
 export interface MetaHandlers {
   rootDir: string;
   getKey: () => string;
-  getMetaLocation: () => string;
+  // getMetaLocation: () => string;
   /** handle meta operations */
   resetMeta: (options?: GetDirAssetOptions) => Promise<AssetMeta>;
   initMeta: (options?: GetDirAssetOptions) => Promise<void>;
@@ -33,6 +33,6 @@ export interface MetaHandlers {
   ) => Promise<AssetInfoFull[]>;
   removeItem: (relativePath: string, options?: MoreOptions) => Promise<AssetInfoFull>;
   removeItems: (relativePath: string[], options?: MoreOptions) => Promise<AssetInfoFull[]>;
-  archiveMeta: () => AssetMeta;
+  archiveMeta: () => void;
 }
 export type GetMetaHandlers = (rootDir: string) => Promise<MetaHandlers>;
