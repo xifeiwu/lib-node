@@ -15,8 +15,9 @@ export interface MetaHandlers {
   getKey: () => string;
   getMetaLocation: () => string;
   /** handle meta operations */
-  getMeta: (options?: GetDirAssetOptions) => Promise<AssetMeta>;
   resetMeta: (options?: GetDirAssetOptions) => Promise<AssetMeta>;
+  initMeta: (options?: GetDirAssetOptions) => Promise<void>;
+  getMeta: (options?: GetDirAssetOptions) => Promise<AssetMeta>;
   cleanUpMeta: () => Promise<boolean>;
   /** handle items of asset meta */
   createItem: (info: AssetInfoFull, options?: MoreOptions) => Promise<AssetInfoFull>;

@@ -58,9 +58,9 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string) => {
     return result;
   }
 
-  async function getMeta(options?: GetDirAssetOptions) {
+  async function initMeta(options?: GetDirAssetOptions) {
     const {getAssetInfoParams = {}, goThroughDirOptions} = options ?? {};
-    let result = readMetaFromDir(rootDir);
+    const result = readMetaFromDir(rootDir);
     if (result) {
       if (result.rootDir !== rootDir) {
         throw new Error(`rootDir from assetMeta is different from rootDir of meta handler!`);
@@ -77,9 +77,13 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string) => {
         throw new Error(`Meta not found, and user not want to create it`);
       }
       getAssetInfoParams.logging = true;
-      result = await resetMeta({getAssetInfoParams, goThroughDirOptions});
+      await resetMeta({getAssetInfoParams, goThroughDirOptions});
     }
-    return result;
+  }
+
+  async function getMeta(options?: GetDirAssetOptions) {
+    await initMeta(options);
+    return {...meta, rootDir} as AssetTreeMeta;
   }
 
   function getMetaLocation() {
@@ -173,6 +177,7 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string) => {
     rootDir,
     getKey,
     getMetaLocation,
+    initMeta,
     getMeta,
     resetMeta,
     cleanUpMeta,
