@@ -6,6 +6,8 @@ import {
   CreateOrUpdateItemOptions,
   MetaHandlers,
   AssetTree,
+  MoreOptions,
+  AssetTreeMeta,
 } from '../../types';
 import {
   assetInfoTreeToList,
@@ -20,6 +22,11 @@ import {
 } from '../assets-meta';
 import {addDtSuffixToBareBasename, goOnOrNot, removeFile} from '../../external';
 
+/**
+ * get a meta handler for a directory
+ * Rules:
+ * 1. to avoid write meta file too often, default archive is false
+ */
 export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string) => {
   if (!fs.existsSync(rootDir)) {
     throw new Error(`rootDir not exist: ${rootDir}`);
@@ -40,12 +47,17 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string) => {
       saveDirMetaToFile(rootDir, meta, {maxMetaBackupFile: 20});
     }
   }
+  function archiveMeta() {
+    updateMeta({archive: true});
+    return {...meta, rootDir} as AssetTreeMeta;
+  }
 
   async function resetMeta(options?: GetDirAssetOptions) {
     const result = await getAssetFullInfoTreeMeta(rootDir, options);
     updateMeta({newValue: result, archive: true});
     return result;
   }
+
   async function getMeta(options?: GetDirAssetOptions) {
     const {getAssetInfoParams = {}, goThroughDirOptions} = options ?? {};
     let result = readMetaFromDir(rootDir);
@@ -82,53 +94,48 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string) => {
     return true;
   }
 
-  // function findItemByRelativePath(relativePath: string) {
-  //   return relativePathToAssetInfo[relativePath];
-  // }
-
-  async function createOrUpdateItem(options?: CreateOrUpdateItemOptions & {archive?: boolean}) {
-    const {info, prevInfo, archive = true} = options ?? {};
+  async function createOrUpdateItem(param: CreateOrUpdateItemOptions, options?: MoreOptions) {
+    const {info, prevInfo} = param;
+    const {archive} = options ?? {};
     const result = insertOrUpdateItemOfAssetTree(meta, info);
     updateMeta({archive});
     return result;
   }
 
-  async function createItem(info: AssetInfoFull) {
-    const target = await createOrUpdateItem({info});
-    return target;
-  }
-  async function createItems(infoList: AssetInfoFull[]) {
-    const results: AssetInfoFull[] = [];
-    for (const info of infoList) {
-      const target = await createOrUpdateItem({info, archive: false});
-      results.push(target);
-    }
-    updateMeta({archive: true});
-    return results;
-  }
-
-  async function updateItem(item: CreateOrUpdateItemOptions) {
-    const target = await createOrUpdateItem(item);
-    return target;
-  }
-  async function updateItems(items: CreateOrUpdateItemOptions[]) {
-    const results: AssetInfoFull[] = [];
-    for (const item of items) {
-      const target = await createOrUpdateItem({...item, archive: false});
-      results.push(target);
-    }
-    updateMeta({archive: true});
-    return results;
-  }
-
-  // TODO: optimize this function
-  async function createOrUpdateItems(optionList: CreateOrUpdateItemOptions[]) {
+  async function createOrUpdateItems(optionList: CreateOrUpdateItemOptions[], options?: MoreOptions) {
     const results: AssetInfoFull[] = [];
     for (const option of optionList) {
-      const target = await createOrUpdateItem({...option, archive: false});
+      const target = await createOrUpdateItem(option, {...(options ?? {}), archive: false});
       results.push(target);
     }
-    updateMeta({archive: true});
+    updateMeta({archive: options?.archive});
+    return results;
+  }
+
+  async function createItem(info: AssetInfoFull, options?: MoreOptions) {
+    const target = await createOrUpdateItem({info}, options);
+    return target;
+  }
+  async function createItems(infoList: AssetInfoFull[], options?: MoreOptions) {
+    const results: AssetInfoFull[] = [];
+    for (const info of infoList) {
+      const target = await createItem(info, {...(options ?? {}), archive: false});
+      results.push(target);
+    }
+    updateMeta({archive: options?.archive});
+    return results;
+  }
+
+  async function updateItem(param: CreateOrUpdateItemOptions, options?: MoreOptions) {
+    return createOrUpdateItem(param, options);
+  }
+  async function updateItems(paramList: CreateOrUpdateItemOptions[], options?: MoreOptions) {
+    const results: AssetInfoFull[] = [];
+    for (const param of paramList) {
+      const target = await updateItem(param, {...(options ?? {}), archive: false});
+      results.push(target);
+    }
+    updateMeta({archive: options?.archive});
     return results;
   }
 
@@ -142,33 +149,23 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string) => {
   }
 
   async function removeItem(relativePath: string, options?: {archive?: boolean}) {
-    const {archive = true} = options ?? {};
     const item = deleteItemFromAssetTree(meta, relativePath);
-    updateMeta({archive});
+    updateMeta({archive: options?.archive});
     return item;
   }
 
-  async function removeItems(relativePathList: string[]) {
+  async function removeItems(relativePathList: string[], options?: {archive?: boolean}) {
     const results: AssetInfoFull[] = [];
     for (const relativePath of relativePathList) {
       const result = await removeItem(relativePath, {archive: false});
       results.push(result);
     }
-    updateMeta({archive: true});
+    updateMeta({archive: options?.archive});
     return results;
   }
 
   async function getAllItems(options: {paranoid?: boolean}) {
     return assetInfoTreeToList(meta);
-  }
-  async function snapshot() {
-    const metaFile = getMetaFilePath(rootDir);
-    if (!fs.existsSync(metaFile)) {
-      return false;
-    }
-    const backUpMetaFile = addDtSuffixToBareBasename(metaFile);
-    fs.cpSync(metaFile, backUpMetaFile);
-    return backUpMetaFile;
   }
 
   const handlers: MetaHandlers = {
@@ -188,7 +185,7 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string) => {
     removeItem,
     removeItems,
     getAllItems,
-    snapshot,
+    archiveMeta,
   };
   return handlers;
 };

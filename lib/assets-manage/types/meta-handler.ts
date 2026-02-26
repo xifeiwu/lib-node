@@ -6,28 +6,32 @@ export interface CreateOrUpdateItemOptions {
   prevInfo?: Partial<AssetInfoFull>;
 }
 
-interface Options {
-  persistent?: boolean;
+export interface MoreOptions {
+  archive?: boolean;
 }
 
 export interface MetaHandlers {
   rootDir: string;
   getKey: () => string;
   getMetaLocation: () => string;
-  /** get existing meta */
+  /** handle meta operations */
   getMeta: (options?: GetDirAssetOptions) => Promise<AssetMeta>;
   resetMeta: (options?: GetDirAssetOptions) => Promise<AssetMeta>;
   cleanUpMeta: () => Promise<boolean>;
-  createItem: (info: AssetInfoFull) => Promise<AssetInfoFull>;
-  createItems: (infoList: AssetInfoFull[]) => Promise<AssetInfoFull[]>;
+  /** handle items of asset meta */
+  createItem: (info: AssetInfoFull, options?: MoreOptions) => Promise<AssetInfoFull>;
+  createItems: (infoList: AssetInfoFull[], options?: MoreOptions) => Promise<AssetInfoFull[]>;
   findItems: (assetInfo: Partial<AssetInfoFull>) => Promise<AssetInfoFull[]>;
   getAllItems: (options?: {paranoid?: boolean}) => Promise<AssetInfoFull[]>;
-  updateItem: (item: CreateOrUpdateItemOptions) => Promise<AssetInfoFull>;
-  updateItems: (items: CreateOrUpdateItemOptions[]) => Promise<AssetInfoFull[]>;
-  createOrUpdateItem: (item: CreateOrUpdateItemOptions) => Promise<AssetInfoFull>;
-  createOrUpdateItems: (items: CreateOrUpdateItemOptions[]) => Promise<AssetInfoFull[]>;
-  removeItem: (relativePath: string) => Promise<AssetInfoFull>;
-  removeItems: (relativePath: string[]) => Promise<AssetInfoFull[]>;
-  snapshot?: () => Promise<string | false>;
+  updateItem: (param: CreateOrUpdateItemOptions, options?: MoreOptions) => Promise<AssetInfoFull>;
+  updateItems: (paramList: CreateOrUpdateItemOptions[], options?: MoreOptions) => Promise<AssetInfoFull[]>;
+  createOrUpdateItem: (param: CreateOrUpdateItemOptions, options?: MoreOptions) => Promise<AssetInfoFull>;
+  createOrUpdateItems: (
+    paramList: CreateOrUpdateItemOptions[],
+    options?: MoreOptions
+  ) => Promise<AssetInfoFull[]>;
+  removeItem: (relativePath: string, options?: MoreOptions) => Promise<AssetInfoFull>;
+  removeItems: (relativePath: string[], options?: MoreOptions) => Promise<AssetInfoFull[]>;
+  archiveMeta: () => AssetMeta;
 }
 export type GetMetaHandlers = (rootDir: string) => Promise<MetaHandlers>;
