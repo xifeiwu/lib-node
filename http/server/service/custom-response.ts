@@ -9,12 +9,15 @@ import {
   toInteger,
   isString,
   isObject,
+  isPlainObject,
+  unifyNull,
 } from '../../../external';
-import {getHttpRequestHeaderPartInfo} from '.';
+import {getHttpRequestHeaderPartInfo, getHttpRequestInfo} from './receive';
 
 function setHeader(response: http.ServerResponse, key: string, value: string | number) {
   response.setHeader(key, value);
 }
+
 export async function customResponseByConfig(
   response: http.ServerResponse,
   config?: CustomizeResponseOptions
@@ -44,11 +47,39 @@ export async function customResponseByConfig(
   }
   let sentData = false;
   if (data) {
-    response.setHeader('content-type', 'application/json');
+    if (response.getHeader('content-type') === undefined) {
+      response.setHeader('content-type', 'application/json');
+    }
     response.end(convertToBuffer(data));
     sentData = true;
   }
-  return {sentData, config};
+  return response;
+}
+
+/**
+ * return final config, if the data is not set in request body
+ */
+export async function customResponseByRequest(
+  response: http.ServerResponse,
+  request: http.IncomingMessage,
+  config?: CustomizeResponseOptions
+) {
+  const {url, data} = await getHttpRequestInfo(request);
+  const {query} = toNormalizedUrlProps(url);
+  const finalConfig = {
+    ...(isPlainObject(query) ? query : {}),
+    ...(isPlainObject(data) ? data : {}),
+    ...(config ?? {}),
+  };
+  await customResponseByConfig(response, finalConfig);
+  if (!response.writableEnded) {
+    let chunk: Buffer = Buffer.alloc(0);
+    if (unifyNull(finalConfig) !== null) {
+      chunk = convertToBuffer(finalConfig);
+    }
+    response.end(chunk);
+  }
+  return finalConfig;
 }
 
 export interface HttpConditionAndAction {
@@ -71,7 +102,7 @@ export async function handleIncomingMessageByConfig(
     query,
   };
   if (!Array.isArray(configList)) {
-    return {sentData: false};
+    return response;
   }
   const matchedConfig = configList.find(config => {
     const {ignore, requestOptions} = config;
@@ -93,10 +124,11 @@ export async function handleIncomingMessageByConfig(
     return isSame;
   });
   if (!matchedConfig) {
-    return {sentData: false};
+    return response;
   }
   response.setHeader('z-customize-response', matchedConfig.key ?? JSON.stringify(matchedConfig));
-  return await customResponseByConfig(response, matchedConfig.action);
+  await customResponseByConfig(response, matchedConfig.action);
+  return response;
 }
 
 /**

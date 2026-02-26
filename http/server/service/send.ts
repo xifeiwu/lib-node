@@ -3,6 +3,7 @@ import {ConnectionPayload, HttpResponseInfo} from '../../../types';
 import {Readable} from 'stream';
 import {convertToBuffer} from '../../../transform';
 import {updateHeadersByHttpInfo} from '../../tcp';
+import {getHttpRequestInfo} from './receive';
 
 export function sendHttpResponse<Payload extends ConnectionPayload = any>(
   response: http.ServerResponse,
@@ -34,6 +35,17 @@ export function sendHttpResponse<Payload extends ConnectionPayload = any>(
     }
   }
   return response;
+}
+
+/**
+ * response/echo requestInfo
+ */
+export async function responseHttpRequestInfo(response: http.ServerResponse, request: http.IncomingMessage) {
+  const requestInfo = await getHttpRequestInfo(request);
+  const resData = convertToBuffer(requestInfo);
+  response.setHeader('content-length', resData.byteLength);
+  response.setHeader('content-type', 'application/json');
+  response.end(resData);
 }
 
 /**
