@@ -27,18 +27,18 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string) => {
 
   let meta: AssetTree;
 
+  function getKey() {
+    return getMetaDir(rootDir);
+  }
+
   function updateMeta(options?: {newValue?: AssetTree | null; archive?: boolean}) {
     const {newValue, archive} = options ?? {};
     if (newValue !== undefined) {
       meta = newValue;
     }
     if (archive) {
-      saveDirMetaToFile(rootDir, meta, {backupOutdatedMeta: true});
+      saveDirMetaToFile(rootDir, meta, {maxMetaBackupFile: 20});
     }
-  }
-
-  function getKey() {
-    return getMetaDir(rootDir);
   }
 
   async function resetMeta(options?: GetDirAssetOptions) {

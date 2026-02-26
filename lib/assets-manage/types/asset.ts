@@ -10,6 +10,9 @@ interface Asset {
   extname: string;
   /** props from asset stat */
   size: number;
+  // in OS, changeDate identify change time of file's inode,
+  // in MacOS, its value will be change event open the file,
+  // so its value will not be used for asset change compare
   changeDate: Date;
   modifyDate: Date;
   /** props from calculation */

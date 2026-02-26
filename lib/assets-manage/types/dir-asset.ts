@@ -4,7 +4,6 @@
 
 import {AssetInfoFull} from '.';
 
-// export type AssetMeta = DirAssetMeta | AssetInfoFull;
 export type AssetTree = {
   relativePath: string;
   children?: Array<AssetTree | AssetInfoFull>;
