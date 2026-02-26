@@ -94,8 +94,8 @@ export async function importNewAssets(
   await makeSureMetaIsUptodate(metaHandlers1, options);
   await makeSureMetaIsUptodate(metaHandlers2, options);
   const allActions = await getActionForImportNewAssets(
-    {assetInfoList: await metaHandlers1.getAllItems(), rootDir: from.metaHandlers.rootDir},
-    {assetInfoList: await metaHandlers2.getAllItems(), rootDir: to.metaHandlers.rootDir}
+    {assetInfoList: await metaHandlers1.getItemList(), rootDir: from.metaHandlers.rootDir},
+    {assetInfoList: await metaHandlers2.getItemList(), rootDir: to.metaHandlers.rootDir}
   );
 
   const fromMetaKey = from.metaHandlers.getMetaLocation();

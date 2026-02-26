@@ -124,8 +124,8 @@ export async function syncUpAssetsBetweenDir(
   await makeSureMetaIsUptodate(metaHandlers2, options);
 
   const allActions = await getActionForSyncUpFiles(
-    {assetInfoList: await metaHandlers1.getAllItems(), rootDir: metaHandlers1.rootDir},
-    {assetInfoList: await metaHandlers2.getAllItems(), rootDir: metaHandlers2.rootDir}
+    {assetInfoList: await metaHandlers1.getItemList(), rootDir: metaHandlers1.rootDir},
+    {assetInfoList: await metaHandlers2.getItemList(), rootDir: metaHandlers2.rootDir}
   );
   const fromMetaKey = metaHandlers1.getMetaLocation();
   const toMetaKey = metaHandlers2.getMetaLocation();

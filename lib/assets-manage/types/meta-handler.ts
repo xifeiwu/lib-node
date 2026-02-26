@@ -23,7 +23,7 @@ export interface MetaHandlers {
   createItem: (info: AssetInfoFull, options?: MoreOptions) => Promise<AssetInfoFull>;
   createItems: (infoList: AssetInfoFull[], options?: MoreOptions) => Promise<AssetInfoFull[]>;
   findItems: (assetInfo: Partial<AssetInfoFull>) => Promise<AssetInfoFull[]>;
-  getAllItems: (options?: {paranoid?: boolean}) => Promise<AssetInfoFull[]>;
+  getItemList: (options?: {paranoid?: boolean}) => Promise<AssetInfoFull[]>;
   updateItem: (param: CreateOrUpdateItemOptions, options?: MoreOptions) => Promise<AssetInfoFull>;
   updateItems: (paramList: CreateOrUpdateItemOptions[], options?: MoreOptions) => Promise<AssetInfoFull[]>;
   createOrUpdateItem: (param: CreateOrUpdateItemOptions, options?: MoreOptions) => Promise<AssetInfoFull>;

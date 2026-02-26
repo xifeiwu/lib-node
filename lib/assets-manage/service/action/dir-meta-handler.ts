@@ -149,6 +149,10 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string) => {
     return findAssetItemsByFilter(meta, match);
   }
 
+  async function getItemList(options: {paranoid?: boolean}) {
+    return assetInfoTreeToList(meta);
+  }
+
   async function removeItem(relativePath: string, options?: {archive?: boolean}) {
     const item = deleteItemFromAssetTree(meta, relativePath);
     updateMeta({archive: options?.archive});
@@ -165,9 +169,6 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string) => {
     return results;
   }
 
-  async function getAllItems(options: {paranoid?: boolean}) {
-    return assetInfoTreeToList(meta);
-  }
 
   const handlers: MetaHandlers = {
     rootDir,
@@ -185,7 +186,7 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string) => {
     findItems,
     removeItem,
     removeItems,
-    getAllItems,
+    getItemList,
     archiveMeta,
   };
   return handlers;
