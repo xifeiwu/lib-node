@@ -20,7 +20,7 @@ import {
   insertOrUpdateItemOfAssetTree,
   saveDirMetaToFile,
 } from '../assets-meta';
-import {addDtSuffixToBareBasename, goOnOrNot, removeFile} from '../../external';
+import {goOnOrNot, removeFile} from '../../external';
 
 /**
  * get a meta handler for a directory
@@ -61,7 +61,12 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string) => {
   async function getMeta(options?: GetDirAssetOptions) {
     const {getAssetInfoParams = {}, goThroughDirOptions} = options ?? {};
     let result = readMetaFromDir(rootDir);
-    if (!result) {
+    if (result) {
+      if (result.rootDir !== rootDir) {
+        throw new Error(`rootDir from assetMeta is different from rootDir of meta handler!`);
+      }
+      updateMeta({newValue: result});
+    } else {
       if (
         !(await goOnOrNot({
           tips: [`Meta not found for dir: ${rootDir}, do you want to create it now?`],
@@ -74,10 +79,6 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string) => {
       getAssetInfoParams.logging = true;
       result = await resetMeta({getAssetInfoParams, goThroughDirOptions});
     }
-    if (result.rootDir !== rootDir) {
-      throw new Error(`rootDir from assetMeta is different from rootDir of meta handler!`);
-    }
-    updateMeta({newValue: result});
     return result;
   }
 
