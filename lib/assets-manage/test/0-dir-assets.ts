@@ -1,4 +1,3 @@
-import path from 'path';
 import {createDuplicateFile, createNewFiles, createLinkFile, removeDataDir} from './generator';
 import {
   assetInfoTreeToList,
@@ -8,8 +7,6 @@ import {
   toAssetTreeMeta,
 } from '../service';
 import {logColorful} from '../../../log';
-import {DIR_TMP_DATA} from './service/config';
-import {getDirMetaHandler} from '../service';
 
 // const rootDir = DIR_TMP_DATA;
 // const rootDir = path.resolve(process.env.HOME, 'Downloads');

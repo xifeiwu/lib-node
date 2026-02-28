@@ -1,6 +1,6 @@
 import path from 'path';
 import {alignMetaWithAssets, handleDuplicateFile} from '../meta-handler';
-import {getDirMetaHandler} from '../service';
+import {getFileMetaHandler} from '../service';
 import {DIR_TMP_DATA} from './service/config';
 
 // const rootDir = DIR_TMP_DATA;
@@ -12,13 +12,13 @@ const rootDir = '/Volumes/ssd_4t/camera';
 // const rootDir = '/Volumes/HIKSEMI/xl-photo/';
 
 export async function testAlignMetaWithAssets() {
-  const metaHandlers = await getDirMetaHandler(rootDir);
+  const metaHandlers = await getFileMetaHandler(rootDir);
   await metaHandlers.getMeta();
   await alignMetaWithAssets(metaHandlers);
 }
 
 export async function runHandleDuplicateFile() {
-  const metaHandlers = await getDirMetaHandler(rootDir);
+  const metaHandlers = await getFileMetaHandler(rootDir);
   await metaHandlers.getMeta();
   await alignMetaWithAssets(metaHandlers);
   const solution = undefined;

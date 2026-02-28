@@ -8,26 +8,25 @@ import {
   AssetTree,
   MoreOptions,
   AssetTreeMeta,
-} from '../../types';
+} from '../types';
 import {
   assetInfoTreeToList,
   deleteItemFromAssetTree,
   findAssetItemsByFilter,
   getAssetFullInfoTreeMeta,
   getMetaDir,
-  getMetaFilePath,
   readMetaFromDir,
   insertOrUpdateItemOfAssetTree,
   saveDirMetaToFile,
-} from '../assets-meta';
-import {goOnOrNot, removeFile} from '../../external';
+} from './assets-meta';
+import {goOnOrNot, removeFile} from '../external';
 
 /**
  * get a meta handler for a directory
  * Rules:
  * 1. to avoid write meta file too often, default archive is false
  */
-export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string) => {
+export const getFileMetaHandler: GetMetaHandlers = async (rootDir: string) => {
   if (!fs.existsSync(rootDir)) {
     throw new Error(`rootDir not exist: ${rootDir}`);
   }
@@ -168,7 +167,6 @@ export const getDirMetaHandler: GetMetaHandlers = async (rootDir: string) => {
     updateMeta({archive: options?.archive});
     return results;
   }
-
 
   const handlers: MetaHandlers = {
     rootDir,
