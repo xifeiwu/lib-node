@@ -1,13 +1,14 @@
+import {HttpDebugServerPath} from '../../external';
 import {logColorful} from '../../log';
 import {HttpRequestOptions} from '../../types';
 import {requestAndGetResponseInfo} from '../client';
-import {DebugServerPathname, startHttpDebugServer} from '../server';
+import {startHttpDebugServer} from '../server';
 import {requestAndGetResponseOnTcp, startHttpDebugServerOnTcp} from '../tcp';
 
 function getRequestOptions(options: Required<Pick<HttpRequestOptions, 'origin'>>): HttpRequestOptions {
   const defaultOptions: HttpRequestOptions = {
     method: 'post',
-    pathname: DebugServerPathname.echo,
+    pathname: HttpDebugServerPath.echo,
     headers: {
       TRACE_id: '123',
     },

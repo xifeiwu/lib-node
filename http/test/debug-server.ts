@@ -1,12 +1,12 @@
 import assert from 'assert';
 import {requestAndGetResponseInfo} from '../client';
-import {DebugServerPathname, startHttpDebugServer} from '../server';
+import {startHttpDebugServer} from '../server';
 import {CustomizeResponseOptions, HttpServerConfig} from '../../types';
 import {getDefaultHttpsConfig} from '../service';
 import {sendHttpRequestByTcp} from '../tcp';
 import {getDataFromReadable} from '../../stream';
 import {logColorful} from '../../log';
-import {isString} from '../../external';
+import {HttpDebugServerPath, isString} from '../../external';
 
 process.on('uncaughtException', function (err) {
   console.log('uncaughtException:');
@@ -34,7 +34,7 @@ export async function testResponseHttpRequestProps() {
   }>({
     method: 'post',
     origin,
-    pathname: DebugServerPathname.echo,
+    pathname: HttpDebugServerPath.echo,
     headers: {
       TRACE_id: '123',
     },
@@ -45,7 +45,7 @@ export async function testResponseHttpRequestProps() {
   /** format of method name upper case  */
   assert.equal(data.method, 'POST');
   /** format of url is the same as param of url from client side */
-  assert.equal(data.url, DebugServerPathname.echo);
+  assert.equal(data.url, HttpDebugServerPath.echo);
   /** format of field name of headers is lower case */
   assert.equal(data.headers['trace_id'], '123');
   /** payload from server response is deepEqual with data from client side */
@@ -67,7 +67,7 @@ export async function testCustomRespnse() {
   const {responseInfo} = await requestAndGetResponseInfo<any, CustomizeResponseOptions>({
     method: 'post',
     origin,
-    pathname: DebugServerPathname.customResponse,
+    pathname: HttpDebugServerPath.customResponse,
     data: {
       // delayMs: 6000,
       statusCode: customized.statusCode,
@@ -100,7 +100,7 @@ export async function test404() {
  */
 export async function testEmpty() {
   const {origin, server} = await startHttpDebugServer();
-  for (const pathname of [DebugServerPathname.empty, DebugServerPathname.echo]) {
+  for (const pathname of [HttpDebugServerPath.empty, HttpDebugServerPath.echo]) {
     const client = await sendHttpRequestByTcp({
       origin,
       pathname,

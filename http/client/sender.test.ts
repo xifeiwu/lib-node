@@ -1,10 +1,11 @@
 import assert from 'assert';
 import {logColorful} from '../../log';
 import {toReadable} from '../../stream';
-import {DebugServerPathname, startHttpDebugServer} from '../server';
+import {startHttpDebugServer} from '../server';
 import {requestAndGetResponseInfo} from './sender';
 import {CustomizeResponseOptions, HttpRequestOptions} from '../../types';
 import {getAFreePort} from '../../net';
+import {HttpDebugServerPath} from '../../external';
 
 export async function contentTypeAndStream() {
   const {origin, server} = await startHttpDebugServer();
@@ -15,10 +16,10 @@ export async function contentTypeAndStream() {
   const originRequestOptions: HttpRequestOptions = {
     method: 'post',
     origin,
-    pathname: DebugServerPathname.echo,
+    pathname: HttpDebugServerPath.echo,
     headers: {
-      cookie: ['a=b', 'c=1']
-    }
+      cookie: ['a=b', 'c=1'],
+    },
   };
   {
     const {requestOptions, responseInfo, request} = await requestAndGetResponseInfo({
@@ -39,7 +40,7 @@ export async function contentTypeAndStream() {
    * connection: 'keep-alive',
    * 'keep-alive': 'timeout=5'
    * If the debug time is longer than 5 seconds, the connection will be closed.
-  */
+   */
   {
     const {requestOptions, responseInfo, request} = await requestAndGetResponseInfo({
       ...originRequestOptions,
@@ -69,7 +70,7 @@ export async function testUnreachable() {
     const {requestOptions, responseInfo, request} = await requestAndGetResponseInfo({
       origin,
       method: 'post',
-      pathname: DebugServerPathname.customResponse,
+      pathname: HttpDebugServerPath.customResponse,
       headers: {
         'content-type': 'application/json',
       },
@@ -98,7 +99,7 @@ export async function testTimeout() {
     const {requestOptions, responseInfo, request} = await requestAndGetResponseInfo({
       origin,
       method: 'post',
-      pathname: DebugServerPathname.customResponse,
+      pathname: HttpDebugServerPath.customResponse,
       headers: {
         'content-type': 'application/json',
       },
@@ -121,7 +122,7 @@ export async function testEmptyArray() {
     const {requestOptions, responseInfo, request} = await requestAndGetResponseInfo({
       method: 'delete',
       origin,
-      pathname: DebugServerPathname.echo,
+      pathname: HttpDebugServerPath.echo,
       // method: 'delete',
       // origin: 'http://127.0.0.1:7778',
       // pathname: '/v1.0/users',

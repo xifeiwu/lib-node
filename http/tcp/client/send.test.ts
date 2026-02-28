@@ -1,18 +1,13 @@
 import {sendHttpRequestByTcp} from './send';
-import {
-  DebugServerPathname,
-  getDataFromReadable,
-  HttpRequestOptions,
-  logColorful,
-  startHttpDebugServer,
-} from '../../../index';
+import {getDataFromReadable, HttpRequestOptions, logColorful, startHttpDebugServer} from '../../../index';
+import {HttpDebugServerPath} from '../../../external';
 
 export async function testSendHttpRequestByTcp() {
   const {origin} = await startHttpDebugServer();
   const requestOptions: HttpRequestOptions = {
     method: 'post',
     origin,
-    pathname: DebugServerPathname.echo,
+    pathname: HttpDebugServerPath.echo,
     data: {
       a: 1,
       b: 'c',
