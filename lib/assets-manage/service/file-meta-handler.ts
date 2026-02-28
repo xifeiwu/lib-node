@@ -17,6 +17,8 @@ import {
   readMetaFromDir,
   insertOrUpdateItemOfAssetTree,
   saveDirMeta,
+  readMetaFromFile,
+  saveMetaToFile,
 } from './assets-meta';
 import {goOnOrNot, removeFile} from '../external';
 
@@ -32,18 +34,20 @@ export const getFileMetaHandler = (options?: {metaFile: string}) => {
       throw new Error(`rootDir not exist: ${rootDir}`);
     }
 
-    let meta: AssetTree;
+    let meta: AssetTreeMeta;
 
     function getKey() {
       return metaFile;
     }
 
-    function updateMeta(options?: {newValue?: AssetTree | null; archive?: boolean}) {
+    function updateMeta(options?: {newValue?: AssetTreeMeta | null; archive?: boolean}) {
       const {newValue, archive} = options ?? {};
       if (newValue !== undefined) {
-        meta = newValue;
+        meta = {...newValue, rootDir};
       }
       if (archive) {
+        saveMetaToFile(metaFile, {...meta, rootDir});
+        // for backup
         saveDirMeta(rootDir, meta, {maxMetaBackupFile: 20});
       }
     }
@@ -60,7 +64,7 @@ export const getFileMetaHandler = (options?: {metaFile: string}) => {
 
     async function initMeta(options?: GetDirAssetOptions) {
       const {getAssetInfoParams = {}, goThroughDirOptions} = options ?? {};
-      const result = readMetaFromDir(rootDir);
+      const result = readMetaFromFile(metaFile);
       if (result) {
         if (result.rootDir !== rootDir) {
           throw new Error(`rootDir from assetMeta is different from rootDir of meta handler!`);
@@ -189,4 +193,5 @@ export const getFileMetaHandler = (options?: {metaFile: string}) => {
     };
     return handlers;
   };
+  return metaHandler;
 };

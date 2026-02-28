@@ -289,7 +289,6 @@ export function toAssetListMeta(treeMeta: AssetTreeMeta): AssetListMeta {
   };
 }
 
-
 export function getAssetInfoListFromMeta(meta: AssetMeta): AssetInfoFull[] {
   if (Array.isArray((meta as AssetListMeta).assetInfoList)) {
     return (meta as AssetListMeta).assetInfoList;
@@ -403,17 +402,6 @@ export function getRelativePathToAssetInfo(infoList: AssetInfoFull[]) {
   return results;
 }
 
-function getMetaDir(rootDir: string) {
-  const metaDir = path.join(rootDir, '.meta');
-  makeSureDirExist(metaDir, {isDir: true});
-  return metaDir;
-}
-
-function getDefaultMetaFilePath(rootDir: string) {
-  const metaDir = getMetaDir(rootDir);
-  return path.resolve(metaDir, 'index.ts');
-}
-
 export function serializeMeta(meta: AssetTree) {
   if (meta.children) {
     return {
@@ -434,20 +422,24 @@ export function deserailizeTreeMeta(meta: AssetTree) {
   return deserailizeAssetInfo(meta as AssetInfoFull);
 }
 
+/** Start: meta file persistence in dir level, may be deprecated */
+function getMetaDir(rootDir: string) {
+  const metaDir = path.join(rootDir, '.meta');
+  makeSureDirExist(metaDir, {isDir: true});
+  return metaDir;
+}
+
+function getDefaultMetaFilePath(rootDir: string) {
+  const metaDir = getMetaDir(rootDir);
+  return path.resolve(metaDir, 'index.ts');
+}
+
 export function readMetaFromDir(rootDir: string): AssetTreeMeta | undefined {
   const metaFile = getDefaultMetaFilePath(rootDir);
   if (!fs.existsSync(metaFile)) {
     return undefined;
   }
   const meta = rerequire(metaFile).meta as AssetMeta;
-  return deserailizeTreeMeta(meta as AssetTreeMeta);
-}
-
-export function readMetaFromFile(metaFilePath: string): AssetTreeMeta | undefined {
-  if (!fs.existsSync(metaFilePath)) {
-    return undefined;
-  }
-  const meta = rerequire(metaFilePath).meta as AssetMeta;
   return deserailizeTreeMeta(meta as AssetTreeMeta);
 }
 
@@ -481,3 +473,18 @@ export function saveDirMeta(
   const serializedMeta = serializeMeta(assetMeta);
   fs.writeFileSync(metaFile, `export const meta = ${JSON.stringify(serializedMeta, null, 2)}`);
 }
+/** End: meta file persistence in dir level */
+/** Start: meta file persistence in file level */
+export function readMetaFromFile(metaFile: string): AssetTreeMeta | undefined {
+  if (!fs.existsSync(metaFile)) {
+    return undefined;
+  }
+  const meta = rerequire(metaFile).meta as AssetMeta;
+  return deserailizeTreeMeta(meta as AssetTreeMeta);
+}
+export function saveMetaToFile(metaFile: string, meta: AssetTreeMeta) {
+  makeSureDirExistForFile(metaFile);
+  const serializedMeta = serializeMeta(meta);
+  fs.writeFileSync(metaFile, `export const meta = ${JSON.stringify(serializedMeta, null, 2)}`);
+}
+/** End: meta file persistence in file level */
