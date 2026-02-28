@@ -12,13 +12,13 @@ const rootDir = '/Volumes/ssd_4t/camera';
 // const rootDir = '/Volumes/HIKSEMI/xl-photo/';
 
 export async function testAlignMetaWithAssets() {
-  const metaHandlers = await getFileMetaHandler(rootDir);
+  const metaHandlers = await getFileMetaHandler()(rootDir);
   await metaHandlers.getMeta();
   await alignMetaWithAssets(metaHandlers);
 }
 
 export async function runHandleDuplicateFile() {
-  const metaHandlers = await getFileMetaHandler(rootDir);
+  const metaHandlers = await getFileMetaHandler()(rootDir);
   await metaHandlers.getMeta();
   await alignMetaWithAssets(metaHandlers);
   const solution = undefined;

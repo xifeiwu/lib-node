@@ -16,10 +16,10 @@ const importFromDir = '/Volumes/ssd_4t/ruby';
 // path.resolve(DIR_TMP_DATA, '../.tmp-bak')
 
 export async function runImportAssets() {
-  const metaHandlers = await getFileMetaHandler(rootDir);
+  const metaHandlers = await getFileMetaHandler()(rootDir);
   await metaHandlers.getMeta();
   await alignMetaWithAssets(metaHandlers);
-  const newAssetsMetaHandlers = await getFileMetaHandler(importFromDir);
+  const newAssetsMetaHandlers = await getFileMetaHandler()(importFromDir);
   await newAssetsMetaHandlers.getMeta();
   await alignMetaWithAssets(newAssetsMetaHandlers);
   await importAssets(metaHandlers, newAssetsMetaHandlers, {newAssetsDir: 'xl-photo'});

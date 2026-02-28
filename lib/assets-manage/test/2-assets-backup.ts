@@ -11,10 +11,10 @@ const rootDir = '/Volumes/ssd_4t/camera';
 const bkrootDir = '/Volumes/12T_APFS/camera';
 
 export async function runBackupAssets() {
-  const metaHandlers = await getFileMetaHandler(rootDir);
+  const metaHandlers = await getFileMetaHandler()(rootDir);
   await metaHandlers.getMeta();
   await alignMetaWithAssets(metaHandlers);
-  const bkMetaHandlers = await getFileMetaHandler(bkrootDir);
+  const bkMetaHandlers = await getFileMetaHandler()(bkrootDir);
   await bkMetaHandlers.getMeta();
   await alignMetaWithAssets(bkMetaHandlers);
   await backupAssets(bkMetaHandlers, metaHandlers);
