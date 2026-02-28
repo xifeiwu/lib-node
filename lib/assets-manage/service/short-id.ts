@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import {getFilePathInfo, FilePathSegement, GetFileListOption, getFileList} from '../external';
-import {SHORT_ID_LENGTH, REG_SHORT_ID} from './constant';
+import {SHORT_ID_LENGTH, REG_SHORT_ID} from './config';
 
 interface FilePathParseResult extends FilePathSegement {
   matched?: string;

@@ -266,31 +266,6 @@ export function isSameAssetMeta(tree1: AssetTree, tree2: AssetTree) {
   }
 }
 
-export function assetInfoListToTree(assetInfoList: AssetInfoPartial[]) {
-  const tree: AssetTree = {relativePath: '.', children: []};
-  for (const info of assetInfoList) {
-    const {relativePath} = info;
-    if (!relativePath) {
-      throw new Error(`relativePath not found for: ${relativePath}`);
-    }
-    insertItemToAssetTree(tree, info);
-  }
-  return tree;
-}
-export function toAssetTreeMeta(assetInfoList: AssetInfoPartial[], rootDir: string) {
-  return {
-    rootDir,
-    ...assetInfoListToTree(assetInfoList),
-  };
-}
-
-export function getAssetInfoListFromMeta(meta: AssetMeta): AssetInfoFull[] {
-  if (Array.isArray((meta as AssetListMeta).assetInfoList)) {
-    return (meta as AssetListMeta).assetInfoList;
-  }
-  return assetInfoTreeToList(meta as AssetTree);
-}
-
 export function assetInfoTreeToList(tree: AssetTree) {
   const results: AssetInfoFull[] = [];
   function traverse(meta: AssetTree | AssetInfoFull) {
@@ -314,6 +289,14 @@ export function toAssetListMeta(treeMeta: AssetTreeMeta): AssetListMeta {
   };
 }
 
+
+export function getAssetInfoListFromMeta(meta: AssetMeta): AssetInfoFull[] {
+  if (Array.isArray((meta as AssetListMeta).assetInfoList)) {
+    return (meta as AssetListMeta).assetInfoList;
+  }
+  return assetInfoTreeToList(meta as AssetTree);
+}
+
 /**
  * Mainly used for init dir meta
  */
@@ -334,6 +317,24 @@ export async function getAssetsPartailInfoListOfDir(
 ): Promise<AssetInfoFull[]> {
   const infoTree = await getAssetPartialInfoTreeMeta(rootDir, options);
   return assetInfoTreeToList(infoTree);
+}
+
+export function assetInfoListToTree(assetInfoList: AssetInfoPartial[]) {
+  const tree: AssetTree = {relativePath: '.', children: []};
+  for (const info of assetInfoList) {
+    const {relativePath} = info;
+    if (!relativePath) {
+      throw new Error(`relativePath not found for: ${relativePath}`);
+    }
+    insertItemToAssetTree(tree, info);
+  }
+  return tree;
+}
+export function toAssetTreeMeta(assetInfoList: AssetInfoPartial[], rootDir: string) {
+  return {
+    rootDir,
+    ...assetInfoListToTree(assetInfoList),
+  };
 }
 
 /**
@@ -402,13 +403,13 @@ export function getRelativePathToAssetInfo(infoList: AssetInfoFull[]) {
   return results;
 }
 
-export function getMetaDir(rootDir: string) {
+function getMetaDir(rootDir: string) {
   const metaDir = path.join(rootDir, '.meta');
   makeSureDirExist(metaDir, {isDir: true});
   return metaDir;
 }
 
-export function getMetaFilePath(rootDir: string) {
+function getDefaultMetaFilePath(rootDir: string) {
   const metaDir = getMetaDir(rootDir);
   return path.resolve(metaDir, 'index.ts');
 }
@@ -434,7 +435,7 @@ export function deserailizeTreeMeta(meta: AssetTree) {
 }
 
 export function readMetaFromDir(rootDir: string): AssetTreeMeta | undefined {
-  const metaFile = getMetaFilePath(rootDir);
+  const metaFile = getDefaultMetaFilePath(rootDir);
   if (!fs.existsSync(metaFile)) {
     return undefined;
   }
@@ -442,7 +443,15 @@ export function readMetaFromDir(rootDir: string): AssetTreeMeta | undefined {
   return deserailizeTreeMeta(meta as AssetTreeMeta);
 }
 
-export function saveDirMetaToFile(
+export function readMetaFromFile(metaFilePath: string): AssetTreeMeta | undefined {
+  if (!fs.existsSync(metaFilePath)) {
+    return undefined;
+  }
+  const meta = rerequire(metaFilePath).meta as AssetMeta;
+  return deserailizeTreeMeta(meta as AssetTreeMeta);
+}
+
+export function saveDirMeta(
   rootDir: string,
   assetMeta: AssetInfoFull[] | AssetTree,
   options?: {
@@ -454,7 +463,7 @@ export function saveDirMetaToFile(
   if (Array.isArray(assetMeta)) {
     assetMeta = toAssetTreeMeta(assetMeta, rootDir);
   }
-  const metaFile = getMetaFilePath(rootDir);
+  const metaFile = getDefaultMetaFilePath(rootDir);
   if (isNumber(maxMetaBackupFile) && maxMetaBackupFile > 0 && fs.existsSync(metaFile)) {
     fs.renameSync(metaFile, addDtSuffixToBareBasename(metaFile, {dtFormat: '-' + DT_FORMAT}));
     /** remove the extral backup file by date */

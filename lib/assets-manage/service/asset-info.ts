@@ -5,12 +5,11 @@ import {
   logColorful,
   byteToWord,
   isBoolean,
-  isDate,
   toDate,
   formatDate,
   toDurationStr,
 } from '../external';
-import {SHORT_ID_LENGTH} from './constant';
+import {SHORT_ID_LENGTH} from './config';
 import {AssetInfoPartial, AssetInfoFull, GetAssetInfoParams} from '../types';
 import {appendShortIdToFilePath, parseFilePath} from './short-id';
 
@@ -41,83 +40,6 @@ function getAssetInfoFromStat(stat: fs.Stats): Pick<AssetInfoPartial, 'changeDat
     size: stat.size,
   };
   return info;
-}
-
-function compareAssetProp(
-  firstValue: Date | boolean | number | string,
-  secondValue: Date | boolean | number | string,
-  key: keyof AssetInfoFull
-) {
-  if (['modifyDate', 'changeDate'].includes(key)) {
-    /** accurate is millisecond */
-    const fileDateInMs = toDate(firstValue as Date | string).getTime();
-    const dbDateInMs = toDate(secondValue as Date | string).getTime();
-    return fileDateInMs === dbDateInMs;
-  } else if (isBoolean(firstValue)) {
-    return firstValue == Boolean(secondValue);
-  } else {
-    return firstValue === secondValue;
-  }
-}
-/**
- * Get the diff between these two assetInfo, to get what should be changed
- * if we want align @param item info with @param refer info
- * @param refer only compare props in @param refer
- * @param current asset info on db
- */
-export function diffAssets(
-  refer: AssetInfoFull,
-  current: AssetInfoFull,
-  keyList?: Array<keyof AssetInfoFull>
-) {
-  keyList =
-    keyList ??
-    (['sha1', 'shortId', 'relativePath', 'extname', 'size', 'modifyDate', 'changeDate'] as Array<
-      keyof AssetInfoFull
-    >);
-  const diff: Partial<AssetInfoFull> = {};
-  for (const key of keyList) {
-    if (refer[key] !== undefined && !compareAssetProp(refer[key], current[key], key as keyof AssetInfoFull)) {
-      // @ts-ignore
-      diff[key] = current[key];
-    }
-  }
-  if (Object.keys(diff).length > 0) {
-    return diff;
-  } else {
-    return null;
-  }
-}
-
-const dtFormat = 'yyyy-MM-ddThh:mm:ss.SSSz';
-export function serailizeAssetInfo(info: Partial<AssetInfoPartial>) {
-  if (!info) {
-    return null;
-  }
-  const result = {...info};
-  if (result.modifyDate) {
-    // @ts-ignore
-    result.modifyDate = formatDate(result.modifyDate, dtFormat);
-  }
-  if (result.changeDate) {
-    // @ts-ignore
-    result.changeDate = formatDate(result.changeDate, dtFormat);
-  }
-  return result;
-}
-
-export function deserailizeAssetInfo(info: Partial<AssetInfoPartial>) {
-  if (!info) {
-    return null;
-  }
-  const result = {...info};
-  if (result.modifyDate) {
-    result.modifyDate = toDate(result.modifyDate);
-  }
-  if (result.changeDate) {
-    result.changeDate = toDate(result.changeDate);
-  }
-  return result;
 }
 
 /**
@@ -213,6 +135,87 @@ export async function toFullAssetInfo(
     } as AssetInfoFull;
   }
   return assetInfo as AssetInfoFull;
+}
+
+
+
+function compareAssetProp(
+  firstValue: Date | boolean | number | string,
+  secondValue: Date | boolean | number | string,
+  key: keyof AssetInfoFull
+) {
+  if (['modifyDate', 'changeDate'].includes(key)) {
+    /** accurate is millisecond */
+    const fileDateInMs = toDate(firstValue as Date | string).getTime();
+    const dbDateInMs = toDate(secondValue as Date | string).getTime();
+    return fileDateInMs === dbDateInMs;
+  } else if (isBoolean(firstValue)) {
+    return firstValue == Boolean(secondValue);
+  } else {
+    return firstValue === secondValue;
+  }
+}
+
+/**
+ * Get the diff between these two assetInfo, to get what should be changed
+ * if we want align @param item info with @param refer info
+ * @param refer only compare props in @param refer
+ * @param current asset info on db
+ */
+export function diffAssets(
+  refer: AssetInfoFull,
+  current: AssetInfoFull,
+  keyList?: Array<keyof AssetInfoFull>
+) {
+  keyList =
+    keyList ??
+    (['sha1', 'shortId', 'relativePath', 'extname', 'size', 'modifyDate', 'changeDate'] as Array<
+      keyof AssetInfoFull
+    >);
+  const diff: Partial<AssetInfoFull> = {};
+  for (const key of keyList) {
+    if (refer[key] !== undefined && !compareAssetProp(refer[key], current[key], key as keyof AssetInfoFull)) {
+      // @ts-ignore
+      diff[key] = current[key];
+    }
+  }
+  if (Object.keys(diff).length > 0) {
+    return diff;
+  } else {
+    return null;
+  }
+}
+
+
+const dtFormat = 'yyyy-MM-ddThh:mm:ss.SSSz';
+export function serailizeAssetInfo(info: Partial<AssetInfoPartial>) {
+  if (!info) {
+    return null;
+  }
+  const result = {...info};
+  if (result.modifyDate) {
+    // @ts-ignore
+    result.modifyDate = formatDate(result.modifyDate, dtFormat);
+  }
+  if (result.changeDate) {
+    // @ts-ignore
+    result.changeDate = formatDate(result.changeDate, dtFormat);
+  }
+  return result;
+}
+
+export function deserailizeAssetInfo(info: Partial<AssetInfoPartial>) {
+  if (!info) {
+    return null;
+  }
+  const result = {...info};
+  if (result.modifyDate) {
+    result.modifyDate = toDate(result.modifyDate);
+  }
+  if (result.changeDate) {
+    result.changeDate = toDate(result.changeDate);
+  }
+  return result;
 }
 
 export function toAssetInfoArray(info: AssetInfoFull[] | AssetInfoFull) {
