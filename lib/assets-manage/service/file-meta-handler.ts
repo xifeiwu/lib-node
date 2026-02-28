@@ -29,6 +29,9 @@ import {goOnOrNot, removeFile} from '../external';
  */
 export const getFileMetaHandler = (options?: {metaFile: string}) => {
   const {metaFile} = options ?? {};
+  if (metaFile && !fs.existsSync(metaFile)) {
+    throw new Error(`metaFile not exist: ${metaFile}`);
+  }
   const metaHandler: GetMetaHandlers = async (rootDir: string) => {
     if (!fs.existsSync(rootDir)) {
       throw new Error(`rootDir not exist: ${rootDir}`);
@@ -46,9 +49,11 @@ export const getFileMetaHandler = (options?: {metaFile: string}) => {
         meta = {...newValue, rootDir};
       }
       if (archive) {
-        saveMetaToFile(metaFile, {...meta, rootDir});
-        // for backup
-        saveDirMeta(rootDir, meta, {maxMetaBackupFile: 20});
+        if (metaFile) {
+          saveMetaToFile(metaFile, {...meta, rootDir});
+        } else {
+          saveDirMeta(rootDir, meta, {maxMetaBackupFile: 20});
+        }
       }
     }
     function archiveMeta() {
@@ -64,7 +69,7 @@ export const getFileMetaHandler = (options?: {metaFile: string}) => {
 
     async function initMeta(options?: GetDirAssetOptions) {
       const {getAssetInfoParams = {}, goThroughDirOptions} = options ?? {};
-      const result = readMetaFromFile(metaFile);
+      const result = metaFile ? readMetaFromFile(metaFile) : readMetaFromDir(rootDir);
       if (result) {
         if (result.rootDir !== rootDir) {
           throw new Error(`rootDir from assetMeta is different from rootDir of meta handler!`);

@@ -1,5 +1,5 @@
 import path from 'path';
-import {alignMetaWithAssets, handleDuplicateFile} from '../meta-handler';
+import {alignMetaWithAssets, handleDuplicateFile} from '../operation';
 import {getFileMetaHandler} from '../service';
 import {DIR_TMP_DATA} from './service/config';
 

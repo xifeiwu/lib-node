@@ -1,8 +1,8 @@
 import path from 'path';
-import {alignMetaWithAssets} from '../meta-handler';
+import {alignMetaWithAssets} from '../operation';
 import {getFileMetaHandler} from '../service';
 import {DIR_TMP_DATA} from './service/config';
-import {backupAssets} from '../meta-handler/2-assets-backup';
+import {backupAssets} from '../operation/2-assets-backup';
 
 // const rootDir = '/Volumes/ssd_4t/z-movie';
 // const bkrootDir = '/Volumes/12T_APFS/z-movie';

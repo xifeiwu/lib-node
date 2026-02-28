@@ -1,8 +1,8 @@
 import path from 'path';
-import {alignMetaWithAssets} from '../meta-handler';
+import {alignMetaWithAssets} from '../operation';
 import {getFileMetaHandler} from '../service';
 import {DIR_TMP_DATA} from './service/config';
-import {importAssets} from '../meta-handler/3-assets-import';
+import {importAssets} from '../operation/3-assets-import';
 
 // const rootDir = '/Volumes/ssd_4t/z-movie';
 // const importFromDir = process.env.HOME + '/Downloads';
