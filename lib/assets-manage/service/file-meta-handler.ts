@@ -6,7 +6,6 @@ import {
   CreateOrUpdateItemOptions,
   MetaHandlers,
   AssetTree,
-  MoreOptions,
   AssetTreeMeta,
 } from '../types';
 import {
@@ -43,27 +42,21 @@ export const getFileMetaHandler = (options?: {metaFile: string}) => {
       return metaFile;
     }
 
-    function updateMeta(options?: {newValue?: AssetTreeMeta | null; archive?: boolean}) {
-      const {newValue, archive} = options ?? {};
+    function updateMeta(options?: {newValue?: AssetTreeMeta | null}) {
+      const {newValue} = options ?? {};
       if (newValue !== undefined) {
         meta = {...newValue, rootDir};
       }
-      if (archive) {
-        if (metaFile) {
-          saveMetaToFile(metaFile, {...meta, rootDir});
-        } else {
-          saveDirMeta(rootDir, meta, {maxMetaBackupFile: 20, backUpInterval: 1000 * 60 * 20});
-        }
+      if (metaFile) {
+        saveMetaToFile(metaFile, {...meta, rootDir});
+      } else {
+        saveDirMeta(rootDir, meta, {maxMetaBackupFile: 20, backUpInterval: 1000 * 60 * 20});
       }
-    }
-    function archiveMeta() {
-      updateMeta({archive: true});
-      return {...meta, rootDir} as AssetTreeMeta;
     }
 
     async function resetMeta(options?: GetDirAssetOptions) {
       const result = await getAssetFullInfoTreeMeta(rootDir, options);
-      updateMeta({newValue: result, archive: true});
+      updateMeta({newValue: result});
       return result;
     }
 
@@ -103,48 +96,46 @@ export const getFileMetaHandler = (options?: {metaFile: string}) => {
       return true;
     }
 
-    async function createOrUpdateItem(param: CreateOrUpdateItemOptions, options?: MoreOptions) {
+    async function createOrUpdateItem(param: CreateOrUpdateItemOptions) {
       const {info, prevInfo} = param;
-      const {archive} = options ?? {};
       const result = insertOrUpdateItemOfAssetTree(meta, info);
-      updateMeta({archive});
+      updateMeta({});
       return result;
     }
 
-    async function createOrUpdateItems(optionList: CreateOrUpdateItemOptions[], options?: MoreOptions) {
+    async function createOrUpdateItems(optionList: CreateOrUpdateItemOptions[]) {
       const results: AssetInfoFull[] = [];
       for (const option of optionList) {
-        const target = await createOrUpdateItem(option, {...(options ?? {}), archive: false});
+        const target = await createOrUpdateItem(option);
         results.push(target);
       }
-      updateMeta({archive: options?.archive});
+      updateMeta({});
       return results;
     }
 
-    async function createItem(info: AssetInfoFull, options?: MoreOptions) {
-      const target = await createOrUpdateItem({info}, options);
+    async function createItem(info: AssetInfoFull) {
+      const target = await createOrUpdateItem({info});
       return target;
     }
-    async function createItems(infoList: AssetInfoFull[], options?: MoreOptions) {
+    async function createItems(infoList: AssetInfoFull[]) {
       const results: AssetInfoFull[] = [];
       for (const info of infoList) {
-        const target = await createItem(info, {...(options ?? {}), archive: false});
+        const target = await createItem(info);
         results.push(target);
       }
-      updateMeta({archive: options?.archive});
       return results;
     }
 
-    async function updateItem(param: CreateOrUpdateItemOptions, options?: MoreOptions) {
-      return createOrUpdateItem(param, options);
+    async function updateItem(param: CreateOrUpdateItemOptions) {
+      return createOrUpdateItem(param);
     }
-    async function updateItems(paramList: CreateOrUpdateItemOptions[], options?: MoreOptions) {
+    async function updateItems(paramList: CreateOrUpdateItemOptions[]) {
       const results: AssetInfoFull[] = [];
       for (const param of paramList) {
-        const target = await updateItem(param, {...(options ?? {}), archive: false});
+        const target = await updateItem(param);
         results.push(target);
       }
-      updateMeta({archive: options?.archive});
+      updateMeta({});
       return results;
     }
 
@@ -161,19 +152,19 @@ export const getFileMetaHandler = (options?: {metaFile: string}) => {
       return assetInfoTreeToList(meta);
     }
 
-    async function removeItem(relativePath: string, options?: {archive?: boolean}) {
+    async function removeItem(relativePath: string) {
       const item = deleteItemFromAssetTree(meta, relativePath);
-      updateMeta({archive: options?.archive});
+      updateMeta({});
       return item;
     }
 
-    async function removeItems(relativePathList: string[], options?: {archive?: boolean}) {
+    async function removeItems(relativePathList: string[]) {
       const results: AssetInfoFull[] = [];
       for (const relativePath of relativePathList) {
-        const result = await removeItem(relativePath, {archive: false});
+        const result = await removeItem(relativePath);
         results.push(result);
       }
-      updateMeta({archive: options?.archive});
+      updateMeta({});
       return results;
     }
 
@@ -194,7 +185,6 @@ export const getFileMetaHandler = (options?: {metaFile: string}) => {
       removeItem,
       removeItems,
       getItemList,
-      archiveMeta,
     };
     return handlers;
   };

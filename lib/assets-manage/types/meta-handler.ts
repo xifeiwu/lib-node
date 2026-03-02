@@ -6,10 +6,6 @@ export interface CreateOrUpdateItemOptions {
   prevInfo?: Partial<AssetInfoFull>;
 }
 
-export interface MoreOptions {
-  archive?: boolean;
-}
-
 export interface MetaHandlers {
   rootDir: string;
   getKey: () => string;
@@ -20,19 +16,15 @@ export interface MetaHandlers {
   getMeta: (options?: GetDirAssetOptions) => Promise<AssetMeta>;
   cleanUpMeta: () => Promise<boolean>;
   /** handle items of asset meta */
-  createItem: (info: AssetInfoFull, options?: MoreOptions) => Promise<AssetInfoFull>;
-  createItems: (infoList: AssetInfoFull[], options?: MoreOptions) => Promise<AssetInfoFull[]>;
+  createItem: (info: AssetInfoFull) => Promise<AssetInfoFull>;
+  createItems: (infoList: AssetInfoFull[]) => Promise<AssetInfoFull[]>;
   findItems: (assetInfo: Partial<AssetInfoFull>) => Promise<AssetInfoFull[]>;
   getItemList: (options?: {paranoid?: boolean}) => Promise<AssetInfoFull[]>;
-  updateItem: (param: CreateOrUpdateItemOptions, options?: MoreOptions) => Promise<AssetInfoFull>;
-  updateItems: (paramList: CreateOrUpdateItemOptions[], options?: MoreOptions) => Promise<AssetInfoFull[]>;
-  createOrUpdateItem: (param: CreateOrUpdateItemOptions, options?: MoreOptions) => Promise<AssetInfoFull>;
-  createOrUpdateItems: (
-    paramList: CreateOrUpdateItemOptions[],
-    options?: MoreOptions
-  ) => Promise<AssetInfoFull[]>;
-  removeItem: (relativePath: string, options?: MoreOptions) => Promise<AssetInfoFull>;
-  removeItems: (relativePath: string[], options?: MoreOptions) => Promise<AssetInfoFull[]>;
-  archiveMeta: () => void;
+  updateItem: (param: CreateOrUpdateItemOptions) => Promise<AssetInfoFull>;
+  updateItems: (paramList: CreateOrUpdateItemOptions[]) => Promise<AssetInfoFull[]>;
+  createOrUpdateItem: (param: CreateOrUpdateItemOptions) => Promise<AssetInfoFull>;
+  createOrUpdateItems: (paramList: CreateOrUpdateItemOptions[]) => Promise<AssetInfoFull[]>;
+  removeItem: (relativePath: string) => Promise<AssetInfoFull>;
+  removeItems: (relativePath: string[]) => Promise<AssetInfoFull[]>;
 }
 export type GetMetaHandlers = (rootDir: string) => Promise<MetaHandlers>;
