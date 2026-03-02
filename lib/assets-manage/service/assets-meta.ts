@@ -11,6 +11,7 @@ import {
   toDate,
   formatDate,
   getFileList,
+  convertObjectToCjsExport,
 } from '../external';
 import {
   AssetInfoFull,
@@ -25,8 +26,8 @@ import {
   AssetMeta,
 } from '../types';
 import {deserailizeAssetInfo, diffAssets, getAssetInfo, serailizeAssetInfo} from './asset-info';
-import {isNumber} from '../../../external';
-import {DT_FORMAT} from '..';
+import {isNumber, toDtStr} from '../../../external';
+import {FILE_SUFFIX_DT_FORMAT} from '..';
 
 async function getOneAssetMeta(
   item: FileInfoTreeItem,
@@ -447,31 +448,47 @@ export function saveDirMeta(
   rootDir: string,
   assetMeta: AssetInfoFull[] | AssetTree,
   options?: {
-    /** If the count of backup file larger than this value, remove the extral file by date */
+    /**
+     * If this param is not set, do not backup the meta file
+     * If the count of backup file larger than this value, remove the extral file by date
+     */
     maxMetaBackupFile?: number;
+    /** if the last backup is less than this value, do not backup again */
+    backUpInterval?: number;
   }
 ) {
-  const {maxMetaBackupFile} = options ?? {};
+  const {maxMetaBackupFile = 20, backUpInterval = 1000 * 60 * 10} = options ?? {};
   if (Array.isArray(assetMeta)) {
     assetMeta = toAssetTreeMeta(assetMeta, rootDir);
   }
   const metaFile = getDefaultMetaFilePath(rootDir);
-  if (isNumber(maxMetaBackupFile) && maxMetaBackupFile > 0 && fs.existsSync(metaFile)) {
-    fs.renameSync(metaFile, addDtSuffixToBareBasename(metaFile, {dtFormat: '-' + DT_FORMAT}));
-    /** remove the extral backup file by date */
-    const reg = new RegExp(`^index-[\\dT-]+\\.ts$`);
-    const backupFiles = getFileList(getMetaDir(rootDir), {fileFilter: ({basename}) => reg.test(basename)});
-    if (backupFiles.length > maxMetaBackupFile) {
-      backupFiles.sort((a, b) => fs.statSync(a).mtime.getTime() - fs.statSync(b).mtime.getTime());
-      const filesToRemove = backupFiles.slice(0, maxMetaBackupFile);
-      for (const file of filesToRemove) {
-        fs.unlinkSync(file);
+  const lastBackupTime = fs.existsSync(metaFile) ? fs.statSync(metaFile).mtime.getTime() : 0;
+  if (
+    lastBackupTime > 0 &&
+    isNumber(backUpInterval) &&
+    backUpInterval > 0 &&
+    lastBackupTime + backUpInterval < Date.now()
+  ) {
+    if (isNumber(maxMetaBackupFile) && maxMetaBackupFile > 0 && fs.existsSync(metaFile)) {
+      fs.renameSync(metaFile, addDtSuffixToBareBasename(metaFile, {dtFormat: '-' + FILE_SUFFIX_DT_FORMAT}));
+      /** remove the extral backup file by date */
+      const reg = new RegExp(`^index-[\\dT-]+\\.ts$`);
+      const backupFiles = getFileList(getMetaDir(rootDir), {fileFilter: ({basename}) => reg.test(basename)});
+      if (backupFiles.length > maxMetaBackupFile) {
+        backupFiles.sort((a, b) => fs.statSync(a).mtime.getTime() - fs.statSync(b).mtime.getTime());
+        const filesToRemove = backupFiles.slice(0, maxMetaBackupFile);
+        for (const file of filesToRemove) {
+          fs.unlinkSync(file);
+        }
       }
     }
   }
   makeSureDirExistForFile(metaFile);
   const serializedMeta = serializeMeta(assetMeta);
-  fs.writeFileSync(metaFile, `export const meta = ${JSON.stringify(serializedMeta, null, 2)}`);
+  fs.writeFileSync(
+    metaFile,
+    convertObjectToCjsExport({timestamp: toDtStr(), meta: serializedMeta}, {format: true})
+  );
 }
 /** End: meta file persistence in dir level */
 /** Start: meta file persistence in file level */

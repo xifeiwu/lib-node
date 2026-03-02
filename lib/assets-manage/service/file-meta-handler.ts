@@ -52,7 +52,7 @@ export const getFileMetaHandler = (options?: {metaFile: string}) => {
         if (metaFile) {
           saveMetaToFile(metaFile, {...meta, rootDir});
         } else {
-          saveDirMeta(rootDir, meta, {maxMetaBackupFile: 20});
+          saveDirMeta(rootDir, meta, {maxMetaBackupFile: 20, backUpInterval: 1000 * 60 * 20});
         }
       }
     }

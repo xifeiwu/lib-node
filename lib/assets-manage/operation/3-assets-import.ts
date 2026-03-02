@@ -11,7 +11,7 @@ import {
   makeSureDirExistForFile,
   byteToWord,
 } from '../external';
-import {DIR_ASSET_MANAGE_TMP_DIR, DT_FORMAT} from '../service';
+import {DIR_ASSET_MANAGE_TMP_DIR, FILE_SUFFIX_DT_FORMAT} from '../service';
 
 export async function importAssets(
   toMetaHandlers: MetaHandlers,
@@ -50,7 +50,7 @@ export async function importAssets(
   }
 
   const stateFile = addDtSuffixToBareBasename(path.join(outputDir, 'import-assets-diff.js'), {
-    dtFormat: DT_FORMAT,
+    dtFormat: FILE_SUFFIX_DT_FORMAT,
   });
   writeFileSync(
     stateFile,

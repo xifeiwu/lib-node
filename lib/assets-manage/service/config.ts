@@ -2,7 +2,7 @@ import path from 'path';
 
 export const DIR_ASSET_MANAGE_TMP_DIR = path.resolve(process.env.HOME, '.asset-manage-tmp');
 
-export const DT_FORMAT = 'yyyy-MM-ddThh-mm-ss';
+export const FILE_SUFFIX_DT_FORMAT = 'yyyy-MM-ddThh-mm-ss';
 
 export const SHORT_ID_LENGTH = 6;
 

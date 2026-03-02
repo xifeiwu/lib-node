@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import {AssetInfoFull, AssetsSyncUpMetaDiff, MetaHandlers} from '../types';
+import {AssetInfoFull, AssetMeta, AssetsSyncUpMetaDiff, MetaHandlers} from '../types';
 import {
   getAssetInfoListFromMeta,
   getAssetPartialInfoTreeMeta,
@@ -19,7 +19,7 @@ import {
   selectOption,
   makeSureDirExist,
 } from '../external';
-import {DIR_ASSET_MANAGE_TMP_DIR, DT_FORMAT} from '../service';
+import {DIR_ASSET_MANAGE_TMP_DIR, FILE_SUFFIX_DT_FORMAT} from '../service';
 
 function getActions(stateChange: AssetsSyncUpMetaDiff) {
   const {added = [], copied = [], moved = [], modified = [], deleted = [], isNeedAction} = stateChange;
@@ -29,24 +29,25 @@ function getActions(stateChange: AssetsSyncUpMetaDiff) {
   return {toAdd, toDelete, toModify, isNeedAction};
 }
 
-export async function alignMetaWithAssets(
+export async function alignMeta(
   metaHandlers: MetaHandlers,
-  options?: {
+  fromMeta: AssetMeta,
+  options: {
     outputDir?: string;
   }
 ) {
   const {outputDir = DIR_ASSET_MANAGE_TMP_DIR} = options ?? {};
-  const {rootDir} = metaHandlers;
   const toMeta = await metaHandlers.getMeta();
-  /** only get partial asset info to reduce cost */
-  const fromMeta = await getAssetPartialInfoTreeMeta(rootDir);
+  if (toMeta.rootDir === fromMeta.rootDir) {
+    throw new Error(`toMeta.rootDir should not be the same as fromMeta.rootDir`);
+  }
   const difference = await diffMetaForAssetsSyncUp(toMeta, fromMeta);
   if (!difference.isNeedAction) {
     return true;
   }
   const action = getActions(difference);
   const stateFile = addDtSuffixToBareBasename(path.join(outputDir, 'meta-assets-diff.js'), {
-    dtFormat: DT_FORMAT,
+    dtFormat: FILE_SUFFIX_DT_FORMAT,
   });
   writeFileSync(
     stateFile,
@@ -55,7 +56,7 @@ export async function alignMetaWithAssets(
   if (
     !(await goOnOrNot({
       tips: [
-        `Need to do meta-asset sync up for dir: ${rootDir}`,
+        `Need to do meta-asset sync up for dir: ${toMeta.rootDir}`,
         `state change is saved to file: ${stateFile}`,
         `Are you sure to apply state change above?`,
       ],
@@ -77,6 +78,18 @@ export async function alignMetaWithAssets(
   //   }
   // }
   return true;
+}
+
+export async function alignMetaWithAssets(
+  metaHandlers: MetaHandlers,
+  options?: {
+    outputDir?: string;
+  }
+) {
+  const {rootDir} = metaHandlers;
+  /** only get partial asset info to reduce cost */
+  const fromMeta = await getAssetPartialInfoTreeMeta(rootDir);
+  return alignMeta(metaHandlers, fromMeta, options);
 }
 
 export async function handleDuplicateFile(
@@ -113,7 +126,7 @@ export async function handleDuplicateFile(
     return true;
   }
   const stateFile = addDtSuffixToBareBasename(path.join(outputDir, 'duplicate.js'), {
-    dtFormat: DT_FORMAT,
+    dtFormat: FILE_SUFFIX_DT_FORMAT,
   });
   writeFileSync(stateFile, convertObjectToCjsExport({duplicate: duplicateFiles}, {format: true}));
   if (
