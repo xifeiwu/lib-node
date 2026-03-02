@@ -32,7 +32,7 @@ function getActions(stateChange: AssetsSyncUpMetaDiff) {
 export async function alignMeta(
   metaHandlers: MetaHandlers,
   fromMeta: AssetMeta,
-  options: {
+  options?: {
     outputDir?: string;
   }
 ) {
