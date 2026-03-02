@@ -7,7 +7,7 @@ import {
   getSha1ToAssetInfo,
   serializeMetaDiff,
 } from '../service';
-import {diffMetaForAssetsSyncUp} from '../service';
+import {diffMetaForSyncUp} from '../service';
 import {
   goOnOrNot,
   addDtSuffixToBareBasename,
@@ -41,7 +41,7 @@ export async function alignMeta(
   if (toMeta.rootDir === fromMeta.rootDir) {
     throw new Error(`toMeta.rootDir should not be the same as fromMeta.rootDir`);
   }
-  const difference = await diffMetaForAssetsSyncUp(toMeta, fromMeta);
+  const difference = await diffMetaForSyncUp(toMeta, fromMeta);
   if (!difference.isNeedAction) {
     return true;
   }

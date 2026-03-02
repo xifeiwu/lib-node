@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import {AssetInfoFull, MetaHandlers} from '../types';
 import {serializeMetaDiff, getPartialAssetInfo} from '../service';
-import {diffMetaForAssetsImport} from '../service';
+import {diffMetaForAddNew} from '../service';
 import {
   goOnOrNot,
   addDtSuffixToBareBasename,
@@ -44,7 +44,7 @@ export async function importAssets(
 
   const toMeta = await toMetaHandlers.getMeta();
   const fromMeta = await fromMetaHandlers.getMeta();
-  const difference = await diffMetaForAssetsImport(toMeta, fromMeta);
+  const difference = await diffMetaForAddNew(toMeta, fromMeta);
   if (!difference.isNeedAction) {
     return true;
   }

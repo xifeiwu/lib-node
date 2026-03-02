@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import {AssetInfoFull, MetaHandlers} from '../types';
 import {serializeMetaDiff, getPartialAssetInfo} from '../service';
-import {diffMetaForAssetsSyncUp} from '../service';
+import {diffMetaForSyncUp} from '../service';
 import {
   goOnOrNot,
   addDtSuffixToBareBasename,
@@ -39,7 +39,7 @@ export async function backupAssets(
   const {outputDir = DIR_ASSET_MANAGE_TMP_DIR} = options ?? {};
   const toMeta = await toMetaHandlers.getMeta();
   const fromMeta = await fromMetaHandlers.getMeta();
-  const difference = await diffMetaForAssetsSyncUp(toMeta, fromMeta);
+  const difference = await diffMetaForSyncUp(toMeta, fromMeta);
   if (!difference.isNeedAction) {
     return true;
   }

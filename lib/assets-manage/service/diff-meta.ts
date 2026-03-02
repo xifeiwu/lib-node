@@ -13,7 +13,7 @@ import {
  * @param fromMeta
  * @returns
  */
-export async function diffMetaForAssetsSyncUp(
+export async function diffMetaForSyncUp(
   toMeta: AssetMeta,
   fromMeta: AssetMeta
 ): Promise<AssetsSyncUpMetaDiff> {
@@ -162,7 +162,7 @@ export async function diffMetaForAssetsSyncUp(
   };
 }
 
-export async function diffMetaForAssetsImport(toMeta: AssetMeta, fromMeta: AssetMeta) {
+export async function diffMetaForAddNew(toMeta: AssetMeta, fromMeta: AssetMeta) {
   const {rootDir: rootDir1} = toMeta;
   const {rootDir: rootDir2} = fromMeta;
   const assetInfoList1 = getAssetInfoListFromMeta(toMeta);
