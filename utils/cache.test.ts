@@ -1,9 +1,9 @@
 import assert from 'assert';
 import {logColorful} from '../log';
-import {useCachedData} from './cache';
+import {cacheData} from './cache';
 
 const maxAge = 3000;
-const {getOrFetch} = useCachedData({maxAge}, async () => {
+const {getOrFetch} = cacheData({maxAge}, async () => {
   await new Promise(res => setTimeout(res, 1000));
   return Date.now();
 });

@@ -1,71 +1,70 @@
-import {isFunction} from '../external';
+type SyncDataSourceFn<T, Args extends any[]> = (...args: Args) => T;
+type AsyncDataSourceFn<T, Args extends any[]> = (...args: Args) => Promise<T>;
+type DataSourceFn<T, Args extends any[]> = SyncDataSourceFn<T, Args> | AsyncDataSourceFn<T, Args>;
 
-type SyncGetDataSource<T> = T | ((...params: any[]) => T);
-type ASyncGetDataSource<T> = (...params: any[]) => Promise<T>;
-type GetDataSource<T> = SyncGetDataSource<T> | ASyncGetDataSource<T>;
-
-export function useCachedData<T>(options: {maxAge?: number}, globalDataSource?: GetDataSource<T>) {
+/**
+ * dataGenerator is the function to generate the data to be cached.
+ */
+export function cacheData<T, Args extends any[] = []>(
+  options: {maxAge?: number},
+  dataGenerator: DataSourceFn<T, Args>
+) {
   // maxAge equal 0 means not do cache by default.
   const {maxAge = 0} = options;
-  let data: T;
-  let expireAt: number;
-  let promise: Promise<T>;
-  async function set(dataSource: GetDataSource<T>) {
+  let data: T | undefined;
+  let expireAt: number | undefined;
+  let pending: Promise<T> | undefined;
+
+  function isExpired() {
+    return expireAt === undefined || Date.now() > expireAt;
+  }
+
+  async function set(...args: Args) {
+    if (!pending) {
+      pending = Promise.resolve(dataGenerator(...args));
+    }
     try {
-      if (promise === undefined) {
-        if (isFunction(dataSource)) {
-          promise = (dataSource as (...params: any[]) => Promise<T>)();
-        } else {
-          promise = Promise.resolve(dataSource as T);
-        }
-      }
-      data = await promise;
+      data = await pending;
       expireAt = Date.now() + maxAge;
       return true;
-    } catch (err) {
+    } catch {
       return false;
     } finally {
-      promise = undefined;
+      pending = undefined;
     }
   }
-  function setSync(dataSource: SyncGetDataSource<T>) {
+
+  function setSync(...args: Args) {
     try {
-      if (isFunction(dataSource)) {
-        data = (dataSource as (...params: any[]) => T)();
-      } else {
-        data = dataSource as T;
-      }
+      data = (dataGenerator as SyncDataSourceFn<T, Args>)(...args);
       expireAt = Date.now() + maxAge;
       return true;
-    } finally {
+    } catch {
       return false;
     }
   }
-  function get() {
-    if (typeof expireAt === 'number' && Date.now() > expireAt) {
-      return undefined;
-    }
-    return data;
+
+  function get(): T | undefined {
+    return isExpired() ? undefined : data;
   }
-  async function getOrFetch(dataSource?: GetDataSource<T>) {
+
+  async function getOrFetch(...args: Args) {
     if (get() === undefined) {
-      await set(dataSource ?? globalDataSource);
+      await set(...args);
     }
     return data;
   }
-  /**
-   * It only works when typeof globalDataSource is SyncGetDataSource<T>
-   * @param dataSource
-   * @returns
-   */
-  function getOrFetchSync(dataSource?: SyncGetDataSource<T>) {
+
+  function getOrFetchSync(...args: Args) {
     if (get() === undefined) {
-      setSync(dataSource ?? (globalDataSource as SyncGetDataSource<T>));
+      setSync(...args);
     }
     return data;
   }
+
   function getMeta() {
     return {expireAt};
   }
-  return {setSync, set, get, getOrFetch, getOrFetchSync, getMeta};
+
+  return {set, setSync, get, getOrFetch, getOrFetchSync, getMeta};
 }
