@@ -4,6 +4,10 @@ import {convertKeyToLowerCase, isObject, isPlainObject} from '../../../../extern
 import {ReadableWithMeta, CanConvertToBuffer, HttpCommonInfo} from '../../../../types';
 import {OutgoingHttpHeaders} from 'http';
 
+/**
+ * if 'content-type': 'application/x-www-form-urlencoded',
+ * we can use this function to convert json data to urlencoded format
+ */
 export function toUrlencodedFormat(data: object) {
   if (isObject(data)) {
     return querystring.stringify(data as ParsedUrlQueryInput);
