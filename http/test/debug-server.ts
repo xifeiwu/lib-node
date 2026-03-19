@@ -64,7 +64,7 @@ export async function testCustomRespnse() {
       c: true,
     },
   };
-  const {responseInfo} = await requestAndGetResponseInfo<any, CustomizeResponseOptions>({
+  const {responseInfo} = await requestAndGetResponseInfo<any>({
     method: 'post',
     origin,
     pathname: HttpDebugServerPath.customResponse,

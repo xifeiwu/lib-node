@@ -66,8 +66,8 @@ export function mergeHttpRequestOptions(
  * @param options
  * @returns
  */
-export function sendHttpRequest<Payload extends ConnectionPayload = any>(
-  options: HttpRequestOptions<Payload>
+export function sendHttpRequest<RequestOptions extends HttpRequestOptions = HttpRequestOptions>(
+  options: RequestOptions
 ): SendHttpRequestResult {
   const {urlProps, restProps} = getUrlPropsFromConfig(options);
   const url = toUrlInstance(urlProps);
@@ -118,8 +118,8 @@ export class ResponseError extends Error {
   }
 }
 
-export async function requestAndGetResponse<Payload extends ConnectionPayload = any>(
-  options: HttpRequestOptions<Payload>
+export async function requestAndGetResponse<RequestOptions extends HttpRequestOptions = HttpRequestOptions>(
+  options: RequestOptions
 ): Promise<SendRequestWithResponseResult> {
   const result = sendHttpRequest(options);
   const {request} = result;
@@ -150,11 +150,14 @@ export const validateStatusCode: ValidateStatus = info => {
 };
 
 export type RequestAndGetResponseInfoFunc = typeof requestAndGetResponseInfo;
-export async function requestAndGetResponseInfo<ResData = any, Payload extends ConnectionPayload = any>(
-  requestOptions: HttpRequestOptions<Payload>,
+export async function requestAndGetResponseInfo<
+  ResData = any,
+  RequestOptions extends HttpRequestOptions = HttpRequestOptions,
+>(
+  requestOptions: RequestOptions,
   parseOptions?: ParseHttpResponseOptions
 ): Promise<SendRequestWithResponseInfoResult<ResData>> {
-  const result = await requestAndGetResponse<Payload>(requestOptions);
+  const result = await requestAndGetResponse(requestOptions);
   const {response, requestOptions: finalRequestOptions} = result;
 
   let {validateStatus, printCurlCommandOnError, bodyParserOptions} = parseOptions ?? {};
@@ -185,8 +188,11 @@ export type RequestAndGetRelatedInfoFunc = typeof requestAndGetRelatedInfo;
  * @param responseConfig
  * @returns
  */
-export async function requestAndGetRelatedInfo<ResData = any, Payload extends ConnectionPayload = any>(
-  requestOptions: HttpRequestOptions<Payload>,
+export async function requestAndGetRelatedInfo<
+  ResData = any,
+  RequestOptions extends HttpRequestOptions = HttpRequestOptions,
+>(
+  requestOptions: RequestOptions,
   responseConfig?: ParseHttpResponseOptions
 ): Promise<SendRequestWithResponseInfoResult<ResData>> {
   return await requestAndGetResponseInfo(requestOptions, responseConfig);
