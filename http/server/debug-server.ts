@@ -49,9 +49,16 @@ const pathnameToHandler: {
  */
 export async function startHttpDebugServer(
   config?: HttpServerConfig,
-  options?: {logRequestHeaderInfo?: LogColors; logSocketState?: LogColors}
+  options?: {
+    logRequestHeaderInfo?: LogColors;
+    logSocketState?: LogColors;
+    requestHandler?: (
+      response: http.ServerResponse,
+      request: http.IncomingMessage
+    ) => boolean | undefined | void;
+  }
 ) {
-  const {logRequestHeaderInfo, logSocketState} = options ?? {};
+  const {logRequestHeaderInfo, logSocketState, requestHandler} = options ?? {};
   const apiListHtml = listAUsingUl({
     infoList: Object.entries(pathnameToHandler).map(([pathname, value]) => {
       const {desc} = value;
@@ -77,8 +84,14 @@ export async function startHttpDebugServer(
         if (pathname === '/') {
           responseHtml(response, apiListHtml);
         } else {
-          const func = pathnameToHandler[pathname]?.handler ?? response404;
-          func(response, request);
+          const func = pathnameToHandler[pathname]?.handler;
+          if (func) {
+            return func(response, request);
+          }
+          if (requestHandler && requestHandler(response, request)) {
+            return;
+          }
+          response404(response);
         }
       },
       async connect(req, socket, head) {
