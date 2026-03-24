@@ -67,7 +67,7 @@ export function mergeHttpRequestOptions(
  * @returns
  */
 export function sendHttpRequest<RequestOptions extends HttpRequestOptions = HttpRequestOptions>(
-  options: RequestOptions
+  options: RequestOptions & HttpRequestOptions
 ): SendHttpRequestResult {
   const {urlProps, restProps} = getUrlPropsFromConfig(options);
   const url = toUrlInstance(urlProps);
@@ -119,7 +119,7 @@ export class ResponseError extends Error {
 }
 
 export async function requestAndGetResponse<RequestOptions extends HttpRequestOptions = HttpRequestOptions>(
-  options: RequestOptions
+  options: RequestOptions & HttpRequestOptions
 ): Promise<SendRequestWithResponseResult> {
   const result = sendHttpRequest(options);
   const {request} = result;
@@ -154,7 +154,7 @@ export async function requestAndGetResponseInfo<
   ResData = any,
   RequestOptions extends HttpRequestOptions = HttpRequestOptions,
 >(
-  requestOptions: RequestOptions,
+  requestOptions: RequestOptions & HttpRequestOptions,
   parseOptions?: ParseHttpResponseOptions
 ): Promise<SendRequestWithResponseInfoResult<ResData>> {
   const result = await requestAndGetResponse(requestOptions);
