@@ -38,7 +38,7 @@ export async function alignMeta(
 ) {
   const {outputDir = DIR_ASSET_MANAGE_TMP_DIR} = options ?? {};
   const toMeta = await metaHandlers.getMeta();
-  if (toMeta.rootDir === fromMeta.rootDir) {
+  if (toMeta.rootDir !== fromMeta.rootDir) {
     throw new Error(`toMeta.rootDir should not be the same as fromMeta.rootDir`);
   }
   const difference = await diffMetaForSyncUp(toMeta, fromMeta);

@@ -11,7 +11,7 @@ export function convertObjectToCjsExport(
     const line = `module.exports.${key} = ${
       isPlainObject(value) || Array.isArray(value)
         ? JSON.stringify(value, null, format ? 2 : undefined)
-        : value
+        : JSON.stringify(value)
     }`;
     return line;
   });
