@@ -66,6 +66,7 @@ export {
   isAsyncFunction,
   getDtStrInFormat,
   toDtStr,
+  formatDt,
 } from '../js/common';
 export {AstAOptions, listAUsingUl} from '../js/lib/html-parser';
 

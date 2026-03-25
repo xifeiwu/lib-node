@@ -56,7 +56,7 @@ export async function alignTwoMetas(
     return true;
   }
   const action = getActions(difference);
-  const stateFile = addDtSuffixToBareBasename(path.join(outputDir, 'meta-assets-diff.js'), {
+  const stateFile = addDtSuffixToBareBasename(path.join(outputDir, 'meta-meta-diff.js'), {
     dtFormat: FILE_SUFFIX_DT_FORMAT,
   });
   writeFileSync(
