@@ -1,6 +1,7 @@
 import {createDuplicateFile, createLinkFile, createNewFiles, removeDataDir} from '.';
 
 export async function initSampleAssets(rootDir: string) {
+  /** remove assets dir if exists */
   removeDataDir({rootDir});
   // const existingFiles = syncUpExistingFiles({rootDir});
   //a10, a20, a30, a40, a50
