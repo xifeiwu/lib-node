@@ -72,9 +72,7 @@ export async function importAssets(
     const {relativePath} = assetInfo;
     const sourcePath = path.join(fromMetaHandlers.rootDir, relativePath);
     const targetRelativePath = path.join(newAssetsDirRelativePath, relativePath);
-    await addAssetMeta(toMetaHandlers, [
-      {sourcePath, relativePath: targetRelativePath},
-    ]);
+    await addAssetMeta(toMetaHandlers, [{sourcePath, relativePath: targetRelativePath}]);
     copiedSize += assetInfo.size;
     copiedCount++;
     console.log(

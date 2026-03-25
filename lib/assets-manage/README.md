@@ -12,13 +12,13 @@
 
 ## 服务层（`service/`）
 
-| 模块 | 作用 |
-|------|------|
-| **`assets-meta.ts`** | 遍历目录生成 `AssetTreeMeta`（全量算 sha1：`getAssetFullInfoTreeMeta`；省成本：`getAssetPartialInfoTreeMeta`）；树与列表互转；读写目录/文件中的 meta；在树上插入、删除、查找节点等。 |
-| **`asset-info.ts`** | 单文件的 `getAssetInfo`、序列化、两版 `AssetInfo` 的字段级 `diff`。 |
-| **`diff-meta.ts`** | **差异引擎**：`diffMetaForSyncUp`、`diffMetaForAddNew`，产出 `added` / `copied` / `moved` / `modified` / `deleted`（以及 import 场景的 `duplicated`）。 |
-| **`file-meta-handler.ts`** | 将上述能力封装为 **`MetaHandlers`**，供 `operation` 注入使用。 |
-| **`short-id.ts`**、`config.ts` | 短 id 与常量（临时目录、日期后缀格式等）。 |
+| 模块                           | 作用                                                                                                                                                                                 |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **`assets-meta.ts`**           | 遍历目录生成 `AssetTreeMeta`（全量算 sha1：`getAssetFullInfoTreeMeta`；省成本：`getAssetPartialInfoTreeMeta`）；树与列表互转；读写目录/文件中的 meta；在树上插入、删除、查找节点等。 |
+| **`asset-info.ts`**            | 单文件的 `getAssetInfo`、序列化、两版 `AssetInfo` 的字段级 `diff`。                                                                                                                  |
+| **`diff-meta.ts`**             | **差异引擎**：`diffMetaForSyncUp`、`diffMetaForAddNew`，产出 `added` / `copied` / `moved` / `modified` / `deleted`（以及 import 场景的 `duplicated`）。                              |
+| **`file-meta-handler.ts`**     | 将上述能力封装为 **`MetaHandlers`**，供 `operation` 注入使用。                                                                                                                       |
+| **`short-id.ts`**、`config.ts` | 短 id 与常量（临时目录、日期后缀格式等）。                                                                                                                                           |
 
 ### `diffMetaForSyncUp(toMeta, fromMeta)`
 

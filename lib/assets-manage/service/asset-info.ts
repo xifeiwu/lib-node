@@ -1,14 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import {
-  hashData,
-  logColorful,
-  byteToWord,
-  isBoolean,
-  toDate,
-  formatDate,
-  toDurationStr,
-} from '../external';
+import {hashData, logColorful, byteToWord, isBoolean, toDate, formatDate, toDurationStr} from '../external';
 import {SHORT_ID_LENGTH} from './config';
 import {AssetInfoPartial, AssetInfoFull, GetAssetInfoParams} from '../types';
 import {appendShortIdToFilePath, parseFilePath} from './short-id';
@@ -137,8 +129,6 @@ export async function toFullAssetInfo(
   return assetInfo as AssetInfoFull;
 }
 
-
-
 function compareAssetProp(
   firstValue: Date | boolean | number | string,
   secondValue: Date | boolean | number | string,
@@ -185,7 +175,6 @@ export function diffAssets(
     return null;
   }
 }
-
 
 const dtFormat = 'yyyy-MM-ddThh:mm:ss.SSSz';
 export function serailizeAssetInfo(info: Partial<AssetInfoPartial>) {

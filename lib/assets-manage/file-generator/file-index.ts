@@ -1,6 +1,8 @@
 import path from 'path';
-import {getFileInfoList} from '../../external';
-import {Folder} from './types';
+import {getFileInfoList} from '../external';
+import {BaseOptions, FileOptions, Folder, FolderOptions} from './types';
+
+export const DEFAULT_ROOT_DIR = path.join(__dirname, '.tmp');
 
 export const STEP = 10;
 // 10, 20, 30, 40, ..., 600
@@ -14,7 +16,8 @@ export function getRelativePath(folder: Folder, index: number) {
   return relativePath;
 }
 
-export function getFullPath(rootDir: string, folder: Folder, index: number) {
+export function getFullPath(options: FileOptions) {
+  const {rootDir = DEFAULT_ROOT_DIR, folder, index} = options;
   return path.join(rootDir, getRelativePath(folder, index));
 }
 
@@ -25,7 +28,8 @@ type FileIndex = Record<string, {[tag in Folder]: number[]}>;
  */
 export const FILE_INDEX: FileIndex = {};
 
-export function getFileIndex(rootDir: string) {
+export function getFileIndex(options: BaseOptions = {}) {
+  const {rootDir = DEFAULT_ROOT_DIR} = options;
   if (!FILE_INDEX[rootDir]) {
     FILE_INDEX[rootDir] = {
       a: [],
@@ -43,46 +47,45 @@ export function getFileSizeByIndex(index: number) {
   return Math.floor(index / STEP) * STEP;
 }
 
-export function getFileIndexOfFolder(rootDir: string, folder: Folder) {
-  const existingFiles = getFileIndex(rootDir);
-  return existingFiles[folder];
+export function getFileIndexOfFolder(options: FolderOptions) {
+  const existingFiles = getFileIndex(options);
+  return existingFiles[options.folder];
 }
 
-export function isFileExist(rootDir: string, folder: Folder, index: number) {
-  const existingFiles = getFileIndexOfFolder(rootDir, folder);
-  return existingFiles.includes(index);
+export function isFileExist(options: FileOptions) {
+  const existingFiles = getFileIndexOfFolder(options);
+  return existingFiles.includes(options.index);
 }
 
 /**
  * add file index to file index directly, with out create new file
- * @param rootDir
- * @param folder
- * @param index
  */
-export function addToFileIndex(rootDir: string, folder: Folder, index: number) {
-  if (isFileExist(rootDir, folder, index)) {
-    throw new Error(`File already exist: ${getFullPath(rootDir, folder, index)}`);
+export function addToFileIndex(options: FileOptions) {
+  if (isFileExist(options)) {
+    throw new Error(`File already exist: ${getFullPath(options)}`);
   }
-  const existingFiles = getFileIndexOfFolder(rootDir, folder);
-  existingFiles.push(index);
+  const existingFiles = getFileIndexOfFolder(options);
+  existingFiles.push(options.index);
   existingFiles.sort();
 }
 
-export function removeFromFileIndex(rootDir: string, folder: Folder, index: number) {
-  const existingFiles = getFileIndex(rootDir);
+export function removeFromFileIndex(options: FileOptions) {
+  const {rootDir = DEFAULT_ROOT_DIR, folder, index} = options;
+  const existingFiles = getFileIndex({rootDir});
   existingFiles[folder] = existingFiles[folder].filter(it => it !== index);
   existingFiles[folder].sort();
 }
 
-export function getNextNewFileIndex(rootDir: string, folder: Folder) {
-  const existingFiles = getFileIndex(rootDir);
-  const indexList = existingFiles[folder];
+export function getNextNewFileIndex(options: FolderOptions) {
+  const existingFiles = getFileIndex(options);
+  const indexList = existingFiles[options.folder];
   return SIZE_LIST.find(it => !indexList.includes(it));
 }
 
-export function getNextDuplicateIndex(rootDir: string, folder: Folder, referIndex: number) {
-  const existingFiles = getFileIndex(rootDir);
-  const indexList = existingFiles[folder];
+export function getNextDuplicateIndex(options: FolderOptions & {referIndex: number}) {
+  const {referIndex} = options;
+  const existingFiles = getFileIndex(options);
+  const indexList = existingFiles[options.folder];
   if (!SIZE_LIST.includes(referIndex)) {
     throw new Error(`Can't found refer to index: ${referIndex}`);
   }
@@ -100,8 +103,9 @@ export function getNextDuplicateIndex(rootDir: string, folder: Folder, referInde
 }
 
 const REG_RELATIVE_PATH = /^([abc])\/([0-9]+).txt$/;
-export function syncUpExistingFiles(rootDir: string) {
-  const existingFiles = getFileIndex(rootDir);
+export function syncUpExistingFiles(options: BaseOptions = {}) {
+  const {rootDir = DEFAULT_ROOT_DIR} = options;
+  const existingFiles = getFileIndex({rootDir});
   const fileInfoList = getFileInfoList(rootDir);
   for (const fileInfo of fileInfoList) {
     const {relativePath} = fileInfo;

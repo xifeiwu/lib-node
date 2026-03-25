@@ -34,10 +34,10 @@ function getActions(stateChange: AssetsSyncUpMetaDiff) {
 
 /**
  * align two metas of the same dir
- * @param metaHandlers 
- * @param fromMeta 
- * @param options 
- * @returns 
+ * @param metaHandlers
+ * @param fromMeta
+ * @param options
+ * @returns
  */
 export async function alignTwoMetas(
   metaHandlers: MetaHandlers,
@@ -92,9 +92,9 @@ export async function alignTwoMetas(
 
 /**
  * align meta with latest status of its assets
- * @param metaHandlers 
- * @param options 
- * @returns 
+ * @param metaHandlers
+ * @param options
+ * @returns
  */
 export async function alignMetaWithAssets(
   metaHandlers: MetaHandlers,
@@ -110,9 +110,9 @@ export async function alignMetaWithAssets(
 
 /**
  * handle duplicate file
- * @param metaHandlers 
- * @param options 
- * @returns 
+ * @param metaHandlers
+ * @param options
+ * @returns
  */
 export async function handleDuplicateFile(
   metaHandlers: MetaHandlers,
@@ -261,10 +261,7 @@ export async function copyAssetMeta(
  * @param metaHandlers
  * @param relativePaths - list of relative paths to delete
  */
-export async function deleteAssetMeta(
-  metaHandlers: MetaHandlers,
-  relativePaths: string[]
-) {
+export async function deleteAssetMeta(metaHandlers: MetaHandlers, relativePaths: string[]) {
   const {rootDir} = metaHandlers;
   for (const relativePath of relativePaths) {
     const filePath = path.join(rootDir, relativePath);
