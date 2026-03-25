@@ -1,7 +1,6 @@
 import path from 'path';
 import {alignMetaWithAssets} from '../operation';
 import {getFileMetaHandler} from '../service';
-import {DIR_TMP_DATA} from './service/config';
 import {importAssets} from '../operation/3-assets-import';
 
 // const rootDir = '/Volumes/ssd_4t/z-movie';

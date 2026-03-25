@@ -1,7 +1,6 @@
 import path from 'path';
 import {alignMetaWithAssets, handleDuplicateFile} from '../operation';
 import {getFileMetaHandler} from '../service';
-import {DIR_TMP_DATA} from './service/config';
 
 // const rootDir = DIR_TMP_DATA;
 // const rootDir = path.resolve(process.env.HOME, 'Downloads');

@@ -5,13 +5,13 @@ import fs from 'fs';
 import path from 'path';
 import {getRandomBase64String, getSequentialBase64String, removeFile, writeFileSync} from '../../external';
 import {
-  addToExistingFile,
+  addToFileIndex,
   getFileSizeByIndex,
   getFullPath,
   getNextDuplicateIndex,
   getNextNewFileIndex,
   getRelativePath,
-  removeFromExistingFile,
+  removeFromFileIndex,
 } from './service';
 import {FileOperationResult, Folder} from './types';
 import {getFileStat, linkFile} from '../../../../fs';
@@ -25,7 +25,7 @@ function createFile(rootDir: string, folder: Folder, index: number, content?: st
   /** By default,make the same size file have the same content */
   content = content ?? getSequentialBase64String(size);
   writeFileSync(fullPath, content);
-  addToExistingFile(rootDir, folder, index);
+  addToFileIndex(rootDir, folder, index);
   return {fullPath, relativePath: getRelativePath(folder, index), size, index};
 }
 
@@ -68,7 +68,7 @@ export function deleteFile(rootDir: string, folder: Folder, index: number) {
     return null;
   }
   fs.unlinkSync(fullPath);
-  removeFromExistingFile(rootDir, folder, index);
+  removeFromFileIndex(rootDir, folder, index);
   return {fullPath, relativePath, size: getFileStat(fullPath)?.size};
 }
 
