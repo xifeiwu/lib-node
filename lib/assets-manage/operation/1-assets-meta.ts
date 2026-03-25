@@ -29,7 +29,14 @@ function getActions(stateChange: AssetsSyncUpMetaDiff) {
   return {toAdd, toDelete, toModify, isNeedAction};
 }
 
-export async function alignMeta(
+/**
+ * align two metas of the same dir
+ * @param metaHandlers 
+ * @param fromMeta 
+ * @param options 
+ * @returns 
+ */
+export async function alignTwoMetas(
   metaHandlers: MetaHandlers,
   fromMeta: AssetMeta,
   options?: {
@@ -80,6 +87,12 @@ export async function alignMeta(
   return true;
 }
 
+/**
+ * align meta with latest status of its assets
+ * @param metaHandlers 
+ * @param options 
+ * @returns 
+ */
 export async function alignMetaWithAssets(
   metaHandlers: MetaHandlers,
   options?: {
@@ -89,9 +102,15 @@ export async function alignMetaWithAssets(
   const {rootDir} = metaHandlers;
   /** only get partial asset info to reduce cost */
   const fromMeta = await getAssetPartialInfoTreeMeta(rootDir);
-  return alignMeta(metaHandlers, fromMeta, options);
+  return alignTwoMetas(metaHandlers, fromMeta, options);
 }
 
+/**
+ * handle duplicate file
+ * @param metaHandlers 
+ * @param options 
+ * @returns 
+ */
 export async function handleDuplicateFile(
   metaHandlers: MetaHandlers,
   options: {
