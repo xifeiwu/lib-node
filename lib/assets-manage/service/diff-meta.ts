@@ -1,4 +1,4 @@
-import {AssetInfoFull, AssetMeta, AssetsSyncUpMetaDiff} from '../types';
+import {AssetInfoFull, AssetMeta, MetaDiffForImportNew, MetaDiffForSyncUp} from '../types';
 import {diffAssets, serailizeAssetInfo, toFullAssetInfo} from './asset-info';
 import {
   getAssetInfoById,
@@ -13,10 +13,7 @@ import {
  * @param fromMeta
  * @returns
  */
-export async function diffMetaForSyncUp(
-  toMeta: AssetMeta,
-  fromMeta: AssetMeta
-): Promise<AssetsSyncUpMetaDiff> {
+export async function diffMetaForSyncUp(toMeta: AssetMeta, fromMeta: AssetMeta): Promise<MetaDiffForSyncUp> {
   const {rootDir: rootDir1} = toMeta;
   const {rootDir: rootDir2} = fromMeta;
   const isSameDir = rootDir1 === rootDir2;
@@ -162,7 +159,10 @@ export async function diffMetaForSyncUp(
   };
 }
 
-export async function diffMetaForAddNew(toMeta: AssetMeta, fromMeta: AssetMeta) {
+export async function diffMetaForImportNew(
+  toMeta: AssetMeta,
+  fromMeta: AssetMeta
+): Promise<MetaDiffForImportNew> {
   const {rootDir: rootDir1} = toMeta;
   const {rootDir: rootDir2} = fromMeta;
   const assetInfoList1 = getAssetInfoListFromMeta(toMeta);
@@ -171,7 +171,7 @@ export async function diffMetaForAddNew(toMeta: AssetMeta, fromMeta: AssetMeta) 
   const sha1ToAssetInfo2 = getSha1ToAssetInfo(assetInfoList2);
 
   const added: AssetInfoFull[] = [];
-  const duplicated: {origin: AssetInfoFull | AssetInfoFull[]; by: AssetInfoFull | AssetInfoFull[]}[] = [];
+  const duplicated: MetaDiffForImportNew['duplicated'] = [];
   for (const key of Object.keys(sha1ToAssetInfo2)) {
     const assetInfo1 = sha1ToAssetInfo1[key];
     const assetInfo2 = sha1ToAssetInfo2[key];
@@ -186,7 +186,7 @@ export async function diffMetaForAddNew(toMeta: AssetMeta, fromMeta: AssetMeta) 
 }
 
 // export function diffAssetMeta(from: MetaInfo, to: MetaInfo) {}
-export function serializeMetaDiff(stateChange: AssetsSyncUpMetaDiff) {
+export function serializeMetaDiff(stateChange: MetaDiffForSyncUp) {
   return {
     ...stateChange,
     added: stateChange.added?.map(it => serailizeAssetInfo(it)),

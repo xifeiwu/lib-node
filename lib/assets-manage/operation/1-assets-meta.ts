@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import {AssetInfoFull, AssetMeta, AssetsSyncUpMetaDiff, MetaHandlers} from '../types';
+import {AssetInfoFull, AssetMeta, MetaDiffForSyncUp, MetaHandlers} from '../types';
 import {
   getAssetInfoListFromMeta,
   getAssetPartialInfoTreeMeta,
@@ -24,7 +24,7 @@ import {
 } from '../external';
 import {DIR_ASSET_MANAGE_TMP_DIR, FILE_SUFFIX_DT_FORMAT} from '../service';
 
-function getActions(stateChange: AssetsSyncUpMetaDiff) {
+function getActions(stateChange: MetaDiffForSyncUp) {
   const {added = [], copied = [], moved = [], modified = [], deleted = [], isNeedAction} = stateChange;
   const toAdd: AssetInfoFull[] = [...added, ...copied.map(it => it.to), ...moved.map(it => it.to)];
   const toDelete: AssetInfoFull[] = [...deleted, ...moved.map(it => it.from)];

@@ -3,7 +3,7 @@ import {AssetInfoFull, AssetInfoPartial} from './asset';
 /**
  * Compared to Meta, what is changed in assets
  */
-export interface AssetsSyncUpMetaDiff {
+export interface MetaDiffForSyncUp {
   isNeedAction: boolean;
   toDir: string;
   fromDir: string;
@@ -25,6 +25,20 @@ export interface AssetsSyncUpMetaDiff {
   deleted?: AssetInfoFull[];
 }
 
+/**
+ * Diff for importing new assets into an existing meta (sha1-based: added vs duplicated).
+ */
+export interface MetaDiffForImportNew {
+  fromDir: string;
+  isNeedAction: boolean;
+  toDir: string;
+  added?: AssetInfoFull[];
+  duplicated?: {
+    origin: AssetInfoFull | AssetInfoFull[];
+    by: AssetInfoFull | AssetInfoFull[];
+  }[];
+}
+
 // export interface Actions {
 //   toAdd: AssetInfoFull[];
 //   toDelete: AssetInfoFull[];
@@ -42,5 +56,5 @@ export interface AssetsSyncUpMetaDiff {
 export interface AssetStateChangeInfo {
   assetInfoListMeta: AssetInfoFull[];
   latestAssetInfoList: AssetInfoPartial[];
-  stateChange: AssetsSyncUpMetaDiff;
+  stateChange: MetaDiffForSyncUp;
 }

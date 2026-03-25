@@ -1,7 +1,7 @@
 import path from 'path';
 import {alignMetaWithAssets} from '.';
 import {getFileMetaHandler} from '../service';
-import {importAssets} from './3-assets-import';
+import {importAssetsByMeta} from './3-assets-import';
 
 // const rootDir = '/Volumes/ssd_4t/z-movie';
 // const importFromDir = process.env.HOME + '/Downloads';
@@ -21,5 +21,5 @@ export async function runImportAssets() {
   const newAssetsMetaHandlers = await getFileMetaHandler()(importFromDir);
   await newAssetsMetaHandlers.getMeta();
   await alignMetaWithAssets(newAssetsMetaHandlers);
-  await importAssets(metaHandlers, newAssetsMetaHandlers, {newAssetsDir: 'xl-photo'});
+  await importAssetsByMeta(metaHandlers, newAssetsMetaHandlers, {newAssetsDir: 'xl-photo'});
 }
