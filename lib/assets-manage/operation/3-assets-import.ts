@@ -1,17 +1,16 @@
-import fs from 'fs';
 import path from 'path';
-import {AssetInfoFull, MetaHandlers} from '../types';
-import {serializeMetaDiff, getPartialAssetInfo} from '../service';
+import {MetaHandlers} from '../types';
+import {serializeMetaDiff} from '../service';
 import {diffMetaForAddNew} from '../service';
 import {
   goOnOrNot,
   addDtSuffixToBareBasename,
   convertObjectToCjsExport,
   writeFileSync,
-  makeSureDirExistForFile,
   byteToWord,
 } from '../external';
 import {DIR_ASSET_MANAGE_TMP_DIR, FILE_SUFFIX_DT_FORMAT} from '../service';
+import {addAssetMeta} from './1-assets-meta';
 
 export async function importAssets(
   toMetaHandlers: MetaHandlers,
@@ -66,39 +65,21 @@ export async function importAssets(
     return false;
   }
   const {added = [], duplicated} = difference;
-  const items: AssetInfoFull[] = [];
   const totalSize = added.reduce((acc, assetInfo) => acc + assetInfo.size, 0);
   let copiedSize = 0;
   let copiedCount = 0;
   for (const assetInfo of added) {
-    const {relativePath, sha1, shortId} = assetInfo;
-    const fromPath = path.join(fromMetaHandlers.rootDir, relativePath);
-    const toPath = path.join(toMetaHandlers.rootDir, newAssetsDirRelativePath, relativePath);
-    makeSureDirExistForFile(toPath);
-    fs.copyFileSync(fromPath, toPath);
-    const info: AssetInfoFull = {
-      sha1,
-      shortId,
-      ...(await getPartialAssetInfo({
-        rootDir: toMetaHandlers.rootDir,
-        relativePath: path.relative(toMetaHandlers.rootDir, toPath),
-      })),
-    };
-    items.push(info);
-    copiedSize += info.size;
+    const {relativePath} = assetInfo;
+    const sourcePath = path.join(fromMetaHandlers.rootDir, relativePath);
+    const targetRelativePath = path.join(newAssetsDirRelativePath, relativePath);
+    await addAssetMeta(toMetaHandlers, [
+      {sourcePath, relativePath: targetRelativePath},
+    ]);
+    copiedSize += assetInfo.size;
     copiedCount++;
-    // TODO: more graceful log
     console.log(
       `copied size:${byteToWord(copiedSize)} / ${byteToWord(totalSize)} (${((copiedSize / totalSize) * 100).toFixed(2)}%), copied count:${copiedCount} / ${added.length}`
     );
-    if (items.length > 800) {
-      await toMetaHandlers.createItems(items);
-      items.length = 0;
-    }
-  }
-  if (items.length > 0) {
-    await toMetaHandlers.createItems(items);
-    items.length = 0;
   }
   return true;
 }
