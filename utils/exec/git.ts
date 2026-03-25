@@ -133,7 +133,7 @@ export async function syncUpGitRepos(gitRepos: GitRepoInfoTree, config: SyncupGi
     }
     for (const command of postPullCmds) {
       if (isFunction(command)) {
-        await (command as Function)();
+        await (command as Function)({repoFullPath});
       } else if (isString(command)) {
         execCmdWithOptions(command as string, DEFAULT_EXEC_OPTIONS);
       } else {
