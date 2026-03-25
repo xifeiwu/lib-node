@@ -1,5 +1,5 @@
 import path from 'path';
-import {alignMetaWithAssets, handleDuplicateFile} from '../operation';
+import {alignMetaWithAssets, handleDuplicateFile} from '.';
 import {getFileMetaHandler} from '../service';
 
 // const rootDir = DIR_TMP_DATA;
