@@ -1,7 +1,7 @@
 import path from 'path';
 import {alignMetaWithAssets} from '.';
 import {getFileMetaHandler} from '../service';
-import {backupAssets} from './2-assets-backup';
+import {backupAssets} from './assets-backup';
 
 // const rootDir = '/Volumes/ssd_4t/z-movie';
 // const bkrootDir = '/Volumes/12T_APFS/z-movie';

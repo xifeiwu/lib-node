@@ -18,7 +18,7 @@ import {
   formatDt,
 } from '../external';
 import {DIR_ASSET_MANAGE_TMP_DIR, FILE_SUFFIX_DT_FORMAT} from '../service';
-import {addAssetMeta} from './1-assets-meta';
+import {addAssetMeta} from './asset-base-operation';
 import {getFileMetaHandler} from '../service';
 
 export async function importAssetsByMeta(

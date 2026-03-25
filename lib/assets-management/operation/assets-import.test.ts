@@ -1,7 +1,7 @@
 import path from 'path';
 import {alignMetaWithAssets} from '.';
 import {getFileMetaHandler} from '../service';
-import {importAssetsByMeta} from './3-assets-import';
+import {importAssetsByMeta} from './assets-import';
 
 // const rootDir = '/Volumes/ssd_4t/z-movie';
 // const importFromDir = process.env.HOME + '/Downloads';
