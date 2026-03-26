@@ -55,21 +55,25 @@ export function recursiveDeleteFile(path: string) {
 /**
  * @deprecated by linkFile
  */
-export function link(sourceFile: string, targetFile: string) {
+export function link(sourceFile: string, targetFile: string, options?: {force?: boolean}) {
   // link can't be overrided, so remove it first
   if (!fs.existsSync(sourceFile)) {
     throw new Error(`binFile not exist: ${sourceFile}`);
   }
   targetFile = path.resolve(targetFile);
   if (isFileExist(targetFile)) {
-    fs.unlinkSync(targetFile);
+    if (options?.force) {
+      fs.unlinkSync(targetFile);
+    } else {
+      throw new Error(`targetFile already exists: ${targetFile}`);
+    }
   }
   const relativePath = path.relative(path.dirname(targetFile), sourceFile);
   fs.symlinkSync(relativePath, targetFile);
   return {sourceFile, targetFile, relativePath};
 }
-export function linkFile(sourceFile: string, targetFile: string) {
-  return link(sourceFile, targetFile);
+export function linkFile(sourceFile: string, targetFile: string, options?: {force?: boolean}) {
+  return link(sourceFile, targetFile, options);
 }
 
 /**
