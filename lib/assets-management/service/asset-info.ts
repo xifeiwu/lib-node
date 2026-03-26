@@ -13,6 +13,10 @@ export async function getSha1AsId(fullPath: string): Promise<Pick<AssetInfoFull,
   if (!fs.existsSync(fullPath)) {
     throw new Error(`file not exist: ${fullPath}`);
   }
+  const st = fs.statSync(fullPath);
+  if (st.isDirectory()) {
+    throw new Error(`Cannot hash a directory: ${fullPath}`);
+  }
   const sha1 = await hashData(fs.createReadStream(fullPath), {algorithm: 'sha1', encode: 'base64url'});
   return {
     sha1,
@@ -47,6 +51,9 @@ export async function getAssetInfo(options?: GetAssetInfoParams): Promise<AssetI
   }
   const {shortId: shortIdFromName, extname} = parseFilePath(fullPath);
   const stat = options?.stat ?? fs.statSync(path.resolve(rootDir, relativePath));
+  if (stat.isDirectory()) {
+    throw new Error(`Not a file (directory): ${fullPath}`);
+  }
   let fileStatInfo = getAssetInfoFromStat(stat);
 
   let fixedRelativePath: string | undefined;
