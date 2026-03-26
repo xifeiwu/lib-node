@@ -45,6 +45,7 @@ export function goThroughDir<T = any>(
     fileFilter = () => true,
     maxDepth,
     ignoreError,
+    handleLink = true,
   } = (options ? options : {}) as GoThroughDirOptions;
   const largerThanMaxDepth = (d: number) => isNumber(maxDepth) && d > maxDepth;
   if (largerThanMaxDepth(depth)) {
@@ -56,8 +57,23 @@ export function goThroughDir<T = any>(
     // @ts-ignore
     return cb(new Error(`File not exist: ${fullpath}`), {pathInfo});
   }
-  if (stats.isDirectory()) {
-    if (depth === 0 || dirFilter(pathInfo, stats)) {
+  if (!handleLink && stats.isSymbolicLink()) {
+    return null;
+  }
+  /** lstat: symlink-to-directory is not isDirectory(); follow so we recurse like a normal dir. */
+  let followStat: fs.Stats | undefined;
+  if (stats.isSymbolicLink()) {
+    try {
+      followStat = fs.statSync(fullpath);
+    } catch {
+      followStat = undefined;
+    }
+  }
+  const isDirectory = stats.isDirectory() || Boolean(followStat?.isDirectory());
+  const statsForDirCb = stats.isDirectory() ? stats : followStat!;
+
+  if (isDirectory) {
+    if (depth === 0 || dirFilter(pathInfo, statsForDirCb)) {
       let error = null;
       let fileListOfCurDir = [];
       try {
@@ -77,7 +93,7 @@ export function goThroughDir<T = any>(
           return child;
         })
         .filter(it => it !== null && it !== undefined);
-      return cb(ignoreError ? null : error, {pathInfo, stats, children});
+      return cb(ignoreError ? null : error, {pathInfo, stats: statsForDirCb, children});
     }
   } else {
     if (fileFilter(pathInfo, stats)) {

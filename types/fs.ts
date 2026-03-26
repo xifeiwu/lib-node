@@ -27,6 +27,11 @@ export interface GoThroughDirOptions {
   maxDepth?: number;
   /** throw Error or not */
   ignoreError?: boolean;
+  /**
+   * When true (default), symlinks are followed: link-to-directory is traversed, link-to-file is a leaf.
+   * When false, any symbolic link is skipped (not visited, not in children).
+   */
+  handleLink?: boolean;
 }
 export interface GetFileListOption extends GoThroughDirOptions {
   includeDir?: boolean;
