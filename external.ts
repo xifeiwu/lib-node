@@ -71,9 +71,9 @@ export {
 export {AstAOptions, listAUsingUl} from '../js/lib/html-parser';
 
 export {
-  GitRepoInfo,
-  GitRepoInfoTree,
-  GitRepoConfigFileExport,
+  SubRepoConfig,
+  SubRepoInfoTree,
+  SubRepoConfigFileExport,
   PartialExcept,
   PickPartial,
   PlainObject,
