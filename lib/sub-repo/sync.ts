@@ -13,10 +13,17 @@ import {
   isString,
   listGitLocalBranches,
   logColorful,
+  SubRepoPostPullFunc,
   SubRepoConfigFileExport,
   SubRepoInfoTree,
 } from './external';
-import {assertNonEmptySubrepoTree, collectSubrepoRelativePaths, filterSubrepoTreeByRepoName, isSubrepoLeaf, asSubrepoLeaf} from './service/tree';
+import {
+  assertNonEmptySubrepoTree,
+  collectSubrepoRelativePaths,
+  filterSubrepoTreeByRepoName,
+  isSubrepoLeaf,
+  asSubrepoLeaf,
+} from './service/tree';
 import {resolveSubrepoConfigFile} from './service/config';
 
 /**
@@ -31,8 +38,8 @@ export interface SubrepoSyncConfig {
 
 /**
  * incrementally sync subrepos in a tree structure
- * @param subrepos 
- * @param config 
+ * @param subrepos
+ * @param config
  */
 async function syncSubrepos(subrepos: SubRepoInfoTree, config: SubrepoSyncConfig) {
   const {hostDir, repoBaseDir: repoDir = '', index: mainIndex} = config;
@@ -65,10 +72,7 @@ async function syncSubrepos(subrepos: SubRepoInfoTree, config: SubrepoSyncConfig
     if (!fs.existsSync(repoFullPath)) {
       for (let i = 0; i < source.length; i++) {
         if (i === 0) {
-          execCmdWithOptions(
-            `git clone -o ${origin} -b ${branch} ${url} ${relativePath}`,
-            execOpts
-          );
+          execCmdWithOptions(`git clone -o ${origin} -b ${branch} ${url} ${relativePath}`, execOpts);
         } else {
           const it = source[i];
           if (!it.origin) {
@@ -109,7 +113,7 @@ async function syncSubrepos(subrepos: SubRepoInfoTree, config: SubrepoSyncConfig
     }
     for (const command of postPullCmds) {
       if (isFunction(command)) {
-        await (command as Function)({repoFullPath});
+        await (command as SubRepoPostPullFunc)({repoFullPath, hostDir});
       } else if (isString(command)) {
         execCmdWithOptions(command as string, execOpts);
       } else {
@@ -123,7 +127,9 @@ async function syncSubrepos(subrepos: SubRepoInfoTree, config: SubrepoSyncConfig
 function writeSubrepoGitIgnore(subrepos: SubRepoInfoTree, config: SubrepoSyncConfig) {
   const {hostDir, repoBaseDir: repoDir = ''} = config;
   const gitIgnoreFile = path.resolve(hostDir, '.gitignore');
-  let newRules = ['.DS_Store', 'node_modules/', ...collectSubrepoRelativePaths(subrepos, repoDir)].filter(Boolean);
+  let newRules = ['.DS_Store', 'node_modules/', ...collectSubrepoRelativePaths(subrepos, repoDir)].filter(
+    Boolean
+  );
   if (fs.existsSync(gitIgnoreFile)) {
     const lines = fs.readFileSync(gitIgnoreFile).toString().split('\n').filter(Boolean);
     newRules = Array.from(new Set([...newRules, ...lines]));

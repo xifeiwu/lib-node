@@ -72,6 +72,7 @@ export {AstAOptions, listAUsingUl} from '../js/lib/html-parser';
 
 export {
   SubRepoConfig,
+  SubRepoPostPullFunc,
   SubRepoInfoTree,
   SubRepoConfigFileExport,
   PartialExcept,
