@@ -200,9 +200,13 @@ export async function spawnAndTryIpc<CpConfig extends Serializable = any, Respon
     );
   }
   let waitResPromise: Promise<ResponseFromCp>;
+  /**
+   * Only when get response from child process or minUptime is passed, the promise will be resolved
+   */
   await new Promise<void>((res, rej) => {
     childProcess.once('spawn', () => {
       info.spawnTime = new Date().toLocaleString();
+      /** if exit, close, error events are not triggered within minUptime ms, the child process will be considered as success */
       timeoutToResolve = setTimeout(() => {
         res();
       }, minUptime);
