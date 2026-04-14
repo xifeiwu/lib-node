@@ -1,6 +1,6 @@
 import {DaemonConfig} from '../../types';
 import {waitIpcMessageOnce, outOnAllChannels} from '../../external';
-import {Daemon} from '../../daemon';
+import {Daemon} from '../../cp-cluster';
 import {getErrorResponse} from '../../service';
 
 async function start() {

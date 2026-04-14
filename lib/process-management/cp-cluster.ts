@@ -65,7 +65,7 @@ export class Daemon {
     // Adopt orphan processes passed from CLI layer
     if (Array.isArray(orphans)) {
       for (const orphan of orphans) {
-        const cpWrapper = CpWrapper.createOrphan(orphan.cpId, orphan.pid, id);
+        const cpWrapper = CpWrapper.createOrphan(orphan.cpId, orphan.pid);
         this.cpWrapperMap[orphan.cpId] = cpWrapper;
       }
     }
@@ -101,7 +101,7 @@ export class Daemon {
       pid: process.pid,
       config: restConfig,
       status: {connection: {}},
-      cpInfoList: Object.values(cpWrapperMap).map(it => it.getInfo({simple: true})),
+      cpInfoList: Object.values(cpWrapperMap).map(it => it.getInfo()),
     };
     if (connectInfo) {
       const {socket} = connectInfo;
@@ -202,7 +202,6 @@ export class Daemon {
       // let cpWrapper = cpWrapperMap[id];
       if (cpWrapper === undefined) {
         cpWrapper = new CpWrapper(cpConfigOrId as CpWrapperConfig);
-        cpWrapper.daemonId = config.id;
         cpWrapperMap[id] = cpWrapper;
       }
     }

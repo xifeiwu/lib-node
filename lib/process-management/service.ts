@@ -38,7 +38,7 @@ export function getCpDir(cpId: string): string {
 }
 
 export function getPidInfoPath(cpId: string): string {
-  return path.join(getCpDir(cpId), 'pid-info.json');
+  return path.join(getCpDir(cpId), 'info.json');
 }
 
 export function getLogSocketPath(cpId: string, pid: number): string {
@@ -70,7 +70,7 @@ export function loadPidInfo(cpId: string): PidInfoRecord | null {
   }
 }
 
-/** Scan all ~/.daemon/{cpId}/pid-info.json, return records with status='running' */
+/** Scan all ~/.process-management/{cpId}/info.json, return records with status='running' */
 export function scanAllPidInfoRecords(): {cpId: string; record: PidInfoRecord}[] {
   const results: {cpId: string; record: PidInfoRecord}[] = [];
   if (!fs.existsSync(DAEMON_ROOT_DIR)) {

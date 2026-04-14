@@ -107,8 +107,8 @@ await client.log({id: 'my-service', tail: 50}); // 获取最近 50 行
 | 模式 | 存储位置 | CLI 查看方式 | 适用场景 |
 |------|---------|-------------|---------|
 | `memory` | 内存环形缓冲区 | 按需查询 | 轻量、少量日志 |
-| `socket` | `~/.daemon/{cpId}/{pid}.sock` | 实时流 `socket.pipe(stdout)` | 实时监控 |
-| `file` | `~/.daemon/{cpId}/{pid}.out/.error` | `tail -f` | 大量日志、持久化 |
+| `socket` | `~/.process-management/{cpId}/{pid}.sock` | 实时流 `socket.pipe(stdout)` | 实时监控 |
+| `file` | `~/.process-management/{cpId}/{pid}.out/.error` | `tail -f` | 大量日志、持久化 |
 
 - 子进程 stdio 中的 `'ignore'` 会被自动替换为 `'pipe'`，其他值不受影响。
 - memory 模式下缓冲区跨子进程重启保留，可查看崩溃前日志。
@@ -118,7 +118,7 @@ await client.log({id: 'my-service', tail: 50}); // 获取最近 50 行
 
 Daemon 异常退出后，其子进程变为孤儿进程。下次启动 Daemon 时交互式处理：
 
-1. 扫描 `~/.daemon/{cpId}/pid-info.json`，找到 `status='running'` 的记录。
+1. 扫描 `~/.process-management/{cpId}/info.json`，找到 `status='running'` 的记录。
 2. 用 `process.kill(pid, 0)` 检查是否存活。
 3. 对存活的孤儿进程，提示用户选择：
    - **Adopt** — 收养到新 Daemon，仅跟踪 PID 并支持 stop（无日志、无自动重试）。

@@ -226,7 +226,7 @@ export class CpWrapper {
     try {
       savePidInfo(this.id, record);
     } catch (err) {
-      console.error(`Failed to persist pid-info for ${this.id}:`, err);
+      console.error(`Failed to persist process-info for ${this.id}:`, err);
     }
   }
 
@@ -244,7 +244,7 @@ export class CpWrapper {
     try {
       savePidInfo(this.id, record);
     } catch (err) {
-      console.error(`Failed to update pid-info on exit for ${this.id}:`, err);
+      console.error(`Failed to update process-info on exit for ${this.id}:`, err);
     }
   }
 

@@ -13,7 +13,7 @@ src/daemon/service.ts  start(id)
   ├─ id === daemonId → runDetachedDaemon()
   │   │
   │   ├─ detectAndHandleOrphans()
-  │   │   ├─ scanAllPidInfoRecords()           // service.ts: 扫描 ~/.daemon/{cpId}/pid-info.json
+  │   │   ├─ scanAllPidInfoRecords()           // service.ts: 扫描 ~/.process-management/{cpId}/info.json
   │   │   ├─ process.kill(pid, 0)              // 检查存活
   │   │   └─ selectOption(Adopt / Kill)        // 用户交互
   │   │
@@ -73,7 +73,7 @@ trySpawn()
   │       └─ createWriteStream → stdout.pipe / stderr.pipe
   │
   ├─ persistPidInfo()
-  │   └─ savePidInfo(cpId, record)  →  ~/.daemon/{cpId}/pid-info.json
+  │   └─ savePidInfo(cpId, record)  →  ~/.process-management/{cpId}/info.json
   │
   └─ childProcess.once('exit') → onExit()
 ```
@@ -188,11 +188,11 @@ lib/daemon/
     └── chat.md             与 Claude 的交流记录
 
 运行时数据目录：
-~/.daemon/
+~/.process-management/
 ├── sockets/               Daemon 控制 socket
 │   └── {daemonId}.socket
 └── {cpWrapperId}/          每个 CpWrapper 独立目录
-    ├── pid-info.json       运行信息（PID、状态、日志模式）
+    ├── info.json       运行信息（PID、状态、日志模式）
     ├── {pid}.sock          日志 socket（socket 模式）
     ├── {pid}.out           stdout 日志（file 模式）
     └── {pid}.error         stderr 日志（file 模式）

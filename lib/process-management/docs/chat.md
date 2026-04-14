@@ -12,7 +12,7 @@
 
 **日志收集**：在 CpWrapper 中添加内存环形缓冲区（`logBuffer`），`prepareStdioForLogging` 将 stdio 的 `'ignore'` 替换为 `'pipe'`，通过 `setupLogCapture` 监听 stdout/stderr 的 `data` 事件，按行缓冲写入 buffer。
 
-**孤儿清理**：Daemon 将所有子进程 PID 持久化到 `~/.daemon/{daemonId}/pids.json`，启动时 `cleanupOrphanProcesses` 读取旧记录，检查 PID 存活后批量 kill。
+**孤儿清理**：Daemon 将所有子进程 PID 持久化到 `~/.process-management/{daemonId}/pids.json`，启动时 `cleanupOrphanProcesses` 读取旧记录，检查 PID 存活后批量 kill。
 
 ### 讨论要点
 
