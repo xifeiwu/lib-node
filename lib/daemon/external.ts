@@ -6,6 +6,10 @@ export {logColorful} from '../../log';
 
 // From fs
 export {getFileList} from '../../fs';
+export {writeFileSync} from '../../fs/write';
+
+// From path
+export {makeSureDirExist} from '../../path';
 
 // From net
 export {startSocketClient} from '../../net/service/client';
@@ -30,7 +34,7 @@ export {tryUseJsFile, waitIpcMessageOnce} from '../../child-process';
 export {outOnAllChannels} from '../../utils/cp-script';
 
 // From service/constants
-export {DAEMON_SOCKET_DIR, SOCKET_FILE_SUFFIX} from '../../service/constants';
+export {DAEMON_ROOT_DIR, DAEMON_SOCKET_DIR, SOCKET_FILE_SUFFIX} from '../../service/constants';
 
 // From types
 export {CP, InfoToCp, TcpServerInfo, TcpServerConfig} from '../../types';

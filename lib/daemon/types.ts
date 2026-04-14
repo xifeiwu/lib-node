@@ -1,11 +1,14 @@
 import {SpawnConfig, SpawnAndTryIpcResponse} from '../../types/child_process/common';
 import {TcpServerInfo, TcpServerConfig} from '../../types/net';
 
+export type LogMode = 'memory' | 'socket' | 'file';
+
 /**
  * Types for child process of Daemon
  */
 export interface CpManagerConfig {
   /** id used to identify the child process  */
+  /** TODO: encodeURIComponent for id before use it as folder or file name */
   id: string;
   managerConfig?: {
     retry?: {
@@ -14,6 +17,12 @@ export interface CpManagerConfig {
       /** Minimum time before next spawn to make sure all resources are released for prvious cp. */
       minInterval?: number;
     };
+    log?: {
+      /** Log collection mode. Default: 'memory' */
+      mode?: LogMode;
+      /** Maximum number of lines to keep in the ring buffer (memory mode only). Default: 1000 */
+      maxLines?: number;
+    };
   };
   spawnConfig?: SpawnConfig;
 }
@@ -21,13 +30,15 @@ export interface CpManagerConfig {
 export interface CpInfo<ResponseFromCp = any> extends Partial<SpawnAndTryIpcResponse<ResponseFromCp>> {
   spawnConfig: SpawnConfig;
 }
-export interface SerializableCpInfo<ResponseFromCp = any>
-  extends Omit<CpInfo<ResponseFromCp>, 'childProcess'> {
+export interface SerializableCpInfo<ResponseFromCp = any> extends Omit<
+  CpInfo<ResponseFromCp>,
+  'childProcess'
+> {
   pid: number;
 }
 export interface CpManagerStatus {
   status: /** initial state */
-  | 'init'
+    | 'init'
     | /** start to spawn process*/ 'toStart'
     | /** will spawn new process */ 'toSpawn'
     | /** process is running */ 'running'
@@ -48,6 +59,11 @@ export interface CpManagerInfo<ResponseFromCp = any> {
   cpInfoHistory?: SerializableCpInfo<ResponseFromCp>[];
 }
 
+export interface OrphanInfo {
+  cpId: string;
+  pid: number;
+}
+
 export interface DaemonConfig {
   /**
    * To identify daemon process,
@@ -60,9 +76,11 @@ export interface DaemonConfig {
     socketConfig?: TcpServerConfig;
   };
   cpManagerConfigList?: CpManagerConfig[];
+  /** Orphan processes detected by CLI layer, to be adopted by daemon */
+  orphans?: OrphanInfo[];
 }
 
-export interface DaemonConnectStatus {
+export interface DaemonConnectInfo {
   socket?: TcpServerInfo;
 }
 
@@ -78,6 +96,7 @@ export interface DaemonInfo {
 export type Action2Daemon = 'ping';
 export type Action2Cp = 'start' | 'restart';
 export type ActionCommon = 'info' | 'stop';
+export type ActionLog = 'log';
 
 export interface Command2Process {
   action: Action2Cp;
@@ -91,7 +110,16 @@ export interface CommandCommon {
   action: ActionCommon;
   data?: string;
 }
-export type Command = Command2Process | Command2Daemon | CommandCommon;
+export interface LogQuery {
+  id?: string;
+  /** Number of most recent lines to return */
+  tail?: number;
+}
+export interface CommandLog {
+  action: ActionLog;
+  data?: string | LogQuery;
+}
+export type Command = Command2Process | Command2Daemon | CommandCommon | CommandLog;
 
 export interface ResponseCpInfo {
   type: Action2Cp;
@@ -106,6 +134,33 @@ export interface ResponseInfo {
   type: ActionCommon;
   data?: DaemonInfo | CpManagerInfo;
 }
+export interface ResponseLogMemory {
+  type: 'log';
+  data: {
+    id: string;
+    mode: 'memory';
+    lines: string[];
+    total: number;
+  };
+}
+export interface ResponseLogSocket {
+  type: 'log';
+  data: {
+    id: string;
+    mode: 'socket';
+    socketPath: string;
+  };
+}
+export interface ResponseLogFile {
+  type: 'log';
+  data: {
+    id: string;
+    mode: 'file';
+    outFile: string;
+    errorFile: string;
+  };
+}
+export type ResponseLog = ResponseLogMemory | ResponseLogSocket | ResponseLogFile;
 export interface ResponseError {
   type: 'error';
   data: string;
@@ -114,4 +169,23 @@ export interface ResponseUnknown {
   type: 'unknown';
   data: string;
 }
-export type DaemonResponse = ResponseInfo | ResponsePong | ResponseCpInfo | ResponseError | ResponseUnknown;
+export type DaemonResponse =
+  | ResponseInfo
+  | ResponsePong
+  | ResponseCpInfo
+  | ResponseLog
+  | ResponseError
+  | ResponseUnknown;
+
+/** Per-CpManager PID info persisted to disk */
+export interface PidInfoRecord {
+  pid: number;
+  startAt: string;
+  status: 'running' | 'exited';
+  logMode: LogMode;
+  spawnConfig?: SpawnConfig;
+  daemonId?: string;
+  exitAt?: string;
+}
+
+export type CpStatusChangeListener = (event: {type: 'spawn' | 'exit'; cpId: string; pid?: number}) => void;

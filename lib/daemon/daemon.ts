@@ -8,18 +8,19 @@ import {
 import {
   CpManagerConfig,
   DaemonConfig,
-  DaemonConnectStatus,
+  DaemonConnectInfo,
   DaemonInfo,
   Command,
   Command2Process,
   Action2Cp,
   DaemonResponse,
+  LogQuery,
 } from './types';
 import {CpManager} from './cp-manager';
-import { getErrorResponse, serializeSocketServerInfo } from './service';
+import {getErrorResponse, serializeSocketServerInfo} from './service';
 export class Daemon {
   config: DaemonConfig;
-  connectInfo: DaemonConnectStatus = {};
+  connectInfo: DaemonConnectInfo = {};
   cpManagerMap: {
     [id: string]: CpManager;
   } = {};
@@ -57,9 +58,16 @@ export class Daemon {
    */
   async startAsCp(config: DaemonConfig) {
     this.config = config;
-    const {id} = this.config;
+    const {id, orphans} = this.config;
     if (!isString(id)) {
       throw new Error(`id property is not set on daemon config.`);
+    }
+    // Adopt orphan processes passed from CLI layer
+    if (Array.isArray(orphans)) {
+      for (const orphan of orphans) {
+        const cpManager = CpManager.createOrphan(orphan.cpId, orphan.pid, id);
+        this.cpManagerMap[orphan.cpId] = cpManager;
+      }
     }
     await this.startConnectionServer();
     await this.startAllCp();
@@ -194,6 +202,7 @@ export class Daemon {
       // let cpManager = cpManagerMap[id];
       if (cpManager === undefined) {
         cpManager = new CpManager(cpConfigOrId as CpManagerConfig);
+        cpManager.daemonId = config.id;
         cpManagerMap[id] = cpManager;
       }
     }
@@ -222,6 +231,25 @@ export class Daemon {
       return {
         type: action,
         data: this.getInfo(cpConfigOrId),
+      };
+    } else if (action === 'log') {
+      let cpId: string;
+      let logOptions: {tail?: number} = {};
+      if (isString(cpConfigOrId)) {
+        cpId = cpConfigOrId as string;
+      } else if (isPlainObject(cpConfigOrId)) {
+        const query = cpConfigOrId as LogQuery;
+        cpId = query.id;
+        logOptions = {tail: query.tail};
+      }
+      const cpManager = this.getCpManager(cpId);
+      if (!cpManager) {
+        throw new Error(`child process is not found for log query`);
+      }
+      const logData = cpManager.getLog(logOptions);
+      return {
+        type: 'log',
+        data: logData,
       };
     } else {
       const cpManager = this.getCpManager(cpConfigOrId);
@@ -252,4 +280,3 @@ export class Daemon {
     }
   }
 }
-
