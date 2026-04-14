@@ -18,11 +18,9 @@ function getCpScript(basename: string) {
 const debugServer1Id = 'debug-server-1';
 const spawnDebugServer1: CpWrapperConfig = {
   id: debugServer1Id,
-  managerConfig: {
-    retry: {
-      maxCount: 3,
-      minInterval: 5000,
-    },
+  retry: {
+    maxCount: 3,
+    minInterval: 5000,
   },
   spawnConfig: getSpawnAndIpcConfigByScript<CP.DebugServerConfig>(getCpScript('debug-server.ts'), {
     // spawnOptions: {

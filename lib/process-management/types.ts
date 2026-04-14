@@ -10,19 +10,19 @@ export interface CpWrapperConfig {
   /** id used to identify the child process  */
   /** TODO: encodeURIComponent for id before use it as folder or file name */
   id: string;
-  managerConfig?: {
-    retry?: {
-      /** max count of retry */
-      maxCount?: number;
-      /** Minimum time before next spawn to make sure all resources are released for prvious cp. */
-      minInterval?: number;
-    };
-    log?: {
-      /** Log collection mode. Default: 'memory' */
-      mode?: LogMode;
-      /** Maximum number of lines to keep in the ring buffer (memory mode only). Default: 1000 */
-      maxLines?: number;
-    };
+  /** identify the cluster this process belongs to */
+  clusterId?: string | number;
+  retry?: {
+    /** max count of retry */
+    maxCount?: number;
+    /** Minimum time before next spawn to make sure all resources are released for prvious cp. */
+    minInterval?: number;
+  };
+  log?: {
+    /** Log collection mode. Default: 'memory' */
+    mode?: LogMode;
+    /** Maximum number of lines to keep in the ring buffer (memory mode only). Default: 1000 */
+    maxLines?: number;
   };
   spawnConfig?: SpawnConfig;
 }
@@ -53,10 +53,9 @@ export interface CpWrapperStatus {
 /** All info of Daemon's child process */
 export interface CpWrapperInfo<ResponseFromCp = any> {
   id: CpWrapperConfig['id'];
-  managerConfig: CpWrapperConfig['managerConfig'];
+  managerConfig?: Pick<CpWrapperConfig, 'retry' | 'log'>;
   status: CpWrapperStatus;
   cpInfo?: SerializableCpInfo<ResponseFromCp>;
-  cpInfoHistory?: SerializableCpInfo<ResponseFromCp>[];
 }
 
 export interface OrphanInfo {
@@ -184,7 +183,6 @@ export interface PidInfoRecord {
   status: 'running' | 'exited';
   logMode: LogMode;
   spawnConfig?: SpawnConfig;
-  daemonId?: string;
   exitAt?: string;
 }
 

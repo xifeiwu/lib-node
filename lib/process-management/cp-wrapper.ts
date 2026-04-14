@@ -13,7 +13,6 @@ import {
 import {
   CpWrapperStatus,
   CpInfo,
-  SerializableCpInfo,
   CpWrapperConfig,
   CpWrapperInfo,
   LogMode,
@@ -43,7 +42,6 @@ export class CpWrapper {
   lastAction: CpWrapperStatus['lastAction'];
   retryCount: CpWrapperStatus['retryCount'];
   cpInfo?: CpInfo;
-  cpInfoHistory?: SerializableCpInfo[];
   exitSignal: {
     resolve?: () => void;
     reject?: (err: Error) => void;
@@ -51,7 +49,6 @@ export class CpWrapper {
   logBuffer: string[] = [];
   private stdoutPartial = '';
   private stderrPartial = '';
-  daemonId?: string;
   isOrphan = false;
   orphanPid?: number;
   private logSocketServer?: net.Server;
@@ -65,11 +62,10 @@ export class CpWrapper {
     this.resetStatus();
     this.setConfig(config);
   }
-  static createOrphan(cpId: string, pid: number, daemonId?: string): CpWrapper {
+  static createOrphan(cpId: string, pid: number): CpWrapper {
     const mgr = new CpWrapper({id: cpId});
     mgr.isOrphan = true;
     mgr.orphanPid = pid;
-    mgr.daemonId = daemonId;
     mgr.status = 'running';
     mgr.lastAction = 'start';
     return mgr;
@@ -78,7 +74,6 @@ export class CpWrapper {
     this.status = 'init';
     this.lastAction = 'none';
     this.retryCount = 0;
-    this.cpInfoHistory = [];
     this.logBuffer = [];
   }
   get id() {
@@ -98,7 +93,7 @@ export class CpWrapper {
     }
   }
   getLogMode(): LogMode {
-    return get(this.config, ['managerConfig', 'log', 'mode'], 'memory');
+    return get(this.config, ['log', 'mode'], 'memory');
   }
   changeStatus(status: CpWrapperStatus['status']) {
     if (!canChangeToStatus(status, this.status)) {
@@ -106,21 +101,20 @@ export class CpWrapper {
     }
     this.status = status;
   }
-  getInfo(options?: {simple?: boolean}): CpWrapperInfo {
-    const {simple} = options ?? {};
+  getInfo(): CpWrapperInfo {
     const {
       id,
-      config: {managerConfig, spawnConfig: spawnOptions},
+      config: {retry, log, spawnConfig: spawnOptions},
       status,
       lastAction,
       retryCount,
       cpInfo,
-      cpInfoHistory,
-      // status: {spawnInfo, cpInfoHistory: spawnHistory, ...restStatus},
     } = this;
+    const managerConfig =
+      retry !== undefined || log !== undefined ? {retry, log} : undefined;
     const info: CpWrapperInfo = {
       id,
-      managerConfig: managerConfig,
+      managerConfig,
       status: {
         status,
         lastAction,
@@ -134,14 +128,11 @@ export class CpWrapper {
         spawnConfig: spawnOptions,
       });
     }
-    if (simple !== true) {
-      info.cpInfoHistory = cpInfoHistory.map(serializeCpInfo);
-    }
     return info;
   }
 
   private getMaxLogLines(): number {
-    return get(this.config, ['managerConfig', 'log', 'maxLines'], 1000);
+    return get(this.config, ['log', 'maxLines'], 1000);
   }
 
   private pushLog(source: 'stdout' | 'stderr', text: string) {
@@ -231,7 +222,6 @@ export class CpWrapper {
       status: 'running',
       logMode: this.getLogMode(),
       spawnConfig: this.config.spawnConfig,
-      daemonId: this.daemonId,
     };
     try {
       savePidInfo(this.id, record);
@@ -249,7 +239,6 @@ export class CpWrapper {
       status: 'exited',
       logMode: this.getLogMode(),
       spawnConfig: this.config.spawnConfig,
-      daemonId: this.daemonId,
       exitAt: new Date().toISOString(),
     };
     try {
@@ -336,7 +325,7 @@ export class CpWrapper {
     }
     this.cleanupLogResources();
     this.updatePidInfoOnExit();
-    const {minInterval, maxCount} = get(config, ['managerConfig', 'retry'], {});
+    const {minInterval, maxCount} = get(config, ['retry'], {});
     const letChildDie = () => {
       this.changeStatus('exited');
       if (exitSignal.resolve) {
@@ -388,9 +377,6 @@ export class CpWrapper {
     const logEnabledConfig = this.prepareStdioForLogging(spawnOptions);
     try {
       const spawnInfo = await spawnAndTryIpc(logEnabledConfig);
-      if (cpInfo) {
-        this.cpInfoHistory.unshift(serializeCpInfo(cpInfo));
-      }
       this.stdoutPartial = '';
       this.stderrPartial = '';
       this.cpInfo = {
