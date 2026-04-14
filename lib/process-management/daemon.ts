@@ -6,7 +6,7 @@ import {
   isString,
 } from './external';
 import {
-  CpManagerConfig,
+  CpWrapperConfig,
   DaemonConfig,
   DaemonConnectInfo,
   DaemonInfo,
@@ -16,13 +16,13 @@ import {
   DaemonResponse,
   LogQuery,
 } from './types';
-import {CpManager} from './cp-manager';
+import {CpWrapper} from './cp-wrapper';
 import {getErrorResponse, serializeSocketServerInfo} from './service';
 export class Daemon {
   config: DaemonConfig;
   connectInfo: DaemonConnectInfo = {};
-  cpManagerMap: {
-    [id: string]: CpManager;
+  cpWrapperMap: {
+    [id: string]: CpWrapper;
   } = {};
   constructor() {}
   /**
@@ -65,8 +65,8 @@ export class Daemon {
     // Adopt orphan processes passed from CLI layer
     if (Array.isArray(orphans)) {
       for (const orphan of orphans) {
-        const cpManager = CpManager.createOrphan(orphan.cpId, orphan.pid, id);
-        this.cpManagerMap[orphan.cpId] = cpManager;
+        const cpWrapper = CpWrapper.createOrphan(orphan.cpId, orphan.pid, id);
+        this.cpWrapperMap[orphan.cpId] = cpWrapper;
       }
     }
     await this.startConnectionServer();
@@ -75,13 +75,13 @@ export class Daemon {
   }
 
   /** start one child process */
-  async startCp(cpConfig: CpManagerConfig) {
+  async startCp(cpConfig: CpWrapperConfig) {
     const actionStart: Command2Process = {action: 'start', data: cpConfig};
     return await this.handleCommand(actionStart);
   }
   /** Start all child process configured in config */
   async startAllCp() {
-    const {cpManagerConfigList: cpConfigList} = this.config;
+    const {cpWrapperConfigList: cpConfigList} = this.config;
     /** Child process should start one by one */
     if (Array.isArray(cpConfigList)) {
       for (const cpConfig of cpConfigList) {
@@ -95,13 +95,13 @@ export class Daemon {
     }
   }
   getDaemonInfo() {
-    const {config, connectInfo, cpManagerMap} = this;
-    const {cpManagerConfigList: cpConfigList, ...restConfig} = config ?? {};
+    const {config, connectInfo, cpWrapperMap} = this;
+    const {cpWrapperConfigList: cpConfigList, ...restConfig} = config ?? {};
     const daemonInfo: DaemonInfo = {
       pid: process.pid,
       config: restConfig,
       status: {connection: {}},
-      cpInfoList: Object.values(cpManagerMap).map(it => it.getInfo({simple: true})),
+      cpInfoList: Object.values(cpWrapperMap).map(it => it.getInfo({simple: true})),
     };
     if (connectInfo) {
       const {socket} = connectInfo;
@@ -112,31 +112,31 @@ export class Daemon {
     return daemonInfo;
   }
   /**
-   * Return child process if cpManager exist, else return daemon info.
+   * Return child process if cpWrapper exist, else return daemon info.
    * @param id daemon id or child process id
    * @returns
    */
   getInfo(id?: string) {
-    const {config, cpManagerMap} = this;
+    const {config, cpWrapperMap} = this;
     if (id === undefined || id === config.id) {
       return this.getDaemonInfo();
     } else {
-      const cpManager = cpManagerMap[id];
-      if (!cpManager) {
-        throw new Error(`Not found cpManager with id: ${id}`);
+      const cpWrapper = cpWrapperMap[id];
+      if (!cpWrapper) {
+        throw new Error(`Not found cpWrapper with id: ${id}`);
       }
-      return cpManager.getInfo();
+      return cpWrapper.getInfo();
     }
   }
   /**
    * Stop daemon process and all it's child process it managed
    */
   async stopDaemon() {
-    const {cpManagerMap, connectInfo} = this;
-    for (const cpManager of Object.values(cpManagerMap)) {
+    const {cpWrapperMap, connectInfo} = this;
+    for (const cpWrapper of Object.values(cpWrapperMap)) {
       /** One process failure should not stop other child process startup */
       try {
-        await cpManager.stop();
+        await cpWrapper.stop();
       } catch (err) {
         console.error(err);
       }
@@ -154,10 +154,10 @@ export class Daemon {
    * @returns
    */
   async stop(id: string) {
-    const {config, cpManagerMap} = this;
-    const cpManager = cpManagerMap[id];
-    if (cpManager) {
-      await cpManager.stop();
+    const {config, cpWrapperMap} = this;
+    const cpWrapper = cpWrapperMap[id];
+    if (cpWrapper) {
+      await cpWrapper.stop();
     } else if (id === config.id) {
       await this.stopDaemon();
     } else {
@@ -165,32 +165,32 @@ export class Daemon {
     }
   }
   /**
-   * get cpManager by config, create a new cpManager is cpConfig is passed
+   * get cpWrapper by config, create a new cpWrapper is cpConfig is passed
    * @param cpConfigOrId
    * @returns
    */
-  getCpManager(cpConfigOrId?: Command2Process['data']) {
-    const {cpManagerMap, config} = this;
-    let cpManager: CpManager;
+  getCpWrapper(cpConfigOrId?: Command2Process['data']) {
+    const {cpWrapperMap, config} = this;
+    let cpWrapper: CpWrapper;
     if (cpConfigOrId === undefined) {
       /**
-       * if cpConfigOrId is undefined, and there is only one cpManager, return it.
+       * if cpConfigOrId is undefined, and there is only one cpWrapper, return it.
        */
-      const allCpManager = Object.values(cpManagerMap);
-      if (allCpManager.length === 1) {
-        cpManager = allCpManager[0];
+      const allCpWrapper = Object.values(cpWrapperMap);
+      if (allCpWrapper.length === 1) {
+        cpWrapper = allCpWrapper[0];
       }
     } else if (isString(cpConfigOrId)) {
       /**
-       * if cpConfigOrId is string, means get cpManager from cpManagerMap by this id.
+       * if cpConfigOrId is string, means get cpWrapper from cpWrapperMap by this id.
        */
-      cpManager = cpManagerMap[cpConfigOrId as string];
+      cpWrapper = cpWrapperMap[cpConfigOrId as string];
     } else if (isPlainObject(cpConfigOrId)) {
       /**
-       * if cpConfigOrId is object, try find cpManager by id first
-       * initialize a new instance if cpManager is not found by id.
+       * if cpConfigOrId is object, try find cpWrapper by id first
+       * initialize a new instance if cpWrapper is not found by id.
        */
-      const {id} = cpConfigOrId as CpManagerConfig;
+      const {id} = cpConfigOrId as CpWrapperConfig;
       if (id === undefined) {
         throw new Error(`id is undefined in cpConfig`);
       }
@@ -198,20 +198,20 @@ export class Daemon {
       if (id === config.id) {
         throw new Error(`child process key is the same as daemon key`);
       }
-      cpManager = cpManagerMap[id];
-      // let cpManager = cpManagerMap[id];
-      if (cpManager === undefined) {
-        cpManager = new CpManager(cpConfigOrId as CpManagerConfig);
-        cpManager.daemonId = config.id;
-        cpManagerMap[id] = cpManager;
+      cpWrapper = cpWrapperMap[id];
+      // let cpWrapper = cpWrapperMap[id];
+      if (cpWrapper === undefined) {
+        cpWrapper = new CpWrapper(cpConfigOrId as CpWrapperConfig);
+        cpWrapper.daemonId = config.id;
+        cpWrapperMap[id] = cpWrapper;
       }
     }
-    return cpManager;
+    return cpWrapper;
   }
   /**
    * Daemon Only: ping
-   * Both Daemon and cpManager: info, stop
-   * cpManager Only: start, restart
+   * Both Daemon and cpWrapper: info, stop
+   * cpWrapper Only: start, restart
    * If you want to restart Daemon, should stop and then start
    * @param command
    * @returns
@@ -242,17 +242,17 @@ export class Daemon {
         cpId = query.id;
         logOptions = {tail: query.tail};
       }
-      const cpManager = this.getCpManager(cpId);
-      if (!cpManager) {
+      const cpWrapper = this.getCpWrapper(cpId);
+      if (!cpWrapper) {
         throw new Error(`child process is not found for log query`);
       }
-      const logData = cpManager.getLog(logOptions);
+      const logData = cpWrapper.getLog(logOptions);
       return {
         type: 'log',
         data: logData,
       };
     } else {
-      const cpManager = this.getCpManager(cpConfigOrId);
+      const cpWrapper = this.getCpWrapper(cpConfigOrId);
       if (action === 'stop') {
         await this.stop(cpConfigOrId as string);
         return {
@@ -260,21 +260,21 @@ export class Daemon {
           data: this.getInfo(cpConfigOrId as string),
         };
       } else {
-        if (!cpManager) {
+        if (!cpWrapper) {
           throw new Error(`child process is not found by payload you provided.`);
         }
         const isCpConfig = isPlainObject(cpConfigOrId);
         switch (action) {
           case 'start':
-            await cpManager.start(isCpConfig ? (cpConfigOrId as CpManagerConfig) : undefined);
+            await cpWrapper.start(isCpConfig ? (cpConfigOrId as CpWrapperConfig) : undefined);
             break;
           case 'restart':
-            await cpManager.restart(isCpConfig ? (cpConfigOrId as CpManagerConfig) : undefined);
+            await cpWrapper.restart(isCpConfig ? (cpConfigOrId as CpWrapperConfig) : undefined);
             break;
         }
         return {
           type: action as Action2Cp,
-          data: cpManager.getInfo(),
+          data: cpWrapper.getInfo(),
         };
       }
     }

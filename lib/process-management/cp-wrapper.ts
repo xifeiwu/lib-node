@@ -11,11 +11,11 @@ import {
   savePidInfo,
 } from './service';
 import {
-  CpManagerStatus,
+  CpWrapperStatus,
   CpInfo,
   SerializableCpInfo,
-  CpManagerConfig,
-  CpManagerInfo,
+  CpWrapperConfig,
+  CpWrapperInfo,
   LogMode,
   PidInfoRecord,
   ResponseLog,
@@ -23,7 +23,7 @@ import {
 import {SpawnConfig} from './external';
 
 const statusConvertRule: Partial<{
-  [status in CpManagerStatus['status']]: Array<CpManagerStatus['status']>;
+  [status in CpWrapperStatus['status']]: Array<CpWrapperStatus['status']>;
 }> = {
   toStart: ['init', 'exited'],
   toSpawn: ['init', 'toStart', 'toRestart', 'exited'],
@@ -31,17 +31,17 @@ const statusConvertRule: Partial<{
   toKill: ['running'],
   toRestart: ['onExit'],
 };
-function canChangeToStatus(to: CpManagerStatus['status'], from: CpManagerStatus['status']) {
+function canChangeToStatus(to: CpWrapperStatus['status'], from: CpWrapperStatus['status']) {
   return !statusConvertRule[to] || statusConvertRule[to].includes(from);
 }
 /**
  * Manager for one process,
  */
-export class CpManager {
-  config: CpManagerConfig;
-  status: CpManagerStatus['status'];
-  lastAction: CpManagerStatus['lastAction'];
-  retryCount: CpManagerStatus['retryCount'];
+export class CpWrapper {
+  config: CpWrapperConfig;
+  status: CpWrapperStatus['status'];
+  lastAction: CpWrapperStatus['lastAction'];
+  retryCount: CpWrapperStatus['retryCount'];
   cpInfo?: CpInfo;
   cpInfoHistory?: SerializableCpInfo[];
   exitSignal: {
@@ -61,12 +61,12 @@ export class CpManager {
   private logErrStream?: fs.WriteStream;
   private logOutFilePath?: string;
   private logErrFilePath?: string;
-  constructor(config: CpManagerConfig) {
+  constructor(config: CpWrapperConfig) {
     this.resetStatus();
     this.setConfig(config);
   }
-  static createOrphan(cpId: string, pid: number, daemonId?: string): CpManager {
-    const mgr = new CpManager({id: cpId});
+  static createOrphan(cpId: string, pid: number, daemonId?: string): CpWrapper {
+    const mgr = new CpWrapper({id: cpId});
     mgr.isOrphan = true;
     mgr.orphanPid = pid;
     mgr.daemonId = daemonId;
@@ -87,7 +87,7 @@ export class CpManager {
   getConfig() {
     return this.config;
   }
-  setConfig(config: CpManagerConfig) {
+  setConfig(config: CpWrapperConfig) {
     if (!this.config) {
       this.config = config;
     } else {
@@ -100,13 +100,13 @@ export class CpManager {
   getLogMode(): LogMode {
     return get(this.config, ['managerConfig', 'log', 'mode'], 'memory');
   }
-  changeStatus(status: CpManagerStatus['status']) {
+  changeStatus(status: CpWrapperStatus['status']) {
     if (!canChangeToStatus(status, this.status)) {
       throw new Error(`Can't change to status[${status}] from status[${this.status}]`);
     }
     this.status = status;
   }
-  getInfo(options?: {simple?: boolean}): CpManagerInfo {
+  getInfo(options?: {simple?: boolean}): CpWrapperInfo {
     const {simple} = options ?? {};
     const {
       id,
@@ -118,7 +118,7 @@ export class CpManager {
       cpInfoHistory,
       // status: {spawnInfo, cpInfoHistory: spawnHistory, ...restStatus},
     } = this;
-    const info: CpManagerInfo = {
+    const info: CpWrapperInfo = {
       id,
       managerConfig: managerConfig,
       status: {
@@ -419,7 +419,7 @@ export class CpManager {
     }
   }
 
-  async start(config?: CpManagerConfig) {
+  async start(config?: CpWrapperConfig) {
     if (this.isOrphan) {
       throw new Error(`Cannot start an orphan process (${this.id}), only stop is supported`);
     }
@@ -459,7 +459,7 @@ export class CpManager {
     await this.waitExitComplete();
   }
 
-  async restart(config?: CpManagerConfig) {
+  async restart(config?: CpWrapperConfig) {
     if (this.isOrphan) {
       throw new Error(`Cannot restart an orphan process (${this.id}), only stop is supported`);
     }

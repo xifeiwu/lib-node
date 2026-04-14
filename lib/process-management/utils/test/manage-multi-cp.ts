@@ -3,7 +3,7 @@ import path from 'path';
 import {logColorful, CP, getSocketPath, getSpawnAndIpcConfigByScript} from '../../../../index';
 import {startDetachedDaemon} from '../../utils/server';
 import {SocketClientToDaemon} from '../../utils/client';
-import {CpManagerConfig} from '../../types';
+import {CpWrapperConfig} from '../../types';
 
 function getCpScript(basename: string) {
   const fullpath = path.join(__dirname, basename);
@@ -16,7 +16,7 @@ function getCpScript(basename: string) {
 // const stdio: SpawnOptions['stdio'] = debugMode ? [0, 1, 2, 'ipc'] : ['ignore', 'ignore', 'ignore', 'ipc'];
 
 const debugServer1Id = 'debug-server-1';
-const spawnDebugServer1: CpManagerConfig = {
+const spawnDebugServer1: CpWrapperConfig = {
   id: debugServer1Id,
   managerConfig: {
     retry: {
@@ -33,7 +33,7 @@ const spawnDebugServer1: CpManagerConfig = {
 };
 
 const debugServer2Id = 'debug-server-2';
-const spawnDebugServer2: CpManagerConfig = {
+const spawnDebugServer2: CpWrapperConfig = {
   id: debugServer2Id,
   // managerConfig: {
   //   retry: {
@@ -57,7 +57,7 @@ export async function runDetachedDaemon() {
   const spawnResponse = await startDetachedDaemon(
     {
       id: daemonKey,
-      cpManagerConfigList: [spawnDebugServer1],
+      cpWrapperConfigList: [spawnDebugServer1],
     },
     {debug: true}
   );

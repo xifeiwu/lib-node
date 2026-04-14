@@ -34,7 +34,7 @@ export {tryUseJsFile, waitIpcMessageOnce} from '../../child-process';
 export {outOnAllChannels} from '../../utils/cp-script';
 
 // From service/constants
-export {DAEMON_ROOT_DIR, DAEMON_SOCKET_DIR, SOCKET_FILE_SUFFIX} from '../../service/constants';
+export {PROCESS_MANAGEMENT_ROOT_DIR as DAEMON_ROOT_DIR, DAEMON_SOCKET_DIR, SOCKET_FILE_SUFFIX} from '../../service/constants';
 
 // From types
 export {CP, InfoToCp, TcpServerInfo, TcpServerConfig} from '../../types';

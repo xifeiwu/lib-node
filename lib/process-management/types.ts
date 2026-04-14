@@ -6,7 +6,7 @@ export type LogMode = 'memory' | 'socket' | 'file';
 /**
  * Types for child process of Daemon
  */
-export interface CpManagerConfig {
+export interface CpWrapperConfig {
   /** id used to identify the child process  */
   /** TODO: encodeURIComponent for id before use it as folder or file name */
   id: string;
@@ -36,7 +36,7 @@ export interface SerializableCpInfo<ResponseFromCp = any> extends Omit<
 > {
   pid: number;
 }
-export interface CpManagerStatus {
+export interface CpWrapperStatus {
   status: /** initial state */
     | 'init'
     | /** start to spawn process*/ 'toStart'
@@ -51,10 +51,10 @@ export interface CpManagerStatus {
 }
 
 /** All info of Daemon's child process */
-export interface CpManagerInfo<ResponseFromCp = any> {
-  id: CpManagerConfig['id'];
-  managerConfig: CpManagerConfig['managerConfig'];
-  status: CpManagerStatus;
+export interface CpWrapperInfo<ResponseFromCp = any> {
+  id: CpWrapperConfig['id'];
+  managerConfig: CpWrapperConfig['managerConfig'];
+  status: CpWrapperStatus;
   cpInfo?: SerializableCpInfo<ResponseFromCp>;
   cpInfoHistory?: SerializableCpInfo<ResponseFromCp>[];
 }
@@ -75,7 +75,7 @@ export interface DaemonConfig {
   connection?: {
     socketConfig?: TcpServerConfig;
   };
-  cpManagerConfigList?: CpManagerConfig[];
+  cpWrapperConfigList?: CpWrapperConfig[];
   /** Orphan processes detected by CLI layer, to be adopted by daemon */
   orphans?: OrphanInfo[];
 }
@@ -90,7 +90,7 @@ export interface DaemonInfo {
   status: {
     connection?: {socket?: Partial<Pick<TcpServerInfo, 'host' | 'port' | 'path'>>};
   };
-  cpInfoList: CpManagerInfo[];
+  cpInfoList: CpWrapperInfo[];
 }
 
 export type Action2Daemon = 'ping';
@@ -100,7 +100,7 @@ export type ActionLog = 'log';
 
 export interface Command2Process {
   action: Action2Cp;
-  data?: CpManagerConfig | string;
+  data?: CpWrapperConfig | string;
 }
 export interface Command2Daemon {
   action: Action2Daemon;
@@ -123,7 +123,7 @@ export type Command = Command2Process | Command2Daemon | CommandCommon | Command
 
 export interface ResponseCpInfo {
   type: Action2Cp;
-  data?: CpManagerInfo;
+  data?: CpWrapperInfo;
 }
 export interface ResponsePong {
   type: 'pong';
@@ -132,7 +132,7 @@ export interface ResponsePong {
 }
 export interface ResponseInfo {
   type: ActionCommon;
-  data?: DaemonInfo | CpManagerInfo;
+  data?: DaemonInfo | CpWrapperInfo;
 }
 export interface ResponseLogMemory {
   type: 'log';
@@ -177,7 +177,7 @@ export type DaemonResponse =
   | ResponseError
   | ResponseUnknown;
 
-/** Per-CpManager PID info persisted to disk */
+/** Per-CpWrapper PID info persisted to disk */
 export interface PidInfoRecord {
   pid: number;
   startAt: string;

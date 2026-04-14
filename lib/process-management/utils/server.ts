@@ -4,11 +4,11 @@ import {DaemonConfig, DaemonResponse} from '../types';
 import {MAX_WAIT_TIME_DEBUG_MODE} from '../service';
 
 export async function startDetachedDaemon(daemonConfig: DaemonConfig, featureConfig?: {debug?: boolean}) {
-  const {id: daemonKey, cpManagerConfigList} = daemonConfig;
+  const {id: daemonKey, cpWrapperConfigList} = daemonConfig;
   const {debug = false} = featureConfig ?? {};
   if (debug) {
-    for (const cpManagerConfig of cpManagerConfigList) {
-      const {spawnConfig} = cpManagerConfig ?? {};
+    for (const cpWrapperConfig of cpWrapperConfigList) {
+      const {spawnConfig} = cpWrapperConfig ?? {};
       if (!spawnConfig) {
         continue;
       }

@@ -10,7 +10,7 @@
 
 ### 实现
 
-**日志收集**：在 CpManager 中添加内存环形缓冲区（`logBuffer`），`prepareStdioForLogging` 将 stdio 的 `'ignore'` 替换为 `'pipe'`，通过 `setupLogCapture` 监听 stdout/stderr 的 `data` 事件，按行缓冲写入 buffer。
+**日志收集**：在 CpWrapper 中添加内存环形缓冲区（`logBuffer`），`prepareStdioForLogging` 将 stdio 的 `'ignore'` 替换为 `'pipe'`，通过 `setupLogCapture` 监听 stdout/stderr 的 `data` 事件，按行缓冲写入 buffer。
 
 **孤儿清理**：Daemon 将所有子进程 PID 持久化到 `~/.daemon/{daemonId}/pids.json`，启动时 `cleanupOrphanProcesses` 读取旧记录，检查 PID 存活后批量 kill。
 
@@ -22,7 +22,7 @@
 
 ---
 
-## 第二轮：重构 — per-CpManager 持久化 + 交互式孤儿处理 + 三种日志模式
+## 第二轮：重构 — per-CpWrapper 持久化 + 交互式孤儿处理 + 三种日志模式
 
 ### 问题分析
 
@@ -53,8 +53,8 @@
 
 主要改动文件：
 - `types.ts` — 新增 `LogMode`、`PidInfoRecord`、`OrphanInfo`，`ResponseLog` 拆为三种模式
-- `service.ts` — 持久化函数从 per-Daemon 改为 per-CpManager
-- `cp-manager.ts` — 三种日志模式、orphan 支持、自行持久化
+- `service.ts` — 持久化函数从 per-Daemon 改为 per-CpWrapper
+- `cp-wrapper.ts` — 三种日志模式、orphan 支持、自行持久化
 - `daemon.ts` — 删除旧 PID 逻辑，改为从 config.orphans 收养
 - `src/daemon/service.ts` — 新增 `detectAndHandleOrphans` 交互式处理
 - `src/daemon/command.ts` — log 命令支持 socket 流/file tail

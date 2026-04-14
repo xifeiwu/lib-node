@@ -22,7 +22,7 @@ src/daemon/service.ts  start(id)
   │       ├─ spawnAndTryIpc(config)             // spawn 子进程 + IPC 传 DaemonConfig
   │       └─ disconnect + unref                 // 非 debug 模式下脱离父进程
   │
-  └─ id !== daemonId → socketClient.start(cpManagerConfig)
+  └─ id !== daemonId → socketClient.start(cpWrapperConfig)
 ```
 
 ### Daemon 进程内部启动流程
@@ -36,8 +36,8 @@ utils/cp-script/daemon.ts
 Daemon.startAsCp(config)                       // daemon.ts
   │
   ├─ 1. 收养孤儿进程
-  │   └─ config.orphans?.forEach → CpManager.createOrphan(cpId, pid)
-  │      └─ 加入 cpManagerMap
+  │   └─ config.orphans?.forEach → CpWrapper.createOrphan(cpId, pid)
+  │      └─ 加入 cpWrapperMap
   │
   ├─ 2. startConnectionServer()
   │   └─ startOneChatSocketServer(handleData, socketConfig)
@@ -45,11 +45,11 @@ Daemon.startAsCp(config)                       // daemon.ts
   └─ 3. startAllCp()
       └─ cpConfigList.forEach → startCp(cpConfig)
           └─ handleCommand({action: 'start', data: cpConfig})
-              └─ getCpManager(cpConfig) → new CpManager(config)
-                  └─ cpManager.start(config) → trySpawn()
+              └─ getCpWrapper(cpConfig) → new CpWrapper(config)
+                  └─ cpWrapper.start(config) → trySpawn()
 ```
 
-## 2. 子进程 spawn 流程（CpManager.trySpawn）
+## 2. 子进程 spawn 流程（CpWrapper.trySpawn）
 
 ```
 trySpawn()
@@ -78,7 +78,7 @@ trySpawn()
   └─ childProcess.once('exit') → onExit()
 ```
 
-## 3. 子进程退出流程（CpManager.onExit）
+## 3. 子进程退出流程（CpWrapper.onExit）
 
 ```
 onExit()
@@ -116,29 +116,29 @@ handleCommand 路由:
   │
   ├─ action: 'info'
   │   ├─ data === daemonId / undefined → getDaemonInfo()
-  │   └─ data === cpId → cpManager.getInfo()
+  │   └─ data === cpId → cpWrapper.getInfo()
   │
   ├─ action: 'log'
   │   ├─ 解析 data → cpId + logOptions
-  │   └─ cpManager.getLog(logOptions)
+  │   └─ cpWrapper.getLog(logOptions)
   │       ├─ orphan → {mode:'memory', lines:['no log'], total:1}
   │       ├─ memory → {mode:'memory', lines, total}
   │       ├─ socket → {mode:'socket', socketPath}
   │       └─ file   → {mode:'file', outFile, errorFile}
   │
   ├─ action: 'start'
-  │   └─ getCpManager(data) → cpManager.start()
+  │   └─ getCpWrapper(data) → cpWrapper.start()
   │
   ├─ action: 'restart'
-  │   └─ getCpManager(data) → cpManager.restart()
+  │   └─ getCpWrapper(data) → cpWrapper.restart()
   │       └─ stop() + start()
   │
   └─ action: 'stop'
-      ├─ data === cpId → cpManager.stop()
+      ├─ data === cpId → cpWrapper.stop()
       │   ├─ orphan: killProcessByPid + updatePidInfoOnExit
       │   └─ normal: killProcessByPid + waitExitComplete
       └─ data === daemonId → stopDaemon()
-          └─ forEach cpManager.stop() + socket.server.close()
+          └─ forEach cpWrapper.stop() + socket.server.close()
 ```
 
 ## 5. CLI 日志查看流程
@@ -171,9 +171,9 @@ log(id, options)
 ```
 lib/daemon/
 ├── daemon.ts              Daemon 类：Socket 服务、命令路由、orphan 收养
-├── cp-manager.ts          CpManager：状态机、spawn/kill、重试、三种日志模式、PID 持久化
+├── cp-wrapper.ts          CpWrapper：状态机、spawn/kill、重试、三种日志模式、PID 持久化
 ├── types.ts               所有 TypeScript 类型定义
-├── service.ts             序列化工具、per-CpManager 持久化函数
+├── service.ts             序列化工具、per-CpWrapper 持久化函数
 ├── external.ts            跨模块依赖聚合
 ├── index.ts               公共导出
 ├── utils/
@@ -191,7 +191,7 @@ lib/daemon/
 ~/.daemon/
 ├── sockets/               Daemon 控制 socket
 │   └── {daemonId}.socket
-└── {cpManagerId}/          每个 CpManager 独立目录
+└── {cpWrapperId}/          每个 CpWrapper 独立目录
     ├── pid-info.json       运行信息（PID、状态、日志模式）
     ├── {pid}.sock          日志 socket（socket 模式）
     ├── {pid}.out           stdout 日志（file 模式）
