@@ -3,7 +3,7 @@ import path from 'path';
 import {addSuffixToBareBasename} from '../path';
 import {PartialExcept} from '../external';
 import {convertObjectToCjsExport} from '../transform';
-import {getDtStrInFormat} from '../external';
+import {formatDt} from '../external';
 
 interface DataWriterOptions {
   dir: string;
@@ -15,6 +15,9 @@ interface DataWriterOptions {
   createDirIfNotExist?: boolean;
 }
 
+/**
+ * write data to a file, and create the directory if it does not exist by default
+ */
 export function writeFileSync(
   fullPath: string,
   data: string | NodeJS.ArrayBufferView,
@@ -30,14 +33,14 @@ export function writeFileSync(
   fs.writeFileSync(fullPath, data);
 }
 
-export function getDataFilePath(
+function getDataFilePath(
   config: Pick<
     DataWriterOptions,
     'dir' | 'subdir' | 'basename' | 'dataCategory' | 'dtForamtAsCategory' | 'categoryWay'
   >
 ) {
   const {dir, subdir, basename, dtForamtAsCategory, dataCategory, categoryWay = 'basenameSuffix'} = config;
-  const tag = dataCategory ?? getDtStrInFormat(dtForamtAsCategory);
+  const tag = dataCategory ?? formatDt(dtForamtAsCategory);
   let tagDir = '';
   let finalBasename = basename;
   if (categoryWay === 'basenameSuffix') {
