@@ -1,17 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import {TcpServerInfo, DAEMON_ROOT_DIR} from './external';
-import {CpInfo, CpWrapperInfo, ResponseError, SerializableCpInfo} from './types';
+import {CpWrapperInfo, ResponseError} from './types';
 
 export const MAX_WAIT_TIME_DEBUG_MODE = 120;
-
-export function serializeCpInfo(cpInfo: CpInfo): SerializableCpInfo {
-  const {childProcess, ...rest} = cpInfo;
-  return {
-    pid: childProcess?.pid,
-    ...rest,
-  };
-}
 
 export function getErrorResponse(err: Error | string): ResponseError {
   let message = err as string;
@@ -41,12 +33,16 @@ export function getProcessInfoPath(cpId: string): string {
   return path.join(getCpDir(cpId), 'info', 'index.js');
 }
 
-export function getLogOutFilePath(cpId: string, pid: number): string {
-  return path.join(getCpDir(cpId), `${pid}.out`);
+export function getLogDir(cpId: string): string {
+  return path.join(getCpDir(cpId), 'log');
 }
 
-export function getLogErrorFilePath(cpId: string, pid: number): string {
-  return path.join(getCpDir(cpId), `${pid}.error`);
+/** Prefer `info.runtime.phase`; fall back to legacy `info.status.status` from older `index.js`. */
+function getCpWrapperPhase(info: CpWrapperInfo): string | undefined {
+  return (
+    info.runtime?.phase ??
+    (info as unknown as {status?: {status?: string}}).status?.status
+  );
 }
 
 export function loadInfo(cpId: string): CpWrapperInfo | null {
@@ -62,7 +58,7 @@ export function loadInfo(cpId: string): CpWrapperInfo | null {
   }
 }
 
-/** Scan all ~/.process-management/{cpId}/info/index.js, return those with status='running' */
+/** Scan all ~/.process-management/{cpId}/info/index.js, return those with runtime.phase === 'running' */
 export function scanAllInfoRecords(): {cpId: string; info: CpWrapperInfo}[] {
   const results: {cpId: string; info: CpWrapperInfo}[] = [];
   if (!fs.existsSync(DAEMON_ROOT_DIR)) {
@@ -75,7 +71,7 @@ export function scanAllInfoRecords(): {cpId: string; info: CpWrapperInfo}[] {
     }
     const cpId = entry.name;
     const info = loadInfo(cpId);
-    if (info && info.status.status === 'running') {
+    if (info && getCpWrapperPhase(info) === 'running') {
       results.push({cpId, info});
     }
   }

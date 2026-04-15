@@ -1,5 +1,4 @@
 import {Readable} from 'stream';
-import fs from 'fs';
 import path from 'path';
 import {
   killProcessByPid,
@@ -7,16 +6,16 @@ import {
   isNumber,
   waitFor,
   get,
-  makeSureDirExist,
   createRollingSnapshotWriter,
+  createRollingLogWriter,
 } from './external';
-import type {RollingSnapshotWriter} from './external';
-import {serializeCpInfo, getCpDir, getLogOutFilePath, getLogErrorFilePath} from './service';
-import {CpWrapperStatus, CpInfo, CpWrapperConfig, CpWrapperInfo, ResponseLog} from './types';
-import {SpawnConfig} from './external';
+import type {RollingSnapshotWriter, RollingLogWriter} from './external';
+import {getCpDir, getLogDir} from './service';
+import {CpWrapperRuntime, CpWrapperConfig, CpWrapperInfo, ResponseLog} from './types';
+import {SpawnConfig, SpawnAndTryIpcResponse} from './external';
 
-const statusConvertRule: Partial<{
-  [status in CpWrapperStatus['status']]: Array<CpWrapperStatus['status']>;
+const phaseConvertRule: Partial<{
+  [phase in CpWrapperRuntime['phase']]: Array<CpWrapperRuntime['phase']>;
 }> = {
   toStart: ['init', 'exited'],
   toSpawn: ['init', 'toStart', 'toRestart', 'exited'],
@@ -24,33 +23,31 @@ const statusConvertRule: Partial<{
   toKill: ['running'],
   toRestart: ['onExit'],
 };
-function canChangeToStatus(to: CpWrapperStatus['status'], from: CpWrapperStatus['status']) {
-  return !statusConvertRule[to] || statusConvertRule[to].includes(from);
+function canChangePhase(to: CpWrapperRuntime['phase'], from: CpWrapperRuntime['phase']) {
+  return !phaseConvertRule[to] || phaseConvertRule[to].includes(from);
 }
 /**
  * Manager for one process,
  */
 export class CpWrapper {
   config: CpWrapperConfig;
-  status: CpWrapperStatus['status'];
-  lastAction: CpWrapperStatus['lastAction'];
-  retryCount: CpWrapperStatus['retryCount'];
-  cpInfo?: CpInfo;
+  phase: CpWrapperRuntime['phase'];
+  lastAction: CpWrapperRuntime['lastAction'];
+  retryCount: CpWrapperRuntime['retryCount'];
+  cpResponse?: SpawnAndTryIpcResponse;
   exitSignal: {
     resolve?: () => void;
     reject?: (err: Error) => void;
   } = {};
-  private logOutStream?: fs.WriteStream;
-  private logErrStream?: fs.WriteStream;
-  private logOutFilePath?: string;
-  private logErrFilePath?: string;
+  private logOutWriter?: RollingLogWriter;
+  private logErrWriter?: RollingLogWriter;
   private infoWriter?: RollingSnapshotWriter;
   constructor(config: CpWrapperConfig) {
-    this.resetStatus();
+    this.resetPhase();
     this.setConfig(config);
   }
-  resetStatus() {
-    this.status = 'init';
+  resetPhase() {
+    this.phase = 'init';
     this.lastAction = 'none';
     this.retryCount = 0;
   }
@@ -70,57 +67,43 @@ export class CpWrapper {
       };
     }
   }
-  changeStatus(status: CpWrapperStatus['status']) {
-    if (!canChangeToStatus(status, this.status)) {
-      throw new Error(`Can't change to status[${status}] from status[${this.status}]`);
+  changePhase(next: CpWrapperRuntime['phase']) {
+    if (!canChangePhase(next, this.phase)) {
+      throw new Error(`Can't change to phase[${next}] from phase[${this.phase}]`);
     }
-    this.status = status;
+    this.phase = next;
     this.persistInfo();
   }
   getInfo(): CpWrapperInfo {
-    const {
-      id,
-      config: {retry, spawnConfig: spawnOptions},
-      status,
-      lastAction,
-      retryCount,
-      cpInfo,
-    } = this;
-    const managerConfig = retry !== undefined ? {retry} : undefined;
+    const {config, phase, lastAction, retryCount, cpResponse} = this;
     const info: CpWrapperInfo = {
-      id,
-      managerConfig,
-      status: {
-        status,
+      config,
+      runtime: {
+        phase,
         lastAction,
         retryCount,
       },
     };
-    if (cpInfo) {
-      info.cpInfo = serializeCpInfo(cpInfo);
-    } else {
-      info.cpInfo = serializeCpInfo({
-        spawnConfig: spawnOptions,
-      });
+    if (cpResponse) {
+      const {childProcess, ...rest} = cpResponse;
+      info.cpResponse = {pid: childProcess?.pid, ...rest};
     }
     return info;
   }
 
   private setupLogFile(stdout?: Readable, stderr?: Readable) {
-    const pid = this.cpInfo?.childProcess?.pid;
-    if (!pid) return;
-    makeSureDirExist(getCpDir(this.id));
-    const outPath = getLogOutFilePath(this.id, pid);
-    const errPath = getLogErrorFilePath(this.id, pid);
-    this.logOutFilePath = outPath;
-    this.logErrFilePath = errPath;
+    const logDir = getLogDir(this.id);
     if (stdout) {
-      this.logOutStream = fs.createWriteStream(outPath, {flags: 'a'});
-      stdout.pipe(this.logOutStream);
+      this.logOutWriter = createRollingLogWriter({dir: logDir, basename: 'out.log'});
+      stdout.on('data', (chunk: Buffer) => {
+        this.logOutWriter.write(chunk);
+      });
     }
     if (stderr) {
-      this.logErrStream = fs.createWriteStream(errPath, {flags: 'a'});
-      stderr.pipe(this.logErrStream);
+      this.logErrWriter = createRollingLogWriter({dir: logDir, basename: 'err.log'});
+      stderr.on('data', (chunk: Buffer) => {
+        this.logErrWriter.write(chunk);
+      });
     }
   }
 
@@ -144,13 +127,13 @@ export class CpWrapper {
   }
 
   private cleanupLogResources() {
-    if (this.logOutStream) {
-      this.logOutStream.end();
-      this.logOutStream = undefined;
+    if (this.logOutWriter) {
+      this.logOutWriter.end();
+      this.logOutWriter = undefined;
     }
-    if (this.logErrStream) {
-      this.logErrStream.end();
-      this.logErrStream = undefined;
+    if (this.logErrWriter) {
+      this.logErrWriter.end();
+      this.logErrWriter = undefined;
     }
   }
 
@@ -175,28 +158,28 @@ export class CpWrapper {
   getLog(): ResponseLog['data'] {
     return {
       id: this.id,
-      outFile: this.logOutFilePath ?? '',
-      errorFile: this.logErrFilePath ?? '',
+      outFile: this.logOutWriter?.basePath ?? '',
+      errorFile: this.logErrWriter?.basePath ?? '',
     };
   }
 
   async onExit() {
-    const {config, exitSignal, cpInfo, lastAction} = this;
+    const {config, exitSignal, cpResponse, lastAction} = this;
     const {} = config;
-    this.changeStatus('onExit');
-    if (cpInfo) {
-      cpInfo.deadTime = new Date().toLocaleString();
+    this.changePhase('onExit');
+    if (cpResponse) {
+      cpResponse.deadTime = new Date().toLocaleString();
     }
     this.cleanupLogResources();
     const {minInterval, maxCount} = get(config, ['retry'], {});
     const letChildDie = () => {
-      this.changeStatus('exited');
+      this.changePhase('exited');
       if (exitSignal.resolve) {
         exitSignal.resolve();
       }
     };
     const restartChild = async () => {
-      this.changeStatus('toRestart');
+      this.changePhase('toRestart');
       await new Promise(res => {
         process.nextTick(res);
       });
@@ -228,37 +211,33 @@ export class CpWrapper {
   }
 
   async trySpawn() {
-    const {config, cpInfo} = this;
+    const {config} = this;
     /** Not throw erro when spawn child process and spawnConfig is null */
     if (!config || !config.spawnConfig) {
       // throw new Error(`Please provide spawnConfig`);
       return null;
     }
-    const {spawnConfig: spawnOptions} = config;
-    this.changeStatus('toSpawn');
-    const logEnabledConfig = this.prepareStdioForLogging(spawnOptions);
+    const {spawnConfig} = config;
+    this.changePhase('toSpawn');
+    const logEnabledConfig = this.prepareStdioForLogging(spawnConfig);
     try {
-      const spawnInfo = await spawnAndTryIpc(logEnabledConfig);
-      this.cpInfo = {
-        spawnConfig: spawnOptions,
-        ...spawnInfo,
-      };
-      const {childProcess} = spawnInfo;
+      this.cpResponse = await spawnAndTryIpc(logEnabledConfig);
+      const {childProcess} = this.cpResponse;
       if (childProcess) {
-        this.changeStatus('running');
+        this.changePhase('running');
         this.setupLogFile(childProcess.stdout, childProcess.stderr);
         childProcess.once('exit', code => {
           this.onExit();
         });
       }
-      return this.cpInfo;
+      return this.cpResponse;
     } catch (err) {
-      this.changeStatus('exited');
+      this.changePhase('exited');
     }
   }
 
   async start(config?: CpWrapperConfig) {
-    this.changeStatus('toStart');
+    this.changePhase('toStart');
     this.lastAction = 'start';
     this.retryCount = 0;
     if (config) {
@@ -268,15 +247,15 @@ export class CpWrapper {
   }
 
   async stop() {
-    const {cpInfo} = this;
-    if (!cpInfo) {
-      throw new Error(`cpInfo is null`);
+    const {cpResponse} = this;
+    if (!cpResponse) {
+      throw new Error(`cpResponse is null`);
     }
-    const {childProcess} = cpInfo;
+    const {childProcess} = cpResponse;
     if (!childProcess) {
       throw new Error(`childProcess is null`);
     }
-    this.changeStatus('toKill');
+    this.changePhase('toKill');
     this.lastAction = 'stop';
     await killProcessByPid([childProcess.pid]);
     /** change status after killProcessByPid success */
@@ -285,7 +264,7 @@ export class CpWrapper {
 
   async restart(config?: CpWrapperConfig) {
     this.lastAction = 'restart';
-    if (canChangeToStatus('toKill', this.status)) {
+    if (canChangePhase('toKill', this.phase)) {
       await this.stop();
     }
     await this.start(config);

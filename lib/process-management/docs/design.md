@@ -68,9 +68,9 @@ init → toStart → toSpawn → running → toKill → onExit → exited
 
 ## 4. 日志
 
-子进程的 stdout/stderr 分别写入 `~/.process-management/{cpId}/{pid}.out` 和 `~/.process-management/{cpId}/{pid}.error`。用 `fs.createWriteStream` + `pipe`。
+子进程的 stdout/stderr 通过 `RollingLogWriter` 分别写入 `~/.process-management/{cpId}/log/out.log` 和 `~/.process-management/{cpId}/log/err.log`。文件超过大小限制时自动滚动归档（重命名为带日期的文件名），并根据总大小和文件数量清理旧归档。
 
-**为什么用 pipe 而非 fd？** spawn 前不知道 PID（PID 是 spawn 后才有的），无法预先创建以 PID 命名的文件。所以 stdio 设为 `pipe`，spawn 后再创建 WriteStream 并 pipe 过去。
+stdio 设为 `pipe`，spawn 后监听 `data` 事件写入 `RollingLogWriter`。
 
 CLI 端用 `spawn('tail', ['-f', ...])` 实现实时跟踪。
 

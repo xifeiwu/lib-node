@@ -44,6 +44,8 @@ export {SpawnConfig, SpawnAndTryIpcResponse} from '../../types/child_process/com
 // From utils/write
 export {createRollingSnapshotWriter} from '../../utils/write/snapshot';
 export type {RollingSnapshotWriter} from '../../utils/write/snapshot';
+export {createRollingLogWriter} from '../../utils/write/log';
+export type {RollingLogWriter} from '../../utils/write/log';
 
 // From external (utility functions)
 export {isNumber, isObject, isPlainObject, isString, waitFor, get} from '../../external';

@@ -55,7 +55,7 @@ trySpawn()
   │   └─ RollingSnapshotWriter.save → ~/.process-management/{cpId}/info/index.js
   │
   ├─ setupLogFile(stdout, stderr)
-  │   └─ createWriteStream → stdout.pipe / stderr.pipe
+  │   └─ createRollingLogWriter → stdout/stderr.on('data') → writer.write
   │
   └─ childProcess.once('exit') → onExit()
 ```
@@ -159,6 +159,7 @@ lib/process-management/
 └── {cpWrapperId}/          每个 CpWrapper 独立目录
     ├── info/
     │   └── index.js        运行信息（CpWrapperInfo，CommonJS 格式）
-    ├── {pid}.out           stdout 日志（file 模式）
-    └── {pid}.error         stderr 日志（file 模式）
+    └── log/
+        ├── out.log         stdout 日志（RollingLogWriter）
+        └── err.log         stderr 日志（RollingLogWriter）
 ```

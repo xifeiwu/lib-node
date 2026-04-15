@@ -8,7 +8,7 @@
 - **多进程管理** — 单个 Daemon 可管理多个子进程，每个子进程有独立 `id`。
 - **启停控制** — 通过 Socket 命令 `start` / `stop` / `restart` 控制任意子进程。
 - **状态查询** — `ping` 探活 Daemon，`info` 查询 Daemon 或指定子进程的状态、PID、运行历史。
-- **日志持久化** — 子进程的 stdout/stderr 写入文件（`~/.process-management/{cpId}/{pid}.out/.error`）。
+- **日志持久化** — 子进程的 stdout/stderr 通过 `RollingLogWriter` 写入 `~/.process-management/{cpId}/log/out.log` 和 `err.log`。
 - **自动重试** — 子进程意外退出后，按配置的 `retry.maxCount` / `retry.minInterval` 自动重启。
 - **状态持久化** — 每次状态变化时通过 `RollingSnapshotWriter` 将完整信息写入 `~/.process-management/{cpId}/info/index.js`。
 
@@ -93,7 +93,7 @@ await client.log({id: 'my-service', tail: 50}); // 获取最近 50 行
 
 ## 日志
 
-子进程的 stdout/stderr 分别写入 `~/.process-management/{cpId}/{pid}.out` 和 `~/.process-management/{cpId}/{pid}.error`。
+子进程的 stdout/stderr 通过 `RollingLogWriter` 分别写入 `~/.process-management/{cpId}/log/out.log` 和 `~/.process-management/{cpId}/log/err.log`，文件超过大小限制时自动滚动归档。
 
 - 子进程 stdio 中的 `'ignore'` 会被自动替换为 `'pipe'`，其他值不受影响。
 - debug 模式下输出直接打印到终端，不经过日志收集。

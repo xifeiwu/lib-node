@@ -1,4 +1,4 @@
-import {SpawnConfig, SpawnAndTryIpcResponse} from '../../types/child_process/common';
+import {SpawnConfig, SerializableSpawnInfo} from '../../types/child_process/common';
 import {TcpServerInfo, TcpServerConfig} from '../../types/net';
 
 /**
@@ -19,19 +19,11 @@ export interface CpWrapperConfig {
   spawnConfig?: SpawnConfig;
 }
 
-export interface CpInfo<ResponseFromCp = any> extends Partial<SpawnAndTryIpcResponse<ResponseFromCp>> {
-  spawnConfig: SpawnConfig;
-}
-export interface SerializableCpInfo<ResponseFromCp = any> extends Omit<
-  CpInfo<ResponseFromCp>,
-  'childProcess'
-> {
-  pid: number;
-}
-export interface CpWrapperStatus {
-  status: /** initial state */
-    | 'init'
-    | /** start to spawn process*/ 'toStart'
+/** Mutable runtime snapshot for one child process (lifecycle phase, last command, retries). */
+export interface CpWrapperRuntime {
+  phase:
+    | /** initial state */ 'init'
+    | /** start to spawn process */ 'toStart'
     | /** will spawn new process */ 'toSpawn'
     | /** process is running */ 'running'
     | /** process is killed */ 'toKill'
@@ -42,12 +34,14 @@ export interface CpWrapperStatus {
   retryCount: number;
 }
 
+/** @deprecated Renamed to {@link CpWrapperRuntime}. */
+export type CpWrapperStatus = CpWrapperRuntime;
+
 /** All info of Daemon's child process */
 export interface CpWrapperInfo<ResponseFromCp = any> {
-  id: CpWrapperConfig['id'];
-  managerConfig?: Pick<CpWrapperConfig, 'retry'>;
-  status: CpWrapperStatus;
-  cpInfo?: SerializableCpInfo<ResponseFromCp>;
+  config: CpWrapperConfig;
+  runtime: CpWrapperRuntime;
+  cpResponse?: SerializableSpawnInfo<ResponseFromCp>;
 }
 
 export interface DaemonConfig {

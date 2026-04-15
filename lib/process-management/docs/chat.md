@@ -10,7 +10,7 @@
 
 ### 实现
 
-**日志收集**：`prepareStdioForLogging` 将 stdio 的 `'ignore'` 替换为 `'pipe'`，stdout/stderr 通过 `setupLogFile` 写入 `~/.process-management/{cpId}/{pid}.out/.error`。
+**日志收集**：`prepareStdioForLogging` 将 stdio 的 `'ignore'` 替换为 `'pipe'`，stdout/stderr 通过 `RollingLogWriter` 写入 `~/.process-management/{cpId}/log/out.log` 和 `err.log`。
 
 ### 讨论要点
 
