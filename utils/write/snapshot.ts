@@ -2,11 +2,14 @@ import fs from 'fs';
 import path from 'path';
 import {formatDate} from '../../external';
 import {makeSureDirExist} from '../../path';
+import {convertObjectToCjsExport} from '../../transform';
 
 const DEFAULT_MAX_FILE_COUNT = 100;
 
 /** Format segment for rolled snapshot filenames: `yyyy-MM-dd-hh-mm-ss` (local time, second precision). */
 const ROLL_TIMESTAMP_FMT = 'yyyy-MM-dd-hh-mm-ss';
+
+export type RollingSnapshotFormat = 'json' | 'commonjs';
 
 export interface RollingSnapshotWriterOptions {
   dir: string;
@@ -14,6 +17,11 @@ export interface RollingSnapshotWriterOptions {
   basename: string;
   /** Max number of related snapshot files (including the active `basename`). Default 100. */
   maxFileCount?: number;
+  /**
+   * File body format. `json` (default): pretty-printed JSON.
+   * `commonjs`: `convertObjectToCjsExport` (one `module.exports.key = ...` per top-level key).
+   */
+  format?: RollingSnapshotFormat;
 }
 
 function escapeRegex(s: string): string {
@@ -21,7 +29,7 @@ function escapeRegex(s: string): string {
 }
 
 /**
- * Rolling JSON snapshot writer: each `save` persists one object to a file.
+ * Rolling snapshot writer: each `save` persists one object to a file (`json` or `commonjs` body).
  * Latest snapshot lives at `path.join(dir, basename)`.
  * On each save, if that file already exists it is renamed to `name + yyyy-MM-dd-hh-mm-ss + ext`,
  * with `-index` before `ext` if that name exists. When the number of related files exceeds `maxFileCount`,
@@ -31,15 +39,24 @@ export class RollingSnapshotWriter {
   private readonly dir: string;
   readonly basename: string;
   private readonly maxFileCount: number;
+  private readonly format: RollingSnapshotFormat;
   readonly basePath: string;
   private chain: Promise<void> = Promise.resolve();
 
   constructor(options: RollingSnapshotWriterOptions) {
-    const {dir, basename, maxFileCount = DEFAULT_MAX_FILE_COUNT} = options;
+    const {dir, basename, maxFileCount = DEFAULT_MAX_FILE_COUNT, format = 'json'} = options;
     this.dir = path.resolve(dir);
     this.basename = basename;
     this.basePath = path.join(this.dir, basename);
     this.maxFileCount = Math.max(1, maxFileCount);
+    this.format = format;
+  }
+
+  private serializeSnapshot(snapshot: object): string {
+    if (this.format === 'commonjs') {
+      return convertObjectToCjsExport(snapshot);
+    }
+    return JSON.stringify(snapshot, null, 2);
   }
 
   private bareNameAndExt(): {name: string; ext: string} {
@@ -134,7 +151,7 @@ export class RollingSnapshotWriter {
   }
 
   /**
-   * Serialize `snapshot` as JSON and write to `path.join(dir, basename)`.
+   * Serialize `snapshot` (JSON or CommonJS per `format`) and write to `path.join(dir, basename)`.
    * If that file already exists, it is renamed first to a second-precision timestamped name.
    * Serializes concurrent saves on this instance.
    */
@@ -143,7 +160,7 @@ export class RollingSnapshotWriter {
       .then(async () => {
         makeSureDirExist(this.dir);
         this.rollExistingActiveFileIfAny();
-        await fs.promises.writeFile(this.basePath, JSON.stringify(snapshot, null, 2), 'utf8');
+        await fs.promises.writeFile(this.basePath, this.serializeSnapshot(snapshot), 'utf8');
         this.enforceRetention();
       })
       .then(
