@@ -1,18 +1,14 @@
 import {Readable} from 'stream';
 import path from 'path';
 import {
-  killProcessByPid,
   spawnAndTryIpc,
-  isNumber,
-  waitFor,
-  get,
   createRollingSnapshotWriter,
   createRollingLogWriter,
-} from './external';
-import type {RollingSnapshotWriter, RollingLogWriter} from './external';
-import {getCpDir, getLogDir} from './service';
-import {CpWrapperRuntime, CpWrapperConfig, CpWrapperInfo, ResponseLog} from './types';
-import {SpawnConfig, SpawnAndTryIpcResponse} from './external';
+} from '../external';
+import type {RollingSnapshotWriter, RollingLogWriter} from '../external';
+import {getCpDir, getLogDir} from '../service';
+import {CpWrapperRuntime, CpWrapperConfig, CpWrapperInfo, ResponseLog} from '../types';
+import {SpawnConfig, SpawnAndTryIpcResponse} from '../external';
 
 const phaseConvertRule: Partial<{
   [phase in CpWrapperRuntime['phase']]: Array<CpWrapperRuntime['phase']>;
@@ -23,22 +19,20 @@ const phaseConvertRule: Partial<{
   toKill: ['running'],
   toRestart: ['onExit'],
 };
-function canChangePhase(to: CpWrapperRuntime['phase'], from: CpWrapperRuntime['phase']) {
+export function canChangePhase(to: CpWrapperRuntime['phase'], from: CpWrapperRuntime['phase']) {
   return !phaseConvertRule[to] || phaseConvertRule[to].includes(from);
 }
+
 /**
- * Manager for one process,
+ * Base class for child process management.
+ * Handles phase state machine, spawn, logging, and info persistence.
  */
-export class CpWrapper {
+export abstract class CpWrapperBase {
   config: CpWrapperConfig;
   phase: CpWrapperRuntime['phase'];
   lastAction: CpWrapperRuntime['lastAction'];
   retryCount: CpWrapperRuntime['retryCount'];
   cpResponse?: SpawnAndTryIpcResponse;
-  exitSignal: {
-    resolve?: () => void;
-    reject?: (err: Error) => void;
-  } = {};
   private logOutWriter?: RollingLogWriter;
   private logErrWriter?: RollingLogWriter;
   private infoWriter?: RollingSnapshotWriter;
@@ -91,7 +85,7 @@ export class CpWrapper {
     return info;
   }
 
-  private setupLogFile(stdout?: Readable, stderr?: Readable) {
+  protected setupLogFile(stdout?: Readable, stderr?: Readable) {
     const logDir = getLogDir(this.id);
     if (stdout) {
       this.logOutWriter = createRollingLogWriter({dir: logDir, basename: 'out.log'});
@@ -126,7 +120,7 @@ export class CpWrapper {
     });
   }
 
-  private cleanupLogResources() {
+  protected cleanupLogResources() {
     if (this.logOutWriter) {
       this.logOutWriter.end();
       this.logOutWriter = undefined;
@@ -137,7 +131,7 @@ export class CpWrapper {
     }
   }
 
-  private prepareStdioForLogging(spawnConfig: SpawnConfig): SpawnConfig {
+  protected prepareStdioForLogging(spawnConfig: SpawnConfig): SpawnConfig {
     const config = {...spawnConfig};
     if (!config.spawnOptions) {
       config.spawnOptions = {};
@@ -163,58 +157,17 @@ export class CpWrapper {
     };
   }
 
-  async onExit() {
-    const {config, exitSignal, cpResponse, lastAction} = this;
-    const {} = config;
-    this.changePhase('onExit');
-    if (cpResponse) {
-      cpResponse.deadTime = new Date().toLocaleString();
-    }
-    this.cleanupLogResources();
-    const {minInterval, maxCount} = get(config, ['retry'], {});
-    const letChildDie = () => {
-      this.changePhase('exited');
-      if (exitSignal.resolve) {
-        exitSignal.resolve();
-      }
-    };
-    const restartChild = async () => {
-      this.changePhase('toRestart');
-      await new Promise(res => {
-        process.nextTick(res);
-      });
-      if (isNumber(minInterval)) {
-        await waitFor(minInterval);
-      }
-      await this.trySpawn();
-      this.retryCount++;
-    };
-    if (lastAction === 'stop' || lastAction === 'restart') {
-      letChildDie();
-    } else if (lastAction === 'start') {
-      if (isNumber(maxCount) && this.retryCount < maxCount) {
-        restartChild();
-      } else {
-        letChildDie();
-      }
-    } else {
-      letChildDie();
-    }
-  }
-
-  async waitExitComplete() {
-    const {exitSignal} = this;
-    return new Promise<void>((res, rej) => {
-      exitSignal.resolve = res;
-      exitSignal.reject = rej;
-    });
-  }
+  /**
+   * Called after child process is spawned and running.
+   * Subclasses implement this to define post-spawn behavior
+   * (e.g. register exit handler, or disconnect & unref).
+   */
+  protected abstract afterSpawn(): void;
 
   async trySpawn() {
     const {config} = this;
-    /** Not throw erro when spawn child process and spawnConfig is null */
+    /** Not throw error when spawn child process and spawnConfig is null */
     if (!config || !config.spawnConfig) {
-      // throw new Error(`Please provide spawnConfig`);
       return null;
     }
     const {spawnConfig} = config;
@@ -226,47 +179,11 @@ export class CpWrapper {
       if (childProcess) {
         this.changePhase('running');
         this.setupLogFile(childProcess.stdout, childProcess.stderr);
-        childProcess.once('exit', code => {
-          this.onExit();
-        });
+        this.afterSpawn();
       }
       return this.cpResponse;
     } catch (err) {
       this.changePhase('exited');
     }
-  }
-
-  async start(config?: CpWrapperConfig) {
-    this.changePhase('toStart');
-    this.lastAction = 'start';
-    this.retryCount = 0;
-    if (config) {
-      this.setConfig(config);
-    }
-    await this.trySpawn();
-  }
-
-  async stop() {
-    const {cpResponse} = this;
-    if (!cpResponse) {
-      throw new Error(`cpResponse is null`);
-    }
-    const {childProcess} = cpResponse;
-    if (!childProcess) {
-      throw new Error(`childProcess is null`);
-    }
-    this.changePhase('toKill');
-    this.lastAction = 'stop';
-    await killProcessByPid([childProcess.pid]);
-    /** change status after killProcessByPid success */
-    await this.waitExitComplete();
-  }
-
-  async restart(config?: CpWrapperConfig) {
-    this.lastAction = 'restart';
-    if (canChangePhase('toKill', this.phase)) {
-      await this.stop();
-    }
-    await this.start(config);
   }
 }

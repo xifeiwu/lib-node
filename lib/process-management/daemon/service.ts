@@ -7,6 +7,7 @@ interface CheckSocketActivityConfig {
   closeActive?: boolean;
   closeInActive?: boolean;
 }
+
 export async function checkDaemonSocketActivity(
   socketPath: string,
   config?: CheckSocketActivityConfig

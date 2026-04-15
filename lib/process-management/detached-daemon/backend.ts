@@ -19,7 +19,7 @@ export async function startDetachedDaemon(daemonConfig: DaemonConfig, featureCon
       spawnConfig.maxWaitCpResInSec = MAX_WAIT_TIME_DEBUG_MODE;
     }
   }
-  const scriptPath = tryUseJsFile(path.resolve(__dirname, './cp-script/daemon.ts'));
+  const scriptPath = tryUseJsFile(path.resolve(__dirname, './cp-script.ts'));
   const spawnConfig4Daemon = getSpawnConfigByScript<DaemonConfig>(scriptPath, {
     /** args key is used for killing Zombie Daemon Process */
     params: [daemonKey],
@@ -36,8 +36,5 @@ export async function startDetachedDaemon(daemonConfig: DaemonConfig, featureCon
     childProcess.disconnect && childProcess.disconnect();
     childProcess.unref();
   }
-  // console.log(`typeof responseFromCp`);
-  // console.log(typeof responseFromCp);
-  // console.log(responseFromCp instanceof Error);
   return serializeSpawnResponse(spawnResponse);
 }

@@ -1,4 +1,4 @@
-export * from './utils/server';
-export * from './utils/client';
+export * from './detached-daemon/backend';
+export * from './detached-daemon/client';
 export * from './types';
 export {scanAllInfoRecords} from './service';

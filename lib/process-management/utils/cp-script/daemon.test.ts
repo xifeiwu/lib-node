@@ -6,7 +6,7 @@ import {logColorful, oneChatFromSocketClient, spawnAndTryIpc, getSpawnAndIpcConf
  */
 export async function runEmptyDaemon() {
   const daemonKey = 'runEmptyDaemon';
-  const spawnConfig4Daemon = getSpawnAndIpcConfigByScript<DaemonConfig>('daemon.ts', {
+  const spawnConfig4Daemon = getSpawnAndIpcConfigByScript<DaemonConfig>('../../detached-daemon/cp-script.ts', {
     params: ['runEmptyDaemon'],
     spawnOptions: {stdio: [0, 1, 2, 'ipc']},
     infoToCp: {
@@ -41,7 +41,7 @@ export async function daemonDebugServer() {
     ...spawnConfigDebugServer,
     id: daemonKey,
   };
-  const spawnConfig4Daemon = getSpawnAndIpcConfigByScript<DaemonConfig>('daemon.ts', {
+  const spawnConfig4Daemon = getSpawnAndIpcConfigByScript<DaemonConfig>('../../detached-daemon/cp-script.ts', {
     params: [daemonKey],
     spawnOptions: {stdio: [0, 1, 2, 'ipc']},
     infoToCp: {
@@ -72,7 +72,7 @@ export async function daemon2DebugServer() {
     infoToCp: {},
     maxWaitTime4Ipc: 600,
   });
-  const spawnConfig4Daemon = getSpawnAndIpcConfigByScript<DaemonConfig>('daemon.ts', {
+  const spawnConfig4Daemon = getSpawnAndIpcConfigByScript<DaemonConfig>('../../detached-daemon/cp-script.ts', {
     params: [daemonKey],
     spawnOptions: {stdio: [0, 1, 2, 'ipc']},
     infoToCp: {

@@ -12,8 +12,8 @@ src/daemon/service.ts  start(id)
   │
   ├─ id === daemonId → runDetachedDaemon()
   │   │
-  │   └─ startDetachedDaemon(config)           // utils/server.ts
-  │       ├─ getSpawnConfigByScript(daemon.ts)  // 指向入口脚本
+  │   └─ startDetachedDaemon(config)           // detached-daemon/backend.ts
+  │       ├─ getSpawnConfigByScript(cp-script.ts)  // 指向入口脚本
   │       ├─ spawnAndTryIpc(config)             // spawn 子进程 + IPC 传 DaemonConfig
   │       └─ disconnect + unref                 // 非 debug 模式下脱离父进程
   │
@@ -23,27 +23,26 @@ src/daemon/service.ts  start(id)
 ### Daemon 进程内部启动流程
 
 ```
-utils/cp-script/daemon.ts
+detached-daemon/cp-script.ts
   │
   ├─ waitIpcMessageOnce<DaemonConfig>()        // 接收 IPC 配置
   │
   ▼
-Daemon.startAsCp(config)                       // cp-cluster.ts
+DaemonSocketServer.startAsCp(config)           // daemon/socket-server.ts
   │
   ├─ 1. startConnectionServer()
   │   └─ startOneChatSocketServer(handleData, socketConfig)
   │
-  └─ 2. startAllCp()
+  └─ 2. startAllCp()                           // daemon/daemon.ts
       └─ cpConfigList.forEach → startCp(cpConfig)
-          └─ handleCommand({action: 'start', data: cpConfig})
-              └─ getCpWrapper(cpConfig) → new CpWrapper(config)
-                  └─ cpWrapper.start(config) → trySpawn()
+          └─ getCpWrapper(cpConfig) → new CpWrapperWithDaemon(config)
+              └─ cpWrapper.start(config) → trySpawn()
 ```
 
-## 2. 子进程 spawn 流程（CpWrapper.trySpawn）
+## 2. 子进程 spawn 流程（CpWrapperBase.trySpawn）
 
 ```
-trySpawn()
+trySpawn()                              // start-cp/base.ts
   │
   ├─ prepareStdioForLogging(spawnConfig)
   │   └─ stdio 中 'ignore' → 'pipe'
@@ -51,33 +50,35 @@ trySpawn()
   ├─ spawnAndTryIpc(config)
   │   └─ spawn 子进程 + 可选 IPC 握手
   │
-  ├─ changeStatus('running')          // 触发 persistInfo()
+  ├─ changePhase('running')           // 触发 persistInfo()
   │   └─ RollingSnapshotWriter.save → ~/.process-management/{cpId}/info/index.js
   │
   ├─ setupLogFile(stdout, stderr)
   │   └─ createRollingLogWriter → stdout/stderr.on('data') → writer.write
   │
-  └─ childProcess.once('exit') → onExit()
+  └─ afterSpawn()                     // 抽象方法，子类实现
+      ├─ CpWrapperWithDaemon: childProcess.once('exit') → onExit()
+      └─ CpWrapperIndividual: disconnect + unref
 ```
 
-## 3. 子进程退出流程（CpWrapper.onExit）
+## 3. 子进程退出流程（CpWrapperWithDaemon.onExit）
 
 ```
-onExit()
+onExit()                                // start-cp/with-daemon.ts
   │
-  ├─ changeStatus('onExit')           // 触发 persistInfo()
+  ├─ changePhase('onExit')             // 触发 persistInfo()
   ├─ cleanupLogResources()
-  │   └─ WriteStream end
+  │   └─ RollingLogWriter end
   │
   └─ 判断 lastAction:
       ├─ 'stop' / 'restart' → letChildDie()
-      │   └─ changeStatus('exited') + resolve exitSignal
+      │   └─ changePhase('exited') + resolve exitSignal
       ├─ 'start' + retryCount < maxCount → restartChild()
-      │   └─ changeStatus('toRestart') → waitFor(minInterval) → trySpawn()
+      │   └─ changePhase('toRestart') → waitFor(minInterval) → trySpawn()
       └─ else → letChildDie()
 ```
 
-## 4. Socket 命令处理（Daemon.handleCommand）
+## 4. Socket 命令处理（DaemonSocketServer.handleCommand）
 
 ```
 Socket 连接
@@ -135,22 +136,26 @@ log(id, options)
 
 ```
 lib/process-management/
-├── cp-cluster.ts          Daemon 类：Socket 服务、命令路由
-├── cp-wrapper.ts          CpWrapper：状态机、spawn/kill、重试、日志、状态持久化
-├── types.ts               所有 TypeScript 类型定义
-├── service.ts             序列化工具、信息加载函数
-├── external.ts            跨模块依赖聚合
-├── index.ts               公共导出
-├── utils/
-│   ├── server.ts          startDetachedDaemon
-│   ├── client.ts          SocketClientToDaemon
-│   ├── utils.ts           Socket 活跃性检查工具
-│   └── cp-script/
-│       └── daemon.ts      Daemon 进程入口脚本
+├── types.ts                所有 TypeScript 类型定义
+├── service.ts              序列化工具、信息加载函数
+├── external.ts             跨模块依赖聚合
+├── index.ts                公共导出
+├── start-cp/
+│   ├── base.ts             CpWrapperBase：状态机、spawn、日志、状态持久化（抽象基类）
+│   ├── with-daemon.ts      CpWrapperWithDaemon：在 Daemon 内使用，退出重试、生命周期管理
+│   └── individual.ts       CpWrapperIndividual：独立子进程，spawn 后 disconnect & unref
+├── daemon/
+│   ├── daemon.ts           Daemon 类：CpWrapper 编排（getDaemonInfo, startAllCp, stop, getCpWrapper）
+│   ├── socket-server.ts    DaemonSocketServer extends Daemon：Socket 服务 + handleCommand
+│   └── service.ts          Socket 活跃性检查工具
+├── detached-daemon/
+│   ├── cp-script.ts        Daemon 进程入口脚本
+│   ├── backend.ts          startDetachedDaemon
+│   └── client.ts           SocketClientToDaemon
 └── docs/
-    ├── design.md           关键 feature 的设计决策
-    ├── flow.md             逻辑流程概览（本文件）
-    └── chat.md             与 Claude 的交流记录
+    ├── design.md            关键 feature 的设计决策
+    ├── flow.md              逻辑流程概览（本文件）
+    └── chat.md              与 Claude 的交流记录
 
 运行时数据目录：
 ~/.process-management/
