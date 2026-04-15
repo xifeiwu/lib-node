@@ -12,7 +12,7 @@ import {
 } from './external';
 import type {RollingSnapshotWriter} from './external';
 import {serializeCpInfo, getCpDir, getLogOutFilePath, getLogErrorFilePath} from './service';
-import {CpWrapperStatus, CpInfo, CpWrapperConfig, CpWrapperInfo, LogMode, ResponseLog} from './types';
+import {CpWrapperStatus, CpInfo, CpWrapperConfig, CpWrapperInfo, ResponseLog} from './types';
 import {SpawnConfig} from './external';
 
 const statusConvertRule: Partial<{
@@ -40,9 +40,6 @@ export class CpWrapper {
     resolve?: () => void;
     reject?: (err: Error) => void;
   } = {};
-  logBuffer: string[] = [];
-  private stdoutPartial = '';
-  private stderrPartial = '';
   private logOutStream?: fs.WriteStream;
   private logErrStream?: fs.WriteStream;
   private logOutFilePath?: string;
@@ -56,7 +53,6 @@ export class CpWrapper {
     this.status = 'init';
     this.lastAction = 'none';
     this.retryCount = 0;
-    this.logBuffer = [];
   }
   get id() {
     return this.config.id;
@@ -74,9 +70,6 @@ export class CpWrapper {
       };
     }
   }
-  getLogMode(): LogMode {
-    return get(this.config, ['log', 'mode'], 'memory');
-  }
   changeStatus(status: CpWrapperStatus['status']) {
     if (!canChangeToStatus(status, this.status)) {
       throw new Error(`Can't change to status[${status}] from status[${this.status}]`);
@@ -87,13 +80,13 @@ export class CpWrapper {
   getInfo(): CpWrapperInfo {
     const {
       id,
-      config: {retry, log, spawnConfig: spawnOptions},
+      config: {retry, spawnConfig: spawnOptions},
       status,
       lastAction,
       retryCount,
       cpInfo,
     } = this;
-    const managerConfig = retry !== undefined || log !== undefined ? {retry, log} : undefined;
+    const managerConfig = retry !== undefined ? {retry} : undefined;
     const info: CpWrapperInfo = {
       id,
       managerConfig,
@@ -111,48 +104,6 @@ export class CpWrapper {
       });
     }
     return info;
-  }
-
-  private getMaxLogLines(): number {
-    return get(this.config, ['log', 'maxLines'], 1000);
-  }
-
-  private pushLog(source: 'stdout' | 'stderr', text: string) {
-    const maxLines = this.getMaxLogLines();
-    const timestamp = new Date().toLocaleString();
-    const lines = text.split('\n');
-    for (const line of lines) {
-      if (line.length > 0) {
-        this.logBuffer.push(`[${source}] ${timestamp} ${line}`);
-      }
-    }
-    if (this.logBuffer.length > maxLines) {
-      this.logBuffer = this.logBuffer.slice(-maxLines);
-    }
-  }
-
-  private setupLogCapture(stdout?: Readable, stderr?: Readable) {
-    const handleStream = (stream: Readable, source: 'stdout' | 'stderr') => {
-      const partialKey = source === 'stdout' ? 'stdoutPartial' : 'stderrPartial';
-      stream.on('data', (chunk: Buffer) => {
-        const text = this[partialKey] + chunk.toString();
-        const lines = text.split('\n');
-        this[partialKey] = lines.pop() ?? '';
-        for (const line of lines) {
-          if (line.length > 0) {
-            this.pushLog(source, line);
-          }
-        }
-      });
-      stream.on('end', () => {
-        if (this[partialKey]) {
-          this.pushLog(source, this[partialKey]);
-          this[partialKey] = '';
-        }
-      });
-    };
-    if (stdout) handleStream(stdout, 'stdout');
-    if (stderr) handleStream(stderr, 'stderr');
   }
 
   private setupLogFile(stdout?: Readable, stderr?: Readable) {
@@ -221,24 +172,12 @@ export class CpWrapper {
     return config;
   }
 
-  getLog(options?: {tail?: number}): ResponseLog['data'] {
-    const mode = this.getLogMode();
-    if (mode === 'file') {
-      return {
-        id: this.id,
-        mode: 'file',
-        outFile: this.logOutFilePath ?? '',
-        errorFile: this.logErrFilePath ?? '',
-      };
-    }
-    // memory mode
-    const {tail} = options ?? {};
-    let lines = this.logBuffer;
-    const total = lines.length;
-    if (tail !== undefined && tail < lines.length) {
-      lines = lines.slice(-tail);
-    }
-    return {id: this.id, mode: 'memory', lines: [...lines], total};
+  getLog(): ResponseLog['data'] {
+    return {
+      id: this.id,
+      outFile: this.logOutFilePath ?? '',
+      errorFile: this.logErrFilePath ?? '',
+    };
   }
 
   async onExit() {
@@ -300,8 +239,6 @@ export class CpWrapper {
     const logEnabledConfig = this.prepareStdioForLogging(spawnOptions);
     try {
       const spawnInfo = await spawnAndTryIpc(logEnabledConfig);
-      this.stdoutPartial = '';
-      this.stderrPartial = '';
       this.cpInfo = {
         spawnConfig: spawnOptions,
         ...spawnInfo,
@@ -309,12 +246,7 @@ export class CpWrapper {
       const {childProcess} = spawnInfo;
       if (childProcess) {
         this.changeStatus('running');
-        const logMode = this.getLogMode();
-        if (logMode === 'file') {
-          this.setupLogFile(childProcess.stdout, childProcess.stderr);
-        } else {
-          this.setupLogCapture(childProcess.stdout, childProcess.stderr);
-        }
+        this.setupLogFile(childProcess.stdout, childProcess.stderr);
         childProcess.once('exit', code => {
           this.onExit();
         });

@@ -54,11 +54,8 @@ trySpawn()
   ├─ changeStatus('running')          // 触发 persistInfo()
   │   └─ RollingSnapshotWriter.save → ~/.process-management/{cpId}/info/index.js
   │
-  ├─ 按 logMode 分支：
-  │   ├─ 'file'   → setupLogFile(stdout, stderr)
-  │   │   └─ createWriteStream → stdout.pipe / stderr.pipe
-  │   └─ default  → setupLogCapture(stdout, stderr)
-  │       └─ stream.on('data') → 行缓冲 → pushLog → logBuffer
+  ├─ setupLogFile(stdout, stderr)
+  │   └─ createWriteStream → stdout.pipe / stderr.pipe
   │
   └─ childProcess.once('exit') → onExit()
 ```
@@ -101,9 +98,8 @@ handleCommand 路由:
   │
   ├─ action: 'log'
   │   ├─ 解析 data → cpId + logOptions
-  │   └─ cpWrapper.getLog(logOptions)
-  │       ├─ memory → {mode:'memory', lines, total}
-  │       └─ file   → {mode:'file', outFile, errorFile}
+  │   └─ cpWrapper.getLog()
+  │       └─ {id, outFile, errorFile}
   │
   ├─ action: 'start'
   │   └─ getCpWrapper(data) → cpWrapper.start()
@@ -129,15 +125,10 @@ log(id, options)
   └─ socketClient.log({id, tail})
       └─ oneChatFromSocketClient → DaemonResponse
 
-根据 response.data.mode:
+根据 response.data:
   │
-  ├─ 'memory'
-  │   └─ 逐行 console.log(line)
-  │      "--- N of M lines ---"
-  │
-  └─ 'file'
-      └─ spawn('tail', ['-f', outFile, errorFile], {stdio: 'inherit'})
-         // 实时跟踪，长驻运行
+  └─ spawn('tail', ['-f', outFile, errorFile], {stdio: 'inherit'})
+     // 实时跟踪，长驻运行
 ```
 
 ## 6. 文件结构

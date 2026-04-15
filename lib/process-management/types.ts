@@ -1,8 +1,6 @@
 import {SpawnConfig, SpawnAndTryIpcResponse} from '../../types/child_process/common';
 import {TcpServerInfo, TcpServerConfig} from '../../types/net';
 
-export type LogMode = 'memory' | 'file';
-
 /**
  * Types for child process of Daemon
  */
@@ -17,12 +15,6 @@ export interface CpWrapperConfig {
     maxCount?: number;
     /** Minimum time before next spawn to make sure all resources are released for prvious cp. */
     minInterval?: number;
-  };
-  log?: {
-    /** Log collection mode. Default: 'memory' */
-    mode?: LogMode;
-    /** Maximum number of lines to keep in the ring buffer (memory mode only). Default: 1000 */
-    maxLines?: number;
   };
   spawnConfig?: SpawnConfig;
 }
@@ -53,7 +45,7 @@ export interface CpWrapperStatus {
 /** All info of Daemon's child process */
 export interface CpWrapperInfo<ResponseFromCp = any> {
   id: CpWrapperConfig['id'];
-  managerConfig?: Pick<CpWrapperConfig, 'retry' | 'log'>;
+  managerConfig?: Pick<CpWrapperConfig, 'retry'>;
   status: CpWrapperStatus;
   cpInfo?: SerializableCpInfo<ResponseFromCp>;
 }
@@ -102,14 +94,9 @@ export interface CommandCommon {
   action: ActionCommon;
   data?: string;
 }
-export interface LogQuery {
-  id?: string;
-  /** Number of most recent lines to return */
-  tail?: number;
-}
 export interface CommandLog {
   action: ActionLog;
-  data?: string | LogQuery;
+  data?: string;
 }
 export type Command = Command2Process | Command2Daemon | CommandCommon | CommandLog;
 
@@ -126,25 +113,14 @@ export interface ResponseInfo {
   type: ActionCommon;
   data?: DaemonInfo | CpWrapperInfo;
 }
-export interface ResponseLogMemory {
+export interface ResponseLog {
   type: 'log';
   data: {
     id: string;
-    mode: 'memory';
-    lines: string[];
-    total: number;
-  };
-}
-export interface ResponseLogFile {
-  type: 'log';
-  data: {
-    id: string;
-    mode: 'file';
     outFile: string;
     errorFile: string;
   };
 }
-export type ResponseLog = ResponseLogMemory | ResponseLogFile;
 export interface ResponseError {
   type: 'error';
   data: string;

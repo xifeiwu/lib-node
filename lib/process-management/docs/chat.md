@@ -10,38 +10,36 @@
 
 ### 实现
 
-**日志收集**：在 CpWrapper 中添加内存环形缓冲区（`logBuffer`），`prepareStdioForLogging` 将 stdio 的 `'ignore'` 替换为 `'pipe'`，通过 `setupLogCapture` 监听 stdout/stderr 的 `data` 事件，按行缓冲写入 buffer。
+**日志收集**：`prepareStdioForLogging` 将 stdio 的 `'ignore'` 替换为 `'pipe'`，stdout/stderr 通过 `setupLogFile` 写入 `~/.process-management/{cpId}/{pid}.out/.error`。
 
 ### 讨论要点
 
-- **行缓冲**：`data` 事件的 Buffer 不按行对齐，需要用 partial 变量累积不完整行
 - **stdio 处理**：只替换 `'ignore'`，不动 debug 模式的 `0`/`1`/`2`（否则会破坏终端直接输出）
-- **日志跨重启保留**：`logBuffer` 在子进程退出后不清空，方便查看崩溃前日志
 
 ---
 
-## 第二轮：重构 — per-CpWrapper 持久化 + 两种日志模式
+## 第二轮：重构 — per-CpWrapper 持久化 + 文件日志
 
 ### 问题分析
 
 第一轮实现存在两个局限：
 1. PID 持久化以 Daemon 为粒度，无法独立追踪每个子进程
-2. 日志只有 memory 模式，不适合大量日志
+2. 日志只在内存中，不适合大量日志
 
 ### 决策过程
 
-**文件模式的 PID 问题**：spawn 前不知道 PID，无法预先创建以 PID 命名的文件。解决方案：stdio 设为 `pipe`，spawn 后知道 PID 再创建 WriteStream 并 pipe。
+**文件日志的 PID 问题**：spawn 前不知道 PID，无法预先创建以 PID 命名的文件。解决方案：stdio 设为 `pipe`，spawn 后知道 PID 再创建 WriteStream 并 pipe。
 
 ### 最终方案
 
 详见 `design.md` 的第 4、5 节。
 
 主要改动文件：
-- `types.ts` — 新增 `LogMode`，`ResponseLog` 拆为两种模式
+- `types.ts` — 新增 `ResponseLog`
 - `service.ts` — 持久化函数从 per-Daemon 改为 per-CpWrapper
-- `cp-wrapper.ts` — 两种日志模式、自行持久化
+- `cp-wrapper.ts` — 文件日志、自行持久化
 - `cp-cluster.ts` — 删除旧 PID 逻辑
-- `src/daemon/command.ts` — log 命令支持 file tail
+- `src/daemon/command.ts` — log 命令使用 `tail -f` 跟踪日志文件
 
 ---
 

@@ -10,7 +10,7 @@ cp-wrapper:
 
 - config.id, 每一个通过cp-wrapper启动的child process应该包含一个id，来唯一标识这个process。
 - 保存cp的状态，支持spwan失败后，再次尝试spawn。
-- 提供处理cp stdout/stderr的输出，到文件或内存。
+- 提供处理cp stdout/stderr的输出，写入日志文件。
 
 - process-management的主要目的
 - 统一存储process的相关信息。可以方便查询进程的运行状态，避免重复启动服务。
@@ -66,21 +66,9 @@ init → toStart → toSpawn → running → toKill → onExit → exited
 - `stop` 和 `restart` 导致的退出不会触发自动重试，因为退出是预期的。
 - `retryCount` 在每次 `start` 时重置为 0。
 
-## 4. 两种日志模式
+## 4. 日志
 
-子进程的 stdout/stderr 支持两种收集模式，通过 `log.mode` 配置：
-
-### memory（默认）
-
-内存环形缓冲区，`maxLines` 行上限。适合轻量场景，日志通过 Socket 命令按需查询。
-
-**行缓冲设计**：`data` 事件的 Buffer 不按行对齐，用 `stdoutPartial`/`stderrPartial` 累积不完整行，遇到 `\n` 才写入 `logBuffer`。`end` 事件刷入剩余内容。
-
-**跨重启保留**：子进程退出后 `logBuffer` 不清空，可查看崩溃前日志。
-
-### file
-
-stdout/stderr 分别写入 `~/.process-management/{cpId}/{pid}.out` 和 `~/.process-management/{cpId}/{pid}.error`。用 `fs.createWriteStream` + `pipe`。
+子进程的 stdout/stderr 分别写入 `~/.process-management/{cpId}/{pid}.out` 和 `~/.process-management/{cpId}/{pid}.error`。用 `fs.createWriteStream` + `pipe`。
 
 **为什么用 pipe 而非 fd？** spawn 前不知道 PID（PID 是 spawn 后才有的），无法预先创建以 PID 命名的文件。所以 stdio 设为 `pipe`，spawn 后再创建 WriteStream 并 pipe 过去。
 

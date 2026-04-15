@@ -8,7 +8,7 @@
 - **多进程管理** — 单个 Daemon 可管理多个子进程，每个子进程有独立 `id`。
 - **启停控制** — 通过 Socket 命令 `start` / `stop` / `restart` 控制任意子进程。
 - **状态查询** — `ping` 探活 Daemon，`info` 查询 Daemon 或指定子进程的状态、PID、运行历史。
-- **两种日志模式** — `memory`（内存环形缓冲区）、`file`（写入文件）。
+- **日志持久化** — 子进程的 stdout/stderr 写入文件（`~/.process-management/{cpId}/{pid}.out/.error`）。
 - **自动重试** — 子进程意外退出后，按配置的 `retry.maxCount` / `retry.minInterval` 自动重启。
 - **状态持久化** — 每次状态变化时通过 `RollingSnapshotWriter` 将完整信息写入 `~/.process-management/{cpId}/info/index.js`。
 
@@ -25,7 +25,6 @@ const spawnInfo = await startDetachedDaemon({
     {
       id: 'my-service',
       retry: {maxCount: 3, minInterval: 5000},
-      log: {maxLines: 2000},
       spawnConfig: {
         command: 'node',
         args: ['./my-service.js'],
@@ -88,26 +87,17 @@ await client.log({id: 'my-service', tail: 50}); // 获取最近 50 行
     maxCount?: number;           // 最大重试次数
     minInterval?: number;        // 重试间隔（ms）
   };
-  log?: {
-    mode?: 'memory' | 'file';   // 日志模式，默认 'memory'
-    maxLines?: number;           // 日志缓冲区最大行数（memory 模式），默认 1000
-  };
   spawnConfig?: SpawnConfig;     // spawn 参数（command, args, spawnOptions, infoToCp 等）
 }
 ```
 
-## 日志模式
+## 日志
 
-通过 `log.mode` 配置，默认 `'memory'`：
-
-| 模式 | 存储位置 | CLI 查看方式 | 适用场景 |
-|------|---------|-------------|---------|
-| `memory` | 内存环形缓冲区 | 按需查询 | 轻量、少量日志 |
-| `file` | `~/.process-management/{cpId}/{pid}.out/.error` | `tail -f` | 大量日志、持久化 |
+子进程的 stdout/stderr 分别写入 `~/.process-management/{cpId}/{pid}.out` 和 `~/.process-management/{cpId}/{pid}.error`。
 
 - 子进程 stdio 中的 `'ignore'` 会被自动替换为 `'pipe'`，其他值不受影响。
-- memory 模式下缓冲区跨子进程重启保留，可查看崩溃前日志。
 - debug 模式下输出直接打印到终端，不经过日志收集。
+- CLI 端使用 `tail -f` 实时跟踪日志文件。
 
 ## 文件结构
 

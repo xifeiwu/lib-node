@@ -14,7 +14,6 @@ import {
   Command2Process,
   Action2Cp,
   DaemonResponse,
-  LogQuery,
 } from './types';
 import {CpWrapper} from './cp-wrapper';
 import {getErrorResponse, serializeSocketServerInfo} from './service';
@@ -225,20 +224,11 @@ export class Daemon {
         data: this.getInfo(cpConfigOrId),
       };
     } else if (action === 'log') {
-      let cpId: string;
-      let logOptions: {tail?: number} = {};
-      if (isString(cpConfigOrId)) {
-        cpId = cpConfigOrId as string;
-      } else if (isPlainObject(cpConfigOrId)) {
-        const query = cpConfigOrId as LogQuery;
-        cpId = query.id;
-        logOptions = {tail: query.tail};
-      }
-      const cpWrapper = this.getCpWrapper(cpId);
+      const cpWrapper = this.getCpWrapper(cpConfigOrId as string);
       if (!cpWrapper) {
         throw new Error(`child process is not found for log query`);
       }
-      const logData = cpWrapper.getLog(logOptions);
+      const logData = cpWrapper.getLog();
       return {
         type: 'log',
         data: logData,
