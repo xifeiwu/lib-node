@@ -41,5 +41,9 @@ export {CP, InfoToCp, TcpServerInfo, TcpServerConfig} from '../../types';
 // Re-export types used in daemon types
 export {SpawnConfig, SpawnAndTryIpcResponse} from '../../types/child_process/common';
 
+// From utils/write
+export {createRollingSnapshotWriter} from '../../utils/write/snapshot';
+export type {RollingSnapshotWriter} from '../../utils/write/snapshot';
+
 // From external (utility functions)
 export {isNumber, isObject, isPlainObject, isString, waitFor, get} from '../../external';

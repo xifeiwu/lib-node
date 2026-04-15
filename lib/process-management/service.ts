@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import {TcpServerInfo, DAEMON_ROOT_DIR, writeFileSync} from './external';
-import {CpInfo, PidInfoRecord, ResponseError, SerializableCpInfo} from './types';
+import {TcpServerInfo, DAEMON_ROOT_DIR} from './external';
+import {CpInfo, CpWrapperInfo, ResponseError, SerializableCpInfo} from './types';
 
 export const MAX_WAIT_TIME_DEBUG_MODE = 120;
 
@@ -37,12 +37,8 @@ export function getCpDir(cpId: string): string {
   return path.join(DAEMON_ROOT_DIR, cpId);
 }
 
-export function getPidInfoPath(cpId: string): string {
-  return path.join(getCpDir(cpId), 'info.json');
-}
-
-export function getLogSocketPath(cpId: string, pid: number): string {
-  return path.join(getCpDir(cpId), `${pid}.sock`);
+export function getProcessInfoPath(cpId: string): string {
+  return path.join(getCpDir(cpId), 'info', 'index.js');
 }
 
 export function getLogOutFilePath(cpId: string, pid: number): string {
@@ -53,26 +49,22 @@ export function getLogErrorFilePath(cpId: string, pid: number): string {
   return path.join(getCpDir(cpId), `${pid}.error`);
 }
 
-export function savePidInfo(cpId: string, record: PidInfoRecord): void {
-  const filePath = getPidInfoPath(cpId);
-  writeFileSync(filePath, JSON.stringify(record, null, 2));
-}
-
-export function loadPidInfo(cpId: string): PidInfoRecord | null {
-  const filePath = getPidInfoPath(cpId);
+export function loadInfo(cpId: string): CpWrapperInfo | null {
+  const filePath = getProcessInfoPath(cpId);
   if (!fs.existsSync(filePath)) {
     return null;
   }
   try {
-    return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+    delete require.cache[require.resolve(filePath)];
+    return require(filePath);
   } catch {
     return null;
   }
 }
 
-/** Scan all ~/.process-management/{cpId}/info.json, return records with status='running' */
-export function scanAllPidInfoRecords(): {cpId: string; record: PidInfoRecord}[] {
-  const results: {cpId: string; record: PidInfoRecord}[] = [];
+/** Scan all ~/.process-management/{cpId}/info/index.js, return those with status='running' */
+export function scanAllInfoRecords(): {cpId: string; info: CpWrapperInfo}[] {
+  const results: {cpId: string; info: CpWrapperInfo}[] = [];
   if (!fs.existsSync(DAEMON_ROOT_DIR)) {
     return results;
   }
@@ -82,9 +74,9 @@ export function scanAllPidInfoRecords(): {cpId: string; record: PidInfoRecord}[]
       continue;
     }
     const cpId = entry.name;
-    const record = loadPidInfo(cpId);
-    if (record && record.status === 'running') {
-      results.push({cpId, record});
+    const info = loadInfo(cpId);
+    if (info && info.status.status === 'running') {
+      results.push({cpId, info});
     }
   }
   return results;

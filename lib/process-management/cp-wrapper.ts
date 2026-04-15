@@ -1,24 +1,18 @@
 import {Readable} from 'stream';
-import net from 'net';
 import fs from 'fs';
-import {killProcessByPid, spawnAndTryIpc, isNumber, waitFor, get, makeSureDirExist} from './external';
+import path from 'path';
 import {
-  serializeCpInfo,
-  getCpDir,
-  getLogSocketPath,
-  getLogOutFilePath,
-  getLogErrorFilePath,
-  savePidInfo,
-} from './service';
-import {
-  CpWrapperStatus,
-  CpInfo,
-  CpWrapperConfig,
-  CpWrapperInfo,
-  LogMode,
-  PidInfoRecord,
-  ResponseLog,
-} from './types';
+  killProcessByPid,
+  spawnAndTryIpc,
+  isNumber,
+  waitFor,
+  get,
+  makeSureDirExist,
+  createRollingSnapshotWriter,
+} from './external';
+import type {RollingSnapshotWriter} from './external';
+import {serializeCpInfo, getCpDir, getLogOutFilePath, getLogErrorFilePath} from './service';
+import {CpWrapperStatus, CpInfo, CpWrapperConfig, CpWrapperInfo, LogMode, ResponseLog} from './types';
 import {SpawnConfig} from './external';
 
 const statusConvertRule: Partial<{
@@ -49,26 +43,14 @@ export class CpWrapper {
   logBuffer: string[] = [];
   private stdoutPartial = '';
   private stderrPartial = '';
-  isOrphan = false;
-  orphanPid?: number;
-  private logSocketServer?: net.Server;
-  private logSocketPath?: string;
-  private logSocketClients: Set<net.Socket> = new Set();
   private logOutStream?: fs.WriteStream;
   private logErrStream?: fs.WriteStream;
   private logOutFilePath?: string;
   private logErrFilePath?: string;
+  private infoWriter?: RollingSnapshotWriter;
   constructor(config: CpWrapperConfig) {
     this.resetStatus();
     this.setConfig(config);
-  }
-  static createOrphan(cpId: string, pid: number): CpWrapper {
-    const mgr = new CpWrapper({id: cpId});
-    mgr.isOrphan = true;
-    mgr.orphanPid = pid;
-    mgr.status = 'running';
-    mgr.lastAction = 'start';
-    return mgr;
   }
   resetStatus() {
     this.status = 'init';
@@ -100,6 +82,7 @@ export class CpWrapper {
       throw new Error(`Can't change to status[${status}] from status[${this.status}]`);
     }
     this.status = status;
+    this.persistInfo();
   }
   getInfo(): CpWrapperInfo {
     const {
@@ -110,8 +93,7 @@ export class CpWrapper {
       retryCount,
       cpInfo,
     } = this;
-    const managerConfig =
-      retry !== undefined || log !== undefined ? {retry, log} : undefined;
+    const managerConfig = retry !== undefined || log !== undefined ? {retry, log} : undefined;
     const info: CpWrapperInfo = {
       id,
       managerConfig,
@@ -173,28 +155,6 @@ export class CpWrapper {
     if (stderr) handleStream(stderr, 'stderr');
   }
 
-  private setupLogSocket(stdout?: Readable, stderr?: Readable) {
-    const pid = this.cpInfo?.childProcess?.pid;
-    if (!pid) return;
-    const socketPath = getLogSocketPath(this.id, pid);
-    makeSureDirExist(getCpDir(this.id));
-    this.logSocketPath = socketPath;
-    const server = net.createServer(client => {
-      this.logSocketClients.add(client);
-      client.on('close', () => this.logSocketClients.delete(client));
-      client.on('error', () => this.logSocketClients.delete(client));
-    });
-    server.listen(socketPath);
-    this.logSocketServer = server;
-    const broadcast = (chunk: Buffer) => {
-      for (const client of this.logSocketClients) {
-        client.write(chunk);
-      }
-    };
-    if (stdout) stdout.on('data', broadcast);
-    if (stderr) stderr.on('data', broadcast);
-  }
-
   private setupLogFile(stdout?: Readable, stderr?: Readable) {
     const pid = this.cpInfo?.childProcess?.pid;
     if (!pid) return;
@@ -213,55 +173,26 @@ export class CpWrapper {
     }
   }
 
-  persistPidInfo() {
-    const pid = this.cpInfo?.childProcess?.pid ?? this.orphanPid;
-    if (!pid) return;
-    const record: PidInfoRecord = {
-      pid,
-      startAt: this.cpInfo?.spawnTime ?? new Date().toISOString(),
-      status: 'running',
-      logMode: this.getLogMode(),
-      spawnConfig: this.config.spawnConfig,
-    };
-    try {
-      savePidInfo(this.id, record);
-    } catch (err) {
-      console.error(`Failed to persist process-info for ${this.id}:`, err);
+  private getInfoWriter(): RollingSnapshotWriter {
+    if (!this.infoWriter) {
+      this.infoWriter = createRollingSnapshotWriter({
+        dir: path.join(getCpDir(this.id), 'info'),
+        basename: 'index.js',
+        format: 'commonjs',
+      });
     }
+    return this.infoWriter;
   }
 
-  private updatePidInfoOnExit() {
-    const pid = this.cpInfo?.childProcess?.pid ?? this.orphanPid;
-    if (!pid) return;
-    const record: PidInfoRecord = {
-      pid,
-      startAt: this.cpInfo?.spawnTime ?? new Date().toISOString(),
-      status: 'exited',
-      logMode: this.getLogMode(),
-      spawnConfig: this.config.spawnConfig,
-      exitAt: new Date().toISOString(),
-    };
-    try {
-      savePidInfo(this.id, record);
-    } catch (err) {
-      console.error(`Failed to update process-info on exit for ${this.id}:`, err);
-    }
+  persistInfo() {
+    this.getInfoWriter().save(this.getInfo(), err => {
+      if (err) {
+        console.error(`Failed to persist info for ${this.id}:`, err);
+      }
+    });
   }
 
   private cleanupLogResources() {
-    if (this.logSocketServer) {
-      for (const client of this.logSocketClients) {
-        client.destroy();
-      }
-      this.logSocketClients.clear();
-      this.logSocketServer.close();
-      this.logSocketServer = undefined;
-      // Clean up socket file
-      if (this.logSocketPath) {
-        try { fs.unlinkSync(this.logSocketPath); } catch {}
-        this.logSocketPath = undefined;
-      }
-    }
     if (this.logOutStream) {
       this.logOutStream.end();
       this.logOutStream = undefined;
@@ -292,12 +223,6 @@ export class CpWrapper {
 
   getLog(options?: {tail?: number}): ResponseLog['data'] {
     const mode = this.getLogMode();
-    if (this.isOrphan) {
-      return {id: this.id, mode: 'memory', lines: ['[orphan process - no log capture available]'], total: 1};
-    }
-    if (mode === 'socket') {
-      return {id: this.id, mode: 'socket', socketPath: this.logSocketPath ?? ''};
-    }
     if (mode === 'file') {
       return {
         id: this.id,
@@ -324,7 +249,6 @@ export class CpWrapper {
       cpInfo.deadTime = new Date().toLocaleString();
     }
     this.cleanupLogResources();
-    this.updatePidInfoOnExit();
     const {minInterval, maxCount} = get(config, ['retry'], {});
     const letChildDie = () => {
       this.changeStatus('exited');
@@ -365,7 +289,6 @@ export class CpWrapper {
   }
 
   async trySpawn() {
-    if (this.isOrphan) return null;
     const {config, cpInfo} = this;
     /** Not throw erro when spawn child process and spawnConfig is null */
     if (!config || !config.spawnConfig) {
@@ -387,14 +310,11 @@ export class CpWrapper {
       if (childProcess) {
         this.changeStatus('running');
         const logMode = this.getLogMode();
-        if (logMode === 'socket') {
-          this.setupLogSocket(childProcess.stdout, childProcess.stderr);
-        } else if (logMode === 'file') {
+        if (logMode === 'file') {
           this.setupLogFile(childProcess.stdout, childProcess.stderr);
         } else {
           this.setupLogCapture(childProcess.stdout, childProcess.stderr);
         }
-        this.persistPidInfo();
         childProcess.once('exit', code => {
           this.onExit();
         });
@@ -406,9 +326,6 @@ export class CpWrapper {
   }
 
   async start(config?: CpWrapperConfig) {
-    if (this.isOrphan) {
-      throw new Error(`Cannot start an orphan process (${this.id}), only stop is supported`);
-    }
     this.changeStatus('toStart');
     this.lastAction = 'start';
     this.retryCount = 0;
@@ -419,17 +336,6 @@ export class CpWrapper {
   }
 
   async stop() {
-    if (this.isOrphan) {
-      if (!this.orphanPid) {
-        throw new Error(`orphan pid is null`);
-      }
-      this.status = 'toKill';
-      this.lastAction = 'stop';
-      await killProcessByPid([this.orphanPid]);
-      this.status = 'exited';
-      this.updatePidInfoOnExit();
-      return;
-    }
     const {cpInfo} = this;
     if (!cpInfo) {
       throw new Error(`cpInfo is null`);
@@ -446,9 +352,6 @@ export class CpWrapper {
   }
 
   async restart(config?: CpWrapperConfig) {
-    if (this.isOrphan) {
-      throw new Error(`Cannot restart an orphan process (${this.id}), only stop is supported`);
-    }
     this.lastAction = 'restart';
     if (canChangeToStatus('toKill', this.status)) {
       await this.stop();

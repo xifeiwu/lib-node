@@ -58,16 +58,9 @@ export class Daemon {
    */
   async startAsCp(config: DaemonConfig) {
     this.config = config;
-    const {id, orphans} = this.config;
+    const {id} = this.config;
     if (!isString(id)) {
       throw new Error(`id property is not set on daemon config.`);
-    }
-    // Adopt orphan processes passed from CLI layer
-    if (Array.isArray(orphans)) {
-      for (const orphan of orphans) {
-        const cpWrapper = CpWrapper.createOrphan(orphan.cpId, orphan.pid);
-        this.cpWrapperMap[orphan.cpId] = cpWrapper;
-      }
     }
     await this.startConnectionServer();
     await this.startAllCp();

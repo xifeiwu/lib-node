@@ -1,7 +1,7 @@
 import {SpawnConfig, SpawnAndTryIpcResponse} from '../../types/child_process/common';
 import {TcpServerInfo, TcpServerConfig} from '../../types/net';
 
-export type LogMode = 'memory' | 'socket' | 'file';
+export type LogMode = 'memory' | 'file';
 
 /**
  * Types for child process of Daemon
@@ -58,11 +58,6 @@ export interface CpWrapperInfo<ResponseFromCp = any> {
   cpInfo?: SerializableCpInfo<ResponseFromCp>;
 }
 
-export interface OrphanInfo {
-  cpId: string;
-  pid: number;
-}
-
 export interface DaemonConfig {
   /**
    * To identify daemon process,
@@ -75,8 +70,6 @@ export interface DaemonConfig {
     socketConfig?: TcpServerConfig;
   };
   cpWrapperConfigList?: CpWrapperConfig[];
-  /** Orphan processes detected by CLI layer, to be adopted by daemon */
-  orphans?: OrphanInfo[];
 }
 
 export interface DaemonConnectInfo {
@@ -142,14 +135,6 @@ export interface ResponseLogMemory {
     total: number;
   };
 }
-export interface ResponseLogSocket {
-  type: 'log';
-  data: {
-    id: string;
-    mode: 'socket';
-    socketPath: string;
-  };
-}
 export interface ResponseLogFile {
   type: 'log';
   data: {
@@ -159,7 +144,7 @@ export interface ResponseLogFile {
     errorFile: string;
   };
 }
-export type ResponseLog = ResponseLogMemory | ResponseLogSocket | ResponseLogFile;
+export type ResponseLog = ResponseLogMemory | ResponseLogFile;
 export interface ResponseError {
   type: 'error';
   data: string;
@@ -175,15 +160,5 @@ export type DaemonResponse =
   | ResponseLog
   | ResponseError
   | ResponseUnknown;
-
-/** Per-CpWrapper PID info persisted to disk */
-export interface PidInfoRecord {
-  pid: number;
-  startAt: string;
-  status: 'running' | 'exited';
-  logMode: LogMode;
-  spawnConfig?: SpawnConfig;
-  exitAt?: string;
-}
 
 export type CpStatusChangeListener = (event: {type: 'spawn' | 'exit'; cpId: string; pid?: number}) => void;

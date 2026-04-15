@@ -1,6 +1,6 @@
 # Intro
 
-在后台管理一组长期运行的子进程：启动、停止、重启、查看状态、获取日志，并在 Daemon 异常退出后自动清理孤儿进程。
+在后台管理一组长期运行的子进程：启动、停止、重启、查看状态、获取日志。
 
 ## 功能
 
@@ -8,26 +8,24 @@
 - **多进程管理** — 单个 Daemon 可管理多个子进程，每个子进程有独立 `id`。
 - **启停控制** — 通过 Socket 命令 `start` / `stop` / `restart` 控制任意子进程。
 - **状态查询** — `ping` 探活 Daemon，`info` 查询 Daemon 或指定子进程的状态、PID、运行历史。
-- **三种日志模式** — `memory`（内存环形缓冲区）、`socket`（Unix socket 实时流）、`file`（写入文件）。
+- **两种日志模式** — `memory`（内存环形缓冲区）、`file`（写入文件）。
 - **自动重试** — 子进程意外退出后，按配置的 `retry.maxCount` / `retry.minInterval` 自动重启。
-- **孤儿进程处理** — 启动时检测遗留的孤儿进程，交互式选择收养（Adopt）或终止（Kill）。
+- **状态持久化** — 每次状态变化时通过 `RollingSnapshotWriter` 将完整信息写入 `~/.process-management/{cpId}/info/index.js`。
 
 ## 使用方式
 
 ### 启动 Daemon
 
 ```typescript
-import {startDetachedDaemon} from './lib/daemon';
+import {startDetachedDaemon} from './lib/process-management';
 
 const spawnInfo = await startDetachedDaemon({
   id: 'my-daemon',
   cpWrapperConfigList: [
     {
       id: 'my-service',
-      managerConfig: {
-        retry: {maxCount: 3, minInterval: 5000},
-        log: {maxLines: 2000},
-      },
+      retry: {maxCount: 3, minInterval: 5000},
+      log: {maxLines: 2000},
       spawnConfig: {
         command: 'node',
         args: ['./my-service.js'],
@@ -41,7 +39,7 @@ const spawnInfo = await startDetachedDaemon({
 ### 连接并控制
 
 ```typescript
-import {SocketClientToDaemon} from './lib/daemon';
+import {SocketClientToDaemon} from './lib/process-management';
 
 const client = new SocketClientToDaemon({path: 'my-daemon'});
 
@@ -86,15 +84,13 @@ await client.log({id: 'my-service', tail: 50}); // 获取最近 50 行
 ```typescript
 {
   id: string;                    // 子进程标识
-  managerConfig?: {
-    retry?: {
-      maxCount?: number;         // 最大重试次数
-      minInterval?: number;      // 重试间隔（ms）
-    };
-    log?: {
-      mode?: 'memory' | 'socket' | 'file'; // 日志模式，默认 'memory'
-      maxLines?: number;         // 日志缓冲区最大行数（memory 模式），默认 1000
-    };
+  retry?: {
+    maxCount?: number;           // 最大重试次数
+    minInterval?: number;        // 重试间隔（ms）
+  };
+  log?: {
+    mode?: 'memory' | 'file';   // 日志模式，默认 'memory'
+    maxLines?: number;           // 日志缓冲区最大行数（memory 模式），默认 1000
   };
   spawnConfig?: SpawnConfig;     // spawn 参数（command, args, spawnOptions, infoToCp 等）
 }
@@ -102,36 +98,25 @@ await client.log({id: 'my-service', tail: 50}); // 获取最近 50 行
 
 ## 日志模式
 
-通过 `managerConfig.log.mode` 配置，默认 `'memory'`：
+通过 `log.mode` 配置，默认 `'memory'`：
 
 | 模式 | 存储位置 | CLI 查看方式 | 适用场景 |
 |------|---------|-------------|---------|
 | `memory` | 内存环形缓冲区 | 按需查询 | 轻量、少量日志 |
-| `socket` | `~/.process-management/{cpId}/{pid}.sock` | 实时流 `socket.pipe(stdout)` | 实时监控 |
 | `file` | `~/.process-management/{cpId}/{pid}.out/.error` | `tail -f` | 大量日志、持久化 |
 
 - 子进程 stdio 中的 `'ignore'` 会被自动替换为 `'pipe'`，其他值不受影响。
 - memory 模式下缓冲区跨子进程重启保留，可查看崩溃前日志。
 - debug 模式下输出直接打印到终端，不经过日志收集。
 
-## 孤儿进程处理
-
-Daemon 异常退出后，其子进程变为孤儿进程。下次启动 Daemon 时交互式处理：
-
-1. 扫描 `~/.process-management/{cpId}/info.json`，找到 `status='running'` 的记录。
-2. 用 `process.kill(pid, 0)` 检查是否存活。
-3. 对存活的孤儿进程，提示用户选择：
-   - **Adopt** — 收养到新 Daemon，仅跟踪 PID 并支持 stop（无日志、无自动重试）。
-   - **Kill** — 立即终止。
-
 ## 文件结构
 
 ```
-lib/daemon/
-├── daemon.ts          Daemon 类：Socket 服务、命令路由、orphan 收养
-├── cp-wrapper.ts      CpWrapper：状态机、spawn/kill、重试、三种日志模式、PID 持久化
+lib/process-management/
+├── cp-cluster.ts      Daemon 类：Socket 服务、命令路由
+├── cp-wrapper.ts      CpWrapper：状态机、spawn/kill、重试、日志、状态持久化
 ├── types.ts           所有 TypeScript 类型定义
-├── service.ts         序列化工具、per-CpWrapper 持久化函数
+├── service.ts         序列化工具、信息加载函数
 ├── external.ts        跨模块依赖聚合
 ├── index.ts           公共导出
 ├── utils/
