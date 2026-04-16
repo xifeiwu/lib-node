@@ -89,6 +89,8 @@ function cleanInfoDir(dir: string): void {
   }
 }
 
+const PROCESS_INFO_FILE_NAME = 'index.json';
+
 /**
  * Base class for child process management.
  * Handles phase state machine, spawn, and info persistence.
@@ -159,7 +161,7 @@ export abstract class LaunchCpBase {
   }
 
   private getInfoFilePath(): string {
-    return path.join(this.getInfoDir(), 'index.json');
+    return path.join(this.getInfoDir(), PROCESS_INFO_FILE_NAME);
   }
 
   /**
@@ -189,7 +191,7 @@ export abstract class LaunchCpBase {
       cleanInfoDir(dir);
       this.infoWriter = createRollingSnapshotWriter({
         dir,
-        basename: 'index.js',
+        basename: PROCESS_INFO_FILE_NAME,
         format: 'json',
       });
     }

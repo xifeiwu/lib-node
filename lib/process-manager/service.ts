@@ -30,7 +30,7 @@ export function getCpDir(cpId: string): string {
 }
 
 export function getProcessInfoPath(cpId: string): string {
-  return path.join(getCpDir(cpId), 'info', 'index.js');
+  return path.join(getCpDir(cpId), 'info', 'index.json');
 }
 
 export function getLogDir(cpId: string): string {
@@ -58,7 +58,7 @@ export function loadInfo(cpId: string): LaunchCpInfo | null {
   }
 }
 
-/** Scan all ~/.process-management/{cpId}/info/index.js, return those with runtime.phase === 'running' */
+/** Scan all ~/.process-manager/{cpId}/info/index.json, return those with runtime.phase === 'running' */
 export function scanAllInfoRecords(): {cpId: string; info: LaunchCpInfo}[] {
   const results: {cpId: string; info: LaunchCpInfo}[] = [];
   if (!fs.existsSync(DAEMON_ROOT_DIR)) {

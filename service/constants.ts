@@ -1,9 +1,9 @@
 import path from 'path';
-export const PROCESS_MANAGEMENT_ROOT_DIR = path.join(process.env.HOME, '.process-management');
+export const PROCESS_MANAGER_ROOT_DIR = path.join(process.env.HOME, '.process-manager');
 /**
  * @deprecated
  */
-export const DAEMON_SOCKET_DIR = PROCESS_MANAGEMENT_ROOT_DIR;//path.join(PROCESS_MANAGEMENT_ROOT_DIR, 'sockets');
+export const DAEMON_SOCKET_DIR = PROCESS_MANAGER_ROOT_DIR;
 /**
  * @deprecated
  */
