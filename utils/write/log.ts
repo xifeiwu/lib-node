@@ -92,9 +92,7 @@ export class RollingLogWriter {
   /** Match archive files for this basename (not the active filename itself). */
   private archiveNamePattern(): RegExp {
     const {name, ext} = this.bareNameAndExt();
-    return new RegExp(
-      `^${escapeRegex(name)}\\d{4}-\\d{2}-\\d{2}(-\\d+)?${escapeRegex(ext)}$`
-    );
+    return new RegExp(`^${escapeRegex(name)}\\d{4}-\\d{2}-\\d{2}(-\\d+)?${escapeRegex(ext)}$`);
   }
 
   private collectRelatedFiles(): {full: string; mtimeMs: number; size: number}[] {

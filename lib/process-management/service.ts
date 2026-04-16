@@ -51,8 +51,8 @@ export function loadInfo(cpId: string): LaunchCpInfo | null {
     return null;
   }
   try {
-    delete require.cache[require.resolve(filePath)];
-    return require(filePath);
+    const content = fs.readFileSync(filePath, 'utf8');
+    return JSON.parse(content);
   } catch {
     return null;
   }

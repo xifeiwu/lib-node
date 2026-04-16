@@ -1,3 +1,4 @@
+import fs from 'fs';
 import path from 'path';
 import {spawnAndTryIpc, createRollingSnapshotWriter} from '../external';
 import type {RollingSnapshotWriter} from '../external';
@@ -50,6 +51,42 @@ export function validateAndApplyStdio(spawnConfig: SpawnConfig, defaultStdio: an
   }
   config.spawnOptions.stdio = stdio;
   return config;
+}
+
+function isProcessAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function loadInfoFromFile(filePath: string): LaunchCpInfo | null {
+  if (!fs.existsSync(filePath)) {
+    return null;
+  }
+  try {
+    const content = fs.readFileSync(filePath, 'utf8');
+    return JSON.parse(content);
+  } catch {
+    return null;
+  }
+}
+
+/** Remove all files in the info directory (rolling snapshots from previous runs). */
+function cleanInfoDir(dir: string): void {
+  if (!fs.existsSync(dir)) {
+    return;
+  }
+  const entries = fs.readdirSync(dir);
+  for (const entry of entries) {
+    try {
+      fs.unlinkSync(path.join(dir, entry));
+    } catch {
+      /* ignore */
+    }
+  }
 }
 
 /**
@@ -117,12 +154,42 @@ export abstract class LaunchCpBase {
     return info;
   }
 
+  private getInfoDir(): string {
+    return path.join(getCpDir(this.id), 'info');
+  }
+
+  private getInfoFilePath(): string {
+    return path.join(this.getInfoDir(), 'index.js');
+  }
+
+  /**
+   * Check if a process with the same cpId is already running.
+   * Reads the persisted info file and verifies the pid is alive.
+   * @throws if a process with this cpId is already running
+   */
+  protected checkExistingProcess(): void {
+    const info = loadInfoFromFile(this.getInfoFilePath());
+    if (!info) {
+      return;
+    }
+    const phase = info.runtime?.phase;
+    const pid = info.spawnInfo?.pid;
+    if (phase === 'running' && pid && isProcessAlive(pid)) {
+      throw new Error(
+        `Process with id '${this.id}' is already running (pid: ${pid}). ` +
+          `Stop the existing process before starting a new one.`
+      );
+    }
+  }
+
   private getInfoWriter(): RollingSnapshotWriter {
     if (!this.infoWriter) {
+      const dir = this.getInfoDir();
+      cleanInfoDir(dir);
       this.infoWriter = createRollingSnapshotWriter({
-        dir: path.join(getCpDir(this.id), 'info'),
+        dir,
         basename: 'index.js',
-        format: 'commonjs',
+        format: 'json',
       });
     }
     return this.infoWriter;
@@ -133,6 +200,19 @@ export abstract class LaunchCpBase {
       if (err) {
         console.error(`Failed to persist info for ${this.id}:`, err);
       }
+    });
+  }
+
+  /** Wait for all queued info writes to flush to disk. */
+  flushInfo(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.getInfoWriter().flush(err => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
     });
   }
 

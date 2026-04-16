@@ -34,6 +34,7 @@ export class LaunchCpDetached extends LaunchCpBase {
   }
 
   async start(config?: LaunchCpConfig) {
+    this.checkExistingProcess();
     this.changePhase('toStart');
     this.lastAction = 'start';
     this.retryCount = 0;

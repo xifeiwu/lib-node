@@ -6,8 +6,8 @@ import {convertObjectToCjsExport} from '../../transform';
 
 const DEFAULT_MAX_FILE_COUNT = 100;
 
-/** Format segment for rolled snapshot filenames: `yyyy-MM-dd-hh-mm-ss` (local time, second precision). */
-const ROLL_TIMESTAMP_FMT = 'yyyy-MM-dd-hh-mm-ss';
+/** Format segment for rolled snapshot filenames: `yyyy-MM-dd-hh-mm-ss.SSS` (local time, millisecond precision). */
+const ROLL_TIMESTAMP_FMT = '-yyyy-MM-dd-hh-mm-ss.SSS';
 
 export type RollingSnapshotFormat = 'json' | 'commonjs';
 

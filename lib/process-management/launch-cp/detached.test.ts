@@ -23,7 +23,8 @@ export async function runDetachedDebugServer() {
   const info = cpWrapper.getInfo();
   logColorful({}, 'LaunchCpDetached info:', info);
 
-  /** Verify persisted info can be loaded */
+  /** Wait for async info writes to flush, then verify persisted info */
+  await cpWrapper.flushInfo();
   const persisted = loadInfo(cpId);
   logColorful({}, 'Persisted info:', persisted);
 }
