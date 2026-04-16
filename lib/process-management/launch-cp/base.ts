@@ -159,7 +159,7 @@ export abstract class LaunchCpBase {
   }
 
   private getInfoFilePath(): string {
-    return path.join(this.getInfoDir(), 'index.js');
+    return path.join(this.getInfoDir(), 'index.json');
   }
 
   /**
@@ -174,7 +174,8 @@ export abstract class LaunchCpBase {
     }
     const phase = info.runtime?.phase;
     const pid = info.spawnInfo?.pid;
-    if (phase === 'running' && pid && isProcessAlive(pid)) {
+    // if (phase === 'running' && pid && isProcessAlive(pid)) {
+    if (pid && isProcessAlive(pid)) {
       throw new Error(
         `Process with id '${this.id}' is already running (pid: ${pid}). ` +
           `Stop the existing process before starting a new one.`
