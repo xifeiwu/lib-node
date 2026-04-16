@@ -2,10 +2,10 @@ import {CpWrapperConfig} from '../types';
 import {CpWrapperBase} from './base';
 
 /**
- * CpWrapper for standalone child processes.
+ * CpWrapper for detached child processes.
  * After spawn, the child process is disconnected and unref'd so the parent can exit.
  */
-export class CpWrapperIndividual extends CpWrapperBase {
+export class CpWrapperDetached extends CpWrapperBase {
   protected afterSpawn() {
     const {childProcess} = this.cpResponse;
     if (childProcess) {

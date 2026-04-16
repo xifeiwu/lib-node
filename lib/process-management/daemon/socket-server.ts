@@ -15,7 +15,7 @@ import {
   DaemonResponse,
 } from '../types';
 import {getErrorResponse, serializeSocketServerInfo} from '../service';
-import {Daemon} from './daemon';
+import {Daemon} from './core';
 
 export class DaemonSocketServer extends Daemon {
   connectInfo: DaemonConnectInfo = {};
