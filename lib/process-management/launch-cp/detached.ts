@@ -1,6 +1,6 @@
-import {CpWrapperConfig, CpWrapperType} from '../types';
+import {LaunchCpConfig, LaunchCpType} from '../types';
 import {SpawnConfig} from '../external';
-import {CpWrapperBase, validateAndApplyStdio} from './base';
+import {LaunchCpBase, validateAndApplyStdio} from './base';
 
 /**
  * Default stdio for detached mode:
@@ -9,12 +9,12 @@ import {CpWrapperBase, validateAndApplyStdio} from './base';
 const DEFAULT_STDIO = ['ignore', 'ignore', 'ignore', 'ipc'];
 
 /**
- * CpWrapper for detached child processes.
+ * LaunchCp for detached child processes.
  * Spawns with `detached: true`, then disconnects IPC and unrefs
  * so the parent process can exit while the child keeps running.
  */
-export class CpWrapperDetached extends CpWrapperBase {
-  readonly type: CpWrapperType = 'detached';
+export class LaunchCpDetached extends LaunchCpBase {
+  readonly type: LaunchCpType = 'detached';
 
   protected prepareSpawnConfig(spawnConfig: SpawnConfig): SpawnConfig {
     const config = validateAndApplyStdio(spawnConfig, DEFAULT_STDIO);
@@ -33,7 +33,7 @@ export class CpWrapperDetached extends CpWrapperBase {
     }
   }
 
-  async start(config?: CpWrapperConfig) {
+  async start(config?: LaunchCpConfig) {
     this.changePhase('toStart');
     this.lastAction = 'start';
     this.retryCount = 0;

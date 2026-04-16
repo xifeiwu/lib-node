@@ -5,11 +5,11 @@ import {
 } from '../external';
 import type {RollingSnapshotWriter} from '../external';
 import {getCpDir} from '../service';
-import {CpWrapperRuntime, CpWrapperConfig, CpWrapperInfo, CpWrapperType} from '../types';
+import {LaunchCpRuntime, LaunchCpConfig, LaunchCpInfo, LaunchCpType} from '../types';
 import {SpawnConfig, SpawnAndTryIpcResponse} from '../external';
 
 const phaseConvertRule: Partial<{
-  [phase in CpWrapperRuntime['phase']]: Array<CpWrapperRuntime['phase']>;
+  [phase in LaunchCpRuntime['phase']]: Array<LaunchCpRuntime['phase']>;
 }> = {
   toStart: ['init', 'exited'],
   toSpawn: ['init', 'toStart', 'toRestart', 'exited'],
@@ -17,7 +17,7 @@ const phaseConvertRule: Partial<{
   toKill: ['running'],
   toRestart: ['onExit'],
 };
-export function canChangePhase(to: CpWrapperRuntime['phase'], from: CpWrapperRuntime['phase']) {
+export function canChangePhase(to: LaunchCpRuntime['phase'], from: LaunchCpRuntime['phase']) {
   return !phaseConvertRule[to] || phaseConvertRule[to].includes(from);
 }
 
@@ -64,15 +64,15 @@ export function validateAndApplyStdio(
  * Base class for child process management.
  * Handles phase state machine, spawn, and info persistence.
  */
-export abstract class CpWrapperBase {
-  abstract readonly type: CpWrapperType;
-  config: CpWrapperConfig;
-  phase: CpWrapperRuntime['phase'];
-  lastAction: CpWrapperRuntime['lastAction'];
-  retryCount: CpWrapperRuntime['retryCount'];
+export abstract class LaunchCpBase {
+  abstract readonly type: LaunchCpType;
+  config: LaunchCpConfig;
+  phase: LaunchCpRuntime['phase'];
+  lastAction: LaunchCpRuntime['lastAction'];
+  retryCount: LaunchCpRuntime['retryCount'];
   cpResponse?: SpawnAndTryIpcResponse;
   private infoWriter?: RollingSnapshotWriter;
-  constructor(config: CpWrapperConfig) {
+  constructor(config: LaunchCpConfig) {
     this.resetPhase();
     this.setConfig(config);
   }
@@ -87,7 +87,7 @@ export abstract class CpWrapperBase {
   getConfig() {
     return this.config;
   }
-  setConfig(config: CpWrapperConfig) {
+  setConfig(config: LaunchCpConfig) {
     if (!this.config) {
       this.config = config;
     } else {
@@ -97,16 +97,16 @@ export abstract class CpWrapperBase {
       };
     }
   }
-  changePhase(next: CpWrapperRuntime['phase']) {
+  changePhase(next: LaunchCpRuntime['phase']) {
     if (!canChangePhase(next, this.phase)) {
       throw new Error(`Can't change to phase[${next}] from phase[${this.phase}]`);
     }
     this.phase = next;
     this.persistInfo();
   }
-  getInfo(): CpWrapperInfo {
+  getInfo(): LaunchCpInfo {
     const {type, config, phase, lastAction, retryCount, cpResponse} = this;
-    const info: CpWrapperInfo = {
+    const info: LaunchCpInfo = {
       type,
       config,
       runtime: {

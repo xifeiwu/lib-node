@@ -4,7 +4,7 @@ import {TcpServerInfo, TcpServerConfig} from '../../types/net';
 /**
  * Types for child process of Daemon
  */
-export interface CpWrapperConfig {
+export interface LaunchCpConfig {
   /** id used to identify the child process  */
   /** TODO: encodeURIComponent for id before use it as folder or file name */
   id: string;
@@ -20,7 +20,7 @@ export interface CpWrapperConfig {
 }
 
 /** Mutable runtime snapshot for one child process (lifecycle phase, last command, retries). */
-export interface CpWrapperRuntime {
+export interface LaunchCpRuntime {
   phase:
     | /** initial state */ 'init'
     | /** start to spawn process */ 'toStart'
@@ -34,16 +34,13 @@ export interface CpWrapperRuntime {
   retryCount: number;
 }
 
-/** @deprecated Renamed to {@link CpWrapperRuntime}. */
-export type CpWrapperStatus = CpWrapperRuntime;
-
-export type CpWrapperType = 'detached' | 'with-daemon';
+export type LaunchCpType = 'detached' | 'with-daemon';
 
 /** All info of managed child process */
-export interface CpWrapperInfo<ResponseFromCp = any> {
-  type: CpWrapperType;
-  config: CpWrapperConfig;
-  runtime: CpWrapperRuntime;
+export interface LaunchCpInfo<ResponseFromCp = any> {
+  type: LaunchCpType;
+  config: LaunchCpConfig;
+  runtime: LaunchCpRuntime;
   spawnInfo?: SerializableSpawnInfo<ResponseFromCp>;
 }
 
@@ -58,7 +55,7 @@ export interface DaemonConfig {
   connection?: {
     socketConfig?: TcpServerConfig;
   };
-  cpWrapperConfigList?: CpWrapperConfig[];
+  cpWrapperConfigList?: LaunchCpConfig[];
 }
 
 export interface DaemonConnectInfo {
@@ -71,7 +68,7 @@ export interface DaemonInfo {
   status: {
     connection?: {socket?: Partial<Pick<TcpServerInfo, 'host' | 'port' | 'path'>>};
   };
-  cpInfoList: CpWrapperInfo[];
+  cpInfoList: LaunchCpInfo[];
 }
 
 export type Action2Daemon = 'ping';
@@ -81,7 +78,7 @@ export type ActionLog = 'log';
 
 export interface Command2Process {
   action: Action2Cp;
-  data?: CpWrapperConfig | string;
+  data?: LaunchCpConfig | string;
 }
 export interface Command2Daemon {
   action: Action2Daemon;
@@ -99,7 +96,7 @@ export type Command = Command2Process | Command2Daemon | CommandCommon | Command
 
 export interface ResponseCpInfo {
   type: Action2Cp;
-  data?: CpWrapperInfo;
+  data?: LaunchCpInfo;
 }
 export interface ResponsePong {
   type: 'pong';
@@ -108,7 +105,7 @@ export interface ResponsePong {
 }
 export interface ResponseInfo {
   type: ActionCommon;
-  data?: DaemonInfo | CpWrapperInfo;
+  data?: DaemonInfo | LaunchCpInfo;
 }
 export interface ResponseLog {
   type: 'log';

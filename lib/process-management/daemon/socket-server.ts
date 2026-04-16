@@ -6,7 +6,7 @@ import {
   isString,
 } from '../external';
 import {
-  CpWrapperConfig,
+  LaunchCpConfig,
   DaemonConfig,
   DaemonConnectInfo,
   Command,
@@ -107,7 +107,7 @@ export class DaemonSocketServer extends Daemon {
         data: this.getInfo(cpConfigOrId),
       };
     } else if (action === 'log') {
-      const cpWrapper = this.getCpWrapper(cpConfigOrId as string);
+      const cpWrapper = this.getLaunchCp(cpConfigOrId as string);
       if (!cpWrapper) {
         throw new Error(`child process is not found for log query`);
       }
@@ -117,7 +117,7 @@ export class DaemonSocketServer extends Daemon {
         data: logData,
       };
     } else {
-      const cpWrapper = this.getCpWrapper(cpConfigOrId);
+      const cpWrapper = this.getLaunchCp(cpConfigOrId);
       if (action === 'stop') {
         await this.stop(cpConfigOrId as string);
         return {
@@ -131,10 +131,10 @@ export class DaemonSocketServer extends Daemon {
         const isCpConfig = isPlainObject(cpConfigOrId);
         switch (action) {
           case 'start':
-            await cpWrapper.start(isCpConfig ? (cpConfigOrId as CpWrapperConfig) : undefined);
+            await cpWrapper.start(isCpConfig ? (cpConfigOrId as LaunchCpConfig) : undefined);
             break;
           case 'restart':
-            await cpWrapper.restart(isCpConfig ? (cpConfigOrId as CpWrapperConfig) : undefined);
+            await cpWrapper.restart(isCpConfig ? (cpConfigOrId as LaunchCpConfig) : undefined);
             break;
         }
         return {

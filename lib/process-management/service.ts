@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import {TcpServerInfo, DAEMON_ROOT_DIR} from './external';
-import {CpWrapperInfo, ResponseError} from './types';
+import {LaunchCpInfo, ResponseError} from './types';
 
 export const MAX_WAIT_TIME_DEBUG_MODE = 120;
 
@@ -38,14 +38,14 @@ export function getLogDir(cpId: string): string {
 }
 
 /** Prefer `info.runtime.phase`; fall back to legacy `info.status.status` from older `index.js`. */
-function getCpWrapperPhase(info: CpWrapperInfo): string | undefined {
+function getLaunchCpPhase(info: LaunchCpInfo): string | undefined {
   return (
     info.runtime?.phase ??
     (info as unknown as {status?: {status?: string}}).status?.status
   );
 }
 
-export function loadInfo(cpId: string): CpWrapperInfo | null {
+export function loadInfo(cpId: string): LaunchCpInfo | null {
   const filePath = getProcessInfoPath(cpId);
   if (!fs.existsSync(filePath)) {
     return null;
@@ -59,8 +59,8 @@ export function loadInfo(cpId: string): CpWrapperInfo | null {
 }
 
 /** Scan all ~/.process-management/{cpId}/info/index.js, return those with runtime.phase === 'running' */
-export function scanAllInfoRecords(): {cpId: string; info: CpWrapperInfo}[] {
-  const results: {cpId: string; info: CpWrapperInfo}[] = [];
+export function scanAllInfoRecords(): {cpId: string; info: LaunchCpInfo}[] {
+  const results: {cpId: string; info: LaunchCpInfo}[] = [];
   if (!fs.existsSync(DAEMON_ROOT_DIR)) {
     return results;
   }
@@ -71,7 +71,7 @@ export function scanAllInfoRecords(): {cpId: string; info: CpWrapperInfo}[] {
     }
     const cpId = entry.name;
     const info = loadInfo(cpId);
-    if (info && getCpWrapperPhase(info) === 'running') {
+    if (info && getLaunchCpPhase(info) === 'running') {
       results.push({cpId, info});
     }
   }

@@ -1,4 +1,4 @@
-import {DaemonConfig, DaemonInfo, CommandCommon, CpWrapperConfig} from '../types';
+import {DaemonConfig, DaemonInfo, CommandCommon, LaunchCpConfig} from '../types';
 import {logColorful, oneChatFromSocketClient, spawnAndTryIpc, getSpawnAndIpcConfigByScript, CP} from '../external';
 
 /**
@@ -37,7 +37,7 @@ export async function daemonDebugServer() {
     infoToCp: {},
     maxWaitTime4Ipc: 600,
   });
-  const cpConfig4DebugServer: CpWrapperConfig = {
+  const cpConfig4DebugServer: LaunchCpConfig = {
     ...spawnConfigDebugServer,
     id: daemonKey,
   };

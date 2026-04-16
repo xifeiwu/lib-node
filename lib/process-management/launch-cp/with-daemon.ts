@@ -8,9 +8,9 @@ import {
 } from '../external';
 import type {RollingLogWriter} from '../external';
 import {getLogDir} from '../service';
-import {CpWrapperConfig, CpWrapperType, ResponseLog} from '../types';
+import {LaunchCpConfig, LaunchCpType, ResponseLog} from '../types';
 import {SpawnConfig} from '../external';
-import {CpWrapperBase, canChangePhase, validateAndApplyStdio} from './base';
+import {LaunchCpBase, canChangePhase, validateAndApplyStdio} from './base';
 
 /**
  * Default stdio for with-daemon mode:
@@ -19,11 +19,11 @@ import {CpWrapperBase, canChangePhase, validateAndApplyStdio} from './base';
 const DEFAULT_STDIO = ['ignore', 'pipe', 'pipe', 'ipc'];
 
 /**
- * CpWrapper used inside a Daemon process.
+ * LaunchCp used inside a Daemon process.
  * Handles log collection, exit retry logic, exit signals, and lifecycle management (start/stop/restart).
  */
-export class CpWrapperWithDaemon extends CpWrapperBase {
-  readonly type: CpWrapperType = 'with-daemon';
+export class LaunchCpWithDaemon extends LaunchCpBase {
+  readonly type: LaunchCpType = 'with-daemon';
   exitSignal: {
     resolve?: () => void;
     reject?: (err: Error) => void;
@@ -124,7 +124,7 @@ export class CpWrapperWithDaemon extends CpWrapperBase {
     });
   }
 
-  async start(config?: CpWrapperConfig) {
+  async start(config?: LaunchCpConfig) {
     this.changePhase('toStart');
     this.lastAction = 'start';
     this.retryCount = 0;
@@ -150,7 +150,7 @@ export class CpWrapperWithDaemon extends CpWrapperBase {
     await this.waitExitComplete();
   }
 
-  async restart(config?: CpWrapperConfig) {
+  async restart(config?: LaunchCpConfig) {
     this.lastAction = 'restart';
     if (canChangePhase('toKill', this.phase)) {
       await this.stop();

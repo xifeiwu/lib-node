@@ -3,7 +3,7 @@ import path from 'path';
 import {logColorful, CP, getSocketPath, getSpawnAndIpcConfigByScript} from '../../../../index';
 import {startDetachedDaemon} from './launcher';
 import {SocketClientToDaemon} from './client';
-import {CpWrapperConfig} from '../types';
+import {LaunchCpConfig} from '../types';
 
 function getCpScript(basename: string) {
   const fullpath = path.join(__dirname, basename);
@@ -16,7 +16,7 @@ function getCpScript(basename: string) {
 // const stdio: SpawnOptions['stdio'] = debugMode ? [0, 1, 2, 'ipc'] : ['ignore', 'ignore', 'ignore', 'ipc'];
 
 const debugServer1Id = 'debug-server-1';
-const spawnDebugServer1: CpWrapperConfig = {
+const spawnDebugServer1: LaunchCpConfig = {
   id: debugServer1Id,
   retry: {
     maxCount: 3,
@@ -31,7 +31,7 @@ const spawnDebugServer1: CpWrapperConfig = {
 };
 
 const debugServer2Id = 'debug-server-2';
-const spawnDebugServer2: CpWrapperConfig = {
+const spawnDebugServer2: LaunchCpConfig = {
   id: debugServer2Id,
   // managerConfig: {
   //   retry: {

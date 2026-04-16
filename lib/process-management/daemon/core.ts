@@ -3,23 +3,23 @@ import {
   isString,
 } from '../external';
 import {
-  CpWrapperConfig,
+  LaunchCpConfig,
   DaemonConfig,
   DaemonInfo,
 } from '../types';
-import {CpWrapperWithDaemon} from '../start-cp/with-daemon';
+import {LaunchCpWithDaemon} from '../launch-cp/with-daemon';
 import {serializeSocketServerInfo} from '../service';
 
 export class Daemon {
   config: DaemonConfig;
   cpWrapperMap: {
-    [id: string]: CpWrapperWithDaemon;
+    [id: string]: LaunchCpWithDaemon;
   } = {};
   constructor() {}
 
   /** start one child process */
-  async startCp(cpConfig: CpWrapperConfig) {
-    const cpWrapper = this.getCpWrapper(cpConfig);
+  async startCp(cpConfig: LaunchCpConfig) {
+    const cpWrapper = this.getLaunchCp(cpConfig);
     await cpWrapper.start(cpConfig);
     return cpWrapper.getInfo();
   }
@@ -102,18 +102,18 @@ export class Daemon {
   /**
    * Get cpWrapper by config or id; create a new cpWrapper if cpConfig is passed and not found.
    */
-  getCpWrapper(cpConfigOrId?: string | CpWrapperConfig) {
+  getLaunchCp(cpConfigOrId?: string | LaunchCpConfig) {
     const {cpWrapperMap, config} = this;
-    let cpWrapper: CpWrapperWithDaemon;
+    let cpWrapper: LaunchCpWithDaemon;
     if (cpConfigOrId === undefined) {
-      const allCpWrapper = Object.values(cpWrapperMap);
-      if (allCpWrapper.length === 1) {
-        cpWrapper = allCpWrapper[0];
+      const allLaunchCp = Object.values(cpWrapperMap);
+      if (allLaunchCp.length === 1) {
+        cpWrapper = allLaunchCp[0];
       }
     } else if (isString(cpConfigOrId)) {
       cpWrapper = cpWrapperMap[cpConfigOrId as string];
     } else if (isPlainObject(cpConfigOrId)) {
-      const {id} = cpConfigOrId as CpWrapperConfig;
+      const {id} = cpConfigOrId as LaunchCpConfig;
       if (id === undefined) {
         throw new Error(`id is undefined in cpConfig`);
       }
@@ -122,7 +122,7 @@ export class Daemon {
       }
       cpWrapper = cpWrapperMap[id];
       if (cpWrapper === undefined) {
-        cpWrapper = new CpWrapperWithDaemon(cpConfigOrId as CpWrapperConfig);
+        cpWrapper = new LaunchCpWithDaemon(cpConfigOrId as LaunchCpConfig);
         cpWrapperMap[id] = cpWrapper;
       }
     }
