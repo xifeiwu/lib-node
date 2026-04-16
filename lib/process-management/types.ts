@@ -32,6 +32,8 @@ export interface LaunchCpRuntime {
     | /** try restart process on exit */ 'toRestart';
   lastAction: 'none' | 'start' | 'stop' | 'restart';
   retryCount: number;
+  /** The actual SpawnConfig used by spawnAndTryIpc (after stdio validation, detached flag, etc.) */
+  spawnConfig?: SpawnConfig;
 }
 
 export type LaunchCpType = 'detached' | 'with-daemon';

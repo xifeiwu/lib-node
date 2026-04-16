@@ -1,8 +1,5 @@
 import path from 'path';
-import {
-  spawnAndTryIpc,
-  createRollingSnapshotWriter,
-} from '../external';
+import {spawnAndTryIpc, createRollingSnapshotWriter} from '../external';
 import type {RollingSnapshotWriter} from '../external';
 import {getCpDir} from '../service';
 import {LaunchCpRuntime, LaunchCpConfig, LaunchCpInfo, LaunchCpType} from '../types';
@@ -27,10 +24,7 @@ export function canChangePhase(to: LaunchCpRuntime['phase'], from: LaunchCpRunti
  * - If stdio is set, check each position: if both user and default specify a value
  *   and they differ, throw an error.
  */
-export function validateAndApplyStdio(
-  spawnConfig: SpawnConfig,
-  defaultStdio: any[]
-): SpawnConfig {
+export function validateAndApplyStdio(spawnConfig: SpawnConfig, defaultStdio: any[]): SpawnConfig {
   const config = {...spawnConfig};
   if (!config.spawnOptions) {
     config.spawnOptions = {};
@@ -51,9 +45,7 @@ export function validateAndApplyStdio(
     if (userVal === undefined) {
       stdio[i] = defaultVal;
     } else if (userVal !== defaultVal) {
-      throw new Error(
-        `stdio[${i}] is set to '${userVal}', but '${defaultVal}' is required for this mode`
-      );
+      throw new Error(`stdio[${i}] is set to '${userVal}', but '${defaultVal}' is required for this mode`);
     }
   }
   config.spawnOptions.stdio = stdio;
@@ -71,6 +63,8 @@ export abstract class LaunchCpBase {
   lastAction: LaunchCpRuntime['lastAction'];
   retryCount: LaunchCpRuntime['retryCount'];
   cpResponse?: SpawnAndTryIpcResponse;
+  /** The actual SpawnConfig used by spawnAndTryIpc */
+  actualSpawnConfig?: SpawnConfig;
   private infoWriter?: RollingSnapshotWriter;
   constructor(config: LaunchCpConfig) {
     this.resetPhase();
@@ -113,6 +107,7 @@ export abstract class LaunchCpBase {
         phase,
         lastAction,
         retryCount,
+        spawnConfig: this.actualSpawnConfig,
       },
     };
     if (cpResponse) {
@@ -163,6 +158,8 @@ export abstract class LaunchCpBase {
     const {spawnConfig} = config;
     this.changePhase('toSpawn');
     const prepared = this.prepareSpawnConfig(spawnConfig);
+    this.actualSpawnConfig = prepared;
+    this.persistInfo();
     try {
       this.cpResponse = await spawnAndTryIpc(prepared);
       const {childProcess} = this.cpResponse;
