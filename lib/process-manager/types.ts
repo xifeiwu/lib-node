@@ -47,9 +47,7 @@ export interface LaunchCpInfo<ResponseFromCp = any> {
 }
 
 export interface DaemonConfig {
-  /** To identify daemon process cluster. Defaults to 'process-manager'. */
-  clusterId?: string;
-  cpWrapperConfigList?: LaunchCpConfig[];
+  launchCpConfigList?: LaunchCpConfig[];
 }
 
 export interface SocketConfig {

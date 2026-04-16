@@ -3,7 +3,6 @@ import path from 'path';
 import {DAEMON_ROOT_DIR} from './external';
 import {LaunchCpInfo, ResponseError} from './types';
 
-export const DEFAULT_CLUSTER_ID = 'process-manager';
 export const MAX_WAIT_TIME_DEBUG_MODE = 120;
 
 export function getErrorResponse(err: Error | string): ResponseError {

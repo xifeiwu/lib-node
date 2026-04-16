@@ -10,7 +10,6 @@ export async function runDetachedDebugServer() {
   const cpId = 'detached-debug-server';
   const config: LaunchCpConfig = {
     id: cpId,
-    clusterId: 'test',
     spawnConfig: getSpawnConfigByScript<CP.DebugServerConfig>(debugServerScript, {
       params: [cpId],
       infoToCp: {

@@ -1,15 +1,14 @@
 import path from 'path';
 import {getSpawnConfigByScript, serializeSpawnResponse, spawnAndTryIpc, tryUseJsFile} from '../../external';
 import {SocketConfig, DaemonResponse} from '../../types';
-import {DEFAULT_CLUSTER_ID, MAX_WAIT_TIME_DEBUG_MODE} from '../../service';
+import {MAX_WAIT_TIME_DEBUG_MODE} from '../../service';
 
 export async function startDetachedDaemon(socketConfig: SocketConfig, featureConfig?: {debug?: boolean}) {
   const {daemonConfig} = socketConfig;
-  const {clusterId, cpWrapperConfigList} = daemonConfig;
-  const daemonKey = clusterId ?? DEFAULT_CLUSTER_ID;
+  const {launchCpConfigList} = daemonConfig;
   const {debug = false} = featureConfig ?? {};
   if (debug) {
-    for (const cpWrapperConfig of cpWrapperConfigList) {
+    for (const cpWrapperConfig of launchCpConfigList) {
       const {spawnConfig} = cpWrapperConfig ?? {};
       if (!spawnConfig) {
         continue;
@@ -24,7 +23,7 @@ export async function startDetachedDaemon(socketConfig: SocketConfig, featureCon
   const scriptPath = tryUseJsFile(path.resolve(__dirname, './script.ts'));
   const spawnConfig4Daemon = getSpawnConfigByScript<SocketConfig>(scriptPath, {
     /** args key is used for killing Zombie Daemon Process */
-    params: [daemonKey],
+    params: [socketConfig.serverConfig.path ?? String(socketConfig.serverConfig.port)],
     infoToCp: socketConfig,
     maxWaitTime4Ipc: MAX_WAIT_TIME_DEBUG_MODE,
     spawnOptions: {stdio: debug ? [0, 1, 2, 'ipc'] : ['ignore', 'ignore', 'ignore', 'ipc']},

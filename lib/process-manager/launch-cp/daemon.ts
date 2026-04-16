@@ -1,14 +1,13 @@
 import {
   isPlainObject,
   isString,
-} from './external';
+} from '../external';
 import {
   LaunchCpConfig,
   DaemonConfig,
   DaemonInfo,
-} from './types';
-import {DEFAULT_CLUSTER_ID} from './service';
-import {LaunchCpWithDaemon} from './launch-cp/with-daemon';
+} from '../types';
+import {LaunchCpWithDaemon} from './with-daemon';
 
 export class Daemon {
   config: DaemonConfig;
@@ -19,14 +18,14 @@ export class Daemon {
 
   /** start one child process */
   async startCp(cpConfig: LaunchCpConfig) {
-    const cpWrapper = this.getLaunchCp(cpConfig);
+    const cpWrapper = this.getLaunchCpInst(cpConfig);
     await cpWrapper.start(cpConfig);
     return cpWrapper.getInfo();
   }
 
   /** Start all child process configured in config */
   async startAllCp() {
-    const {cpWrapperConfigList: cpConfigList} = this.config;
+    const {launchCpConfigList: cpConfigList} = this.config;
     /** Child process should start one by one */
     if (Array.isArray(cpConfigList)) {
       for (const cpConfig of cpConfigList) {
@@ -42,7 +41,7 @@ export class Daemon {
 
   getDaemonInfo() {
     const {config, cpWrapperMap} = this;
-    const {cpWrapperConfigList: cpConfigList, ...restConfig} = config ?? {};
+    const {launchCpConfigList: cpConfigList, ...restConfig} = config ?? {};
     const daemonInfo: DaemonInfo = {
       pid: process.pid,
       config: restConfig,
@@ -57,7 +56,7 @@ export class Daemon {
    */
   getInfo(id?: string) {
     const {config, cpWrapperMap} = this;
-    if (id === undefined || id === (config.clusterId ?? DEFAULT_CLUSTER_ID)) {
+    if (id === undefined) {
       return this.getDaemonInfo();
     } else {
       const cpWrapper = cpWrapperMap[id];
@@ -87,12 +86,10 @@ export class Daemon {
    * Stop child process or daemon (prioritise child process), and return corresponding info
    */
   async stop(id: string) {
-    const {config, cpWrapperMap} = this;
+    const {cpWrapperMap} = this;
     const cpWrapper = cpWrapperMap[id];
     if (cpWrapper) {
       await cpWrapper.stop();
-    } else if (id === (config.clusterId ?? DEFAULT_CLUSTER_ID)) {
-      await this.stopDaemon();
     } else {
       throw new Error(`No target found by id: ${id}`);
     }
@@ -101,30 +98,27 @@ export class Daemon {
   /**
    * Get cpWrapper by config or id; create a new cpWrapper if cpConfig is passed and not found.
    */
-  getLaunchCp(cpConfigOrId?: string | LaunchCpConfig) {
-    const {cpWrapperMap, config} = this;
-    let cpWrapper: LaunchCpWithDaemon;
+  getLaunchCpInst(cpConfigOrId?: string | LaunchCpConfig) {
+    const {cpWrapperMap} = this;
+    let inst: LaunchCpWithDaemon;
     if (cpConfigOrId === undefined) {
       const allLaunchCp = Object.values(cpWrapperMap);
       if (allLaunchCp.length === 1) {
-        cpWrapper = allLaunchCp[0];
+        inst = allLaunchCp[0];
       }
     } else if (isString(cpConfigOrId)) {
-      cpWrapper = cpWrapperMap[cpConfigOrId as string];
+      inst = cpWrapperMap[cpConfigOrId as string];
     } else if (isPlainObject(cpConfigOrId)) {
       const {id} = cpConfigOrId as LaunchCpConfig;
       if (id === undefined) {
         throw new Error(`id is undefined in cpConfig`);
       }
-      if (id === (config.clusterId ?? DEFAULT_CLUSTER_ID)) {
-        throw new Error(`child process key is the same as daemon key`);
-      }
-      cpWrapper = cpWrapperMap[id];
-      if (cpWrapper === undefined) {
-        cpWrapper = new LaunchCpWithDaemon(cpConfigOrId as LaunchCpConfig);
-        cpWrapperMap[id] = cpWrapper;
+      inst = cpWrapperMap[id];
+      if (inst === undefined) {
+        inst = new LaunchCpWithDaemon(cpConfigOrId as LaunchCpConfig);
+        cpWrapperMap[id] = inst;
       }
     }
-    return cpWrapper;
+    return inst;
   }
 }
