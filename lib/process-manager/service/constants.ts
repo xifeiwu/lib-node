@@ -1,0 +1,2 @@
+
+export const MAX_WAIT_TIME_DEBUG_MODE = 120;

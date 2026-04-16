@@ -1,6 +1,6 @@
 import path from 'path';
-import {LaunchCpConfig, LaunchCpType} from '../types';
-import {SpawnConfig, makeSureDirExist} from '../external';
+import {LaunchCpConfig, LaunchCpType} from '../service';
+import {SpawnConfig, makeSureDirExist} from '../service/external';
 import {getLogDir} from '../service';
 import {LaunchCpBase, validateAndApplyStdio} from './base';
 

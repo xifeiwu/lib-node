@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import {Socket} from 'net';
-import {getFileList, startSocketClient, DAEMON_SOCKET_DIR, SOCKET_FILE_SUFFIX} from '../external';
+import {getFileList, startSocketClient, DAEMON_SOCKET_DIR, SOCKET_FILE_SUFFIX} from '../service/external';
 
 interface CheckSocketActivityConfig {
   closeActive?: boolean;

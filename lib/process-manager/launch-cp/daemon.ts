@@ -1,5 +1,5 @@
-import {isPlainObject, isString} from '../external';
-import {LaunchCpConfig, DaemonConfig, DaemonInfo} from '../types';
+import {isPlainObject, isString} from '../service/external';
+import {LaunchCpConfig, DaemonConfig, DaemonInfo} from '../service';
 import {LaunchCpWithDaemon} from './with-daemon';
 
 export class Daemon {

@@ -1,11 +1,11 @@
 import fs from 'fs';
 import path from 'path';
-import {spawnAndTryIpc, createRollingSnapshotWriter} from '../external';
-import type {RollingSnapshotWriter} from '../external';
+import {spawnAndTryIpc, createRollingSnapshotWriter} from '../service/external';
+import type {RollingSnapshotWriter} from '../service/external';
 import {getCpDir} from '../service';
 import {isProcessAlive} from '../../../process/service/kill';
-import {LaunchCpRuntime, LaunchCpConfig, LaunchCpInfo, LaunchCpType} from '../types';
-import {SpawnConfig, SpawnAndTryIpcResponse} from '../external';
+import {LaunchCpRuntime, LaunchCpConfig, LaunchCpInfo, LaunchCpType} from '../service';
+import {SpawnConfig, SpawnAndTryIpcResponse} from '../service/external';
 
 const phaseConvertRule: Partial<{
   [phase in LaunchCpRuntime['phase']]: Array<LaunchCpRuntime['phase']>;

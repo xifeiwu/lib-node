@@ -1,5 +1,5 @@
-import {SpawnConfig, SerializableSpawnInfo} from '../../types/child_process/common';
-import {TcpServerConfig} from '../../types/net';
+import {SpawnConfig, SerializableSpawnInfo} from '../../../types/child_process/common';
+import {TcpServerConfig} from '../../../types/net';
 
 /**
  * Types for child process of Daemon

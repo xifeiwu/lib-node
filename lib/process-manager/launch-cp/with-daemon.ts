@@ -5,11 +5,11 @@ import {
   waitFor,
   get,
   createRollingLogWriter,
-} from '../external';
-import type {RollingLogWriter} from '../external';
+} from '../service/external';
+import type {RollingLogWriter} from '../service/external';
 import {getLogDir} from '../service';
-import {LaunchCpConfig, LaunchCpType, ResponseLog} from '../types';
-import {SpawnConfig} from '../external';
+import {LaunchCpConfig, LaunchCpType, ResponseLog} from '../service';
+import {SpawnConfig} from '../service/external';
 import {LaunchCpBase, canChangePhase, validateAndApplyStdio} from './base';
 
 /**

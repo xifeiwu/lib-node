@@ -1,6 +1,6 @@
 import {NetConnectOpts} from 'net';
-import {oneChatFromSocketClient} from '../external';
-import {Command2Daemon, CommandCommon, Command2Process} from '../types';
+import {oneChatFromSocketClient} from '../service/external';
+import {Command2Daemon, CommandCommon, Command2Process} from '../service';
 
 export class SocketClientToDaemon {
   connectOpts: NetConnectOpts;

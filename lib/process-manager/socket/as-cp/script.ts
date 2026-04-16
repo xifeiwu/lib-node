@@ -1,5 +1,5 @@
-import {SocketConfig} from '../../types';
-import {waitIpcMessageOnce, outOnAllChannels} from '../../external';
+import {SocketConfig} from '../../service';
+import {waitIpcMessageOnce, outOnAllChannels} from '../../service/external';
 import {DaemonSocketServer} from '../server';
 import {getErrorResponse} from '../../service';
 

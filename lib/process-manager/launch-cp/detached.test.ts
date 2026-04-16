@@ -1,6 +1,6 @@
 import path from 'path';
-import {LaunchCpConfig} from '../types';
-import {logColorful, getSpawnConfigByScript, CP} from '../external';
+import {LaunchCpConfig} from '../service';
+import {logColorful, getSpawnConfigByScript, CP} from '../service/external';
 import {LaunchCpDetached} from './detached';
 import {loadInfo} from '../service';
 

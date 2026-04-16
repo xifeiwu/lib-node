@@ -6,8 +6,8 @@ import {
   isObject,
   isPlainObject,
   isString,
-} from '../external';
-import {LaunchCpConfig, SocketConfig, Command, Action2Cp, DaemonResponse} from '../types';
+} from '../service/external';
+import {LaunchCpConfig, SocketConfig, Command, Action2Cp, DaemonResponse} from '../service';
 import {getErrorResponse} from '../service';
 import {Daemon} from '../launch-cp/daemon';
 

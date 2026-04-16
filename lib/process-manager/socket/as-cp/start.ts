@@ -1,6 +1,6 @@
 import path from 'path';
-import {getSpawnConfigByScript, serializeSpawnResponse, spawnAndTryIpc, tryUseJsFile} from '../../external';
-import {SocketConfig, DaemonResponse} from '../../types';
+import {getSpawnConfigByScript, serializeSpawnResponse, spawnAndTryIpc, tryUseJsFile} from '../../service/external';
+import {SocketConfig, DaemonResponse} from '../../service';
 import {MAX_WAIT_TIME_DEBUG_MODE} from '../../service';
 
 export async function startDetachedDaemon(socketConfig: SocketConfig, featureConfig?: {debug?: boolean}) {
