@@ -1,14 +1,13 @@
 import {
   isPlainObject,
   isString,
-} from '../external';
+} from './external';
 import {
   LaunchCpConfig,
   DaemonConfig,
   DaemonInfo,
-} from '../types';
-import {LaunchCpWithDaemon} from '../launch-cp/with-daemon';
-import {serializeSocketServerInfo} from '../service';
+} from './types';
+import {LaunchCpWithDaemon} from './launch-cp/with-daemon';
 
 export class Daemon {
   config: DaemonConfig;
