@@ -1,8 +1,9 @@
 import fs from 'fs';
 import path from 'path';
-import {TcpServerInfo, DAEMON_ROOT_DIR} from './external';
+import {DAEMON_ROOT_DIR} from './external';
 import {LaunchCpInfo, ResponseError} from './types';
 
+export const DEFAULT_CLUSTER_ID = 'process-manager';
 export const MAX_WAIT_TIME_DEBUG_MODE = 120;
 
 export function getErrorResponse(err: Error | string): ResponseError {
@@ -16,15 +17,6 @@ export function getErrorResponse(err: Error | string): ResponseError {
   };
   return errorResponse;
 }
-export function serializeSocketServerInfo(info: TcpServerInfo) {
-  const {path: socketPath, host, port} = info;
-  if (socketPath) {
-    return {path: socketPath};
-  } else {
-    return {host, port};
-  }
-}
-
 export function getCpDir(cpId: string): string {
   return path.join(DAEMON_ROOT_DIR, cpId);
 }

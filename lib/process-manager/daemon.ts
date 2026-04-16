@@ -7,6 +7,7 @@ import {
   DaemonConfig,
   DaemonInfo,
 } from './types';
+import {DEFAULT_CLUSTER_ID} from './service';
 import {LaunchCpWithDaemon} from './launch-cp/with-daemon';
 
 export class Daemon {
@@ -45,7 +46,6 @@ export class Daemon {
     const daemonInfo: DaemonInfo = {
       pid: process.pid,
       config: restConfig,
-      status: {connection: {}},
       cpInfoList: Object.values(cpWrapperMap).map(it => it.getInfo()),
     };
     return daemonInfo;
@@ -57,7 +57,7 @@ export class Daemon {
    */
   getInfo(id?: string) {
     const {config, cpWrapperMap} = this;
-    if (id === undefined || id === config.id) {
+    if (id === undefined || id === (config.clusterId ?? DEFAULT_CLUSTER_ID)) {
       return this.getDaemonInfo();
     } else {
       const cpWrapper = cpWrapperMap[id];
@@ -91,7 +91,7 @@ export class Daemon {
     const cpWrapper = cpWrapperMap[id];
     if (cpWrapper) {
       await cpWrapper.stop();
-    } else if (id === config.id) {
+    } else if (id === (config.clusterId ?? DEFAULT_CLUSTER_ID)) {
       await this.stopDaemon();
     } else {
       throw new Error(`No target found by id: ${id}`);
@@ -116,7 +116,7 @@ export class Daemon {
       if (id === undefined) {
         throw new Error(`id is undefined in cpConfig`);
       }
-      if (id === config.id) {
+      if (id === (config.clusterId ?? DEFAULT_CLUSTER_ID)) {
         throw new Error(`child process key is the same as daemon key`);
       }
       cpWrapper = cpWrapperMap[id];

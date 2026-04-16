@@ -1,5 +1,5 @@
 import {SpawnConfig, SerializableSpawnInfo} from '../../types/child_process/common';
-import {TcpServerInfo, TcpServerConfig} from '../../types/net';
+import {TcpServerConfig} from '../../types/net';
 
 /**
  * Types for child process of Daemon
@@ -47,29 +47,19 @@ export interface LaunchCpInfo<ResponseFromCp = any> {
 }
 
 export interface DaemonConfig {
-  /**
-   * To identify daemon process,
-   * If daemon run as a seperate child process, it must have at least one connection channel
-   * If connection.socket is not set, daemonKey will be used as socket path
-   */
-  id?: string;
-  /** connectionConfig should be set, as Daemon process is can't be used without communiction way */
-  connection?: {
-    socketConfig?: TcpServerConfig;
-  };
+  /** To identify daemon process cluster. Defaults to 'process-manager'. */
+  clusterId?: string;
   cpWrapperConfigList?: LaunchCpConfig[];
 }
 
-export interface DaemonConnectInfo {
-  socket?: TcpServerInfo;
+export interface SocketConfig {
+  serverConfig: TcpServerConfig;
+  daemonConfig: DaemonConfig;
 }
 
 export interface DaemonInfo {
   pid: number;
   config: Omit<DaemonConfig, 'cpConfigList'>;
-  status: {
-    connection?: {socket?: Partial<Pick<TcpServerInfo, 'host' | 'port' | 'path'>>};
-  };
   cpInfoList: LaunchCpInfo[];
 }
 

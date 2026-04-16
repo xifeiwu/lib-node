@@ -1,10 +1,12 @@
 import path from 'path';
-import {getSpawnConfigByScript, serializeSpawnResponse, spawnAndTryIpc, tryUseJsFile} from '../external';
-import {DaemonConfig, DaemonResponse} from '../types';
-import {MAX_WAIT_TIME_DEBUG_MODE} from '../service';
+import {getSpawnConfigByScript, serializeSpawnResponse, spawnAndTryIpc, tryUseJsFile} from '../../external';
+import {SocketConfig, DaemonResponse} from '../../types';
+import {DEFAULT_CLUSTER_ID, MAX_WAIT_TIME_DEBUG_MODE} from '../../service';
 
-export async function startDetachedDaemon(daemonConfig: DaemonConfig, featureConfig?: {debug?: boolean}) {
-  const {id: daemonKey, cpWrapperConfigList} = daemonConfig;
+export async function startDetachedDaemon(socketConfig: SocketConfig, featureConfig?: {debug?: boolean}) {
+  const {daemonConfig} = socketConfig;
+  const {clusterId, cpWrapperConfigList} = daemonConfig;
+  const daemonKey = clusterId ?? DEFAULT_CLUSTER_ID;
   const {debug = false} = featureConfig ?? {};
   if (debug) {
     for (const cpWrapperConfig of cpWrapperConfigList) {
@@ -19,15 +21,15 @@ export async function startDetachedDaemon(daemonConfig: DaemonConfig, featureCon
       spawnConfig.maxWaitCpResInSec = MAX_WAIT_TIME_DEBUG_MODE;
     }
   }
-  const scriptPath = tryUseJsFile(path.resolve(__dirname, './cp-script.ts'));
-  const spawnConfig4Daemon = getSpawnConfigByScript<DaemonConfig>(scriptPath, {
+  const scriptPath = tryUseJsFile(path.resolve(__dirname, './script.ts'));
+  const spawnConfig4Daemon = getSpawnConfigByScript<SocketConfig>(scriptPath, {
     /** args key is used for killing Zombie Daemon Process */
     params: [daemonKey],
-    infoToCp: daemonConfig,
+    infoToCp: socketConfig,
     maxWaitTime4Ipc: MAX_WAIT_TIME_DEBUG_MODE,
     spawnOptions: {stdio: debug ? [0, 1, 2, 'ipc'] : ['ignore', 'ignore', 'ignore', 'ipc']},
   });
-  const spawnResponse = await spawnAndTryIpc<DaemonConfig, DaemonResponse>(spawnConfig4Daemon);
+  const spawnResponse = await spawnAndTryIpc<SocketConfig, DaemonResponse>(spawnConfig4Daemon);
   const {childProcess, responseFromCp} = spawnResponse;
   if (responseFromCp.type === 'error') {
     console.log(responseFromCp.data);

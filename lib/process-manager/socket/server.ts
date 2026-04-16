@@ -1,36 +1,32 @@
 import {
   fromBuffer,
   startOneChatSocketServer,
+  TcpServerConfig,
+  TcpServerInfo,
   isObject,
   isPlainObject,
   isString,
 } from '../external';
 import {
   LaunchCpConfig,
-  DaemonConfig,
-  DaemonConnectInfo,
+  SocketConfig,
   Command,
   Action2Cp,
   DaemonResponse,
 } from '../types';
-import {getErrorResponse, serializeSocketServerInfo} from '../service';
+import {DEFAULT_CLUSTER_ID, getErrorResponse} from '../service';
 import {Daemon} from '../daemon';
 
 export class DaemonSocketServer {
   daemon: Daemon;
-  connectInfo: DaemonConnectInfo = {};
+  private serverConfig: TcpServerConfig;
+  private socketInfo?: TcpServerInfo;
 
   constructor(daemon?: Daemon) {
     this.daemon = daemon ?? new Daemon();
   }
 
   private async startConnectionServer() {
-    const {id: daemonKey, connection} = this.daemon.config;
-    const {socketConfig} = connection ?? {};
-    let finalSocketConfig = socketConfig;
-    if (!socketConfig) {
-      finalSocketConfig = {path: daemonKey};
-    }
     const handleData = async (chunk: Buffer) => {
       try {
         const command = fromBuffer(chunk, 'json') as Command;
@@ -42,34 +38,25 @@ export class DaemonSocketServer {
         return getErrorResponse(err);
       }
     };
-    const serverInfo = await startOneChatSocketServer(handleData, finalSocketConfig);
-    this.connectInfo.socket = serverInfo;
+    this.socketInfo = await startOneChatSocketServer(handleData, this.serverConfig);
   }
 
   /**
    * Start daemon with socket server.
    * Can be called as a child process entry point or in a third-party process.
    */
-  async startAsCp(config: DaemonConfig) {
-    this.daemon.config = config;
-    const {id} = this.daemon.config;
-    if (!isString(id)) {
-      throw new Error(`id property is not set on daemon config.`);
-    }
+  async startAsCp(socketConfig: SocketConfig) {
+    const {serverConfig, daemonConfig} = socketConfig;
+    this.daemon.config = daemonConfig;
+    this.serverConfig = serverConfig;
     await this.startConnectionServer();
     await this.daemon.startAllCp();
-    return this.getInfo(config.id);
+    const clusterId = daemonConfig.clusterId ?? DEFAULT_CLUSTER_ID;
+    return this.getInfo(clusterId);
   }
 
   getInfo(id?: string) {
-    const daemonInfo = this.daemon.getInfo(id);
-    if ('cpInfoList' in daemonInfo) {
-      const {connectInfo} = this;
-      if (connectInfo?.socket) {
-        daemonInfo.status.connection.socket = serializeSocketServerInfo(connectInfo.socket);
-      }
-    }
-    return daemonInfo;
+    return this.daemon.getInfo(id);
   }
 
   async stop(id: string) {
@@ -78,9 +65,8 @@ export class DaemonSocketServer {
 
   async stopAll() {
     await this.daemon.stopDaemon();
-    const {connectInfo} = this;
-    if (connectInfo?.socket) {
-      connectInfo.socket.server.close();
+    if (this.socketInfo) {
+      this.socketInfo.server.close();
     }
   }
 
@@ -93,7 +79,7 @@ export class DaemonSocketServer {
         case 'ping':
           return {
             type: 'pong',
-            data: config.id,
+            data: config.clusterId ?? DEFAULT_CLUSTER_ID,
           };
       }
     } else if (action === 'info') {
