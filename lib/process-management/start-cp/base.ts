@@ -1,13 +1,11 @@
-import {Readable} from 'stream';
 import path from 'path';
 import {
   spawnAndTryIpc,
   createRollingSnapshotWriter,
-  createRollingLogWriter,
 } from '../external';
-import type {RollingSnapshotWriter, RollingLogWriter} from '../external';
-import {getCpDir, getLogDir} from '../service';
-import {CpWrapperRuntime, CpWrapperConfig, CpWrapperInfo, ResponseLog} from '../types';
+import type {RollingSnapshotWriter} from '../external';
+import {getCpDir} from '../service';
+import {CpWrapperRuntime, CpWrapperConfig, CpWrapperInfo, CpWrapperType} from '../types';
 import {SpawnConfig, SpawnAndTryIpcResponse} from '../external';
 
 const phaseConvertRule: Partial<{
@@ -24,17 +22,55 @@ export function canChangePhase(to: CpWrapperRuntime['phase'], from: CpWrapperRun
 }
 
 /**
+ * Validate stdio array against default values.
+ * - If stdio is not set, apply defaultStdio.
+ * - If stdio is set, check each position: if both user and default specify a value
+ *   and they differ, throw an error.
+ */
+export function validateAndApplyStdio(
+  spawnConfig: SpawnConfig,
+  defaultStdio: any[]
+): SpawnConfig {
+  const config = {...spawnConfig};
+  if (!config.spawnOptions) {
+    config.spawnOptions = {};
+  }
+  config.spawnOptions = {...config.spawnOptions};
+  const userStdio = config.spawnOptions.stdio;
+  if (!userStdio) {
+    config.spawnOptions.stdio = defaultStdio;
+    return config;
+  }
+  if (!Array.isArray(userStdio)) {
+    throw new Error(`stdio must be an array, got: ${JSON.stringify(userStdio)}`);
+  }
+  const stdio = [...userStdio] as any[];
+  for (let i = 0; i < defaultStdio.length; i++) {
+    const userVal = stdio[i];
+    const defaultVal = defaultStdio[i];
+    if (userVal === undefined) {
+      stdio[i] = defaultVal;
+    } else if (userVal !== defaultVal) {
+      throw new Error(
+        `stdio[${i}] is set to '${userVal}', but '${defaultVal}' is required for this mode`
+      );
+    }
+  }
+  config.spawnOptions.stdio = stdio;
+  return config;
+}
+
+/**
  * Base class for child process management.
- * Handles phase state machine, spawn, logging, and info persistence.
+ * Handles phase state machine, spawn, and info persistence.
  */
 export abstract class CpWrapperBase {
+  abstract readonly type: CpWrapperType;
   config: CpWrapperConfig;
   phase: CpWrapperRuntime['phase'];
   lastAction: CpWrapperRuntime['lastAction'];
   retryCount: CpWrapperRuntime['retryCount'];
   cpResponse?: SpawnAndTryIpcResponse;
-  private logOutWriter?: RollingLogWriter;
-  private logErrWriter?: RollingLogWriter;
   private infoWriter?: RollingSnapshotWriter;
   constructor(config: CpWrapperConfig) {
     this.resetPhase();
@@ -69,8 +105,9 @@ export abstract class CpWrapperBase {
     this.persistInfo();
   }
   getInfo(): CpWrapperInfo {
-    const {config, phase, lastAction, retryCount, cpResponse} = this;
+    const {type, config, phase, lastAction, retryCount, cpResponse} = this;
     const info: CpWrapperInfo = {
+      type,
       config,
       runtime: {
         phase,
@@ -80,25 +117,9 @@ export abstract class CpWrapperBase {
     };
     if (cpResponse) {
       const {childProcess, ...rest} = cpResponse;
-      info.cpResponse = {pid: childProcess?.pid, ...rest};
+      info.spawnInfo = {pid: childProcess?.pid, ...rest};
     }
     return info;
-  }
-
-  protected setupLogFile(stdout?: Readable, stderr?: Readable) {
-    const logDir = getLogDir(this.id);
-    if (stdout) {
-      this.logOutWriter = createRollingLogWriter({dir: logDir, basename: 'out.log'});
-      stdout.on('data', (chunk: Buffer) => {
-        this.logOutWriter.write(chunk);
-      });
-    }
-    if (stderr) {
-      this.logErrWriter = createRollingLogWriter({dir: logDir, basename: 'err.log'});
-      stderr.on('data', (chunk: Buffer) => {
-        this.logErrWriter.write(chunk);
-      });
-    }
   }
 
   private getInfoWriter(): RollingSnapshotWriter {
@@ -120,47 +141,16 @@ export abstract class CpWrapperBase {
     });
   }
 
-  protected cleanupLogResources() {
-    if (this.logOutWriter) {
-      this.logOutWriter.end();
-      this.logOutWriter = undefined;
-    }
-    if (this.logErrWriter) {
-      this.logErrWriter.end();
-      this.logErrWriter = undefined;
-    }
-  }
-
-  protected prepareStdioForLogging(spawnConfig: SpawnConfig): SpawnConfig {
-    const config = {...spawnConfig};
-    if (!config.spawnOptions) {
-      config.spawnOptions = {};
-    }
-    const options = {...config.spawnOptions};
-    let stdio = options.stdio as any[];
-    if (!Array.isArray(stdio)) {
-      return config;
-    }
-    stdio = [...stdio];
-    if (stdio[1] === 'ignore') stdio[1] = 'pipe';
-    if (stdio[2] === 'ignore') stdio[2] = 'pipe';
-    options.stdio = stdio;
-    config.spawnOptions = options;
-    return config;
-  }
-
-  getLog(): ResponseLog['data'] {
-    return {
-      id: this.id,
-      outFile: this.logOutWriter?.basePath ?? '',
-      errorFile: this.logErrWriter?.basePath ?? '',
-    };
-  }
+  /**
+   * Prepare spawn config before spawning. Subclasses override to validate
+   * stdio, set detached flag, etc.
+   */
+  protected abstract prepareSpawnConfig(spawnConfig: SpawnConfig): SpawnConfig;
 
   /**
    * Called after child process is spawned and running.
    * Subclasses implement this to define post-spawn behavior
-   * (e.g. register exit handler, or disconnect & unref).
+   * (e.g. register exit handler + log setup, or disconnect & unref).
    */
   protected abstract afterSpawn(): void;
 
@@ -172,13 +162,12 @@ export abstract class CpWrapperBase {
     }
     const {spawnConfig} = config;
     this.changePhase('toSpawn');
-    const logEnabledConfig = this.prepareStdioForLogging(spawnConfig);
+    const prepared = this.prepareSpawnConfig(spawnConfig);
     try {
-      this.cpResponse = await spawnAndTryIpc(logEnabledConfig);
+      this.cpResponse = await spawnAndTryIpc(prepared);
       const {childProcess} = this.cpResponse;
       if (childProcess) {
         this.changePhase('running');
-        this.setupLogFile(childProcess.stdout, childProcess.stderr);
         this.afterSpawn();
       }
       return this.cpResponse;

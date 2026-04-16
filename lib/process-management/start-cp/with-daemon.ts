@@ -1,26 +1,81 @@
+import {Readable} from 'stream';
 import {
   killProcessByPid,
   isNumber,
   waitFor,
   get,
+  createRollingLogWriter,
 } from '../external';
-import {CpWrapperConfig} from '../types';
-import {CpWrapperBase, canChangePhase} from './base';
+import type {RollingLogWriter} from '../external';
+import {getLogDir} from '../service';
+import {CpWrapperConfig, CpWrapperType, ResponseLog} from '../types';
+import {SpawnConfig} from '../external';
+import {CpWrapperBase, canChangePhase, validateAndApplyStdio} from './base';
+
+/**
+ * Default stdio for with-daemon mode:
+ * stdin: ignore, stdout: pipe (for log collection), stderr: pipe (for log collection), ipc
+ */
+const DEFAULT_STDIO = ['ignore', 'pipe', 'pipe', 'ipc'];
 
 /**
  * CpWrapper used inside a Daemon process.
- * Handles exit retry logic, exit signals, and lifecycle management (start/stop/restart).
+ * Handles log collection, exit retry logic, exit signals, and lifecycle management (start/stop/restart).
  */
 export class CpWrapperWithDaemon extends CpWrapperBase {
+  readonly type: CpWrapperType = 'with-daemon';
   exitSignal: {
     resolve?: () => void;
     reject?: (err: Error) => void;
   } = {};
+  private logOutWriter?: RollingLogWriter;
+  private logErrWriter?: RollingLogWriter;
+
+  protected prepareSpawnConfig(spawnConfig: SpawnConfig): SpawnConfig {
+    return validateAndApplyStdio(spawnConfig, DEFAULT_STDIO);
+  }
 
   protected afterSpawn() {
-    this.cpResponse.childProcess.once('exit', () => {
+    const {childProcess} = this.cpResponse;
+    this.setupLogFile(childProcess.stdout, childProcess.stderr);
+    childProcess.once('exit', () => {
       this.onExit();
     });
+  }
+
+  private setupLogFile(stdout?: Readable, stderr?: Readable) {
+    const logDir = getLogDir(this.id);
+    if (stdout) {
+      this.logOutWriter = createRollingLogWriter({dir: logDir, basename: 'out.log'});
+      stdout.on('data', (chunk: Buffer) => {
+        this.logOutWriter.write(chunk);
+      });
+    }
+    if (stderr) {
+      this.logErrWriter = createRollingLogWriter({dir: logDir, basename: 'err.log'});
+      stderr.on('data', (chunk: Buffer) => {
+        this.logErrWriter.write(chunk);
+      });
+    }
+  }
+
+  private cleanupLogResources() {
+    if (this.logOutWriter) {
+      this.logOutWriter.end();
+      this.logOutWriter = undefined;
+    }
+    if (this.logErrWriter) {
+      this.logErrWriter.end();
+      this.logErrWriter = undefined;
+    }
+  }
+
+  getLog(): ResponseLog['data'] {
+    return {
+      id: this.id,
+      outFile: this.logOutWriter?.basePath ?? '',
+      errorFile: this.logErrWriter?.basePath ?? '',
+    };
   }
 
   async onExit() {

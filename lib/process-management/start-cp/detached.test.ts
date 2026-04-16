@@ -11,9 +11,6 @@ export async function runDetachedDebugServer() {
   const config: CpWrapperConfig = {
     id: cpId,
     spawnConfig: getSpawnConfigByScript<CP.DebugServerConfig>(debugServerScript, {
-      spawnOptions: {
-        stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
-      },
       params: [cpId],
       infoToCp: {
         port: 3456,
@@ -25,9 +22,9 @@ export async function runDetachedDebugServer() {
   await cpWrapper.start();
   const info = cpWrapper.getInfo();
   logColorful({}, 'CpWrapperDetached info:', info);
-  logColorful({}, 'Log paths:', cpWrapper.getLog());
 
   /** Verify persisted info can be loaded */
   const persisted = loadInfo(cpId);
   logColorful({}, 'Persisted info:', persisted);
 }
+// runDetachedDebugServer();

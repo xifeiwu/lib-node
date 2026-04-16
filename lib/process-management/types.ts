@@ -37,11 +37,14 @@ export interface CpWrapperRuntime {
 /** @deprecated Renamed to {@link CpWrapperRuntime}. */
 export type CpWrapperStatus = CpWrapperRuntime;
 
-/** All info of Daemon's child process */
+export type CpWrapperType = 'detached' | 'with-daemon';
+
+/** All info of managed child process */
 export interface CpWrapperInfo<ResponseFromCp = any> {
+  type: CpWrapperType;
   config: CpWrapperConfig;
   runtime: CpWrapperRuntime;
-  cpResponse?: SerializableSpawnInfo<ResponseFromCp>;
+  spawnInfo?: SerializableSpawnInfo<ResponseFromCp>;
 }
 
 export interface DaemonConfig {

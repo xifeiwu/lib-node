@@ -7,7 +7,7 @@ import {
   DaemonConfig,
   DaemonInfo,
 } from '../types';
-import {CpWrapperWithDaemon} from '../cp-wrapper/with-daemon';
+import {CpWrapperWithDaemon} from '../start-cp/with-daemon';
 import {serializeSocketServerInfo} from '../service';
 
 export class Daemon {

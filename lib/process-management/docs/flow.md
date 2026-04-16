@@ -140,10 +140,10 @@ lib/process-management/
 ├── service.ts              序列化工具、信息加载函数
 ├── external.ts             跨模块依赖聚合
 ├── index.ts                公共导出
-├── cp-wrapper/
-│   ├── base.ts             CpWrapperBase：状态机、spawn、日志、状态持久化（抽象基类）
-│   ├── with-daemon.ts      CpWrapperWithDaemon：在 Daemon 内使用，退出重试、生命周期管理
-│   └── detached.ts         CpWrapperDetached：独立子进程，spawn 后 disconnect & unref
+├── start-cp/
+│   ├── base.ts             CpWrapperBase：状态机、spawn、状态持久化（抽象基类）+ stdio 校验工具
+│   ├── with-daemon.ts      CpWrapperWithDaemon：日志收集、退出重试、生命周期管理
+│   └── detached.ts         CpWrapperDetached：detached spawn，disconnect & unref
 ├── daemon/
 │   ├── core.ts             Daemon 类：CpWrapper 编排（getDaemonInfo, startAllCp, stop, getCpWrapper）
 │   ├── socket-server.ts    DaemonSocketServer extends Daemon：Socket 服务 + handleCommand
