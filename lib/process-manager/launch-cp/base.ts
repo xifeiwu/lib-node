@@ -3,6 +3,7 @@ import path from 'path';
 import {spawnAndTryIpc, createRollingSnapshotWriter} from '../external';
 import type {RollingSnapshotWriter} from '../external';
 import {getCpDir} from '../service';
+import {isProcessAlive} from '../../../process/service/kill';
 import {LaunchCpRuntime, LaunchCpConfig, LaunchCpInfo, LaunchCpType} from '../types';
 import {SpawnConfig, SpawnAndTryIpcResponse} from '../external';
 
@@ -51,15 +52,6 @@ export function validateAndApplyStdio(spawnConfig: SpawnConfig, defaultStdio: an
   }
   config.spawnOptions.stdio = stdio;
   return config;
-}
-
-function isProcessAlive(pid: number): boolean {
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 function loadInfoFromFile(filePath: string): LaunchCpInfo | null {

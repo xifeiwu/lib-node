@@ -3,6 +3,15 @@ import {GetProcessInfoOptions, PidToProcessInfo, ProcessInfo} from '../../types'
 import {treeInfoList} from './base';
 import {getProcessInfo} from './info';
 
+export function isProcessAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function getProcessInfoMap(options?: GetProcessInfoOptions) {
   const {infoList: processList} = await getProcessInfo(options);
   return treeInfoList(processList);
