@@ -7,13 +7,7 @@ import {
   isPlainObject,
   isString,
 } from '../external';
-import {
-  LaunchCpConfig,
-  SocketConfig,
-  Command,
-  Action2Cp,
-  DaemonResponse,
-} from '../types';
+import {LaunchCpConfig, SocketConfig, Command, Action2Cp, DaemonResponse} from '../types';
 import {getErrorResponse} from '../service';
 import {Daemon} from '../launch-cp/daemon';
 
@@ -22,8 +16,9 @@ export class DaemonSocketServer {
   private serverConfig: TcpServerConfig;
   private socketInfo?: TcpServerInfo;
 
-  constructor(daemon?: Daemon) {
-    this.daemon = daemon ?? new Daemon();
+  constructor(socketConfig: SocketConfig) {
+    this.daemon = new Daemon(socketConfig.daemonConfig);
+    this.serverConfig = socketConfig.serverConfig;
   }
 
   private async startConnectionServer() {
@@ -45,12 +40,9 @@ export class DaemonSocketServer {
    * Start daemon with socket server.
    * Can be called as a child process entry point or in a third-party process.
    */
-  async startAsCp(socketConfig: SocketConfig) {
-    const {serverConfig, daemonConfig} = socketConfig;
-    this.daemon.config = daemonConfig;
-    this.serverConfig = serverConfig;
+  async start() {
     await this.startConnectionServer();
-    await this.daemon.startAllCp();
+    await this.daemon.launchAllCpInConfigList();
     return this.getInfo();
   }
 
@@ -84,16 +76,6 @@ export class DaemonSocketServer {
       return {
         type: action,
         data: this.getInfo(cpConfigOrId as string),
-      };
-    } else if (action === 'log') {
-      const cpWrapper = daemon.getLaunchCpInst(cpConfigOrId as string);
-      if (!cpWrapper) {
-        throw new Error(`child process is not found for log query`);
-      }
-      const logData = cpWrapper.getLog();
-      return {
-        type: 'log',
-        data: logData,
       };
     } else {
       const cpWrapper = daemon.getLaunchCpInst(cpConfigOrId);

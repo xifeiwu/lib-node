@@ -1,6 +1,6 @@
 import {NetConnectOpts} from 'net';
 import {oneChatFromSocketClient} from '../external';
-import {Command2Daemon, CommandCommon, Command2Process, CommandLog} from '../types';
+import {Command2Daemon, CommandCommon, Command2Process} from '../types';
 
 export class SocketClientToDaemon {
   connectOpts: NetConnectOpts;
@@ -21,8 +21,5 @@ export class SocketClientToDaemon {
   }
   async restart(data?: Command2Process['data']) {
     return await oneChatFromSocketClient<Command2Process>({action: 'restart', data}, this.connectOpts);
-  }
-  async log(id?: string) {
-    return await oneChatFromSocketClient<CommandLog>({action: 'log', data: id}, this.connectOpts);
   }
 }

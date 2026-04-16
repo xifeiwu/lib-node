@@ -166,7 +166,7 @@ export abstract class LaunchCpBase {
     if (!info) {
       return;
     }
-    const phase = info.runtime?.phase;
+    // const phase = info.runtime?.phase;
     const pid = info.spawnInfo?.pid;
     // if (phase === 'running' && pid && isProcessAlive(pid)) {
     if (pid && isProcessAlive(pid)) {

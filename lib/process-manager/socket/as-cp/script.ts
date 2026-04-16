@@ -6,8 +6,8 @@ import {getErrorResponse} from '../../service';
 async function start() {
   try {
     const ipcMessage = await waitIpcMessageOnce<SocketConfig>();
-    const socketServer = new DaemonSocketServer();
-    const response = await socketServer.startAsCp(ipcMessage);
+    const socketServer = new DaemonSocketServer(ipcMessage);
+    const response = await socketServer.start();
     outOnAllChannels(response);
   } catch (err) {
     outOnAllChannels(getErrorResponse(err));

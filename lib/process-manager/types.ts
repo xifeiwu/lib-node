@@ -64,7 +64,6 @@ export interface DaemonInfo {
 export type Action2Daemon = 'ping';
 export type Action2Cp = 'start' | 'restart';
 export type ActionCommon = 'info' | 'stop';
-export type ActionLog = 'log';
 
 export interface Command2Process {
   action: Action2Cp;
@@ -78,11 +77,7 @@ export interface CommandCommon {
   action: ActionCommon;
   data?: string;
 }
-export interface CommandLog {
-  action: ActionLog;
-  data?: string;
-}
-export type Command = Command2Process | Command2Daemon | CommandCommon | CommandLog;
+export type Command = Command2Process | Command2Daemon | CommandCommon;
 
 export interface ResponseCpInfo {
   type: Action2Cp;
