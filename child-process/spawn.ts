@@ -239,6 +239,78 @@ export async function spawnAndTryIpc<CpConfig extends Serializable = any, Respon
   return info;
 }
 
+export async function spawnScriptAndTryIpc<CpConfig extends Serializable = any, ResponseFromCp = any>(
+  scriptPath: string,
+  options?: SpawnScriptOptions
+) {
+  const spwanAndIpcConfig = getSpawnConfigByScript<CpConfig>(scriptPath, options);
+  return spawnAndTryIpc<CpConfig, ResponseFromCp>(spwanAndIpcConfig);
+}
+
+/** Default stdio for detached spawn: no inherited tty, IPC for optional handshake (same idea as process-manager detached mode). */
+const DETACHED_SPAWN_STDIO: Array<'ignore' | 'ipc'> = ['ignore', 'ignore', 'ignore', 'ipc'];
+
+function prepareSpawnConfigForDetachedMode<CpConfig>(
+  spawnConfig: SpawnConfig<CpConfig>
+): SpawnConfig<CpConfig> {
+  const config = {...spawnConfig};
+  if (!config.spawnOptions) {
+    config.spawnOptions = {};
+  }
+  config.spawnOptions = {...config.spawnOptions};
+  const userStdio = config.spawnOptions.stdio;
+  if (!userStdio) {
+    config.spawnOptions.stdio = [...DETACHED_SPAWN_STDIO];
+  } else if (!Array.isArray(userStdio)) {
+    throw new Error(`stdio must be an array, got: ${JSON.stringify(userStdio)}`);
+  } else {
+    const stdio = [...userStdio] as any[];
+    for (let i = 0; i < DETACHED_SPAWN_STDIO.length; i++) {
+      const userVal = stdio[i];
+      const defaultVal = DETACHED_SPAWN_STDIO[i];
+      if (userVal === undefined) {
+        stdio[i] = defaultVal;
+      } else if (userVal !== defaultVal) {
+        throw new Error(
+          `stdio[${i}] is set to '${String(userVal)}', but '${defaultVal}' is required for detached spawn mode`
+        );
+      }
+    }
+    config.spawnOptions.stdio = stdio;
+  }
+  if (config.spawnOptions.detached === undefined) {
+    config.spawnOptions.detached = true;
+  }
+  return config;
+}
+
+/**
+ * Like {@link spawnAndTryIpc}, but defaults to a detached child: `detached: true` and
+ * `stdio: ['ignore','ignore','ignore','ipc']` (undefined slots are filled; mismatches throw).
+ * After a successful handshake, disconnects and unrefs the child so the parent can exit without waiting on it.
+ */
+export async function spwanInDetachedMode<CpConfig extends Serializable = any, ResponseFromCp = any>(
+  config: SpawnConfig<CpConfig>
+): Promise<SpawnAndTryIpcResponse<ResponseFromCp> & {finalSpawnConfig: SpawnConfig<CpConfig>}> {
+  const finalConfig = prepareSpawnConfigForDetachedMode(config);
+  const result = await spawnAndTryIpc<CpConfig, ResponseFromCp>(finalConfig);
+  const {childProcess} = result;
+  childProcess.disconnect?.();
+  childProcess.unref();
+  return {...result, finalSpawnConfig: finalConfig};
+}
+
+/**
+ * Like {@link spawnScriptAndTryIpc}, but runs {@link spwanInDetachedMode} so the child defaults to detached spawn options.
+ */
+export async function spawnScriptInDetachedMode<CpConfig extends Serializable = any, ResponseFromCp = any>(
+  scriptPath: string,
+  options?: SpawnScriptOptions
+) {
+  const spwanAndIpcConfig = getSpawnConfigByScript<CpConfig>(scriptPath, options);
+  return spwanInDetachedMode<CpConfig, ResponseFromCp>(spwanAndIpcConfig);
+}
+
 export function serializeSpawnResponse<ResponseFromCp = any>(
   response: SpawnAndTryIpcResponse<ResponseFromCp>
 ): SerializableSpawnInfo {
@@ -262,12 +334,4 @@ export function getSpawnAndIpcConfigByScript<CpConfig = any>(
 ): SpawnConfig<CpConfig> {
   const spwanAndIpcConfig = getSpawnConfigByScript<CpConfig>(scriptPath, options);
   return spwanAndIpcConfig;
-}
-
-export async function spawnScriptAndTryIpc<CpConfig extends Serializable = any, ResponseFromCp = any>(
-  scriptPath: string,
-  options?: SpawnScriptOptions
-) {
-  const spwanAndIpcConfig = getSpawnConfigByScript<CpConfig>(scriptPath, options);
-  return spawnAndTryIpc<CpConfig, ResponseFromCp>(spwanAndIpcConfig);
 }
