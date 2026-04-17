@@ -15,7 +15,7 @@ export async function startDetachedDaemon(socketConfig: SocketConfig, featureCon
   if (debug) {
     for (const entry of launchCpConfigList) {
       const {spawnConfig} = entry?.cpConfig ?? {};
-      if (!spawnConfig) {
+      if (!spawnConfig || typeof spawnConfig === 'string') {
         continue;
       }
       if (!spawnConfig.spawnOptions) {

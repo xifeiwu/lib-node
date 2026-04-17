@@ -24,6 +24,7 @@ export {killProcessByPid} from '../../../process/service';
 // From child-process/spawn
 export {
   spawnAndTryIpc,
+  spwanInDetachedMode,
   getSpawnConfigByScript,
   serializeSpawnResponse,
   getSpawnAndIpcConfigByScript,
@@ -34,7 +35,11 @@ export {tryUseJsFile, waitIpcMessageOnce} from '../../../child-process';
 export {outOnAllChannels} from '../../../utils/cp-script';
 
 // From service/constants
-export {PROCESS_MANAGER_ROOT_DIR as DAEMON_ROOT_DIR, DAEMON_SOCKET_DIR, SOCKET_FILE_SUFFIX} from '../../../service/constants';
+export {
+  PROCESS_MANAGER_ROOT_DIR as DAEMON_ROOT_DIR,
+  DAEMON_SOCKET_DIR,
+  SOCKET_FILE_SUFFIX,
+} from '../../../service/constants';
 
 // From types
 export {CP, InfoToCp, TcpServerInfo, TcpServerConfig} from '../../../types';

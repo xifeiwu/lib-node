@@ -1,14 +1,13 @@
 import path from 'path';
-import {LaunchCpConfig} from '../service';
 import {logColorful, getSpawnConfigByScript, CP} from '../service/external';
-import {LaunchCp} from './launch-cp';
+import {launchCpInDetachedMode} from './detached';
 import {loadCpInfo} from '../service';
 
 const debugServerScript = path.resolve(__dirname, '../../../utils/cp-script/debug-server.ts');
 
 export async function runDetachedDebugServer() {
   const cpId = 'detached-debug-server';
-  const config: LaunchCpConfig = {
+  const info = await launchCpInDetachedMode({
     id: cpId,
     spawnConfig: getSpawnConfigByScript<CP.DebugServerConfig>(debugServerScript, {
       params: [cpId],
@@ -17,14 +16,9 @@ export async function runDetachedDebugServer() {
       },
       maxWaitTime4Ipc: 10,
     }),
-  };
-  const cpWrapper = new LaunchCp(config);
-  await cpWrapper.startInDetachedMode();
-  const info = cpWrapper.getInfo();
+  });
   logColorful({}, 'LaunchCp detached info:', info);
 
-  /** Wait for async info writes to flush, then verify persisted info */
-  await cpWrapper.flushInfo();
   const persisted = loadCpInfo(cpId);
   logColorful({}, 'Persisted info:', persisted);
 }

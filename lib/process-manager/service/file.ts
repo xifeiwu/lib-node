@@ -4,18 +4,6 @@ import {DAEMON_ROOT_DIR} from './external';
 import {LaunchCpInfo, ResponseError} from './types';
 import {PROCESS_INFO_FILE_NAME} from './constants';
 
-export function getErrorResponse(err: Error | string): ResponseError {
-  let message = err as string;
-  if (err instanceof Error) {
-    message = err.stack ? err.stack : err.message;
-  }
-  const errorResponse: ResponseError = {
-    type: 'error',
-    data: message,
-  };
-  return errorResponse;
-}
-
 export function getCpBaseDir(cpId: string): string {
   return path.join(DAEMON_ROOT_DIR, cpId);
 }
@@ -30,6 +18,10 @@ export function getCpInfoPath(cpId: string): string {
 
 export function getCpLogDir(cpId: string): string {
   return path.join(getCpBaseDir(cpId), 'log');
+}
+
+export function getCpMonitorDir(cpId: string): string {
+  return path.join(getCpBaseDir(cpId), 'monitor');
 }
 
 /**
@@ -67,4 +59,16 @@ export function loadAllCpInfo(): {cpId: string; info: LaunchCpInfo | null}[] {
     results.push({cpId, info: loadCpInfo(cpId)});
   }
   return results;
+}
+
+export function getErrorResponse(err: Error | string): ResponseError {
+  let message = err as string;
+  if (err instanceof Error) {
+    message = err.stack ? err.stack : err.message;
+  }
+  const errorResponse: ResponseError = {
+    type: 'error',
+    data: message,
+  };
+  return errorResponse;
 }

@@ -1,6 +1,10 @@
 import {SpawnConfig, SerializableSpawnInfo} from '../../../types/child_process/common';
 import {TcpServerConfig} from '../../../types/net';
 
+export interface InfoToCp {
+  logOutPath: string;
+  logErrPath: string;
+}
 /**
  * Types for child process of Daemon
  */
@@ -8,9 +12,7 @@ export interface LaunchCpConfig {
   /** id used to identify the child process  */
   /** TODO: encodeURIComponent for id before use it as folder or file name */
   id: string;
-  /** identify the cluster this process belongs to */
-  clusterId?: string | number;
-  spawnConfig?: SpawnConfig;
+  spawnConfig?: SpawnConfig | string;
 }
 
 export interface MonitorConfig {
@@ -20,6 +22,7 @@ export interface MonitorConfig {
     /** Minimum time before next spawn to make sure all resources are released for previous cp. */
     minInterval?: number;
   };
+  logCpOut?: boolean;
 }
 
 /** Mutable runtime snapshot for one child process (lifecycle phase, last command). */
@@ -44,15 +47,15 @@ export interface MonitorInfo {
   retryCount: number;
 }
 
-export type LaunchCpType = 'detached' | 'with-daemon';
+export type LaunchCpMode = 'detached' | 'monitored';
 
 /** All info of managed child process */
 export interface LaunchCpInfo<ResponseFromCp = any> {
-  type: LaunchCpType;
+  mode: LaunchCpMode;
   config: LaunchCpConfig;
   runtime: LaunchCpRuntime;
   monitorInfo?: MonitorInfo;
-  spawnInfo?: SerializableSpawnInfo<ResponseFromCp>;
+  spawnInfo: SerializableSpawnInfo<ResponseFromCp>;
 }
 
 export interface LaunchCpEntry {
