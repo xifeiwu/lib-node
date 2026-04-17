@@ -12,6 +12,10 @@ export function outOnAllChannels(value: any) {
     });
   }
 }
+
+/**
+ * customize child process behavior by key-value pairs in config
+ */
 export async function handleCpCustomization(config?: CP.CpCustomization, key?: string) {
   if (!config || !key) {
     return;

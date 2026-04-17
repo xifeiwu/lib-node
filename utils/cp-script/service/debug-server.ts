@@ -9,13 +9,16 @@ import {getProcessInfoByInst} from '../../../process';
  * This is a http server target to run on child process to explore feature of child_process
  */
 export async function startDebugServer() {
-  let ipcMessage: CP.DebugServerConfig = await waitIpcMessageOnce<CP.DebugServerConfig>({maxWaitInSec: 9});
+  let ipcMessage = await waitIpcMessageOnce<CP.DebugServerConfig>({maxWaitInSec: 9});
   const config = ipcMessage ?? {};
   /** Make sure port property exist */
   if (config['port'] === undefined) {
     config['port'] = await getAFreePort();
   }
   for (const key of Object.keys(config)) {
+    /**
+     * if key is 'port' start httpDebugServer, else customize child process behavior
+     */
     if (key === 'port') {
       try {
         const serverInfo = await startHttpDebugServer(config, {logRequestHeaderInfo: 'black'});
