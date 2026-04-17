@@ -20,6 +20,7 @@ export {fromBuffer} from '../../../transform/buffer';
 
 // From process
 export {killProcessByPid} from '../../../process/service';
+export {isProcessAlive} from '../../../process/service/kill';
 
 // From child-process/spawn
 export {

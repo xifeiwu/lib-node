@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import {DAEMON_ROOT_DIR} from './external';
+import {DAEMON_ROOT_DIR, killProcessByPid, isProcessAlive} from './external';
 import {LaunchCpInfo, ResponseError} from './types';
 import {PROCESS_INFO_FILE_NAME} from './constants';
 
@@ -59,6 +59,27 @@ export function loadAllCpInfo(): {cpId: string; info: LaunchCpInfo | null}[] {
     results.push({cpId, info: loadCpInfo(cpId)});
   }
   return results;
+}
+
+export function isCpAlive(cpId: string): boolean {
+  const info = loadCpInfo(cpId);
+  const pid = info?.spawnInfo?.pid;
+  return pid != null && isProcessAlive(pid);
+}
+
+export async function stopCp(cpId: string): Promise<void> {
+  const info = loadCpInfo(cpId);
+  if (!info) {
+    throw new Error(`No info found for cpId: ${cpId}`);
+  }
+  const pid = info.spawnInfo?.pid;
+  if (!pid) {
+    throw new Error(`No pid found for cpId: ${cpId}`);
+  }
+  if (!isProcessAlive(pid)) {
+    return;
+  }
+  await killProcessByPid([pid]);
 }
 
 export function getErrorResponse(err: Error | string): ResponseError {

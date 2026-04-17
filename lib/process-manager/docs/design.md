@@ -1,23 +1,31 @@
 # 设计思想
 
-本文档说明 `lib/process-management` 各关键 feature 的设计思路与决策原因。
+本文档说明 `lib/process-manager` 各关键 feature 的设计思路与决策原因。
 
-## 对process做的逻辑
+## process-manager 的核心价值
 
-相比直接spawn一个process，process-management都做了哪些额外工作：
+相比直接 spawn 一个 process，process-manager 提供：
 
-cp-wrapper:
+- **统一标识**：每个子进程通过 `config.id` 唯一标识，避免重复启动。
+- **状态持久化**：进程信息持久化到文件，可跨进程查询运行状态。
+- **统一日志**：stdout/stderr 通过 RollingLogWriter 自动收集和滚动归档。
+- **生命周期管理**：支持 spawn 失败重试、stop、restart。
 
-- config.id, 每一个通过cp-wrapper启动的child process应该包含一个id，来唯一标识这个process。
-- 保存cp的状态，支持spwan失败后，再次尝试spawn。
-- 提供处理cp stdout/stderr的输出，写入日志文件。
+## 1. 两种使用方式
 
-- process-management的主要目的
-- 统一存储process的相关信息。可以方便查询进程的运行状态，避免重复启动服务。
-- 统一的日志输出方式
-- 
+### 独立函数（轻量）
 
-## 1. 三层进程架构
+`launchCpInDetachedMode` 和 `launchCpInMonitoredMode` 提供一次性调用入口，不需要实例化类。适合简单场景：启动一个子进程，持久化信息，调用方即可退出（detached）或挂起监控（monitored）。
+
+`spawnConfig` 支持 `SpawnConfig | string`。传入脚本路径时，自动通过 `getSpawnConfigByScript` 推断 command 和 args（.ts → ts-node, .js → node）。
+
+### Daemon 模式（完整编排）
+
+`Daemon` 类管理多个 `LaunchCp` 实例，提供完整的生命周期控制（start、stop、restart、getInfo）。通过 `DaemonSocketServer` 暴露 Socket 接口，支持运行时远程控制。
+
+**LaunchCp 类与独立函数的关系**：独立函数是简化入口，LaunchCp 类提供完整状态机。Daemon 需要持续追踪子进程状态，因此使用 LaunchCp 类。两者合并在 `daemon.ts` 中，因为 LaunchCp 类的唯一消费者是 Daemon。
+
+## 2. 三层进程架构（Daemon 模式）
 
 ```
 调用方（CLI）  ──spawn+IPC──▶  Daemon 进程  ──spawn+IPC──▶  业务子进程
@@ -28,11 +36,11 @@ cp-wrapper:
 
 如果 CLI 直接 spawn 子进程，CLI 退出后子进程就失去了控制面。引入一个常驻的 Daemon 进程作为中间层，既能让子进程在后台独立运行，又能通过 Socket 随时控制它们。
 
-## 2. 两阶段通信
+## 3. 两阶段通信（Daemon 模式）
 
 ### IPC 阶段：启动时的一次性配置传递
 
-`startDetachedDaemon` 通过 `spawnAndTryIpc` 拉起 Daemon 进程，把完整的 `DaemonConfig`（包含所有子进程配置）作为 IPC 消息传入。Daemon 收到后调用 `startAsCp` 完成初始化。
+`startDetachedDaemon` 通过 `spawnAndTryIpc` 拉起 Daemon 进程，把完整的 `SocketConfig`（包含所有子进程配置）作为 IPC 消息传入。Daemon 收到后完成初始化。
 
 非 debug 模式下，父进程拿到首包响应后 `disconnect` + `unref`，Daemon 从此独立运行。
 
@@ -46,9 +54,7 @@ Daemon 启动 `startOneChatSocketServer`，采用"一问一答"模式：每个 S
 
 命令都是短操作（查状态、启停），无需保持长连接。one-chat 避免了连接管理、心跳、断线重连等复杂度。
 
-**Socket path 默认策略**：未配置 `connection.socketConfig` 时，直接用 `config.id` 作为 socket path，保证"至少一条连接通道"的约束。
-
-## 3. CpWrapper 状态机
+## 4. LaunchCp 状态机
 
 单个子进程的生命周期通过有限状态机管理，防止乱序调用：
 
@@ -58,36 +64,52 @@ init → toStart → toSpawn → running → toKill → onExit → exited
                                               toRestart → toSpawn → ...
 ```
 
-`statusConvertRule` 定义合法迁移路径，`changeStatus` 会校验。
+`phaseConvertRule` 定义合法迁移路径，`changePhase` 会校验。
 
 **关键决策**：
 
 - `lastAction` 记录最近一次用户意图（`start`/`stop`/`restart`），`onExit` 时据此判断是否自动重试。只有 `lastAction === 'start'` 且未超 `maxCount` 时才重启。
 - `stop` 和 `restart` 导致的退出不会触发自动重试，因为退出是预期的。
-- `retryCount` 在每次 `start` 时重置为 0。
+- `retryCount` 在每次 `startInMonitoredMode` 时重置为 0。
 
-## 4. 日志
+## 5. 日志
 
-子进程的 stdout/stderr 通过 `RollingLogWriter` 分别写入 `~/.process-management/{cpId}/log/out.log` 和 `~/.process-management/{cpId}/log/err.log`。文件超过大小限制时自动滚动归档（重命名为带日期的文件名），并根据总大小和文件数量清理旧归档。
+### 子进程输出日志
 
-stdio 设为 `pipe`，spawn 后监听 `data` 事件写入 `RollingLogWriter`。
+stdout/stderr 通过 `RollingLogWriter` 写入 `{cpId}/log/out.log` 和 `{cpId}/log/err.log`。
 
-CLI 端用 `spawn('tail', ['-f', ...])` 实现实时跟踪。
+- `out.log` 收集 stdout + stderr（合并日志）
+- `err.log` 只收集 stderr
 
-### stdio 处理
+文件超过大小限制时自动滚动归档（重命名为带日期的文件名），并根据总大小和文件数量清理旧归档。
 
-`prepareStdioForLogging` 将 stdio 中的 `'ignore'` 替换为 `'pipe'`，其他值（如 debug 模式的 `0`/`1`/`2`）不动。debug 模式下 `childProcess.stdout` 为 `null`，日志收集自动跳过。
+**Daemon 模式**：stdio 为 `['ignore','pipe','pipe','ipc']`，always pipe stdout/stderr 并通过 `setupLogPipe` 写入。
 
-## 5. 状态持久化
+**独立函数 monitored 模式**：通过 `MonitorConfig.logCpOut` 控制是否收集日志。为 true 时创建 outWriter/errWriter 并 pipe。
 
-每次 `changeStatus()` 时，CpWrapper 通过 `RollingSnapshotWriter` 将完整的 `CpWrapperInfo` 写入 `~/.process-management/{cpId}/info/index.js`（CommonJS 格式）。
+### 监控状态日志（独立函数 monitored 模式）
 
-`scanAllInfoRecords()` 扫描所有 `~/.process-management/{cpId}/info/index.js`，用 `require()` 加载并返回 `status='running'` 的记录。
+子进程状态变化（spawned、exited、retry）通过 `RollingLogWriter` 写入 `{cpId}/monitor/changes.log`，格式为 `[ISO时间] event details`。这与 LaunchCpInfo 持久化分开：
+
+- `{cpId}/info/index.json`：当前快照（RollingSnapshotWriter）
+- `{cpId}/monitor/changes.log`：变化历史（RollingLogWriter）
+
+### 日志路径传递给子进程
+
+无论哪种模式，`logOutPath` 和 `logErrPath` 都通过 `infoToCp` 传递给子进程。子进程可通过 `waitInfoFromParent()` (cp-util.ts) 接收 `InfoToCp`，获取自己的日志文件路径。
+
+## 6. 状态持久化
+
+每次 `changePhase()` 时，LaunchCp 通过 `RollingSnapshotWriter` 将完整的 `LaunchCpInfo` 写入 `{cpId}/info/index.json`（JSON 格式）。
+
+`loadCpInfo()` 使用 `JSON.parse` 加载。`loadAllCpInfo()` 扫描所有 cpId 目录下的 info 文件。
 
 **RollingSnapshotWriter**：每次写入时将旧文件重命名为带时间戳的归档文件，再写入新内容。通过 promise chain 串行化并发写入。
 
-## 6. 错误隔离
+独立函数模式下同样使用 `RollingSnapshotWriter` 持久化 LaunchCpInfo，保持一致的数据格式。
 
-- 多个子进程的启停互不影响：`startAllCp` 和 `stopDaemon` 中，单个 CP 失败只 `console.error`，不阻断其他 CP。
+## 7. 错误隔离
+
+- 多个子进程的启停互不影响：`launchAllCpInConfigList` 和 `stopDaemon` 中，单个 CP 失败只 `console.error`，不阻断其他 CP。
 - 状态持久化失败不阻断主流程。
 - `handleCommand` 外层 try/catch，任何命令执行失败都返回 `{ type: 'error' }` 而非让 Daemon 崩溃。
