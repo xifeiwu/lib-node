@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
-import {spawnAndTryIpc, createRollingSnapshotWriter} from '../service/external';
+import {spawnAndTryIpc, createRollingSnapshotWriter, makeSureDirExist} from '../service/external';
 import type {RollingSnapshotWriter} from '../service/external';
-import {getCpDir} from '../service';
+import {getCpDir, getCpLogDir} from '../service';
 import {isProcessAlive} from '../../../process/service/kill';
 import {LaunchCpRuntime, LaunchCpConfig, LaunchCpInfo, LaunchCpType} from '../service';
 import {SpawnConfig, SpawnAndTryIpcResponse} from '../service/external';
@@ -212,6 +212,26 @@ export abstract class LaunchCpBase {
   }
 
   /**
+   * Ensure log dir exists and attach canonical stdout/stderr file paths to
+   * `infoToCp` for the child (same paths as rolling log writers in with-daemon
+   * and as detached file logging).
+   */
+  protected mergeLogPathsIntoInfoToCp(spawnConfig: SpawnConfig): SpawnConfig {
+    const logDir = getCpLogDir(this.id);
+    makeSureDirExist(logDir);
+    const logOutPath = path.join(logDir, 'out.log');
+    const logErrPath = path.join(logDir, 'err.log');
+    return {
+      ...spawnConfig,
+      infoToCp: {
+        ...spawnConfig.infoToCp,
+        logOutPath,
+        logErrPath,
+      },
+    };
+  }
+
+  /**
    * Prepare spawn config before spawning. Subclasses override to validate
    * stdio, set detached flag, etc.
    */
@@ -232,7 +252,7 @@ export abstract class LaunchCpBase {
     }
     const {spawnConfig} = config;
     this.changePhase('toSpawn');
-    const prepared = this.prepareSpawnConfig(spawnConfig);
+    const prepared = this.mergeLogPathsIntoInfoToCp(this.prepareSpawnConfig(spawnConfig));
     this.actualSpawnConfig = prepared;
     this.persistInfo();
     try {

@@ -19,6 +19,11 @@ export function getCpBaseDir(cpId: string): string {
   return path.join(DAEMON_ROOT_DIR, cpId);
 }
 
+/** Root directory for one managed child process (`~/.process-manager/{cpId}`). */
+export function getCpDir(cpId: string): string {
+  return getCpBaseDir(cpId);
+}
+
 export function getCpInfoPath(cpId: string): string {
   return path.join(getCpBaseDir(cpId), 'info', 'index.json');
 }
@@ -29,16 +34,13 @@ export function getCpLogDir(cpId: string): string {
 
 /** Prefer `info.runtime.phase`; fall back to legacy `info.status.status` from older `index.js`. */
 function getLaunchCpPhase(info: LaunchCpInfo): string | undefined {
-  return (
-    info.runtime?.phase ??
-    (info as unknown as {status?: {status?: string}}).status?.status
-  );
+  return info.runtime?.phase ?? (info as unknown as {status?: {status?: string}}).status?.status;
 }
 
 /**
  * cp info is not reliable, it may be corrupted or missing.
- * @param cpId 
- * @returns 
+ * @param cpId
+ * @returns
  */
 export function loadCpInfo(cpId: string): LaunchCpInfo | null {
   const filePath = getCpInfoPath(cpId);
@@ -68,17 +70,6 @@ export function loadAllCpInfo(): {cpId: string; info: LaunchCpInfo | null}[] {
     }
     const cpId = entry.name;
     results.push({cpId, info: loadCpInfo(cpId)});
-  }
-  return results;
-}
-
-/** Scan all ~/.process-manager/{cpId}/info/index.json, return those with runtime.phase === 'running' */
-export function scanAllInfoRecords(): {cpId: string; info: LaunchCpInfo}[] {
-  const results: {cpId: string; info: LaunchCpInfo}[] = [];
-  for (const {cpId, info} of loadAllCpInfo()) {
-    if (info && getLaunchCpPhase(info) === 'running') {
-      results.push({cpId, info});
-    }
   }
   return results;
 }

@@ -1,13 +1,7 @@
 import {Readable} from 'stream';
-import {
-  killProcessByPid,
-  isNumber,
-  waitFor,
-  get,
-  createRollingLogWriter,
-} from '../service/external';
+import {killProcessByPid, isNumber, waitFor, get, createRollingLogWriter} from '../service/external';
 import type {RollingLogWriter} from '../service/external';
-import {getLogDir} from '../service';
+import {getCpLogDir} from '../service';
 import {LaunchCpConfig, LaunchCpType, ResponseLog} from '../service';
 import {SpawnConfig} from '../service/external';
 import {LaunchCpBase, canChangePhase, validateAndApplyStdio} from './base';
@@ -44,7 +38,7 @@ export class LaunchCpWithDaemon extends LaunchCpBase {
   }
 
   private setupLogFile(stdout?: Readable, stderr?: Readable) {
-    const logDir = getLogDir(this.id);
+    const logDir = getCpLogDir(this.id);
     if (stdout) {
       this.logOutWriter = createRollingLogWriter({dir: logDir, basename: 'out.log'});
       stdout.on('data', (chunk: Buffer) => {

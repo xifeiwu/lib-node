@@ -1,7 +1,5 @@
-import path from 'path';
 import {LaunchCpConfig, LaunchCpType} from '../service';
-import {SpawnConfig, makeSureDirExist} from '../service/external';
-import {getLogDir} from '../service';
+import {SpawnConfig} from '../service/external';
 import {LaunchCpBase, validateAndApplyStdio} from './base';
 
 /**
@@ -19,21 +17,10 @@ export class LaunchCpDetached extends LaunchCpBase {
   readonly type: LaunchCpType = 'detached';
 
   protected prepareSpawnConfig(spawnConfig: SpawnConfig): SpawnConfig {
-    const logDir = getLogDir(this.id);
-    makeSureDirExist(logDir);
-    /** expect the child process use these file as stdout and stderr */
-    const logOutPath = path.join(logDir, 'out.log');
-    const logErrPath = path.join(logDir, 'err.log');
-
     const config = validateAndApplyStdio(spawnConfig, DEFAULT_STDIO);
     config.spawnOptions = {
       ...config.spawnOptions,
       detached: true,
-    };
-    config.infoToCp = {
-      ...config.infoToCp,
-      logOutPath,
-      logErrPath,
     };
     return config;
   }
