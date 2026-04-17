@@ -89,13 +89,15 @@ export class DaemonSocketServer {
         if (!cpWrapper) {
           throw new Error(`child process is not found by payload you provided.`);
         }
-        const isCpConfig = isPlainObject(cpConfigOrId);
+        if (isPlainObject(cpConfigOrId)) {
+          cpWrapper.setConfig(cpConfigOrId as LaunchCpConfig);
+        }
         switch (action) {
           case 'start':
-            await cpWrapper.start(isCpConfig ? (cpConfigOrId as LaunchCpConfig) : undefined);
+            await cpWrapper.startInMonitoredMode();
             break;
           case 'restart':
-            await cpWrapper.restart(isCpConfig ? (cpConfigOrId as LaunchCpConfig) : undefined);
+            await cpWrapper.restart();
             break;
         }
         return {

@@ -1,11 +1,11 @@
 import {isPlainObject, isString} from '../service/external';
-import {LaunchCpConfig, DaemonConfig, DaemonInfo} from '../service';
-import {LaunchCpWithDaemon} from './with-daemon';
+import {LaunchCpConfig, LaunchCpEntry, DaemonConfig, DaemonInfo} from '../service';
+import {LaunchCp} from './launch-cp';
 
 export class Daemon {
   config: DaemonConfig;
   launchCpIdToInst: {
-    [id: string]: LaunchCpWithDaemon;
+    [id: string]: LaunchCp;
   } = {};
   constructor(config: DaemonConfig) {
     this.config = config;
@@ -16,7 +16,7 @@ export class Daemon {
    */
   getLaunchCpInst(cpConfigOrId?: string | LaunchCpConfig) {
     const {launchCpIdToInst} = this;
-    let inst: LaunchCpWithDaemon;
+    let inst: LaunchCp;
     if (cpConfigOrId === undefined) {
       const allLaunchCp = Object.values(launchCpIdToInst);
       if (allLaunchCp.length === 1) {
@@ -31,7 +31,7 @@ export class Daemon {
       }
       inst = launchCpIdToInst[id];
       if (inst === undefined) {
-        inst = new LaunchCpWithDaemon(cpConfigOrId as LaunchCpConfig);
+        inst = new LaunchCp(cpConfigOrId as LaunchCpConfig);
         launchCpIdToInst[id] = inst;
       }
     }
@@ -39,10 +39,11 @@ export class Daemon {
   }
 
   /** start one child process */
-  async launchCp(cpConfig: LaunchCpConfig) {
-    const cpWrapper = this.getLaunchCpInst(cpConfig);
-    await cpWrapper.start(cpConfig);
-    return cpWrapper.getInfo();
+  async launchCp(entry: LaunchCpEntry) {
+    const {cpConfig, monitorConfig} = entry;
+    const inst = this.getLaunchCpInst(cpConfig);
+    await inst.startInMonitoredMode(monitorConfig);
+    return inst.getInfo();
   }
 
   /** Start all child process configured in config */
@@ -50,10 +51,10 @@ export class Daemon {
     const {launchCpConfigList} = this.config;
     /** Child process should start one by one */
     if (Array.isArray(launchCpConfigList)) {
-      for (const cpConfig of launchCpConfigList) {
+      for (const entry of launchCpConfigList) {
         /** One process failure should not stop other child process startup */
         try {
-          await this.launchCp(cpConfig);
+          await this.launchCp(entry);
         } catch (err) {
           console.error(err);
         }

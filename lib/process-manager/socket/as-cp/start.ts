@@ -1,5 +1,10 @@
 import path from 'path';
-import {getSpawnConfigByScript, serializeSpawnResponse, spawnAndTryIpc, tryUseJsFile} from '../../service/external';
+import {
+  getSpawnConfigByScript,
+  serializeSpawnResponse,
+  spawnAndTryIpc,
+  tryUseJsFile,
+} from '../../service/external';
 import {SocketConfig, DaemonResponse} from '../../service';
 import {MAX_WAIT_TIME_DEBUG_MODE} from '../../service';
 
@@ -8,8 +13,8 @@ export async function startDetachedDaemon(socketConfig: SocketConfig, featureCon
   const {launchCpConfigList} = daemonConfig;
   const {debug = false} = featureConfig ?? {};
   if (debug) {
-    for (const cpWrapperConfig of launchCpConfigList) {
-      const {spawnConfig} = cpWrapperConfig ?? {};
+    for (const entry of launchCpConfigList) {
+      const {spawnConfig} = entry?.cpConfig ?? {};
       if (!spawnConfig) {
         continue;
       }

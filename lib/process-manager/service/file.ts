@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import {DAEMON_ROOT_DIR} from './external';
 import {LaunchCpInfo, ResponseError} from './types';
+import {PROCESS_INFO_FILE_NAME} from './constants';
 
 export function getErrorResponse(err: Error | string): ResponseError {
   let message = err as string;
@@ -19,22 +20,16 @@ export function getCpBaseDir(cpId: string): string {
   return path.join(DAEMON_ROOT_DIR, cpId);
 }
 
-/** Root directory for one managed child process (`~/.process-manager/{cpId}`). */
-export function getCpDir(cpId: string): string {
-  return getCpBaseDir(cpId);
+export function getCpInfoDir(cpId: string): string {
+  return path.join(getCpBaseDir(cpId), 'info');
 }
 
 export function getCpInfoPath(cpId: string): string {
-  return path.join(getCpBaseDir(cpId), 'info', 'index.json');
+  return path.join(getCpInfoDir(cpId), PROCESS_INFO_FILE_NAME);
 }
 
 export function getCpLogDir(cpId: string): string {
   return path.join(getCpBaseDir(cpId), 'log');
-}
-
-/** Prefer `info.runtime.phase`; fall back to legacy `info.status.status` from older `index.js`. */
-function getLaunchCpPhase(info: LaunchCpInfo): string | undefined {
-  return info.runtime?.phase ?? (info as unknown as {status?: {status?: string}}).status?.status;
 }
 
 /**

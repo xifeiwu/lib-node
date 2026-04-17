@@ -10,16 +10,19 @@ export interface LaunchCpConfig {
   id: string;
   /** identify the cluster this process belongs to */
   clusterId?: string | number;
-  retry?: {
-    /** max count of retry */
-    maxCount?: number;
-    /** Minimum time before next spawn to make sure all resources are released for prvious cp. */
-    minInterval?: number;
-  };
   spawnConfig?: SpawnConfig;
 }
 
-/** Mutable runtime snapshot for one child process (lifecycle phase, last command, retries). */
+export interface MonitorConfig {
+  retry?: {
+    /** max count of retry */
+    maxCount?: number;
+    /** Minimum time before next spawn to make sure all resources are released for previous cp. */
+    minInterval?: number;
+  };
+}
+
+/** Mutable runtime snapshot for one child process (lifecycle phase, last command). */
 export interface LaunchCpRuntime {
   phase:
     | /** initial state */ 'init'
@@ -31,9 +34,14 @@ export interface LaunchCpRuntime {
     | /** process is exited */ 'exited'
     | /** try restart process on exit */ 'toRestart';
   lastAction: 'none' | 'start' | 'stop' | 'restart';
-  retryCount: number;
   /** The actual SpawnConfig used by spawnAndTryIpc (after stdio validation, detached flag, etc.) */
   spawnConfig?: SpawnConfig;
+}
+
+export interface MonitorInfo {
+  /** monitor process pid */
+  id: number;
+  retryCount: number;
 }
 
 export type LaunchCpType = 'detached' | 'with-daemon';
@@ -43,11 +51,17 @@ export interface LaunchCpInfo<ResponseFromCp = any> {
   type: LaunchCpType;
   config: LaunchCpConfig;
   runtime: LaunchCpRuntime;
+  monitorInfo?: MonitorInfo;
   spawnInfo?: SerializableSpawnInfo<ResponseFromCp>;
 }
 
+export interface LaunchCpEntry {
+  cpConfig: LaunchCpConfig;
+  monitorConfig?: MonitorConfig;
+}
+
 export interface DaemonConfig {
-  launchCpConfigList?: LaunchCpConfig[];
+  launchCpConfigList?: LaunchCpEntry[];
 }
 
 export interface SocketConfig {
