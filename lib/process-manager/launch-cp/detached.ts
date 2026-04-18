@@ -7,7 +7,13 @@ import {
   makeSureDirExist,
 } from '../service/external';
 import type {SpawnConfig} from '../service/external';
-import {getCpInfoDir, getCpLogDir, PROCESS_INFO_FILE_NAME} from '../service';
+import {
+  getCpInfoDir,
+  getCpLogDir,
+  PROCESS_INFO_FILE_NAME,
+  PROCESS_LOG_ERR_FILE_NAME,
+  PROCESS_LOG_OUT_FILE_NAME,
+} from '../service';
 import type {LaunchCpConfig, LaunchCpInfo} from '../service';
 
 export async function launchCpInDetachedMode(config: LaunchCpConfig): Promise<LaunchCpInfo> {
@@ -23,8 +29,8 @@ export async function launchCpInDetachedMode(config: LaunchCpConfig): Promise<La
     ...spawnConfig,
     infoToCp: {
       ...spawnConfig.infoToCp,
-      logOutPath: path.join(logDir, 'out.log'),
-      logErrPath: path.join(logDir, 'err.log'),
+      logOutPath: path.join(logDir, PROCESS_LOG_OUT_FILE_NAME),
+      logErrPath: path.join(logDir, PROCESS_LOG_ERR_FILE_NAME),
     },
   };
 

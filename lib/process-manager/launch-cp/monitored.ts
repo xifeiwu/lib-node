@@ -23,6 +23,9 @@ import {
   getCpMonitorDir,
   PROCESS_INFO_FILE_NAME,
   MONITORED_STDIO,
+  MONITOR_CHANGES_FILE_NAME,
+  PROCESS_LOG_ERR_FILE_NAME,
+  PROCESS_LOG_OUT_FILE_NAME,
 } from '../service';
 import type {LaunchCpConfig, LaunchCpEntry, LaunchCpInfo, MonitorConfig} from '../service';
 
@@ -71,8 +74,8 @@ export async function launchCpInMonitoredMode(
     ...prepared,
     infoToCp: {
       ...prepared.infoToCp,
-      logOutPath: path.join(logDir, 'out.log'),
-      logErrPath: path.join(logDir, 'err.log'),
+      logOutPath: path.join(logDir, PROCESS_LOG_OUT_FILE_NAME),
+      logErrPath: path.join(logDir, PROCESS_LOG_ERR_FILE_NAME),
     },
   };
 
@@ -84,13 +87,13 @@ export async function launchCpInMonitoredMode(
   });
 
   const monitorDir = getCpMonitorDir(id);
-  const changesWriter = createRollingLogWriter({dir: monitorDir, basename: 'changes.log'});
+  const changesWriter = createRollingLogWriter({dir: monitorDir, basename: MONITOR_CHANGES_FILE_NAME});
 
   let outWriter: RollingLogWriter | undefined;
   let errWriter: RollingLogWriter | undefined;
   if (monitorConfig.logCpOut) {
-    outWriter = createRollingLogWriter({dir: logDir, basename: 'out.log'});
-    errWriter = createRollingLogWriter({dir: logDir, basename: 'err.log'});
+    outWriter = createRollingLogWriter({dir: logDir, basename: PROCESS_LOG_OUT_FILE_NAME});
+    errWriter = createRollingLogWriter({dir: logDir, basename: PROCESS_LOG_ERR_FILE_NAME});
   }
 
   let retryCount = 0;
