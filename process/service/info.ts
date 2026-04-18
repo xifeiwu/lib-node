@@ -1,5 +1,5 @@
 import {spawn, execSync} from 'child_process';
-import {isFunction, isNumber} from '../../external';
+import {byteToWord, isFunction, isNumber} from '../../external';
 import {
   ProcessInfo,
   ProcessProps,
@@ -9,6 +9,14 @@ import {
   PidToProcessInfo,
 } from '../../types';
 import {treeInfoList} from './base';
+
+/** When `rssVsizeFromPsKib`, treat {@link ProcessInfo.rss} / {@link ProcessInfo.vsize} as KiB from `ps`; otherwise as bytes (e.g. Node `memoryUsage`). */
+function withMemoryWordFields(info: ProcessInfo, rssVsizeFromPsKib: boolean): ProcessInfo {
+  const rssBytes = rssVsizeFromPsKib ? info.rss * 1024 : info.rss;
+  const vsizeBytes = rssVsizeFromPsKib ? info.vsize * 1024 : info.vsize;
+  const toWord = (n: number) => (Number.isFinite(n) && n >= 0 ? byteToWord(n) : '');
+  return {...info, rssWord: toWord(rssBytes), vsizeWord: toWord(vsizeBytes)};
+}
 
 export function getFilterFunc(filter?: ProcessFilter): ProcessInfoFilterFunc | null {
   if (!filter) {
@@ -59,10 +67,27 @@ function toAppendChildInfo(infoList: ProcessInfo[]) {
 }
 
 interface ProcessRelatedInfo {
+  /** Rows after {@link GetProcessInfoOptions.filter}, when set; otherwise same as {@link allInfoList}. */
   infoList: ProcessInfo[];
+  /** Map pid → row, only when {@link GetProcessInfoOptions.appendChildInfo} is true (includes {@link ProcessInfo.children}). */
   pidToInfo?: PidToProcessInfo;
+  /** Every parsed row from `ps` before filtering. */
   allInfoList: ProcessInfo[];
 }
+
+/**
+ * Spawns `ps -A -o …` on Unix, parses columns into {@link ProcessInfo}, optionally builds a parent/child tree.
+ *
+ * @returns All rows, filtered rows, and optional pid map. On Windows the implementation currently resolves with `null`.
+ *
+ * @remarks
+ * Logic / robustness ideas worth considering later:
+ * - Drop blank lines and rows whose `pid` is not a finite number, so filters never see half-parsed objects.
+ * - BSD vs GNU `ps` differ in column flags and labels; pinning one dialect or detecting the platform avoids subtle bugs.
+ * - Prefer rejecting with `Error` (and optional `cause`) instead of passing raw stderr chunks to `reject`.
+ * - Align the Windows branch with the success type (e.g. empty lists) or widen the declared return type so callers do not need `null` checks.
+ * - If you need stable CPU/memory semantics, confirm your `ps` flags match the intended units (KiB vs pages) for `rss` / `vsize`.
+ */
 export async function getProcessInfo(options?: GetProcessInfoOptions): Promise<ProcessRelatedInfo> {
   const {printCommand, filter, appendChildInfo = true} = options ?? {};
   const filterFunc = getFilterFunc(filter);
@@ -111,17 +136,20 @@ export async function getProcessInfo(options?: GetProcessInfoOptions): Promise<P
     processLister.on('close', code => {
       const data = Buffer.concat(bufList).toString();
       const threads = data.toString().split('\n');
-      const processList = threads.slice(1).map(it => {
-        const items = it.trim().split(/\s+/);
-        return props.reduce<ProcessInfo>((sum, it, index) => {
-          if (index == props.length - 1) {
-            assignValue(sum, it, items.slice(index).join(' '));
-          } else {
-            assignValue(sum, it, items[index]);
-          }
-          return sum;
-        }, {} as ProcessInfo);
-      });
+      const processList = threads
+        .slice(1)
+        .map(it => {
+          const items = it.trim().split(/\s+/);
+          return props.reduce<ProcessInfo>((sum, it, index) => {
+            if (index == props.length - 1) {
+              assignValue(sum, it, items.slice(index).join(' '));
+            } else {
+              assignValue(sum, it, items[index]);
+            }
+            return sum;
+          }, {} as ProcessInfo);
+        })
+        .map(row => withMemoryWordFields(row, true));
 
       let pidToProcessInfo: PidToProcessInfo;
       if (appendChildInfo) {
@@ -140,39 +168,21 @@ export async function getProcessInfo(options?: GetProcessInfoOptions): Promise<P
 
 export function getProcessInfoByInst(p: NodeJS.Process): ProcessInfo {
   const {pid, ppid} = process;
-  const info: ProcessInfo = {
-    pid,
-    ppid,
-    pgid: process.getgid(),
-    etime: process.uptime() + '',
-
-    rss: process.memoryUsage.rss(),
-    cpu: 0,
-    vsize: 0,
-    command: process.argv.join(' '),
-  };
-  return info;
+  return withMemoryWordFields(
+    {
+      pid,
+      ppid,
+      pgid: process.getgid(),
+      etime: process.uptime() + '',
+      rss: process.memoryUsage.rss(),
+      cpu: 0,
+      vsize: 0,
+      command: process.argv.join(' '),
+    } as ProcessInfo,
+    false
+  );
 }
 
-// function isChildProcess(ppid, pid) {
-//   if ([ppid, pid].includes(undefined) || ppid === pid) {
-//     return false;
-//   }
-//   const pInfo = infoTree[ppid];
-//   if (!pInfo) {
-//     return false;
-//   }
-//   const {children} = pInfo;
-//   if (!Array.isArray(children)) {
-//     return false;
-//   }
-//   return children.some(child => {
-//     if (child.pid === pid) {
-//       return true;
-//     }
-//     return isChildProcess(child.pid, pid);
-//   });
-// }
 /**
  * Remove pid in pidList when it is child process of another pid in pidList
  * @param pidList

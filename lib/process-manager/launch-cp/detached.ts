@@ -32,7 +32,7 @@ export async function launchCpInDetachedMode(config: LaunchCpConfig): Promise<La
 
   const info: LaunchCpInfo = {
     mode: 'detached',
-    config: {...config, spawnConfig},
+    config,
     runtime: {
       phase: 'running',
       lastAction: 'start',
