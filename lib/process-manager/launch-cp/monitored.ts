@@ -18,9 +18,9 @@ import type {
   RollingSnapshotWriter,
 } from '../service/external';
 import {
-  getCpInfoDir,
-  getCpLogDir,
-  getCpMonitorDir,
+  getProcInfoDir,
+  getProcLogDir,
+  getProcMonitorDir,
   PROCESS_INFO_FILE_NAME,
   MONITORED_STDIO,
   MONITOR_CHANGES_FILE_NAME,
@@ -68,7 +68,7 @@ export async function launchCpInMonitoredMode(
   const spawnConfig = typeof raw === 'string' ? getSpawnConfigByScript(raw) : raw;
   const prepared = validateAndApplyStdio(spawnConfig, MONITORED_STDIO);
 
-  const logDir = getCpLogDir(id);
+  const logDir = getProcLogDir(id);
   makeSureDirExist(logDir);
   const enriched: SpawnConfig = {
     ...prepared,
@@ -79,14 +79,14 @@ export async function launchCpInMonitoredMode(
     },
   };
 
-  const infoDir = getCpInfoDir(id);
+  const infoDir = getProcInfoDir(id);
   const infoWriter = createRollingSnapshotWriter({
     dir: infoDir,
     basename: PROCESS_INFO_FILE_NAME,
     format: 'json',
   });
 
-  const monitorDir = getCpMonitorDir(id);
+  const monitorDir = getProcMonitorDir(id);
   const changesWriter = createRollingLogWriter({dir: monitorDir, basename: MONITOR_CHANGES_FILE_NAME});
 
   let outWriter: RollingLogWriter | undefined;

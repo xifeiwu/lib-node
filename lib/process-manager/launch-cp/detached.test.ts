@@ -1,7 +1,7 @@
 import path from 'path';
 import {logColorful, getSpawnConfigByScript, CP} from '../service/external';
 import {launchCpInDetachedMode} from './detached';
-import {loadCpInfo} from '../service';
+import {readProcInfo} from '../service';
 
 const debugServerScript = path.resolve(__dirname, '../../../utils/cp-script/debug-server.ts');
 
@@ -19,6 +19,6 @@ export async function runDetachedDebugServer() {
   });
   logColorful({}, 'LaunchCp detached info:', info);
 
-  const persisted = loadCpInfo(cpId);
+  const persisted = readProcInfo(cpId);
   logColorful({}, 'Persisted info:', persisted);
 }

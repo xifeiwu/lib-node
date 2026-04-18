@@ -4,11 +4,12 @@ import fs from 'fs';
 import {getAFreePort} from '../../../net/service/utils';
 import {logColorful, getSpawnConfigByScript, CP, waitFor, killProcessByPid} from './external';
 import {launchCpInDetachedMode} from '../launch-cp/detached';
-import {getAllCpKeyInfo, getCpBaseDir} from './file';
+import {getProcBaseDir} from './file';
+import {getAllProcKeyInfo} from './operation';
 
 /**
  * Same style as {@link ../launch-cp/detached.test.ts runDetachedDebugServer}: launch a detached cp, then assert
- * {@link getAllCpKeyInfo} returns a row for that `cpId`.
+ * {@link getAllProcKeyInfo} returns a row for that `cpId`.
  */
 export async function testGetAllCpKeyInfo() {
   const cpId = `test-get-all-cp-key-${Date.now()}`;
@@ -27,7 +28,7 @@ export async function testGetAllCpKeyInfo() {
 
   await waitFor(1000);
 
-  const list = await getAllCpKeyInfo();
+  const list = await getAllProcKeyInfo();
   assert.ok(Array.isArray(list), 'getAllCpKeyInfo returns an array');
   const mine = list.find(it => it && it.key === cpId);
   assert.ok(mine, `expected a CpKeyInfo row for cpId=${cpId}`);
@@ -38,7 +39,7 @@ export async function testGetAllCpKeyInfo() {
   assert.ok(mine!.errFilePath.includes(cpId), mine!.errFilePath);
   logColorful({}, 'getAllCpKeyInfo match:', mine);
 
-  const base = getCpBaseDir(cpId);
+  const base = getProcBaseDir(cpId);
   try {
     await killProcessByPid([childPid], {killChildren: false});
   } catch {

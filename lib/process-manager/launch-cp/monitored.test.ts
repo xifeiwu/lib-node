@@ -1,7 +1,7 @@
 import path from 'path';
 import {logColorful, getSpawnConfigByScript, CP} from '../service/external';
 import {launchCpInMonitoredMode} from './monitored';
-import {loadCpInfo} from '../service';
+import {readProcInfo} from '../service';
 
 const debugServerScript = path.resolve(__dirname, '../../../utils/cp-script/debug-server.ts');
 
@@ -27,6 +27,6 @@ export async function runMonitoredDebugServer() {
   );
   logColorful({}, 'LaunchCp monitored info:', info);
 
-  const persisted = loadCpInfo(cpId);
+  const persisted = readProcInfo(cpId);
   logColorful({}, 'Persisted info:', persisted);
 }

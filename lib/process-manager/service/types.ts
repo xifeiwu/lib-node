@@ -62,3 +62,14 @@ export interface LaunchCpEntry {
   cpConfig: LaunchCpConfig;
   monitorConfig?: MonitorConfig;
 }
+
+export interface ProcKeyInfo {
+  key: string;
+  status: string;
+  command: string;
+  pid: number;
+  rss: string;
+  monitorPid: MonitorInfo['id'];
+  outFilePath: string;
+  errFilePath: string;
+}

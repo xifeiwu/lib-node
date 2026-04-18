@@ -8,8 +8,8 @@ import {
 } from '../service/external';
 import type {SpawnConfig} from '../service/external';
 import {
-  getCpInfoDir,
-  getCpLogDir,
+  getProcInfoDir,
+  getProcLogDir,
   PROCESS_INFO_FILE_NAME,
   PROCESS_LOG_ERR_FILE_NAME,
   PROCESS_LOG_OUT_FILE_NAME,
@@ -23,7 +23,7 @@ export async function launchCpInDetachedMode(config: LaunchCpConfig): Promise<La
   }
   const spawnConfig = typeof raw === 'string' ? getSpawnConfigByScript(raw) : raw;
 
-  const logDir = getCpLogDir(id);
+  const logDir = getProcLogDir(id);
   makeSureDirExist(logDir);
   const enriched: SpawnConfig = {
     ...spawnConfig,
@@ -47,7 +47,7 @@ export async function launchCpInDetachedMode(config: LaunchCpConfig): Promise<La
     spawn: serializeSpawnResponse(spawnResponse),
   };
 
-  const infoDir = getCpInfoDir(id);
+  const infoDir = getProcInfoDir(id);
   createRollingSnapshotWriter({dir: infoDir, basename: PROCESS_INFO_FILE_NAME, format: 'json'}).save(info);
 
   return info;

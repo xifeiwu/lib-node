@@ -1,3 +1,7 @@
 export * from './service/types';
-export type {CpKeyInfo} from './service/file';
-export {loadCpInfo, getAllCpKeyInfo as getAllCpInfo, isCpAlive, stopCp} from './service';
+export {
+  readProcInfo as loadCpInfo,
+  getAllProcKeyInfo as getAllCpInfo,
+  isProcAlive as isCpAlive,
+  stopProc as stopCp,
+} from './service';
