@@ -44,7 +44,7 @@ export async function launchCpInDetachedMode(config: LaunchCpConfig): Promise<La
       lastAction: 'start',
       spawnConfig: finalSpawnConfig,
     },
-    spawnInfo: serializeSpawnResponse(spawnResponse),
+    spawn: serializeSpawnResponse(spawnResponse),
   };
 
   const infoDir = getCpInfoDir(id);

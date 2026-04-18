@@ -7,7 +7,7 @@ export {logColorful} from '../../../log';
 export {makeSureDirExist} from '../../../path';
 
 // From process
-export {killProcessByPid} from '../../../process/service';
+export {killProcessByPid, getProcessInfoByPid} from '../../../process/service';
 export {isProcessAlive} from '../../../process/service/kill';
 
 // From child-process/spawn

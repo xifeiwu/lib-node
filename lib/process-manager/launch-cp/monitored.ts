@@ -106,11 +106,11 @@ export async function launchCpInMonitoredMode(
       lastAction: 'start',
       spawnConfig: enriched,
     },
-    monitorInfo: {
+    monitor: {
       id: process.pid,
       retryCount,
     },
-    spawnInfo: serializeSpawnResponse(result),
+    spawn: serializeSpawnResponse(result),
   });
 
   const doSpawn = async (): Promise<SpawnAndTryIpcResponse> => {

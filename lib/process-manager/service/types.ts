@@ -4,6 +4,10 @@ export interface InfoToCp {
   logOutPath: string;
   logErrPath: string;
 }
+export interface CpResponse {
+  outFilePath?: string;
+  errFilePath?: string;
+}
 
 export interface LaunchCpConfig {
   /** id used to identify the child process  */
@@ -46,12 +50,12 @@ export interface MonitorInfo {
 export type LaunchCpMode = 'detached' | 'monitored';
 
 /** All info of managed child process */
-export interface LaunchCpInfo<ResponseFromCp = any> {
+export interface LaunchCpInfo<ResponseFromCp extends CpResponse = CpResponse> {
   mode: LaunchCpMode;
   config: LaunchCpConfig;
   runtime: LaunchCpRuntime;
-  monitorInfo?: MonitorInfo;
-  spawnInfo: SerializableSpawnInfo<ResponseFromCp>;
+  monitor?: MonitorInfo;
+  spawn: SerializableSpawnInfo<ResponseFromCp>;
 }
 
 export interface LaunchCpEntry {
