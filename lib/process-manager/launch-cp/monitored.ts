@@ -9,6 +9,7 @@ import {
   isNumber,
   waitFor,
   get,
+  waitIpcMessageOnce,
 } from '../service/external';
 import type {
   SpawnConfig,
@@ -23,7 +24,7 @@ import {
   PROCESS_INFO_FILE_NAME,
   MONITORED_STDIO,
 } from '../service';
-import type {LaunchCpConfig, LaunchCpInfo, MonitorConfig} from '../service';
+import type {LaunchCpConfig, LaunchCpEntry, LaunchCpInfo, MonitorConfig} from '../service';
 
 export function validateAndApplyStdio(spawnConfig: SpawnConfig, defaultStdio: any[]): SpawnConfig {
   const config = {...spawnConfig};
@@ -147,4 +148,17 @@ export async function launchCpInMonitoredMode(
 
   const result = await doSpawn();
   return buildInfo(result);
+}
+
+// Script entry point: runs when this file is spawned as a child process
+if (require.main === module) {
+  (async () => {
+    const payload = await waitIpcMessageOnce<LaunchCpEntry>();
+    if (!payload) {
+      process.exit(1);
+    }
+    const {cpConfig, monitorConfig} = payload;
+    const results = await launchCpInMonitoredMode(cpConfig, monitorConfig);
+    process.send?.(results);
+  })();
 }

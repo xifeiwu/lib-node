@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import {DAEMON_ROOT_DIR, killProcessByPid, isProcessAlive} from './external';
-import {LaunchCpInfo, ResponseError} from './types';
+import {LaunchCpInfo} from './types';
 import {PROCESS_INFO_FILE_NAME} from './constants';
 
 export function getCpBaseDir(cpId: string): string {
@@ -80,16 +80,4 @@ export async function stopCp(cpId: string): Promise<void> {
     return;
   }
   await killProcessByPid([pid]);
-}
-
-export function getErrorResponse(err: Error | string): ResponseError {
-  let message = err as string;
-  if (err instanceof Error) {
-    message = err.stack ? err.stack : err.message;
-  }
-  const errorResponse: ResponseError = {
-    type: 'error',
-    data: message,
-  };
-  return errorResponse;
 }
