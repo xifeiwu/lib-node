@@ -10,7 +10,10 @@ import {
 } from '../../types';
 import {treeInfoList} from './base';
 
-/** When `rssVsizeFromPsKib`, treat {@link ProcessInfo.rss} / {@link ProcessInfo.vsize} as KiB from `ps`; otherwise as bytes (e.g. Node `memoryUsage`). */
+/**
+ * When `rssVsizeFromPsKib`, convert `ps` memory columns to bytes: Darwin `rss` / `vsize` are documented as **1024-byte
+ * units** (`man ps`). When false, {@link ProcessInfo.rss} / {@link ProcessInfo.vsize} are already bytes (Node).
+ */
 function withMemoryWordFields(info: ProcessInfo, rssVsizeFromPsKib: boolean): ProcessInfo {
   const rssBytes = rssVsizeFromPsKib ? info.rss * 1024 : info.rss;
   const vsizeBytes = rssVsizeFromPsKib ? info.vsize * 1024 : info.vsize;
@@ -87,6 +90,8 @@ interface ProcessRelatedInfo {
  * - Prefer rejecting with `Error` (and optional `cause`) instead of passing raw stderr chunks to `reject`.
  * - Align the Windows branch with the success type (e.g. empty lists) or widen the declared return type so callers do not need `null` checks.
  * - If you need stable CPU/memory semantics, confirm your `ps` flags match the intended units (KiB vs pages) for `rss` / `vsize`.
+ * - **macOS Activity Monitor:** its “Memory” value is **not** `ps` RSS; it reflects different kernel accounting. {@link ProcessInfo.rssWord}
+ *   is intended to match **`ps`**, not Activity Monitor. Matching AM would need Mach `task_info` (native code) or tools like `vmmap`, not `ps` alone.
  */
 export async function getProcessInfo(options?: GetProcessInfoOptions): Promise<ProcessRelatedInfo> {
   const {printCommand, filter, appendChildInfo = true} = options ?? {};
