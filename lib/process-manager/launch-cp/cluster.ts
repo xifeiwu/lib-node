@@ -1,21 +1,20 @@
 import {getSpawnConfigByScript, waitIpcMessageOnce} from '../service/external';
 import {launchCpInDetachedMode} from './detached';
 import {launchCpInMonitoredMode} from './monitored';
-import type {LaunchCpEntry, LaunchCpInfo} from '../service';
+import type {LaunchCpConfig, LaunchCpInfo} from '../service';
 
 interface ClusterIpcPayload {
-  entries: LaunchCpEntry[];
+  entries: LaunchCpConfig[];
 }
 
-export async function launchCluster(entries: LaunchCpEntry[]): Promise<LaunchCpInfo[]> {
+export async function launchCluster(entries: LaunchCpConfig[]): Promise<LaunchCpInfo[]> {
   const results: LaunchCpInfo[] = [];
   for (const entry of entries) {
     try {
-      const {cpConfig, monitorConfig} = entry;
-      if (monitorConfig) {
-        results.push(await launchCpInMonitoredMode(cpConfig, monitorConfig));
+      if (entry.monitorConfig) {
+        results.push(await launchCpInMonitoredMode(entry));
       } else {
-        results.push(await launchCpInDetachedMode(cpConfig));
+        results.push(await launchCpInDetachedMode(entry));
       }
     } catch (err) {
       console.error(err);
@@ -26,7 +25,7 @@ export async function launchCluster(entries: LaunchCpEntry[]): Promise<LaunchCpI
 
 export async function launchClusterInDetachedMode(
   clusterId: string,
-  entries: LaunchCpEntry[]
+  entries: LaunchCpConfig[]
 ): Promise<LaunchCpInfo> {
   return launchCpInDetachedMode({
     id: clusterId,

@@ -27,7 +27,7 @@ import {
   PROCESS_LOG_ERR_FILE_NAME,
   PROCESS_LOG_OUT_FILE_NAME,
 } from '../service';
-import type {LaunchCpConfig, LaunchCpEntry, LaunchCpInfo, MonitorConfig} from '../service';
+import type {LaunchCpConfig, LaunchCpInfo} from '../service';
 
 export function validateAndApplyStdio(spawnConfig: SpawnConfig, defaultStdio: any[]): SpawnConfig {
   const config = {...spawnConfig};
@@ -57,10 +57,11 @@ export function validateAndApplyStdio(spawnConfig: SpawnConfig, defaultStdio: an
   return config;
 }
 
-export async function launchCpInMonitoredMode(
-  config: LaunchCpConfig,
-  monitorConfig: MonitorConfig
-): Promise<LaunchCpInfo> {
+export async function launchCpInMonitoredMode(config: LaunchCpConfig): Promise<LaunchCpInfo> {
+  const monitorConfig = config.monitorConfig;
+  if (!monitorConfig) {
+    throw new Error('monitorConfig is required on LaunchCpConfig for monitored mode');
+  }
   const {id, spawnConfig: raw} = config;
   if (!raw) {
     throw new Error('spawnConfig is required');
@@ -156,12 +157,11 @@ export async function launchCpInMonitoredMode(
 // Script entry point: runs when this file is spawned as a child process
 if (require.main === module) {
   (async () => {
-    const payload = await waitIpcMessageOnce<LaunchCpEntry>();
-    if (!payload) {
+    const payload = await waitIpcMessageOnce<LaunchCpConfig>();
+    if (!payload?.monitorConfig) {
       process.exit(1);
     }
-    const {cpConfig, monitorConfig} = payload;
-    const results = await launchCpInMonitoredMode(cpConfig, monitorConfig);
+    const results = await launchCpInMonitoredMode(payload);
     process.send?.(results);
   })();
 }

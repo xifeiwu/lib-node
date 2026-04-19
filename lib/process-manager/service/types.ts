@@ -9,12 +9,6 @@ export interface CpResponse {
   errFilePath?: string;
 }
 
-export interface LaunchCpConfig {
-  /** id used to identify the child process  */
-  id: string;
-  spawnConfig?: SpawnConfig | string;
-}
-
 export interface MonitorConfig {
   retry?: {
     /** max count of retry */
@@ -23,6 +17,13 @@ export interface MonitorConfig {
     minInterval?: number;
   };
   logCpOut?: boolean;
+}
+
+export interface LaunchCpConfig {
+  /** id used to identify the child process  */
+  id: string;
+  spawnConfig?: SpawnConfig | string;
+  monitorConfig?: MonitorConfig;
 }
 
 /** Mutable runtime snapshot for one child process (lifecycle phase, last command). */
@@ -56,11 +57,6 @@ export interface LaunchCpInfo<ResponseFromCp extends CpResponse = CpResponse> {
   runtime: LaunchCpRuntime;
   monitor?: MonitorInfo;
   spawn: SerializableSpawnInfo<ResponseFromCp>;
-}
-
-export interface LaunchCpEntry {
-  cpConfig: LaunchCpConfig;
-  monitorConfig?: MonitorConfig;
 }
 
 export interface ProcKeyInfo {
