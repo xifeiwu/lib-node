@@ -1,7 +1,6 @@
 import path from 'path';
 import {
   spawnAndTryIpc,
-  getSpawnConfigByScript,
   serializeSpawnResponse,
   createRollingSnapshotWriter,
   createRollingLogWriter,
@@ -26,6 +25,7 @@ import {
   MONITOR_CHANGES_FILE_NAME,
   PROCESS_LOG_ERR_FILE_NAME,
   PROCESS_LOG_OUT_FILE_NAME,
+  resolveLaunchSpawnConfig,
 } from '../service';
 import type {LaunchCpConfig, LaunchCpInfo} from '../service';
 
@@ -66,7 +66,7 @@ export async function launchCpInMonitoredMode(config: LaunchCpConfig): Promise<L
   if (!raw) {
     throw new Error('spawnConfig is required');
   }
-  const spawnConfig = typeof raw === 'string' ? getSpawnConfigByScript(raw) : raw;
+  const spawnConfig = resolveLaunchSpawnConfig(raw);
   const prepared = validateAndApplyStdio(spawnConfig, MONITORED_STDIO);
 
   const logDir = getProcLogDir(id);

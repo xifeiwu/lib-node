@@ -1,7 +1,6 @@
 import path from 'path';
 import {
   spwanInDetachedMode,
-  getSpawnConfigByScript,
   serializeSpawnResponse,
   createRollingSnapshotWriter,
   makeSureDirExist,
@@ -13,6 +12,7 @@ import {
   PROCESS_INFO_FILE_NAME,
   PROCESS_LOG_ERR_FILE_NAME,
   PROCESS_LOG_OUT_FILE_NAME,
+  resolveLaunchSpawnConfig,
 } from '../service';
 import type {LaunchCpConfig, LaunchCpInfo} from '../service';
 
@@ -21,7 +21,7 @@ export async function launchCpInDetachedMode(config: LaunchCpConfig): Promise<La
   if (!raw) {
     throw new Error('spawnConfig is required');
   }
-  const spawnConfig = typeof raw === 'string' ? getSpawnConfigByScript(raw) : raw;
+  const spawnConfig = resolveLaunchSpawnConfig(raw);
 
   const logDir = getProcLogDir(id);
   makeSureDirExist(logDir);

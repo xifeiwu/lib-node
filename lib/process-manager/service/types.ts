@@ -1,4 +1,4 @@
-import {SpawnConfig, SerializableSpawnInfo} from '../../../types/child_process/common';
+import {SpawnConfig, SerializableSpawnInfo, SpawnScriptOptions} from '../../../types/child_process/common';
 
 export interface InfoToCp {
   logOutPath: string;
@@ -22,7 +22,7 @@ export interface MonitorConfig {
 export interface LaunchCpConfig {
   /** id used to identify the child process  */
   id: string;
-  spawnConfig?: SpawnConfig | string;
+  spawnConfig?: SpawnConfig | ({scriptPath: string} & SpawnScriptOptions);
   monitorConfig?: MonitorConfig;
 }
 
