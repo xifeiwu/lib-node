@@ -31,9 +31,8 @@ export interface IpcConfig<CpConfig = any> {
   maxWaitTime4Ipc?: number;
   /**
    * Max wait time for ipc message from Child Process, the unit is second
-   * If maxWaitTime4Ipc is not equal undefined, main process will wait response from child process
-   * until maxWaitTime4Ipc second is passed
-   * Else main process will not wait for response from child process.
+   * If maxWaitCpResInSec is not set, main process will not wait response from child process
+   * Else main process will wait response from child process within maxWaitTime4Ipc seconds
    */
   maxWaitCpResInSec?: number;
 }
@@ -50,9 +49,7 @@ interface SpawnScriptOnlyOptions<RuntimeOptions> {
  * args of SpawnConfig split into two parts: tsNodeOptions for ts-node, params for ts script
  */
 export interface SpawnScriptOptions<RuntimeOptions = any, CpConfig = any>
-  extends SpawnScriptOnlyOptions<RuntimeOptions>,
-    CommonSpawnOptions,
-    IpcConfig<CpConfig> {}
+  extends SpawnScriptOnlyOptions<RuntimeOptions>, CommonSpawnOptions, IpcConfig<CpConfig> {}
 
 /**
  * @deprecated by SpawnScriptOptions
@@ -112,7 +109,9 @@ export interface SpawnAndTryIpcResponse<ResponseFromCp = any> {
 /**
  * An json object to describe child process related info, also remove node instance of ChildProcess as it's not Serielizeable
  */
-export interface SerializableSpawnInfo<ResponseFromCp = any>
-  extends Omit<SpawnAndTryIpcResponse<ResponseFromCp>, 'childProcess'> {
+export interface SerializableSpawnInfo<ResponseFromCp = any> extends Omit<
+  SpawnAndTryIpcResponse<ResponseFromCp>,
+  'childProcess'
+> {
   pid: number;
 }

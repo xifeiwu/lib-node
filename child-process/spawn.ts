@@ -210,16 +210,16 @@ export async function spawnAndTryIpc<CpConfig extends Serializable = any, Respon
       timeoutToResolve = setTimeout(() => {
         res();
       }, minUptime);
-      waitResPromise = new Promise<ResponseFromCp>(async (res, rej) => {
+      waitResPromise = new Promise<ResponseFromCp>(async (res2, rej) => {
         /** Wait message of child process from IPC channel when supportIpc and maxWaitTime4Ipc is not undefined */
         if (supportIpc && isNumber(maxWaitCpResInSec)) {
           const responseFromCp = await waitIpcMessageOnce({
             p: childProcess,
             maxWaitInSec: maxWaitCpResInSec,
           });
-          res(responseFromCp);
+          res2(responseFromCp);
         } else {
-          res(undefined);
+          res2(undefined);
         }
       });
     });
