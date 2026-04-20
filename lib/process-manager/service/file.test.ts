@@ -5,7 +5,7 @@ import {getAFreePort} from '../../../net/service/utils';
 import {logColorful, getSpawnConfigByScript, CP, waitFor, killProcessByPid} from './external';
 import {launchCpInDetachedMode} from '../launch-cp/detached';
 import {getProcBaseDir} from './file';
-import {listProcKeyInfo} from './operation';
+import {listProcKeyInfo} from '../operation';
 
 /**
  * Same style as {@link ../launch-cp/detached.test.ts runDetachedDebugServer}: launch a detached cp, then assert

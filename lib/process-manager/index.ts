@@ -1,2 +1,12 @@
 export * from './service/types';
-export {readProcInfo, listProcKeyInfo, listProcKeyInfo as getAllCpInfo} from './service';
+export {readProcInfo} from './service';
+export {
+  listProcKeyInfo,
+  killProc,
+  restartProcess,
+  removeProcBaseDir,
+  startProcess,
+  getProcKeyInfo,
+  tailProcessOutLog,
+  tailProcessErrLog,
+} from './operation';

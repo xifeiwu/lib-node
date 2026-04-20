@@ -2,9 +2,14 @@
  * logic based on file system
  */
 import fs from 'fs';
-import {PROCESS_MANAGER_ROOT_DIR, killProcessByPid, isProcessAlive, getProcessInfoByPid} from './external';
-import type {KillProcOptions, LaunchCpConfig, LaunchCpInfo, ProcKeyInfo} from './types';
-import {readProcInfo, getProcLogOutPath, getProcLogErrPath, getProcBaseDir} from './file';
+import {
+  PROCESS_MANAGER_ROOT_DIR,
+  killProcessByPid,
+  isProcessAlive,
+  getProcessInfoByPid,
+} from '../service/external';
+import type {KillProcOptions, LaunchCpConfig, LaunchCpInfo, ProcKeyInfo} from '../service/types';
+import {readProcInfo, getProcLogOutPath, getProcLogErrPath, getProcBaseDir} from '../service/file';
 import {launchCpInMonitoredMode} from '../launch-cp/monitored';
 import {launchCpInDetachedMode} from '../launch-cp/detached';
 
@@ -42,7 +47,6 @@ export async function getProcKeyInfo(cpId: string): Promise<ProcKeyInfo | null> 
   const errFilePath = info.spawn.responseFromCp?.errFilePath ?? getProcLogErrPath(cpId);
   const pInfo = await getProcessInfoByPid(pid);
   const monitorPid = info.monitor?.id;
-  // const monitorInfo = await getProcessInfoByPid(monitorPid);
   return {
     key: cpId,
     status: pInfo ? pInfo.etime : 'dead',

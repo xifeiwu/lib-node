@@ -1,6 +1,6 @@
 import fs from 'fs';
 import {spawn, type ChildProcess} from 'child_process';
-import {readProcInfo, getProcLogOutPath, getProcLogErrPath} from './file';
+import {readProcInfo, getProcLogOutPath, getProcLogErrPath} from '../service/file';
 
 export type TailProcessLogOptions = {
   /** When aborted, tail stops and the returned promise rejects with `AbortError`. */
@@ -48,7 +48,7 @@ function tailPathFollowing(
   filePath: string,
   tailLines: number,
   out: NodeJS.WritableStream,
-  signal?: AbortSignal,
+  signal?: AbortSignal
 ): Promise<void> {
   if (signal?.aborted) {
     return Promise.reject(abortError(signal));
@@ -74,7 +74,7 @@ function tailPathFollowing(
             '-Command',
             `Get-Content -LiteralPath '${lit}' -Wait -Tail ${tailLines}`,
           ],
-          {stdio: ['ignore', 'pipe', 'pipe']},
+          {stdio: ['ignore', 'pipe', 'pipe']}
         );
       }
       return spawn('tail', ['-n', String(tailLines), '-f', filePath], {
@@ -121,7 +121,7 @@ function tailPathFollowing(
 /**
  * Pure Node fallback when `tail` / PowerShell is unavailable (`spawn` ENOENT).
  *
- * **Phase 1 — “tail -n”:** Read only the last 256 KiB of the file (cap for huge logs), split
+ * **Phase 1 — "tail -n":** Read only the last 256 KiB of the file (cap for huge logs), split
  * lines, print the last `tailLines` lines, then set `position` to EOF so phase 2 only sees new
  * bytes (same idea as `tail -f` after an initial snapshot).
  *
@@ -139,7 +139,7 @@ async function tailPathFollowingFs(
   filePath: string,
   tailLines: number,
   out: NodeJS.WritableStream,
-  signal?: AbortSignal,
+  signal?: AbortSignal
 ): Promise<void> {
   if (signal?.aborted) {
     throw abortError(signal);
@@ -164,7 +164,7 @@ async function tailPathFollowingFs(
     }
   }
 
-  // --- Phase 2: block until aborted; never resolve on “EOF” (growing log has no EOF for follow) ---
+  // --- Phase 2: block until aborted; never resolve on "EOF" (growing log has no EOF for follow) ---
   return new Promise((_resolve, reject) => {
     if (signal?.aborted) {
       reject(abortError(signal));
