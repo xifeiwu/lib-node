@@ -1,123 +1,132 @@
-# Intro
+# process-manager
 
-在后台管理一组长期运行的子进程：启动、停止、重启、查看状态、获取日志。
+管理长期运行的子进程：启动、停止、重启、查看状态、获取日志。通过文件系统持久化进程状态，无需常驻 daemon。
 
 ## 功能
 
-- **后台运行** — Daemon 以 detached 模式在后台独立运行，调用方退出后不影响子进程。
-- **多进程管理** — 单个 Daemon 可管理多个子进程，每个子进程有独立 `id`。
-- **启停控制** — 通过 Socket 命令 `start` / `stop` / `restart` 控制任意子进程。
-- **状态查询** — `ping` 探活 Daemon，`info` 查询 Daemon 或指定子进程的状态、PID、运行历史。
-- **日志持久化** — 子进程的 stdout/stderr 通过 `RollingLogWriter` 写入 `~/.process-management/{cpId}/log/out.log` 和 `err.log`。
-- **自动重试** — 子进程意外退出后，按配置的 `retry.maxCount` / `retry.minInterval` 自动重启。
-- **状态持久化** — 每次状态变化时通过 `RollingSnapshotWriter` 将完整信息写入 `~/.process-management/{cpId}/info/index.js`。
+- **后台运行** — detached 模式下子进程独立运行，调用方退出不影响子进程。
+- **自动重试** — monitored 模式下，子进程意外退出后按 `retry.maxCount` / `retry.minInterval` 自动重启。
+- **状态持久化** — 进程信息持久化到 `~/.process-management/{cpId}/info/index.json`。
+- **日志持久化** — stdout/stderr 通过 `RollingLogWriter` 写入 `~/.process-management/{cpId}/log/`。
+- **批量管理** — `launchCluster` 批量启动多个子进程。
+
+## 架构分层
+
+本模块提供核心进程管理能力，不包含配置定义和 CLI。消费方（如 busybox）负责：
+
+```
+消费方 command 层    CLI 解析、结果展示（logColorful）
+消费方 service 层    config/id 选择、委托调用 modules 层
+消费方 config 层     定义 LaunchCpConfig、selectConfigById
+─────────────────────────────────────────────────────
+modules service 层   startProcess、killProc、restartProcess 等
+modules launch-cp    launchCpInDetachedMode、launchCpInMonitoredMode
+```
+
+消费方 service 层的职责是薄封装：选择 configId（从配置列表）或 procId（从已注册目录），然后调用本模块的函数。所有实际的进程操作（spawn、kill、持久化、日志）都在本模块完成。
 
 ## 使用方式
 
-### 启动 Daemon
+### 启动单个进程
 
 ```typescript
-import {startDetachedDaemon} from './lib/process-management';
+import {startProcess} from './service';
 
-const spawnInfo = await startDetachedDaemon({
-  id: 'my-daemon',
-  cpWrapperConfigList: [
-    {
-      id: 'my-service',
-      retry: {maxCount: 3, minInterval: 5000},
-      spawnConfig: {
-        command: 'node',
-        args: ['./my-service.js'],
-        spawnOptions: {stdio: ['ignore', 'ignore', 'ignore', 'ipc']},
-      },
-    },
-  ],
+const info = await startProcess({
+  id: 'my-service',
+  spawnConfig: {
+    scriptPath: './my-service.ts',
+    infoToCp: {port: 3333},
+    maxWaitCpResInSec: 6,
+  },
+  monitorConfig: {retry: {maxCount: 3, minInterval: 5000}},
 });
 ```
 
-### 连接并控制
+### 管理进程
 
 ```typescript
-import {SocketClientToDaemon} from './lib/process-management';
+import {killProc, restartProcess, listProcKeyInfo, removeProcBaseDir} from './service';
 
-const client = new SocketClientToDaemon({path: 'my-daemon'});
-
-await client.ping();                          // 探活
-await client.info('my-daemon');               // Daemon 整体信息
-await client.info('my-service');              // 单个子进程信息
-await client.start({id: 'my-service', ...}); // 启动子进程
-await client.restart('my-service');           // 重启子进程
-await client.stop('my-service');              // 停止子进程
-await client.stop('my-daemon');               // 停止整个 Daemon
-await client.log('my-service');               // 获取全部日志
-await client.log({id: 'my-service', tail: 50}); // 获取最近 50 行
+await listProcKeyInfo();                          // 列出所有进程状态
+await killProc('my-service');                     // 停止进程
+await killProc('my-service', {cleanUp: true});    // 停止并清理文件
+await restartProcess(config, {cleanUp: true});    // 重启（先 kill 再 start）
+removeProcBaseDir('my-service');                   // 清理持久化文件（需先停止）
 ```
 
-## Socket 命令
+### 查看日志
 
-| `action` | `data` | 返回 |
-|----------|--------|------|
-| `ping` | — | `{ type: 'pong', data: daemonId }` |
-| `info` | daemon id 或 子进程 id | `{ type: 'info', data: DaemonInfo \| CpWrapperInfo }` |
-| `start` | `CpWrapperConfig` 对象或子进程 id | `{ type: 'start', data: CpWrapperInfo }` |
-| `restart` | 同 `start` | `{ type: 'restart', data: CpWrapperInfo }` |
-| `stop` | daemon id 或子进程 id | `{ type: 'stop', data: DaemonInfo \| CpWrapperInfo }` |
-| `log` | 子进程 id 或 `{ id, tail? }` | `{ type: 'log', data: { id, lines, total } }` |
+```typescript
+import {tailProcessOutLog} from './service';
 
-## 配置说明
+await tailProcessOutLog('my-service');  // tail -f stdout 日志
+```
 
-### DaemonConfig
+## 配置
+
+### LaunchCpConfig
 
 ```typescript
 {
-  id: string;                    // Daemon 标识，也作为默认 socket path
-  connection?: {
-    socketConfig?: TcpServerConfig; // 自定义 socket 配置，不设则用 id 作为 path
+  id: string;                    // 进程标识，也是持久化目录名
+  spawnConfig: {
+    scriptPath: string;          // 脚本路径（.ts → ts-node, .js → node）
+    infoToCp?: object;           // 通过 IPC 传递给子进程的数据
+    maxWaitCpResInSec?: number;  // 等待子进程 IPC 响应的超时秒数
+    spawnOptions?: object;       // Node.js spawn options
   };
-  cpWrapperConfigList?: CpWrapperConfig[]; // 启动时自动拉起的子进程列表
-}
-```
-
-### CpWrapperConfig
-
-```typescript
-{
-  id: string;                    // 子进程标识
-  retry?: {
-    maxCount?: number;           // 最大重试次数
-    minInterval?: number;        // 重试间隔（ms）
+  monitorConfig?: {              // 有此字段时使用 monitored 模式
+    retry?: {
+      maxCount?: number;         // 最大重试次数
+      minInterval?: number;      // 重试间隔（ms）
+    };
   };
-  spawnConfig?: SpawnConfig;     // spawn 参数（command, args, spawnOptions, infoToCp 等）
 }
 ```
 
 ## 日志
 
-子进程的 stdout/stderr 通过 `RollingLogWriter` 分别写入 `~/.process-management/{cpId}/log/out.log` 和 `~/.process-management/{cpId}/log/err.log`，文件超过大小限制时自动滚动归档。
+stdout/stderr 通过 `RollingLogWriter` 写入：
+- `{cpId}/log/out.log` — stdout + stderr 合并日志
+- `{cpId}/log/err.log` — 仅 stderr
 
-- 子进程 stdio 中的 `'ignore'` 会被自动替换为 `'pipe'`，其他值不受影响。
-- debug 模式下输出直接打印到终端，不经过日志收集。
-- CLI 端使用 `tail -f` 实时跟踪日志文件。
+文件超过大小限制时自动滚动归档。CLI 端使用 `tail -f` 实时跟踪。
 
 ## 文件结构
 
 ```
-lib/process-management/
-├── cp-cluster.ts      Daemon 类：Socket 服务、命令路由
-├── cp-wrapper.ts      CpWrapper：状态机、spawn/kill、重试、日志、状态持久化
-├── types.ts           所有 TypeScript 类型定义
-├── service.ts         序列化工具、信息加载函数
-├── external.ts        跨模块依赖聚合
-├── index.ts           公共导出
-├── utils/
-│   ├── server.ts      startDetachedDaemon（拉起 Daemon 进程）
-│   ├── client.ts      SocketClientToDaemon（Socket 客户端）
-│   ├── utils.ts       Socket 活跃性检查工具
-│   └── cp-script/
-│       └── daemon.ts  Daemon 进程入口脚本
-├── README.md          功能说明（本文件）
+lib/process-manager/
+├── service/
+│   ├── operation.ts       核心操作：startProcess、killProc、restartProcess、
+│   │                      removeProcBaseDir、listProcKeyInfo
+│   ├── file.ts            路径工具（getProcBaseDir 等）、readProcInfo
+│   ├── tail-file.ts       tailProcessOutLog、tailProcessErrLog
+│   ├── types.ts           类型定义
+│   ├── constants.ts       stdio 常量、文件名常量
+│   ├── external.ts        跨模块依赖聚合
+│   ├── launch-spawn-config.ts  SpawnConfig 解析
+│   └── index.ts           公共导出
+├── launch-cp/
+│   ├── detached.ts        launchCpInDetachedMode：spawn + 持久化，父进程断开
+│   ├── monitored.ts       launchCpInMonitoredMode：spawn + 日志管道 + 退出重试
+│   ├── cluster.ts         launchCluster：批量启动
+│   └── cp-util.ts         子进程工具（waitInfoFromParent）
+├── index.ts               公共导出
+├── README.md              本文件
 └── docs/
-    ├── design.md       关键 feature 的设计决策
-    ├── flow.md         逻辑流程概览
-    └── chat.md         与 Claude 的交流记录
+    ├── design.md          设计决策
+    ├── flow.md            代码流程
+    └── chat.md            开发记录
+
+运行时数据目录：
+~/.process-management/
+└── {cpId}/
+    ├── info/
+    │   └── index.json     运行信息（LaunchCpInfo）
+    ├── log/
+    │   ├── out.log        stdout + stderr 合并日志
+    │   └── err.log        stderr 日志
+    └── monitor/
+        └── changes.log    状态变化日志（仅 monitored 模式）
 ```

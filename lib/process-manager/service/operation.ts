@@ -80,7 +80,7 @@ export async function listProcKeyInfo(): Promise<(ProcKeyInfo | null)[]> {
  * Refuses while any persisted spawn/monitor PID is still alive.
  * No-ops if the directory is already absent.
  */
-export function removeProcBaseDir(cpId: string): void {
+export function removeProcBaseDir(cpId: string): string {
   if (isManagedProcPidAlive(cpId)) {
     throw new Error(
       `Cannot remove process base dir for "${cpId}": process is still running. Stop it first (e.g. killProc).`
@@ -91,6 +91,7 @@ export function removeProcBaseDir(cpId: string): void {
     return;
   }
   fs.rmSync(dir, {recursive: true, force: true});
+  return dir;
 }
 
 export async function killProc(cpId: string, options?: KillProcOptions): Promise<number[]> {

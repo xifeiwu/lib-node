@@ -71,3 +71,30 @@
 - 新增 `cp-util.ts` 供子进程使用
 - `service/file.ts` 新增 `getCpMonitorDir`
 - `service/types.ts` 中 `LaunchCpConfig.spawnConfig` 改为 `SpawnConfig | string`
+
+---
+
+## 第五轮：重构 — 分层架构，移除 Daemon 模式
+
+### 问题分析
+
+旧架构中 Daemon 模式通过常驻进程 + Socket 通信管理子进程，增加了大量复杂度（三层进程架构、两阶段通信、LaunchCp 状态机）。实际上大部分场景只需要：启动一个后台进程，能查状态、能停止、能看日志。
+
+同时消费方（busybox）的 `src/daemon/` 和 `src/process-manager/` 职责重叠，进程操作逻辑散落在两处。
+
+### 决策过程
+
+1. **移除 Daemon/Socket 架构**：删除 `socket/` 目录、`launch-cp/daemon.ts`（LaunchCp 类 + Daemon 类）。只保留 `launchCpInDetachedMode` 和 `launchCpInMonitoredMode` 两个独立函数。
+2. **新增 `service/operation.ts`**：基于文件系统的高层操作 API（`startProcess`、`killProc`、`restartProcess`、`removeProcBaseDir`、`listProcKeyInfo`），替代 Daemon 的 Socket 命令。
+3. **移除消费方 `src/daemon/`**：与 `src/process-manager/` 合并，统一为一套 CLI。
+4. **明确分层**：modules 层只做进程操作，消费方负责配置管理（`selectConfigById`）、ID 选择（`selectRunningOrRegisteredId`）和 CLI 展示。
+5. **service 层只返回值，不做输出**：所有 `logColorful` 调用移到 command 层，service 函数纯粹返回数据。
+
+### 主要改动
+
+- 删除 `socket/` 目录、`launch-cp/daemon.ts`
+- 新增 `service/operation.ts`（startProcess、killProc、restartProcess、removeProcBaseDir、listProcKeyInfo）
+- 新增 `launch-cp/cluster.ts`（批量启动，替代 Daemon 的 `launchAllCpInConfigList`）
+- 消费方删除 `src/daemon/`，`src/process-manager/service.ts` 简化为薄封装
+- `src/2-process/config.ts` 承担配置管理，只导出 `selectConfigById`
+- `src/process-manager/command.ts` 承担所有 CLI 输出
