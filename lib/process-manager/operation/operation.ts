@@ -11,11 +11,17 @@ import {
   getSpawnConfigByScript,
   spwanInDetachedMode,
 } from '../service/external';
-import type {KillProcOptions, LaunchCpConfig, LaunchCpInfo, ProcKeyInfo} from '../service/types';
+import type {
+  KillProcOptions,
+  LaunchCpConfig,
+  LaunchCpInfo,
+  ProcKeyInfo,
+  StartProcOptions,
+} from '../service/types';
 import {readProcInfo, getProcLogOutPath, getProcLogErrPath, getProcBaseDir} from '../service/file';
 import {launchCpInDetachedMode} from '../launch-cp/detached';
 
-function isManagedProcPidAlive(cpId: string): boolean {
+export function isManagedProcPidAlive(cpId: string): boolean {
   const info = readProcInfo(cpId);
   if (!info) {
     return false;
@@ -41,12 +47,14 @@ async function launchMonitoredInDetachedMode(config: LaunchCpConfig): Promise<La
   return readProcInfo(config.id);
 }
 
-export async function startProcess(config: LaunchCpConfig) {
+export async function startProcess(config: LaunchCpConfig, options?: StartProcOptions) {
   const {id} = config;
   if (isManagedProcPidAlive(id)) {
     throw new Error(`Process "${id}" is already running, cannot start again.`);
   }
-  return config.monitorConfig
+  let mode = options?.mode ?? (config.monitorConfig ? 'monitored' : 'detached');
+
+  return mode === 'monitored'
     ? await launchMonitoredInDetachedMode(config)
     : await launchCpInDetachedMode(config);
 }
@@ -120,7 +128,7 @@ async function waitUntilManagedProcDead(cpId: string, maxWaitMs: number): Promis
   while (isManagedProcPidAlive(cpId)) {
     if (Date.now() >= deadline) {
       throw new Error(
-        `Process "${cpId}" is still alive after ${maxWaitMs}ms (polled every ${KILL_EXIT_POLL_MS}ms) following kill.`,
+        `Process "${cpId}" is still alive after ${maxWaitMs}ms (polled every ${KILL_EXIT_POLL_MS}ms) following kill.`
       );
     }
     await new Promise<void>(r => setTimeout(r, KILL_EXIT_POLL_MS));
@@ -152,8 +160,9 @@ export async function killProc(cpId: string, options?: KillProcOptions): Promise
 
 export async function restartProcess(
   config: LaunchCpConfig,
-  options?: KillProcOptions
+  killOptions?: KillProcOptions,
+  startOptions?: StartProcOptions
 ): Promise<LaunchCpInfo> {
-  await killProc(config.id, options);
-  return await startProcess(config);
+  await killProc(config.id, killOptions);
+  return await startProcess(config, startOptions);
 }

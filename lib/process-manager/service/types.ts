@@ -70,6 +70,10 @@ export interface ProcKeyInfo {
   errFilePath: string;
 }
 
+export interface StartProcOptions {
+  mode?: LaunchCpMode;
+}
+
 export interface KillProcOptions {
   /** clean up process info and log files */
   cleanUp?: boolean;
