@@ -10,6 +10,7 @@ import {
   getProcessInfoByPid,
   getSpawnConfigByScript,
   spwanInDetachedMode,
+  getPreferredFileByExt,
 } from '../service/external';
 import type {
   KillProcOptions,
@@ -20,6 +21,10 @@ import type {
 } from '../service/types';
 import {readProcInfo, getProcLogOutPath, getProcLogErrPath, getProcBaseDir} from '../service/file';
 import {launchCpInDetachedMode} from '../launch-cp/detached';
+/**
+ * import this function to make sure the monitored script will be included during compile porcess
+ */
+import {launchCpInMonitoredMode} from '../launch-cp/monitored';
 
 export function isManagedProcPidAlive(cpId: string): boolean {
   const info = readProcInfo(cpId);
@@ -38,7 +43,9 @@ export function isManagedProcPidAlive(cpId: string): boolean {
 }
 
 async function launchMonitoredInDetachedMode(config: LaunchCpConfig): Promise<LaunchCpInfo> {
-  const monitoredScript = path.resolve(__dirname, '../launch-cp/monitored.ts');
+  const monitoredScript = getPreferredFileByExt(path.resolve(__dirname, '../launch-cp/monitored.ts'), {
+    preferredExtSequence: ['.js'],
+  });
   const monitorSpawnConfig = getSpawnConfigByScript<LaunchCpConfig>(monitoredScript, {
     infoToCp: config,
     maxWaitTime4Ipc: 15,

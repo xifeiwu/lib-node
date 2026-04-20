@@ -18,6 +18,8 @@ export {
   serializeSpawnResponse,
 } from '../../../child-process/spawn';
 
+export {getPreferredFileByExt} from '../../../path';
+
 // From child-process/service
 export {waitIpcMessageOnce} from '../../../child-process';
 
