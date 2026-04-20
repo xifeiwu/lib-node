@@ -22,7 +22,7 @@ export interface MonitorConfig {
 export interface LaunchCpConfig {
   /** id used to identify the child process  */
   id: string;
-  spawnConfig?: SpawnConfig | ({scriptPath: string} & SpawnScriptOptions);
+  spawnConfig: SpawnConfig | ({scriptPath: string} & SpawnScriptOptions);
   monitorConfig?: MonitorConfig;
 }
 
