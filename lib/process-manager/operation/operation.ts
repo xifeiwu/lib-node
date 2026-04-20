@@ -2,15 +2,17 @@
  * logic based on file system
  */
 import fs from 'fs';
+import path from 'path';
 import {
   PROCESS_MANAGER_ROOT_DIR,
   killProcessByPid,
   isProcessAlive,
   getProcessInfoByPid,
+  getSpawnConfigByScript,
+  spwanInDetachedMode,
 } from '../service/external';
 import type {KillProcOptions, LaunchCpConfig, LaunchCpInfo, ProcKeyInfo} from '../service/types';
 import {readProcInfo, getProcLogOutPath, getProcLogErrPath, getProcBaseDir} from '../service/file';
-import {launchCpInMonitoredMode} from '../launch-cp/monitored';
 import {launchCpInDetachedMode} from '../launch-cp/detached';
 
 function isManagedProcPidAlive(cpId: string): boolean {
@@ -29,12 +31,24 @@ function isManagedProcPidAlive(cpId: string): boolean {
   return false;
 }
 
+async function launchMonitoredInDetachedMode(config: LaunchCpConfig): Promise<LaunchCpInfo> {
+  const monitoredScript = path.resolve(__dirname, '../launch-cp/monitored.ts');
+  const monitorSpawnConfig = getSpawnConfigByScript<LaunchCpConfig>(monitoredScript, {
+    infoToCp: config,
+    maxWaitTime4Ipc: 15,
+  });
+  await spwanInDetachedMode(monitorSpawnConfig);
+  return readProcInfo(config.id);
+}
+
 export async function startProcess(config: LaunchCpConfig) {
   const {id} = config;
   if (isManagedProcPidAlive(id)) {
     throw new Error(`Process "${id}" is already running, cannot start again.`);
   }
-  return config.monitorConfig ? await launchCpInMonitoredMode(config) : await launchCpInDetachedMode(config);
+  return config.monitorConfig
+    ? await launchMonitoredInDetachedMode(config)
+    : await launchCpInDetachedMode(config);
 }
 
 export async function getProcKeyInfo(cpId: string): Promise<ProcKeyInfo | null> {
