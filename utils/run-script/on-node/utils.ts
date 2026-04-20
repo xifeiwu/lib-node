@@ -1,7 +1,7 @@
 import path from 'path';
 import {CpWrapScriptOptions, RunScriptInCPOptions, SpawnConfig, TsNodeOptions} from '../../../types';
 import {getFilePathInfo, getPreferredFileByExt} from '../../../path';
-import {getSpawnConfigByScript, tryUseJsFile} from '../../../child-process';
+import {getSpawnConfigByScript} from '../../../child-process';
 
 const defaultTsNodeOptions: TsNodeOptions = {
   // '--transpileOnly': true,
