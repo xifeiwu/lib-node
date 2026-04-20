@@ -22,7 +22,7 @@ export {
 export {waitIpcMessageOnce} from '../../../child-process';
 
 // From service/constants
-export {PROCESS_MANAGER_ROOT_DIR as DAEMON_ROOT_DIR} from '../../../service/constants';
+export {PROCESS_MANAGER_ROOT_DIR} from '../../../service/constants';
 
 // From types
 export {CP} from '../../../types';

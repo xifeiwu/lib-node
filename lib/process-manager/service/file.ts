@@ -1,11 +1,14 @@
+/**
+ * save/read process info to/from file system
+ */
 import fs from 'fs';
 import path from 'path';
-import {DAEMON_ROOT_DIR} from './external';
+import {PROCESS_MANAGER_ROOT_DIR} from './external';
 import {LaunchCpInfo, MonitorInfo} from './types';
 import {PROCESS_INFO_FILE_NAME, PROCESS_LOG_ERR_FILE_NAME, PROCESS_LOG_OUT_FILE_NAME} from './constants';
 
 export function getProcBaseDir(cpId: string): string {
-  return path.join(DAEMON_ROOT_DIR, cpId);
+  return path.join(PROCESS_MANAGER_ROOT_DIR, cpId);
 }
 
 export function getProcInfoDir(cpId: string): string {

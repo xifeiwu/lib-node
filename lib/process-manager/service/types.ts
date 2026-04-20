@@ -69,3 +69,8 @@ export interface ProcKeyInfo {
   outFilePath: string;
   errFilePath: string;
 }
+
+export interface KillProcOptions {
+  /** clean up process info and log files */
+  cleanUp?: boolean;
+}

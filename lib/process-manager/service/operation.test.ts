@@ -1,8 +1,8 @@
 import assert from 'assert';
-import {getAllProcKeyInfo} from './operation';
+import {listProcKeyInfo} from './operation';
 
-export async function testGetAllProcKeyInfo() {
-  const list = await getAllProcKeyInfo();
-  assert.ok(Array.isArray(list), 'getAllProcKeyInfo returns an array');
+export async function testListProcKeyInfo() {
+  const list = await listProcKeyInfo();
+  assert.ok(Array.isArray(list), 'listProcKeyInfo returns an array');
   console.log(list);
 }
