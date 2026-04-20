@@ -73,4 +73,9 @@ export interface ProcKeyInfo {
 export interface KillProcOptions {
   /** clean up process info and log files */
   cleanUp?: boolean;
+  /**
+   * After sending kill signals, poll every 1s until persisted spawn/monitor PIDs are gone.
+   * If still alive when this budget is exceeded, an error is thrown. Default 10_000 ms.
+   */
+  maxWaitMs?: number;
 }

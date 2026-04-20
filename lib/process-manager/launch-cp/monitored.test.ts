@@ -22,6 +22,7 @@ export async function runMonitoredDebugServer() {
         maxCount: 3,
         minInterval: 5000,
       },
+      logCpOut: true,
     },
   };
 

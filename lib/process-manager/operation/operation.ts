@@ -112,6 +112,21 @@ export function removeProcBaseDir(cpId: string): string {
   return dir;
 }
 
+const DEFAULT_KILL_MAX_WAIT_MS = 10_000;
+const KILL_EXIT_POLL_MS = 1_000;
+
+async function waitUntilManagedProcDead(cpId: string, maxWaitMs: number): Promise<void> {
+  const deadline = Date.now() + maxWaitMs;
+  while (isManagedProcPidAlive(cpId)) {
+    if (Date.now() >= deadline) {
+      throw new Error(
+        `Process "${cpId}" is still alive after ${maxWaitMs}ms (polled every ${KILL_EXIT_POLL_MS}ms) following kill.`,
+      );
+    }
+    await new Promise<void>(r => setTimeout(r, KILL_EXIT_POLL_MS));
+  }
+}
+
 export async function killProc(cpId: string, options?: KillProcOptions): Promise<number[]> {
   const info = readProcInfo(cpId);
   if (!info) return [];
@@ -126,6 +141,8 @@ export async function killProc(cpId: string, options?: KillProcOptions): Promise
   }
   if (pids.length > 0) {
     await killProcessByPid(pids);
+    const maxWaitMs = options?.maxWaitMs ?? DEFAULT_KILL_MAX_WAIT_MS;
+    await waitUntilManagedProcDead(cpId, maxWaitMs);
   }
   if (options?.cleanUp) {
     removeProcBaseDir(cpId);
