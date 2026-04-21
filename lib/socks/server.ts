@@ -104,7 +104,7 @@ export async function handleSocksConnection<Version extends SocksVersion>(
   config: SocksServerConfig<Version>,
   handleRequestTarget?: (requestTarget: RequestTargetV5) => Promise<boolean | undefined>
 ) {
-  const {socksVersion, proxyConfigList, tcpMaxLifeTime = 6 * 3600, ...serverConfig} = config;
+  const {socksVersion, proxyConfigList, tcpMaxLifeTime = 6 * 60_000, ...serverConfig} = config;
   const info: SocksServerInfo = {
     socksVersion,
     negotiationResult: undefined,
