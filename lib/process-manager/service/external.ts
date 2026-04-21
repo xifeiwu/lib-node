@@ -37,4 +37,4 @@ export {createRollingLogWriter} from '../../../utils/write/log';
 export type {RollingLogWriter} from '../../../utils/write/log';
 
 // From external (utility functions)
-export {isNumber, isPlainObject, isString, waitFor, get} from '../../../external';
+export {isNumber, isPlainObject, isString, waitFor, get, msToDuration} from '../../../external';

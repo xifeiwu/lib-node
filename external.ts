@@ -67,6 +67,7 @@ export {
   getDtStrInFormat,
   toDtStr,
   formatDt,
+  msToDuration,
 } from '../js/common';
 export {AstAOptions, listAUsingUl} from '../js/lib/html-parser';
 

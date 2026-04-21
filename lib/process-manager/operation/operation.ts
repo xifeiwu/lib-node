@@ -11,6 +11,7 @@ import {
   getSpawnConfigByScript,
   spwanInDetachedMode,
   getPreferredFileByExt,
+  msToDuration,
 } from '../service/external';
 import type {
   KillProcOptions,
@@ -77,9 +78,13 @@ export async function getProcKeyInfo(cpId: string): Promise<ProcKeyInfo | null> 
   const errFilePath = info.spawn.responseFromCp?.errFilePath ?? getProcLogErrPath(cpId);
   const pInfo = await getProcessInfoByPid(pid);
   const monitorPid = info.monitor?.id;
+  let etime = pInfo.etime;
+  if (!etime && info.spawn.spawnTime) {
+    etime = msToDuration(Date.now() - new Date(info.spawn.spawnTime).getTime());
+  }
   return {
     key: cpId,
-    status: pInfo ? pInfo.etime : 'dead',
+    status: etime ? etime : 'dead',
     monitorPid,
     command: info.spawn.wholeScript,
     pid: info.spawn.pid,
