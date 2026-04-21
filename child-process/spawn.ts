@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import {Serializable, spawn} from 'child_process';
 import {findClosestFile} from '../fs';
-import {isBoolean, isNumber, isString} from '../external';
+import {isBoolean, isNumber, isString, toDtStr} from '../external';
 import {
   SpawnAndTryIpcResponse,
   SerializableSpawnInfo,
@@ -205,7 +205,7 @@ export async function spawnAndTryIpc<CpConfig extends Serializable = any, Respon
    */
   await new Promise<void>((res, rej) => {
     childProcess.once('spawn', () => {
-      info.spawnTime = new Date().toLocaleString();
+      info.spawnTime = toDtStr();
       /** if exit, close, error events are not triggered within minUptime ms, the child process will be considered as success */
       timeoutToResolve = setTimeout(() => {
         res();
