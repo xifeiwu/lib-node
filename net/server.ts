@@ -32,7 +32,20 @@ async function getConnectionProtocol(
 }
 
 /**
- * Redirect to different handler by first line of incoming socket
+ * TCP connection router that inspects the first bytes of each incoming connection
+ * to determine the protocol, then dispatches to the appropriate handler.
+ *
+ * Flow:
+ * 1. `onConnection` guard — runs first if provided. Returning `false` closes the socket immediately.
+ * 2. Protocol detection — reads the first chunk and classifies as `'http'`, SOCKS version, or `undefined`.
+ * 3. Dispatch:
+ *    - `undefined` protocol → 400 response, close socket.
+ *    - HTTP → tries `httpHandler` first; falls back to piping to `httpServerInfo` as a reverse proxy.
+ *    - Everything else (SOCKS, raw TCP) → delegates to `tcpHandler`.
+ *    - If handler returns `false` or no handler matches → 400 response, close socket.
+ *
+ * Priority: onConnection > protocol detection > httpHandler > httpServerInfo > tcpHandler.
+ *
  * @param config
  * @param tcpServerConfig
  * @returns
@@ -71,18 +84,17 @@ export async function startTcpGateway(
     if (protocol === undefined) {
       return closeSocket(socket);
     }
-    let isHandled;
+    let isHandled: boolean | void = false;
     if (protocol === 'http' && (httpHandler || httpServerInfo)) {
       if (httpHandler) {
-        isHandled = httpHandler(socket, {firstChunk});
+        isHandled = await httpHandler(socket, {firstChunk});
       } else {
         const proxySocket = await startSocketClient(httpServerInfo);
         socket.pipe(proxySocket).pipe(socket);
         isHandled = true;
       }
-    } else {
-      // foundHandler = Boolean(tcpHandler);
-      isHandled = tcpHandler && (await tcpHandler(socket, {protocol, firstChunk}));
+    } else if (tcpHandler) {
+      isHandled = await tcpHandler(socket, {protocol, firstChunk});
     }
     if (isHandled === false) {
       return closeSocket(socket);
