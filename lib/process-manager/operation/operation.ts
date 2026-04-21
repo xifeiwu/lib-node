@@ -16,6 +16,7 @@ import type {
   KillProcOptions,
   LaunchCpConfig,
   LaunchCpInfo,
+  ListProcKeyInfoOptions,
   ProcKeyInfo,
   StartProcOptions,
 } from '../service/types';
@@ -92,7 +93,7 @@ export async function getProcKeyInfo(cpId: string): Promise<ProcKeyInfo | null> 
  * Like {@link getProcKeyInfo} for every directory under {@link PROCESS_MANAGER_ROOT_DIR} (same enumeration as iterating
  * each `cpId` and calling {@link readProcInfo}).
  */
-export async function listProcKeyInfo(): Promise<(ProcKeyInfo | null)[]> {
+export async function listProcKeyInfo(options?: ListProcKeyInfoOptions): Promise<(ProcKeyInfo | null)[]> {
   if (!fs.existsSync(PROCESS_MANAGER_ROOT_DIR)) {
     return [];
   }
@@ -103,7 +104,14 @@ export async function listProcKeyInfo(): Promise<(ProcKeyInfo | null)[]> {
       continue;
     }
     const cpId = entry.name;
-    results.push(await getProcKeyInfo(cpId));
+    const info = await getProcKeyInfo(cpId);
+    if (options?.filter === 'running' && !isManagedProcPidAlive(cpId)) {
+      continue;
+    }
+    if (options?.filter === 'dead' && isManagedProcPidAlive(cpId)) {
+      continue;
+    }
+    results.push(info);
   }
   return results;
 }
