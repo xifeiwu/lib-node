@@ -1,7 +1,7 @@
 import assert from 'assert';
 import {requestAndGetResponseInfo, startHttpDebugServer} from '../http';
 import {startSocketClient} from '../net';
-import {startTcpGateway} from './server';
+import {startTcpGateway} from '../lib/tcp-gateway';
 import {Socket} from 'net';
 import {TcpHandler} from '../index';
 

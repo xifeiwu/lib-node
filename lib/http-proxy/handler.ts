@@ -3,18 +3,19 @@ import http, {IncomingMessage, ServerResponse} from 'http';
 import {Socket} from 'net';
 import {toUrlInstance, deepClone, getUrlPropsFromConfig, cookieRewrite, concatPath} from '../../external';
 import {HttpProxyConfig, ProxyStatus} from './types';
-import {toReadable, getDataByTransform} from '../../stream';
-import {toBuffer} from '../../transform';
 import {
+  toReadable,
+  getDataByTransform,
+  toBuffer,
   getHttpResponseHeaderPartInfo,
   httpRequestOptionsToCurlCommand,
   makeSureHttpRequestOptionsSerializable,
   validateStatusCode,
   getHttpRequestHeaderPartInfo,
+  logColorful,
+  mergeHttpRequestOptions,
 } from './external';
-import {logColorful} from '../../log';
 import {HttpRequestOptions, HttpResponseHeaderPartInfo, HttpResponseInfo} from '../../types';
-import {mergeHttpRequestOptions} from '../../http';
 
 /**
  * After response to proxy: print more info when http status code is invalid.

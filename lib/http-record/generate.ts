@@ -1,19 +1,19 @@
 import fs from 'fs';
 import path from 'path';
-import {isPlainObject} from '../../external';
 import {
+  isPlainObject,
   makeSureHttpRequestOptionsSerializable,
   mergeHttpRequestOptions,
   requestAndGetResponseInfo,
-} from '../../http';
+  getFileListOfMultipleDir,
+  selectFileAndGetExports,
+  getHashDigest,
+  convertToBuffer,
+  makeSureDirExistForFile,
+} from './external';
 import {RecordHttpByDirOptions, RecordHttpOptions, HttpRecordContent, HttpRequestOptions} from './types';
-import {getFileListOfMultipleDir} from '../../fs';
 import {MOCK_FILE_SUFFIX} from './service';
-import {selectFileAndGetExports} from '../../utils';
 import {SendRequestWithResponseInfoResult} from '../../types';
-import {getHashDigest} from '../../crypto';
-import {convertToBuffer} from '../../transform';
-import {makeSureDirExistForFile} from '../../path';
 
 export function convertObjectToCjsContent<T extends HttpRecordContent>(info: T) {
   const lines = Object.entries(info).map(([key, value]) => {

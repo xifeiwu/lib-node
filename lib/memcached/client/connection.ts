@@ -1,5 +1,5 @@
 import {TcpNetConnectOpts} from 'net';
-import {startSocketClient} from '../../../net';
+import {startSocketClient} from '../service/external';
 import {getConnectionKey} from '../service/client';
 import {ConnectionInfo, DataHandler} from '../service';
 

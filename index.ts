@@ -16,7 +16,6 @@ export * from './lib/http-body-parser';
 export * from './lib/socks';
 export * from './lib/cookies';
 export * from './lib/http-proxy';
-export * from './lib/mime';
 export * from './types';
 /**
  * To reduce work of tsc compile when using `import * from 'module/lib/node'` from outside,

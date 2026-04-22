@@ -1,5 +1,5 @@
 import {RequestOptions, IncomingMessage} from 'http';
-import {toReadable} from '../../stream';
+import {toReadable} from './external';
 import {
   HttpRequestInfo,
   HttpResponseInfo,

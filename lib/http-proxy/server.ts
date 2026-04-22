@@ -1,6 +1,6 @@
 import {HttpProxyConfig, ProxyStatus} from './types';
 import {startHttpServer, getHttpRequestHeaderPartInfo} from './external';
-import {toBuffer} from '../../transform';
+import {toBuffer} from './external';
 import {proxyHttpRequest, proxyWebSocketRequest} from './handler';
 import {toUrlInstance} from '../../external';
 import {getPreRequestCb} from './utils';

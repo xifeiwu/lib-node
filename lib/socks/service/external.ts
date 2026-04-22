@@ -31,7 +31,6 @@ export {
   getHttpRequestInfo,
   startHttpServer,
   watchSocketState,
-  startTcpGateway,
   ulItems,
   toHtml,
   fromBuffer,
@@ -53,6 +52,8 @@ export {
   getXorTransform,
   getXorDataFunc,
 } from '../../../index';
+
+export {startTcpGateway} from '../../tcp-gateway';
 
 export {
   requestThroughTcpAndPrintResponse,

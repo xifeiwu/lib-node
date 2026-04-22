@@ -7,7 +7,8 @@ import {
   HttpRecordContentWithPathInfo,
   HttpRecordInfoForCompare,
 } from './types';
-import {getFileList, HttpRequestOptions} from '../..';
+import {getFileList} from './external';
+import {HttpRequestOptions} from './types';
 
 function isSameMethod(m1?: string, m2?: string) {
   if (isString(m1) && isString(m2)) {

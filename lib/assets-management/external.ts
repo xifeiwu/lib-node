@@ -30,6 +30,8 @@ export {
   getFileList,
   GetFileListOption,
   getFileInfoList,
+  getFileStat,
+  linkFile,
   moveFile,
   writeFileSync,
   convertObjectToCjsExport,

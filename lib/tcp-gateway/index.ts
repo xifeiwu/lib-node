@@ -1,10 +1,14 @@
 import {Socket} from 'net';
-import {startSocketClient, startSocketServer} from '../net';
-import {getOneLineFromReader} from '../stream';
-import {HttpHandler, Protocol, TcpHandler, TcpServerConfig} from '../types';
-import {isSocksProtocol, SocksVersion} from '../lib/socks';
-import {responseHttpConnection} from '../http';
-import {REG_HTTP_REQUEST_FIRST_LINE} from '../external';
+import {
+  startSocketClient,
+  startSocketServer,
+  getOneLineFromReader,
+  responseHttpConnection,
+  isSocksProtocol,
+  SocksVersion,
+  REG_HTTP_REQUEST_FIRST_LINE,
+} from './external';
+import {HttpHandler, Protocol, TcpHandler, TcpServerConfig} from '../../types';
 
 function isHttpRequest(buffer: Buffer) {
   const str = buffer.toString();

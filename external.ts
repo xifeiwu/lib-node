@@ -70,6 +70,7 @@ export {
   msToDuration,
 } from '../js/common';
 export {AstAOptions, listAUsingUl} from '../js/lib/html-parser';
+export {mime} from '../js/lib/mime';
 
 export {
   SubRepoConfig,

@@ -12,7 +12,7 @@ import {
   removeFromFileIndex,
 } from './file-index';
 import {BaseOptions, FileOperationResult, FileOptions, Folder, FolderOptions} from './types';
-import {getFileStat, linkFile} from '../../../fs';
+import {getFileStat, linkFile} from '../external';
 
 function createFile(options: FileOptions & {content?: string}) {
   const {rootDir = DEFAULT_ROOT_DIR, folder, index, content: inputContent} = options;
