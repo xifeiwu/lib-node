@@ -2,7 +2,7 @@
 
 ## 2026-04-22 — Feature parity with node-http-proxy
 
-Compared modules/lib/node/lib/http-proxy against vendor/node-http-proxy and identified missing features that affect reliability, correctness, and protocol coverage. Added them in four phases:
+Compared modules/lib/node/lib/http-proxy against vendor/node-http-proxy and identified missing features that affect reliability, correctness, and protocol coverage. Added them in three phases:
 
 ### Phase 1: Core Reliability
 
@@ -23,8 +23,3 @@ Compared modules/lib/node/lib/http-proxy against vendor/node-http-proxy and iden
 - **`hostRewrite` / `protocolRewrite`** — Rewrites the `Location` header on 301/302/303/307/308 responses. `hostRewrite: true` uses the original request's Host; a string value sets it explicitly. Prevents redirect loops when the proxy's external address differs from the target's.
 - **`prependPath` / `ignorePath`** — Controls how the request path is constructed. `prependPath` (default true) prepends the target's pathname; `ignorePath` discards the client path entirely.
 - **`followRedirects` / `maxRedirects`** — Follows redirect chains internally (method B, no external dependency). Handles 301/302/303 → GET conversion, strips `authorization` and `cookie` headers on cross-domain redirects, enforces max redirect count to prevent loops.
-
-### Phase 4: Advanced Features
-
-- **`selfHandleResponse`** — Skips the automatic response pipe. The caller receives the response info via `handleResponseInfoToOrigin` and the raw `IncomingMessage` via `onRes2Proxy`, then writes to the client response themselves. Enables response body transformation.
-- **`forward`** — Mirrors a copy of the request to a second target (fire-and-forget). Uses `PassThrough` streams to tee the request body without consuming it. Errors on the forwarded request are logged but don't affect the primary proxy response.

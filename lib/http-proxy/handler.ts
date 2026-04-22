@@ -1,6 +1,5 @@
 import https from 'https';
 import http, {IncomingMessage, ServerResponse} from 'http';
-import {PassThrough} from 'stream';
 import {Socket} from 'net';
 import {toUrlInstance, deepClone, getUrlPropsFromConfig, cookieRewrite, concatPath} from '../../external';
 import {HttpProxyConfig, ProxyStatus} from './types';
@@ -104,8 +103,6 @@ export async function proxyHttpRequest(req: IncomingMessage, res: ServerResponse
     ignorePath,
     followRedirects,
     maxRedirects = 5,
-    selfHandleResponse,
-    forward,
   } = config;
 
   if (timeout && req.socket) {
@@ -113,31 +110,6 @@ export async function proxyHttpRequest(req: IncomingMessage, res: ServerResponse
   }
 
   const originReqInfo = getHttpRequestHeaderPartInfo(req);
-
-  const sourceStream = originData ? toReadable(originData) : req;
-  let proxySourceStream: NodeJS.ReadableStream = sourceStream;
-
-  if (forward) {
-    const forwardReqInfo: HttpRequestOptions = mergeHttpRequestOptions(
-      {
-        pathname: originReqInfo.url,
-        method: originReqInfo.method,
-        headers: {...originReqInfo.headers},
-      },
-      forward
-    );
-    const {urlProps: fwdUrlProps, restProps: fwdRestProps} = getUrlPropsFromConfig(forwardReqInfo);
-    const {data: fwdData, ...fwdRequestOptions} = fwdRestProps;
-    const {protocol: fwdProtocol, href: fwdHref} = toUrlInstance(fwdUrlProps);
-    const fwdReq = (fwdProtocol === 'https:' ? https : http).request(fwdHref, fwdRequestOptions);
-    fwdReq.on('error', err => {
-      logColorful({color: 'yellow'}, `[forward error] ${(err as NodeJS.ErrnoException).code || 'UNKNOWN'}: ${err.message}`);
-    });
-    const forwardPassThrough = new PassThrough();
-    proxySourceStream = new PassThrough();
-    sourceStream.pipe(forwardPassThrough).pipe(fwdReq);
-    sourceStream.pipe(proxySourceStream as PassThrough);
-  }
 
   let requestPathname = originReqInfo.url;
   if (ignorePath) {
@@ -236,7 +208,7 @@ export async function proxyHttpRequest(req: IncomingMessage, res: ServerResponse
     }
   });
 
-  proxySourceStream
+  (originData ? toReadable(originData) : req)
     .pipe(
       getDataByTransform(
         ({data}) => {
@@ -301,11 +273,6 @@ export async function proxyHttpRequest(req: IncomingMessage, res: ServerResponse
       toProxy: infoOfRes2Proxy,
       toOrigin: infoOfRes2Origin,
     };
-
-    if (selfHandleResponse) {
-      return;
-    }
-
     const {httpVersion, statusCode, statusMessage} = infoOfRes2Origin;
     res.statusCode = statusCode;
     res.statusMessage = statusMessage ?? '';
