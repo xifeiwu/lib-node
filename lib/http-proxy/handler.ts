@@ -50,7 +50,14 @@ export async function proxyHttpRequest(req: IncomingMessage, res: ServerResponse
     preProxyReq,
     handleResponseInfoToOrigin,
     onRes2Proxy,
+    timeout,
+    proxyTimeout,
   } = config;
+
+  if (timeout && req.socket) {
+    req.socket.setTimeout(timeout);
+  }
+
   const originReqInfo = getHttpRequestHeaderPartInfo(req);
   let proxyReqInfo: HttpRequestOptions = mergeHttpRequestOptions(
     {
@@ -74,6 +81,18 @@ export async function proxyHttpRequest(req: IncomingMessage, res: ServerResponse
   const {protocol, href} = toUrlInstance(urlProps);
   preProxyReq && preProxyReq(proxyStatus, {href});
   const proxyReq = (protocol === 'https:' ? https : http).request(href, requestOptions);
+
+  if (proxyTimeout) {
+    proxyReq.setTimeout(proxyTimeout, () => {
+      proxyReq.destroy(new Error(`Proxy request timeout after ${proxyTimeout}ms`));
+    });
+  }
+
+  req.on('close', () => {
+    if (!proxyReq.destroyed) {
+      proxyReq.destroy();
+    }
+  });
 
   (originData ? toReadable(originData) : req)
     .pipe(
@@ -138,13 +157,28 @@ export async function proxyHttpRequest(req: IncomingMessage, res: ServerResponse
       )
       .pipe(res);
   } catch (err) {
-    console.log(err);
-    res.statusCode = 500;
-    res.statusMessage = 'Error, proxyHandler error';
-    const {message, stack} = err as Error;
-    const errorInfo = {message, stack};
+    const error = err as NodeJS.ErrnoException;
+    const {message, stack, code} = error;
+    const errorInfo = {message, stack, code};
     proxyStatus.err = errorInfo;
-    if (res.writable) {
+
+    if (code === 'ECONNRESET' && req.socket?.destroyed) {
+      return;
+    }
+
+    const statusByCode: Record<string, number> = {
+      ECONNREFUSED: 502,
+      ETIMEDOUT: 504,
+      ENOTFOUND: 502,
+      EHOSTUNREACH: 502,
+    };
+    const statusCode = statusByCode[code] || 500;
+
+    logColorful({color: 'red'}, `[proxy error] ${code || 'UNKNOWN'}: ${message}`);
+
+    if (res.writable && !res.headersSent) {
+      res.statusCode = statusCode;
+      res.statusMessage = code ? `Proxy ${code}` : 'Proxy Error';
       res.end(toBuffer(errorInfo));
     }
   }

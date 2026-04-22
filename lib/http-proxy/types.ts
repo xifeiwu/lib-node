@@ -7,8 +7,6 @@ export interface HttpProxyConfig {
    * global options for http.request of proxy, will merge with info from request to proxy
    */
   globalRequestOptions?: Partial<HttpRequestOptions>;
-  /** Change headers.origin to origin value of targetHref */
-  // changeOrigin?: boolean;
   /**
    * Use customized data other than request stream, use case:
    * 1. Program already got all original data to decide how to handle some logic, the req stream is alreay ended.
@@ -33,6 +31,11 @@ export interface HttpProxyConfig {
   handleResponseInfoToOrigin?: (
     info: HttpResponseInfo
   ) => Promise<HttpResponseInfo | void> | HttpResponseInfo | void;
+
+  /** Timeout in ms for the incoming request socket */
+  timeout?: number;
+  /** Timeout in ms for the outgoing proxy request, aborts if exceeded */
+  proxyTimeout?: number;
 }
 
 interface MoreProxyRequestInfo {
@@ -55,5 +58,6 @@ export interface ProxyStatus {
   err?: {
     message: Error['message'];
     stack: Error['stack'];
+    code?: string;
   };
 }
