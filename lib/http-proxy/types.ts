@@ -53,6 +53,25 @@ export interface HttpProxyConfig {
    * - object: map from original path to new path, '*' as wildcard key
    */
   cookiePathRewrite?: string | Record<string, string>;
+
+  /** Enable WebSocket proxying (listens for 'upgrade' event on the server) */
+  ws?: boolean;
+  /**
+   * Rewrite the Location header on redirect responses (301/302/307/308).
+   * - true: rewrite to match the original request's Host
+   * - string: rewrite to this specific host
+   */
+  hostRewrite?: boolean | string;
+  /** Force the protocol in rewritten Location headers (e.g. 'https') */
+  protocolRewrite?: string;
+  /** Prepend the target's pathname to the request path (default: true) */
+  prependPath?: boolean;
+  /** Ignore the request path entirely, use only the target path */
+  ignorePath?: boolean;
+  /** Follow redirects from the target server instead of passing them through (method B) */
+  followRedirects?: boolean;
+  /** Max number of redirects to follow (default: 5) */
+  maxRedirects?: number;
 }
 
 interface MoreProxyRequestInfo {
