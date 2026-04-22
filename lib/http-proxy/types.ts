@@ -72,6 +72,18 @@ export interface HttpProxyConfig {
   followRedirects?: boolean;
   /** Max number of redirects to follow (default: 5) */
   maxRedirects?: number;
+
+  /**
+   * When true, the proxy will not automatically pipe the target response to the client.
+   * Instead, the caller handles response writing via `handleResponseInfoToOrigin` and the raw
+   * `IncomingMessage` passed to `onRes2Proxy`.
+   */
+  selfHandleResponse?: boolean;
+  /**
+   * Forward a copy of the request to another target (fire-and-forget).
+   * The forwarded request does not affect the response sent to the client.
+   */
+  forward?: Partial<HttpRequestOptions>;
 }
 
 interface MoreProxyRequestInfo {
