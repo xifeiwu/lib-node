@@ -36,6 +36,23 @@ export interface HttpProxyConfig {
   timeout?: number;
   /** Timeout in ms for the outgoing proxy request, aborts if exceeded */
   proxyTimeout?: number;
+
+  /** Add x-forwarded-for, x-forwarded-port, x-forwarded-proto, x-forwarded-host headers */
+  xfwd?: boolean;
+  /** Rewrite Host header to match the target URL */
+  changeOrigin?: boolean;
+  /**
+   * Rewrite Set-Cookie domain attribute.
+   * - string: replace all domains with this value
+   * - object: map from original domain to new domain, '*' as wildcard key
+   */
+  cookieDomainRewrite?: string | Record<string, string>;
+  /**
+   * Rewrite Set-Cookie path attribute.
+   * - string: replace all paths with this value
+   * - object: map from original path to new path, '*' as wildcard key
+   */
+  cookiePathRewrite?: string | Record<string, string>;
 }
 
 interface MoreProxyRequestInfo {

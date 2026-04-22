@@ -1,6 +1,6 @@
 import https from 'https';
 import http, {IncomingMessage, ServerResponse} from 'http';
-import {toUrlInstance, deepClone, getUrlPropsFromConfig} from '../../external';
+import {toUrlInstance, deepClone, getUrlPropsFromConfig, cookieRewrite} from '../../external';
 import {HttpProxyConfig, ProxyStatus} from './types';
 import {toReadable, getDataByTransform} from '../../stream';
 import {toBuffer} from '../../transform';
@@ -52,6 +52,10 @@ export async function proxyHttpRequest(req: IncomingMessage, res: ServerResponse
     onRes2Proxy,
     timeout,
     proxyTimeout,
+    xfwd,
+    changeOrigin,
+    cookieDomainRewrite,
+    cookiePathRewrite,
   } = config;
 
   if (timeout && req.socket) {
@@ -68,6 +72,17 @@ export async function proxyHttpRequest(req: IncomingMessage, res: ServerResponse
     globalRequestOptions
   );
 
+  if (xfwd && req.socket) {
+    const headers = proxyReqInfo.headers || {};
+    const existingFor = headers['x-forwarded-for'] as string;
+    const clientIp = req.socket.remoteAddress;
+    headers['x-forwarded-for'] = existingFor ? `${existingFor}, ${clientIp}` : clientIp;
+    headers['x-forwarded-port'] = String(req.socket.localPort);
+    headers['x-forwarded-proto'] = (req.socket as any).encrypted ? 'https' : 'http';
+    headers['x-forwarded-host'] = req.headers.host;
+    proxyReqInfo.headers = headers;
+  }
+
   if (handleProxyRequestOptions) {
     const tmp = await handleProxyRequestOptions(proxyReqInfo);
     if (tmp) {
@@ -78,7 +93,16 @@ export async function proxyHttpRequest(req: IncomingMessage, res: ServerResponse
 
   const {urlProps, restProps} = getUrlPropsFromConfig(proxyReqInfo);
   const {data, ...requestOptions} = restProps;
-  const {protocol, href} = toUrlInstance(urlProps);
+  const {protocol, href, hostname, port} = toUrlInstance(urlProps);
+
+  if (changeOrigin) {
+    const headers = proxyReqInfo.headers || {};
+    headers.host = port ? `${hostname}:${port}` : hostname;
+    proxyReqInfo.headers = headers;
+    if (requestOptions.headers) {
+      requestOptions.headers.host = headers.host;
+    }
+  }
   preProxyReq && preProxyReq(proxyStatus, {href});
   const proxyReq = (protocol === 'https:' ? https : http).request(href, requestOptions);
 
@@ -120,13 +144,17 @@ export async function proxyHttpRequest(req: IncomingMessage, res: ServerResponse
     const infoOfRes2Proxy = getHttpResponseHeaderPartInfo(res2Proxy);
     onRes2Proxy && onRes2Proxy(infoOfRes2Proxy, proxyReqInfo, res2Proxy);
     let infoOfRes2Origin = deepClone(infoOfRes2Proxy);
-    /** Rewrite cookie info */
     for (const [key, value] of Object.entries(infoOfRes2Origin.headers)) {
-      const newValue = value;
-      // if (key.toLowerCase() === 'set-cookie') {
-      //   newValue = cookieRewrite(value, 'domain', '0.0.0.0');
-      // }
-      infoOfRes2Origin.headers[key] = newValue;
+      if (key.toLowerCase() === 'set-cookie') {
+        let rewritten = value;
+        if (cookieDomainRewrite !== undefined) {
+          rewritten = cookieRewrite(rewritten, 'domain', cookieDomainRewrite);
+        }
+        if (cookiePathRewrite !== undefined) {
+          rewritten = cookieRewrite(rewritten, 'path', cookiePathRewrite);
+        }
+        infoOfRes2Origin.headers[key] = rewritten;
+      }
     }
     if (handleResponseInfoToOrigin) {
       const tmp = await handleResponseInfoToOrigin(infoOfRes2Origin);
