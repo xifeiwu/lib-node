@@ -28,7 +28,7 @@ A customizable HTTP/WebSocket reverse proxy built on Node.js core `http`/`https`
 | `originData` | buffer/string | Pre-buffered request body when req stream is already consumed |
 | `handleProxyRequestOptions` | `(info) => info \| void` | Async hook to modify proxy request before sending |
 | `preProxyReq` | `(status, {href}) => void` | Callback before proxy request starts (logging, status collection) |
-| `onRes2Proxy` | `(info, reqInfo, res) => void` | Called when response received from target |
+| `postResToProxy` | `(response, headerPart, proxyReqInfo) => void` | After response from target is available at the proxy |
 | `handleResponseInfoToOrigin` | `(info) => info \| void` | Async hook to modify response before sending to client |
 | `timeout` | `number` | Incoming request socket idle timeout (ms) |
 | `proxyTimeout` | `number` | Outgoing proxy request timeout (ms), destroys on exceed |
@@ -56,7 +56,40 @@ All imports are from sibling modules in the parent `lib/node/` tree:
 
 ## Testing
 
-- `handler.test.ts` — Tests streaming vs pre-buffered proxy approaches
-- `server.test.ts` — Full proxy server tests (HTTPS targets, hooks, status endpoint)
+All tests use local target servers (no external dependencies) and clean up via `server.close()` in `finally` blocks. Tests are exported functions — run individually or via `runAllHandlerTests()` / `runAllServerTests()`.
 
-Run individual test functions by importing and calling them directly — they are exported functions, not a test framework.
+### handler.test.ts
+
+| Test | Coverage |
+|------|----------|
+| `twoWayOfProxyPayload` | Streaming vs pre-buffered (`originData`) proxy |
+| `testBasicProxy` | GET forwarding, status code, response body |
+| `testPostWithBody` | POST with JSON body forwarding |
+| `testXForwardedHeaders` | `xfwd` — x-forwarded-for/port/proto/host |
+| `testChangeOrigin` | `changeOrigin` — Host header rewrite |
+| `testHandleProxyRequestOptions` | Async request hook injects custom header |
+| `testHandleResponseInfoToOrigin` | Async response hook adds header |
+| `testTargetErrorStatus` | Target 503 forwarded to client |
+| `testTargetUnreachable` | ECONNREFUSED → 502 |
+| `testProxyTimeout` | `proxyTimeout` → error on slow target |
+| `testCookieDomainRewrite` | Set-Cookie domain rewriting |
+| `testHostRewrite` | Location header host rewrite on 302 |
+| `testProtocolRewrite` | Location header protocol rewrite on 301 |
+| `testPrependPath` | Target pathname prepended to request path |
+| `testFollowRedirects` | Follows 302 chain to final response |
+| `testFollowRedirectsMaxExceeded` | Redirect loop → 502 |
+| `testFollowRedirects303ToGet` | 303 converts POST to GET |
+| `testWebSocketProxy` | Bidirectional WebSocket upgrade + echo |
+| `testPostResToProxyCallback` | `postResToProxy` callback invocation |
+
+### server.test.ts
+
+| Test | Coverage |
+|------|----------|
+| `proxyToBaidu` | Manual test proxying to external HTTPS target |
+| `test443Port` | Manual test on port 443 |
+| `testProxyServerWithStatus` | Proxy + `/api/proxy-status` history tracking |
+| `testProxyStatusFilterById` | `?id=` query parameter filter |
+| `testProxyServerHooks` | Both request/response hooks via `startProxyServer` |
+| `testProxyServerWebSocket` | WebSocket via `startProxyServer` with `ws: true` |
+| `testProxyServerErrorInStatus` | ECONNREFUSED error recorded in proxy status |

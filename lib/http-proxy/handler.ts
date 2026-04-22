@@ -13,21 +13,26 @@ import {
   getHttpRequestHeaderPartInfo,
 } from './external';
 import {logColorful} from '../../log';
-import {HttpRequestOptions, HttpResponseInfo} from '../../types';
+import {HttpRequestOptions, HttpResponseHeaderPartInfo, HttpResponseInfo} from '../../types';
 import {mergeHttpRequestOptions} from '../../http';
 
 /**
- * On response to proxy: print more info when http status code is invalid.
- * @param resInfo
+ * After response to proxy: print more info when http status code is invalid.
+ * @param _response
+ * @param headerPart
  * @param proxyReq
  */
-export function onRes2Proxy(resInfo: HttpResponseInfo, proxyReq: HttpRequestOptions) {
-  if (!validateStatusCode(resInfo)) {
+export function postResToProxy(
+  _response: IncomingMessage,
+  headerPart: HttpResponseHeaderPartInfo<'receiver'>,
+  proxyReq: HttpRequestOptions
+) {
+  if (!validateStatusCode(headerPart)) {
     logColorful(
       {color: 'red'},
       makeSureHttpRequestOptionsSerializable(proxyReq),
       httpRequestOptionsToCurlCommand(proxyReq),
-      resInfo
+      headerPart
     );
   }
 }
@@ -90,7 +95,7 @@ export async function proxyHttpRequest(req: IncomingMessage, res: ServerResponse
     handleProxyRequestOptions,
     preProxyReq,
     handleResponseInfoToOrigin,
-    onRes2Proxy,
+    postResToProxy,
     timeout,
     proxyTimeout,
     xfwd,
@@ -160,7 +165,7 @@ export async function proxyHttpRequest(req: IncomingMessage, res: ServerResponse
     try {
       const res2Proxy = await issueRequestWithRedirects(href, requestOptions, protocol, maxRedirects);
       const infoOfRes2Proxy = getHttpResponseHeaderPartInfo(res2Proxy);
-      onRes2Proxy && onRes2Proxy(infoOfRes2Proxy, proxyReqInfo, res2Proxy);
+      postResToProxy && postResToProxy(res2Proxy, infoOfRes2Proxy, proxyReqInfo);
       let infoOfRes2Origin = deepClone(infoOfRes2Proxy);
       if (handleResponseInfoToOrigin) {
         const tmp = await handleResponseInfoToOrigin(infoOfRes2Origin);
@@ -226,7 +231,7 @@ export async function proxyHttpRequest(req: IncomingMessage, res: ServerResponse
       proxyReq.on('response', res2Proxy => res(res2Proxy));
     });
     const infoOfRes2Proxy = getHttpResponseHeaderPartInfo(res2Proxy);
-    onRes2Proxy && onRes2Proxy(infoOfRes2Proxy, proxyReqInfo, res2Proxy);
+    postResToProxy && postResToProxy(res2Proxy, infoOfRes2Proxy, proxyReqInfo);
     let infoOfRes2Origin = deepClone(infoOfRes2Proxy);
 
     for (const [key, value] of Object.entries(infoOfRes2Origin.headers)) {
@@ -358,7 +363,10 @@ export function proxyWebSocketRequest(
     }
   }
 
-  const proxyReq = (protocol === 'https:' || protocol === 'wss:' ? https : http).request(href, requestOptions);
+  const proxyReq = (protocol === 'https:' || protocol === 'wss:' ? https : http).request(
+    href,
+    requestOptions
+  );
 
   if (proxyTimeout) {
     proxyReq.setTimeout(proxyTimeout, () => {
@@ -368,7 +376,10 @@ export function proxyWebSocketRequest(
   }
 
   proxyReq.on('error', err => {
-    logColorful({color: 'red'}, `[ws proxy error] ${(err as NodeJS.ErrnoException).code || 'UNKNOWN'}: ${err.message}`);
+    logColorful(
+      {color: 'red'},
+      `[ws proxy error] ${(err as NodeJS.ErrnoException).code || 'UNKNOWN'}: ${err.message}`
+    );
     socket.end();
   });
 

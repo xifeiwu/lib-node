@@ -1,6 +1,12 @@
 import {RequestOptions, IncomingMessage} from 'http';
 import {toReadable} from '../../stream';
-import {HttpRequestInfo, HttpResponseInfo, HttpRequestOptions, CanTransfromBetweenBuffer} from '../../types';
+import {
+  HttpRequestInfo,
+  HttpResponseInfo,
+  HttpRequestOptions,
+  HttpResponseHeaderPartInfo,
+  CanTransfromBetweenBuffer,
+} from '../../types';
 
 export interface HttpProxyConfig {
   /**
@@ -25,8 +31,12 @@ export interface HttpProxyConfig {
    */
   preProxyReq?: (proxyStatus: ProxyStatus, moreInfo: {href: string}) => void;
 
-  /** Just on response to proxy */
-  onRes2Proxy?: (info: HttpResponseInfo, proxyReqInfo: HttpRequestOptions, response: IncomingMessage) => void;
+  /** After response from target is available at the proxy (before forwarding to the client) */
+  postResToProxy?: (
+    response: IncomingMessage,
+    headerPart: HttpResponseHeaderPartInfo<'receiver'>,
+    proxyReqInfo: HttpRequestOptions
+  ) => void;
   /** Handle info of response to proxy */
   handleResponseInfoToOrigin?: (
     info: HttpResponseInfo
@@ -70,7 +80,6 @@ export interface HttpProxyConfig {
   followRedirects?: boolean;
   /** Max number of redirects to follow (default: 5) */
   maxRedirects?: number;
-
 }
 
 interface MoreProxyRequestInfo {

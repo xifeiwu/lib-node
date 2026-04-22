@@ -653,9 +653,9 @@ export async function testWebSocketProxy() {
 }
 
 /**
- * onRes2Proxy callback: verifies it is called with correct info.
+ * postResToProxy callback: verifies it is called with correct info.
  */
-export async function testOnRes2ProxyCallback() {
+export async function testPostResToProxyCallback() {
   const {origin: targetOrigin, server: targetServer} = await createTargetServer((req, res) => {
     res.statusCode = 200;
     res.end('ok');
@@ -665,17 +665,17 @@ export async function testOnRes2ProxyCallback() {
   let capturedStatus: number | undefined;
   const {origin: proxyOrigin, server: proxyServer} = await createProxyServer({
     globalRequestOptions: {origin: targetOrigin},
-    onRes2Proxy(info) {
+    postResToProxy(_response, headerPart) {
       callbackCalled = true;
-      capturedStatus = info.statusCode;
+      capturedStatus = headerPart.statusCode;
     },
   });
 
   try {
     await requestAndGetResponseInfo({url: `${proxyOrigin}/test`});
-    console.assert(callbackCalled, 'onRes2Proxy should be called');
+    console.assert(callbackCalled, 'postResToProxy should be called');
     console.assert(capturedStatus === 200, `expected status 200, got ${capturedStatus}`);
-    console.log('[PASS] testOnRes2ProxyCallback');
+    console.log('[PASS] testPostResToProxyCallback');
   } finally {
     targetServer.close();
     proxyServer.close();
@@ -704,7 +704,7 @@ export async function runAllHandlerTests() {
     testFollowRedirectsMaxExceeded,
     testFollowRedirects303ToGet,
     testWebSocketProxy,
-    testOnRes2ProxyCallback,
+    testPostResToProxyCallback,
   ];
 
   let passed = 0;
