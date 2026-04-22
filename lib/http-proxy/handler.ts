@@ -100,7 +100,6 @@ export async function proxyHttpRequest(req: IncomingMessage, res: ServerResponse
     hostRewrite,
     protocolRewrite,
     prependPath = true,
-    ignorePath,
     followRedirects,
     maxRedirects = 5,
   } = config;
@@ -111,14 +110,9 @@ export async function proxyHttpRequest(req: IncomingMessage, res: ServerResponse
 
   const originReqInfo = getHttpRequestHeaderPartInfo(req);
 
-  let requestPathname = originReqInfo.url;
-  if (ignorePath) {
-    requestPathname = '';
-  }
-
   let proxyReqInfo: HttpRequestOptions = mergeHttpRequestOptions(
     {
-      pathname: requestPathname,
+      pathname: originReqInfo.url,
       method: originReqInfo.method,
       headers: originReqInfo.headers,
     },
@@ -126,7 +120,7 @@ export async function proxyHttpRequest(req: IncomingMessage, res: ServerResponse
   );
 
   if (prependPath && globalRequestOptions?.pathname) {
-    proxyReqInfo.pathname = concatPath(globalRequestOptions.pathname, ignorePath ? '' : originReqInfo.url);
+    proxyReqInfo.pathname = concatPath(globalRequestOptions.pathname, originReqInfo.url);
   }
 
   if (xfwd && req.socket) {

@@ -66,8 +66,6 @@ export interface HttpProxyConfig {
   protocolRewrite?: string;
   /** Prepend the target's pathname to the request path (default: true) */
   prependPath?: boolean;
-  /** Ignore the request path entirely, use only the target path */
-  ignorePath?: boolean;
   /** Follow redirects from the target server instead of passing them through (method B) */
   followRedirects?: boolean;
   /** Max number of redirects to follow (default: 5) */
