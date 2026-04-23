@@ -82,7 +82,7 @@ export async function getClientSocket(options: GetSocketOptions) {
   if (Object.prototype.hasOwnProperty.call(options, 'href')) {
     const {href, upgrade} = options as HttpUpgradeConfig;
     const {socket: _socket} = await requestAndGetUpgradeInfo({
-      url: href,
+      href,
       headers: {
         Connection: 'Upgrade',
         Upgrade: upgrade,
