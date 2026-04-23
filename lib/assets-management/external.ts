@@ -2,7 +2,6 @@ export {
   isBoolean,
   isDate,
   toDate,
-  byteToWord,
   PickPartial,
   PartialExcept,
   formatDate,
@@ -10,7 +9,8 @@ export {
   getSequentialBase64String,
   toDurationStr,
   formatDt,
-} from '../../../js/common';
+} from '../../../js';
+export {byteToWord} from '../../../js/lib/humanize';
 export {
   logColorful,
   hashData,

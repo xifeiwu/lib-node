@@ -30,7 +30,6 @@ export {
   matchFilters,
   toUrlProps,
   concatOriginWithPathname,
-  byteToWord,
   normalizeUrlProps,
   uuid,
   base64Chars,
@@ -49,8 +48,6 @@ export {
   convertKeyToLowerCase,
   urlInstanceToProps,
   Env,
-  intToWord,
-  wordToByte,
   throttle,
   REG_HTTP_REQUEST_FIRST_LINE,
   REG_HTTP_RESPONSE_FIRST_LINE,
@@ -69,6 +66,7 @@ export {
   formatDt,
   msToDuration,
 } from '../js';
+export {byteToWord, intToWord, wordToByte} from '../js/lib/humanize';
 export {AstAOptions, listAUsingUl} from '../js/lib/html-parser';
 export {mime} from '../js/lib/mime';
 
