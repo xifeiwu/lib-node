@@ -3,10 +3,8 @@ import https from 'https';
 import {convertToBuffer} from '../../transform';
 import {Socket} from 'net';
 import {
-  toUrlInstance,
+  urlPropsToUrlInst,
   getUrlPropsFromConfig,
-  deepMerge,
-  deepMergeByConcat,
   urlPropsToHref,
   isObject,
   getRandomBase64String,
@@ -70,7 +68,7 @@ export function sendHttpRequest<RequestOptions extends HttpRequestOptions = Http
   options: RequestOptions & HttpRequestOptions
 ): SendHttpRequestResult {
   const {urlProps, restProps} = getUrlPropsFromConfig(options);
-  const url = toUrlInstance(urlProps);
+  const url = urlPropsToUrlInst(urlProps);
   const {protocol, href, host} = url;
   const {data, headers = {}} = restProps;
   const {
@@ -257,7 +255,7 @@ export async function requestAndGetConnectInfo<Payload extends ConnectionPayload
   const {urlProps, restProps} = getUrlPropsFromConfig(config);
   const {data, ...requestOptions} = restProps;
   let clientRequest: http.ClientRequest | null = null;
-  const {protocol, href} = toUrlInstance(urlProps);
+  const {protocol, href} = urlPropsToUrlInst(urlProps);
   clientRequest = (protocol === 'https:' ? https : http).request(href, {
     ...requestOptions,
     method: 'connect',

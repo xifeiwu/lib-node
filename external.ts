@@ -1,5 +1,4 @@
 export {
-  UrlProps,
   waitFor,
   isBoolean,
   toNumber,
@@ -23,6 +22,7 @@ export {
   urlPropsToInstance,
   toUrlInstance,
   urlPropsToHref,
+  urlPropsToUrlInst,
   PORT,
   isRegExp,
   FilterItem,
@@ -68,11 +68,12 @@ export {
   toDtStr,
   formatDt,
   msToDuration,
-} from '../js/common';
+} from '../js';
 export {AstAOptions, listAUsingUl} from '../js/lib/html-parser';
 export {mime} from '../js/lib/mime';
 
 export {
+  UrlProps,
   SubRepoConfig,
   SubRepoPostPullFunc,
   SubRepoInfoTree,

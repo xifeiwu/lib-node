@@ -1,5 +1,5 @@
 import {TcpNetConnectOpts} from 'net';
-import {toUrlInstance, getUrlPropsFromConfig, urlPropsToHref, urlInstanceToProps} from '../../../../external';
+import {getUrlPropsFromConfig, urlPropsToUrlInst} from '../../../../external';
 import {HttpRequestOptions, HttpRequestInfo, ConnectionRole, HttpRequestInfoFull} from '../../../../types';
 import {httpRequestInfoToBuffer} from './info-to-buffer';
 /**
@@ -12,11 +12,9 @@ export function httpRequestOptionsToHttpInfo(httpOption: HttpRequestOptions): Ht
     urlProps,
     restProps: {method = 'get', headers, data, port},
   } = getUrlPropsFromConfig(httpOption);
-  const urlInst = toUrlInstance(urlProps);
+  const urlInst = urlPropsToUrlInst(urlProps, {setDefaultOrigin: true});
   const {hostname, protocol} = urlInst;
-  const {origin, ...otherUrlProps} = urlInstanceToProps(urlInst);
-  /** As otherUrlProps not contain origin, url should only contain pathname + query + hash */
-  const urlStr = urlPropsToHref(otherUrlProps);
+  const urlStr = `${urlInst.pathname}${urlInst.search}${urlInst.hash}`;
   let finalPort = port ?? urlInst.port;
   const overTls = protocol === 'https:';
   if (!finalPort) {
