@@ -45,28 +45,30 @@ const sendRequestTargetResponse: {
 function pipeSocket(
   socket2Remote: Socket,
   clientSocket: Socket,
-  options: {tcpMaxLifeTime: number; stateTracer: StateTracer}
+  options: {socketTimeout: number; socketHalfOpenTimeout: number; stateTracer: StateTracer}
 ) {
-  const {tcpMaxLifeTime, stateTracer} = options;
-  pipeline(clientSocket, socket2Remote, err => {
-    // status.stateTracer = serverserverState.socket_connect_between_client_target_fail;
-    // status.error = err;
-    Boolean(err?.message) && stateTracer.push(`${SERVER_STATE.connectionError}: ${err?.message}`);
-  });
-  pipeline(socket2Remote, clientSocket, err => {
-    // status.stateTracer = serverserverState.socket_connect_between_client_target_fail;
-    // status.error = err;
-    Boolean(err?.message) && stateTracer.push(`${SERVER_STATE.connectionError}: ${err?.message}`);
-  });
-  setTimeout(() => {
-    if (!socket2Remote.destroyed) {
-      socket2Remote.destroy();
-    }
-  }, tcpMaxLifeTime);
+  const {socketTimeout, socketHalfOpenTimeout, stateTracer} = options;
   const closeBoth = () => {
     if (!socket2Remote.destroyed) socket2Remote.destroy();
     if (!clientSocket.destroyed) clientSocket.destroy();
   };
+
+  pipeline(clientSocket, socket2Remote, err => {
+    if (err?.message) stateTracer.push(`${SERVER_STATE.connectionError}: ${err.message}`);
+    closeBoth();
+  });
+  pipeline(socket2Remote, clientSocket, err => {
+    if (err?.message) stateTracer.push(`${SERVER_STATE.connectionError}: ${err.message}`);
+    closeBoth();
+  });
+
+  // Enforce max connection lifetime to prevent indefinitely hung sockets
+  for (const socket of [clientSocket, socket2Remote]) {
+    socket.setTimeout(socketTimeout, () => {
+      stateTracer.push(suffixWithDt(SERVER_STATE.connectionTimeout));
+      closeBoth();
+    });
+  }
 
   socket2Remote.on('close', () => {
     stateTracer.push(suffixWithDt(SERVER_STATE.remoteSocketClosed));
@@ -84,15 +86,19 @@ function pipeSocket(
     stateTracer.push(suffixWithDt(SERVER_STATE.clientSocketError));
     closeBoth();
   });
+  // Guard against half-open connections: if one side sends FIN but the
+  // peer never closes, force destroy after a timeout.
   socket2Remote.on('end', () => {
     if (!clientSocket.writableEnded && !clientSocket.destroyed) {
       clientSocket.end();
     }
+    setTimeout(() => closeBoth(), socketHalfOpenTimeout);
   });
   clientSocket.on('end', () => {
     if (!socket2Remote.writableEnded && !socket2Remote.destroyed) {
       socket2Remote.end();
     }
+    setTimeout(() => closeBoth(), socketHalfOpenTimeout);
   });
 }
 /**
@@ -104,7 +110,13 @@ export async function handleSocksConnection<Version extends SocksVersion>(
   config: SocksServerConfig<Version>,
   handleRequestTarget?: (requestTarget: RequestTargetV5) => Promise<boolean | undefined>
 ) {
-  const {socksVersion, proxyConfigList, tcpMaxLifeTime = 6 * 60_000, ...serverConfig} = config;
+  const {
+    socksVersion,
+    proxyConfigList,
+    socketTimeout = 3 * 60_000,
+    socketHalfOpenTimeout = 30_000,
+    ...serverConfig
+  } = config;
   const info: SocksServerInfo = {
     socksVersion,
     negotiationResult: undefined,
@@ -146,7 +158,7 @@ export async function handleSocksConnection<Version extends SocksVersion>(
       //   })
       // }
       const wrappedSocket = getWrapSocketFunc(socksVersion)(socket, negotiationResult);
-      pipeSocket(socket2Remote, wrappedSocket, {tcpMaxLifeTime, stateTracer});
+      pipeSocket(socket2Remote, wrappedSocket, {socketTimeout, socketHalfOpenTimeout, stateTracer});
       socket.resume();
 
       // status.stateTracer = serverserverState.success;

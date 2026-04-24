@@ -108,6 +108,7 @@ export const SERVER_STATE = {
   remoteSocketClosed: 'remote socket closed',
   remoteSocketError: 'remote socket error',
   connectionError: 'connection error',
+  connectionTimeout: 'connection timeout',
 };
 
 export class SocksError extends Error {
@@ -366,8 +367,8 @@ export async function connectFromLocal(requestTarget: RequestTargetV5): Promise<
     reply = blockByDns
       ? EHandleRequestTargetState.Host_unreachable
       : isString(err)
-      ? EHandleRequestTargetState.general_SOCKS_server_failure
-      : EHandleRequestTargetState.Connection_refused;
+        ? EHandleRequestTargetState.general_SOCKS_server_failure
+        : EHandleRequestTargetState.Connection_refused;
   }
   return {
     socket,

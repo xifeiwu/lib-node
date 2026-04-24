@@ -30,11 +30,10 @@ export type ProxyConfig = SocksProxyConfig<5> | SocksProxyConfig<1>;
 
 export type SocksServerConfig<Version extends SocksVersion = any> = ServerConfig[Version] & {
   socksVersion: Version;
-  /**
-   * after this time, socks server will terminate the tcp connection anyway.
-   * the unit is second
-   */
-  tcpMaxLifeTime?: number;
+  /** Max idle time (ms) before the piped sockets are destroyed. Default 3 min. */
+  socketTimeout?: number;
+  /** Max time (ms) to wait for peer close after receiving FIN. Default 30s. */
+  socketHalfOpenTimeout?: number;
   proxyConfigList?: Array<ProxyConfig>;
 };
 
