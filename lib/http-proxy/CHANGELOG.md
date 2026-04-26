@@ -21,5 +21,5 @@ Compared modules/lib/node/lib/http-proxy against vendor/node-http-proxy and iden
 
 - **WebSocket proxying (`ws`, `proxyWebSocketRequest`)** — Handles HTTP `upgrade` events, pipes bidirectional sockets after 101 Switching Protocols. Falls back to writing raw HTTP response if the target doesn't upgrade. Integrated into `startProxyServer` via the `ws` config flag.
 - **`hostRewrite` / `protocolRewrite`** — Rewrites the `Location` header on 301/302/303/307/308 responses. `hostRewrite: true` uses the original request's Host; a string value sets it explicitly. Prevents redirect loops when the proxy's external address differs from the target's.
-- **`prependPath`** — Controls whether the target's pathname is prepended to the request path (default true).
+- **Target pathname prefixing** — If `globalRequestOptions.pathname` is set, it is prepended to the request path.
 - **`followRedirects` / `maxRedirects`** — Follows redirect chains internally (method B, no external dependency). Handles 301/302/303 → GET conversion, strips `authorization` and `cookie` headers on cross-domain redirects, enforces max redirect count to prevent loops.

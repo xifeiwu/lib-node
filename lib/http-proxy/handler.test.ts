@@ -443,9 +443,9 @@ export async function testProtocolRewrite() {
 }
 
 /**
- * prependPath: verifies target pathname is prepended to request path.
+ * Target pathname from globalRequestOptions is prepended to request path.
  */
-export async function testPrependPath() {
+export async function testTargetPathname() {
   const {origin: targetOrigin, server: targetServer} = await createTargetServer((req, res) => {
     res.statusCode = 200;
     res.setHeader('content-type', 'application/json');
@@ -454,7 +454,6 @@ export async function testPrependPath() {
 
   const {origin: proxyOrigin, server: proxyServer} = await createProxyServer({
     globalRequestOptions: {origin: targetOrigin, pathname: '/api/v1'},
-    prependPath: true,
   });
 
   try {
@@ -463,7 +462,7 @@ export async function testPrependPath() {
       responseInfo.data.url.startsWith('/api/v1/users'),
       `expected /api/v1/users, got "${responseInfo.data.url}"`
     );
-    console.log('[PASS] testPrependPath');
+    console.log('[PASS] testTargetPathname');
   } finally {
     targetServer.close();
     proxyServer.close();
@@ -699,7 +698,7 @@ export async function runAllHandlerTests() {
     testCookieDomainRewrite,
     testHostRewrite,
     testProtocolRewrite,
-    testPrependPath,
+    testTargetPathname,
     testFollowRedirects,
     testFollowRedirectsMaxExceeded,
     testFollowRedirects303ToGet,

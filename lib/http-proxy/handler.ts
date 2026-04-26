@@ -105,7 +105,6 @@ export async function proxyHttpRequest(req: IncomingMessage, res: ServerResponse
     cookiePathRewrite,
     hostRewrite,
     protocolRewrite,
-    prependPath = true,
     followRedirects,
     maxRedirects = 5,
   } = config;
@@ -125,7 +124,7 @@ export async function proxyHttpRequest(req: IncomingMessage, res: ServerResponse
     globalRequestOptions
   );
 
-  if (prependPath && globalRequestOptions?.pathname) {
+  if (globalRequestOptions?.pathname) {
     proxyReqInfo.pathname = concatPath(globalRequestOptions.pathname, originReqInfo.url);
   }
 

@@ -39,7 +39,6 @@ A customizable HTTP/WebSocket reverse proxy built on Node.js core `http`/`https`
 | `ws` | `boolean` | Enable WebSocket proxying via upgrade event |
 | `hostRewrite` | `boolean \| string` | Rewrite Location header on redirects |
 | `protocolRewrite` | `string` | Force protocol in rewritten Location headers |
-| `prependPath` | `boolean` | Prepend target pathname to request path (default: true) |
 | `followRedirects` | `boolean` | Follow redirect chains internally instead of passing through |
 | `maxRedirects` | `number` | Max redirects to follow (default: 5) |
 
@@ -75,7 +74,7 @@ All tests use local target servers (no external dependencies) and clean up via `
 | `testCookieDomainRewrite` | Set-Cookie domain rewriting |
 | `testHostRewrite` | Location header host rewrite on 302 |
 | `testProtocolRewrite` | Location header protocol rewrite on 301 |
-| `testPrependPath` | Target pathname prepended to request path |
+| `testTargetPathname` | Target pathname prepended to request path |
 | `testFollowRedirects` | Follows 302 chain to final response |
 | `testFollowRedirectsMaxExceeded` | Redirect loop → 502 |
 | `testFollowRedirects303ToGet` | 303 converts POST to GET |

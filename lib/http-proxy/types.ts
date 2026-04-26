@@ -74,8 +74,6 @@ export interface HttpProxyConfig {
   hostRewrite?: boolean | string;
   /** Force the protocol in rewritten Location headers (e.g. 'https') */
   protocolRewrite?: string;
-  /** Prepend the target's pathname to the request path (default: true) */
-  prependPath?: boolean;
   /** Follow redirects from the target server instead of passing them through (method B) */
   followRedirects?: boolean;
   /** Max number of redirects to follow (default: 5) */
