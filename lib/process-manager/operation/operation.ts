@@ -69,25 +69,28 @@ export async function startProcess(config: LaunchCpConfig, options?: StartProcOp
 }
 
 export async function getProcKeyInfo(cpId: string): Promise<ProcKeyInfo | null> {
-  const info = readProcInfo(cpId);
-  if (!info) {
+  const procInfo = readProcInfo(cpId);
+  if (!procInfo) {
     return null;
   }
-  const pid = info.spawn.pid;
-  const outFilePath = info.spawn.responseFromCp?.outFilePath ?? getProcLogOutPath(cpId);
-  const errFilePath = info.spawn.responseFromCp?.errFilePath ?? getProcLogErrPath(cpId);
+  const pid = procInfo.spawn.pid;
+  const outFilePath = procInfo.spawn.responseFromCp?.outFilePath ?? getProcLogOutPath(cpId);
+  const errFilePath = procInfo.spawn.responseFromCp?.errFilePath ?? getProcLogErrPath(cpId);
   const pInfo = await getProcessInfoByPid(pid);
-  const monitorPid = info.monitor?.id;
+  if (!pInfo) {
+    return null;
+  }
+  const monitorPid = procInfo.monitor?.id;
   let etime = pInfo.etime;
-  if (!etime && info.spawn.spawnTime) {
-    etime = msToDuration(Date.now() - new Date(info.spawn.spawnTime).getTime());
+  if (!etime && procInfo.spawn.spawnTime) {
+    etime = msToDuration(Date.now() - new Date(procInfo.spawn.spawnTime).getTime());
   }
   return {
     key: cpId,
     status: etime ? etime : 'dead',
     monitorPid,
-    command: info.spawn.wholeScript,
-    pid: info.spawn.pid,
+    command: procInfo.spawn.wholeScript,
+    pid: procInfo.spawn.pid,
     rss: pInfo?.rssWord ?? '0B',
     outFilePath,
     errFilePath,
