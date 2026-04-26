@@ -29,7 +29,6 @@ export {
   matchFilter,
   matchFilters,
   toUrlProps,
-  concatOriginWithPathname,
   normalizeUrlProps,
   uuid,
   base64Chars,

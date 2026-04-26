@@ -40,6 +40,54 @@ export function postResToProxy(
 
 const REDIRECT_STATUS_CODES = [301, 302, 303, 307, 308];
 
+function applyResponseHeaderRewrite(options: {
+  infoOfRes2Origin: HttpResponseInfo;
+  req: IncomingMessage;
+  href: string;
+  cookieDomainRewrite?: HttpProxyConfig['cookieDomainRewrite'];
+  cookiePathRewrite?: HttpProxyConfig['cookiePathRewrite'];
+  hostRewrite?: HttpProxyConfig['hostRewrite'];
+  protocolRewrite?: HttpProxyConfig['protocolRewrite'];
+}) {
+  const {infoOfRes2Origin, req, href, cookieDomainRewrite, cookiePathRewrite, hostRewrite, protocolRewrite} =
+    options;
+  for (const [key, value] of Object.entries(infoOfRes2Origin.headers)) {
+    if (key.toLowerCase() === 'set-cookie') {
+      let rewritten = value;
+      if (cookieDomainRewrite !== undefined) {
+        rewritten = cookieRewrite(rewritten, 'domain', cookieDomainRewrite);
+      }
+      if (cookiePathRewrite !== undefined) {
+        rewritten = cookieRewrite(rewritten, 'path', cookiePathRewrite);
+      }
+      infoOfRes2Origin.headers[key] = rewritten;
+    }
+  }
+
+  if (
+    REDIRECT_STATUS_CODES.includes(infoOfRes2Origin.statusCode) &&
+    infoOfRes2Origin.headers.location &&
+    (hostRewrite || protocolRewrite)
+  ) {
+    const locationUrl = new URL(infoOfRes2Origin.headers.location as string, href);
+    if (hostRewrite) {
+      locationUrl.host = hostRewrite === true ? req.headers.host : hostRewrite;
+    }
+    if (protocolRewrite) {
+      locationUrl.protocol = protocolRewrite.endsWith(':') ? protocolRewrite : `${protocolRewrite}:`;
+    }
+    infoOfRes2Origin.headers.location = locationUrl.href;
+  }
+}
+
+function writeHttpResponseInfoToSocket(socket: Socket, info: HttpResponseInfo) {
+  const statusLine = `HTTP/${info.httpVersion} ${info.statusCode} ${info.statusMessage ?? ''}\r\n`;
+  const headers = Object.entries(info.headers)
+    .map(([key, value]) => `${key}: ${value}`)
+    .join('\r\n');
+  socket.write(statusLine + headers + '\r\n\r\n');
+}
+
 function issueRequestWithRedirects(
   href: string,
   requestOptions: http.RequestOptions,
@@ -124,9 +172,9 @@ export async function proxyHttpRequest(req: IncomingMessage, res: ServerResponse
     globalRequestOptions
   );
 
-  if (globalRequestOptions?.pathname) {
-    proxyReqInfo.pathname = concatPath(globalRequestOptions.pathname, originReqInfo.url);
-  }
+  // if (globalRequestOptions?.pathname) {
+  //   proxyReqInfo.pathname = concatPath(globalRequestOptions.pathname, originReqInfo.url);
+  // }
 
   if (xfwd && req.socket) {
     const headers = proxyReqInfo.headers || {};
@@ -234,33 +282,15 @@ export async function proxyHttpRequest(req: IncomingMessage, res: ServerResponse
     postResToProxy && postResToProxy(res2Proxy, infoOfRes2Proxy, proxyReqInfo);
     let infoOfRes2Origin = deepClone(infoOfRes2Proxy);
 
-    for (const [key, value] of Object.entries(infoOfRes2Origin.headers)) {
-      if (key.toLowerCase() === 'set-cookie') {
-        let rewritten = value;
-        if (cookieDomainRewrite !== undefined) {
-          rewritten = cookieRewrite(rewritten, 'domain', cookieDomainRewrite);
-        }
-        if (cookiePathRewrite !== undefined) {
-          rewritten = cookieRewrite(rewritten, 'path', cookiePathRewrite);
-        }
-        infoOfRes2Origin.headers[key] = rewritten;
-      }
-    }
-
-    if (
-      REDIRECT_STATUS_CODES.includes(infoOfRes2Origin.statusCode) &&
-      infoOfRes2Origin.headers.location &&
-      (hostRewrite || protocolRewrite)
-    ) {
-      const locationUrl = new URL(infoOfRes2Origin.headers.location as string, href);
-      if (hostRewrite) {
-        locationUrl.host = hostRewrite === true ? req.headers.host : hostRewrite;
-      }
-      if (protocolRewrite) {
-        locationUrl.protocol = protocolRewrite.endsWith(':') ? protocolRewrite : `${protocolRewrite}:`;
-      }
-      infoOfRes2Origin.headers.location = locationUrl.href;
-    }
+    applyResponseHeaderRewrite({
+      infoOfRes2Origin,
+      req,
+      href,
+      cookieDomainRewrite,
+      cookiePathRewrite,
+      hostRewrite,
+      protocolRewrite,
+    });
 
     if (handleResponseInfoToOrigin) {
       const tmp = await handleResponseInfoToOrigin(infoOfRes2Origin);
@@ -321,16 +351,35 @@ export async function proxyHttpRequest(req: IncomingMessage, res: ServerResponse
 /**
  * Proxy WebSocket upgrade requests to the target server.
  */
-export function proxyWebSocketRequest(
+export async function proxyWebSocketRequest(
   req: IncomingMessage,
   socket: Socket,
   head: Buffer,
   config: HttpProxyConfig
 ) {
-  const {globalRequestOptions, xfwd, changeOrigin, proxyTimeout} = config;
+  const proxyStatus: ProxyStatus = {ts: Date.now()};
+  const {
+    globalRequestOptions,
+    handleProxyRequestOptions,
+    preProxyReq,
+    handleResponseInfoToOrigin,
+    postResToProxy,
+    timeout,
+    proxyTimeout,
+    xfwd,
+    changeOrigin,
+    cookieDomainRewrite,
+    cookiePathRewrite,
+    hostRewrite,
+    protocolRewrite,
+  } = config;
+
+  if (timeout && req.socket) {
+    req.socket.setTimeout(timeout);
+  }
 
   const originReqInfo = getHttpRequestHeaderPartInfo(req);
-  const proxyReqInfo: HttpRequestOptions = mergeHttpRequestOptions(
+  let proxyReqInfo: HttpRequestOptions = mergeHttpRequestOptions(
     {
       pathname: originReqInfo.url,
       method: originReqInfo.method,
@@ -338,6 +387,10 @@ export function proxyWebSocketRequest(
     },
     globalRequestOptions
   );
+
+  if (globalRequestOptions?.pathname) {
+    proxyReqInfo.pathname = concatPath(globalRequestOptions.pathname, originReqInfo.url);
+  }
 
   if (xfwd && req.socket) {
     const headers = proxyReqInfo.headers || {};
@@ -349,6 +402,14 @@ export function proxyWebSocketRequest(
     headers['x-forwarded-host'] = req.headers.host;
     proxyReqInfo.headers = headers;
   }
+
+  if (handleProxyRequestOptions) {
+    const tmp = await handleProxyRequestOptions(proxyReqInfo);
+    if (tmp) {
+      proxyReqInfo = tmp;
+    }
+  }
+  proxyStatus.requestInfo = {origin: originReqInfo, proxy: proxyReqInfo};
 
   const {urlProps, restProps} = getUrlPropsFromConfig(proxyReqInfo);
   const {data, ...requestOptions} = restProps;
@@ -362,6 +423,7 @@ export function proxyWebSocketRequest(
       requestOptions.headers.host = headers.host;
     }
   }
+  preProxyReq && preProxyReq(proxyStatus, {href});
 
   const proxyReq = (protocol === 'https:' || protocol === 'wss:' ? https : http).request(
     href,
@@ -376,33 +438,62 @@ export function proxyWebSocketRequest(
   }
 
   proxyReq.on('error', err => {
-    logColorful(
-      {color: 'red'},
-      `[ws proxy error] ${(err as NodeJS.ErrnoException).code || 'UNKNOWN'}: ${err.message}`
-    );
+    const error = err as NodeJS.ErrnoException;
+    proxyStatus.err = {message: error.message, stack: error.stack, code: error.code};
+    logColorful({color: 'red'}, `[ws proxy error] ${error.code || 'UNKNOWN'}: ${error.message}`);
     socket.end();
   });
 
-  proxyReq.on('response', res => {
+  proxyReq.on('response', async res => {
     if (!res.headers.upgrade) {
-      const statusLine = `HTTP/${res.httpVersion} ${res.statusCode} ${res.statusMessage}\r\n`;
-      const headers = Object.entries(res.headers)
-        .map(([k, v]) => `${k}: ${v}`)
-        .join('\r\n');
-      socket.write(statusLine + headers + '\r\n\r\n');
+      const infoOfRes2Proxy = getHttpResponseHeaderPartInfo(res);
+      postResToProxy && postResToProxy(res, infoOfRes2Proxy, proxyReqInfo);
+      let infoOfRes2Origin = deepClone(infoOfRes2Proxy);
+      applyResponseHeaderRewrite({
+        infoOfRes2Origin,
+        req,
+        href,
+        cookieDomainRewrite,
+        cookiePathRewrite,
+        hostRewrite,
+        protocolRewrite,
+      });
+      if (handleResponseInfoToOrigin) {
+        const tmp = await handleResponseInfoToOrigin(infoOfRes2Origin);
+        if (tmp) {
+          infoOfRes2Origin = tmp;
+        }
+      }
+      proxyStatus.responseInfo = {toProxy: infoOfRes2Proxy, toOrigin: infoOfRes2Origin};
+      writeHttpResponseInfoToSocket(socket, infoOfRes2Origin);
       res.pipe(socket);
     }
   });
 
-  proxyReq.on('upgrade', (proxyRes, proxySocket, proxyHead) => {
+  proxyReq.on('upgrade', async (proxyRes, proxySocket, proxyHead) => {
     proxySocket.on('error', () => socket.end());
     socket.on('error', () => proxySocket.end());
 
-    const statusLine = `HTTP/${proxyRes.httpVersion} 101 Switching Protocols\r\n`;
-    const headers = Object.entries(proxyRes.headers)
-      .map(([k, v]) => `${k}: ${v}`)
-      .join('\r\n');
-    socket.write(statusLine + headers + '\r\n\r\n');
+    const infoOfRes2Proxy = getHttpResponseHeaderPartInfo(proxyRes);
+    postResToProxy && postResToProxy(proxyRes, infoOfRes2Proxy, proxyReqInfo);
+    let infoOfRes2Origin = deepClone(infoOfRes2Proxy);
+    applyResponseHeaderRewrite({
+      infoOfRes2Origin,
+      req,
+      href,
+      cookieDomainRewrite,
+      cookiePathRewrite,
+      hostRewrite,
+      protocolRewrite,
+    });
+    if (handleResponseInfoToOrigin) {
+      const tmp = await handleResponseInfoToOrigin(infoOfRes2Origin);
+      if (tmp) {
+        infoOfRes2Origin = tmp;
+      }
+    }
+    proxyStatus.responseInfo = {toProxy: infoOfRes2Proxy, toOrigin: infoOfRes2Origin};
+    writeHttpResponseInfoToSocket(socket, infoOfRes2Origin);
 
     if (proxyHead && proxyHead.length) {
       socket.write(proxyHead);
