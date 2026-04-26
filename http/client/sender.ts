@@ -9,6 +9,7 @@ import {
   isObject,
   getRandomBase64String,
   convertKeyToLowerCase,
+  omitNullable,
 } from '../../external';
 import {
   HttpRequestOptions,
@@ -28,33 +29,55 @@ import {mergeHttpHeaders} from '../service';
 
 process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
 
+export interface MergeHttpRequestOptionsOptions {
+  ignoreNullable?: boolean;
+}
+
 function mergeTwoHttpRequestOptions(
-  options1: HttpRequestOptions,
-  options2: HttpRequestOptions
+  first: HttpRequestOptions,
+  second: HttpRequestOptions,
+  options?: MergeHttpRequestOptionsOptions
 ): HttpRequestOptions {
-  if (!options2) {
-    return options1;
+  if (!second) {
+    return first;
   }
-  const {headers: headers1 = {}, ...restOptions1} = options1;
-  const {headers: headers2, ...restOptions2} = options2;
-  const mergedHeaders = mergeHttpHeaders(headers1, headers2);
+  const {headers: headers1 = {}, ...restOptions1} = first;
+  const {headers: headers2, ...restOptions2} = second;
+  const mergedHeaders = mergeHttpHeaders(headers1, headers2, options);
   return {
     ...restOptions1,
-    ...restOptions2,
+    ...(options?.ignoreNullable ? omitNullable(restOptions2) : restOptions2),
     headers: mergedHeaders,
   };
 }
+
+function isMergeOptions(
+  options: HttpRequestOptions | MergeHttpRequestOptionsOptions
+): options is MergeHttpRequestOptionsOptions {
+  const keys = Object.keys(options ?? {});
+  return keys.length > 0 && keys.every(key => key === 'ignoreNullable');
+}
+
 export function mergeHttpRequestOptions(
   options1: HttpRequestOptions,
-  ...otherOptions: HttpRequestOptions[]
+  ...otherOptions: Array<HttpRequestOptions | MergeHttpRequestOptionsOptions>
 ): HttpRequestOptions {
+  const lastOption = otherOptions[otherOptions.length - 1];
+  const mergeOptions =
+    lastOption && isMergeOptions(lastOption)
+      ? (otherOptions.pop() as MergeHttpRequestOptionsOptions)
+      : undefined;
   if (otherOptions.length === 0) {
     return options1;
   } else if (otherOptions.length === 1) {
-    return mergeTwoHttpRequestOptions(options1, otherOptions[0]);
+    return mergeTwoHttpRequestOptions(options1, otherOptions[0] as HttpRequestOptions, mergeOptions);
   } else {
-    const [options2, ...restOptions] = otherOptions;
-    return mergeHttpRequestOptions(mergeHttpRequestOptions(options1, options2), ...restOptions);
+    const [options2, ...restOptions] = otherOptions as HttpRequestOptions[];
+    return mergeHttpRequestOptions(
+      mergeTwoHttpRequestOptions(options1, options2, mergeOptions),
+      ...restOptions,
+      ...(mergeOptions ? [mergeOptions] : [])
+    );
   }
 }
 

@@ -64,6 +64,7 @@ export {
   toDtStr,
   formatDt,
   msToDuration,
+  omitNullable,
 } from '../js';
 export {byteToWord, intToWord, wordToByte} from '../js/lib/humanize';
 export {AstAOptions, listAUsingUl} from '../js/lib/html-parser';

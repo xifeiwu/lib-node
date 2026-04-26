@@ -1,7 +1,11 @@
 import {IncomingHttpHeaders, OutgoingHttpHeader, OutgoingHttpHeaders} from 'http';
-import {deepMergeByConcat, Env, deepClone, isObject, deepEqual} from '../../external';
+import {deepMergeByConcat, Env, deepClone, isObject, deepEqual, omitNullable} from '../../external';
 import {HttpRequestOptions, HttpServerConfig} from '../../types';
 import {getDefaultTlsConfig} from '../../net';
+
+export interface MergeHttpHeadersOptions {
+  ignoreNullable?: boolean;
+}
 
 export function getDefaultHttpsConfig(options?: {env?: Env}): HttpServerConfig {
   const {env = process.env.NODE_ENV} = options ?? {};
@@ -80,8 +84,12 @@ export function mergeCookie(first?: OutgoingHttpHeader, second?: OutgoingHttpHea
 
 export function mergeHttpHeaders(
   headers1?: IncomingHttpHeaders | OutgoingHttpHeaders,
-  headers2?: IncomingHttpHeaders | OutgoingHttpHeaders
+  headers2?: IncomingHttpHeaders | OutgoingHttpHeaders,
+  options?: MergeHttpHeadersOptions
 ) {
+  if (options?.ignoreNullable) {
+    headers2 = omitNullable(headers2);
+  }
   if (!headers1 && !headers2) {
     return {};
   }

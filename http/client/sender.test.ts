@@ -2,10 +2,11 @@ import assert from 'assert';
 import {logColorful} from '../../log';
 import {toReadable} from '../../stream';
 import {startHttpDebugServer} from '../server';
-import {requestAndGetResponseInfo} from './sender';
+import {mergeHttpRequestOptions, requestAndGetResponseInfo} from './sender';
 import {CustomizeResponseOptions, HttpRequestOptions} from '../../types';
 import {getAFreePort} from '../../net';
 import {HttpDebugServerPath} from '../../external';
+import {mergeHttpHeaders} from '../service';
 
 export async function contentTypeAndStream() {
   const {origin, server} = await startHttpDebugServer();
@@ -114,6 +115,62 @@ export async function testTimeout() {
   } finally {
     server.close();
   }
+}
+
+export async function testMergeHttpHeadersIgnoreNullable() {
+  const headers = mergeHttpHeaders(
+    {
+      cookie: 'a=1',
+      accept: 'application/json',
+      authorization: 'Bearer token',
+    },
+    {
+      cookie: undefined,
+      accept: null as any,
+      host: 'example.com',
+    },
+    {ignoreNullable: true}
+  );
+  assert.deepEqual(headers, {
+    cookie: 'a=1',
+    accept: 'application/json',
+    authorization: 'Bearer token',
+    host: 'example.com',
+  });
+}
+
+export async function testMergeHttpRequestOptionsIgnoreNullable() {
+  const options = mergeHttpRequestOptions(
+    {
+      origin: 'http://first.example.com',
+      method: 'GET',
+      pathname: '/users',
+      headers: {
+        accept: 'application/json',
+        authorization: 'Bearer token',
+      },
+    },
+    {
+      origin: undefined,
+      method: null as any,
+      pathname: '/accounts',
+      headers: {
+        accept: undefined,
+        host: 'second.example.com',
+      },
+    },
+    {ignoreNullable: true}
+  );
+  assert.deepEqual(options, {
+    origin: 'http://first.example.com',
+    method: 'GET',
+    pathname: '/accounts',
+    headers: {
+      accept: 'application/json',
+      authorization: 'Bearer token',
+      host: 'second.example.com',
+    },
+  });
 }
 
 export async function testEmptyArray() {
