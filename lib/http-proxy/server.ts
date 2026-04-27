@@ -1,13 +1,16 @@
 import {HttpProxyConfig, ProxyStatus} from './types';
 import {startHttpServer, getHttpRequestHeaderPartInfo} from './external';
 import {toBuffer} from './external';
-import {proxyHttpRequest, proxyWebSocketRequest} from './handler';
+import {proxyHttpRequest, proxyWebSocketRequest} from './handlers';
 import {toUrlInstance} from '../../external';
 import {preProxyReqHook} from './utils';
 import {HttpServerConfig} from '../../types';
 
 export const PATHNAME_PROXY_STATUS = '/api/proxy-status';
-export async function startProxyServer(proxyConfig: HttpProxyConfig, httpServerConfig?: HttpServerConfig) {
+export async function startProxyServer(
+  proxyConfig: HttpProxyConfig,
+  httpServerConfig?: HttpServerConfig & {ws?: boolean}
+) {
   const proxyStatusList: ProxyStatus[] = [];
   const sharedConfig = {
     ...proxyConfig,
@@ -34,11 +37,12 @@ export async function startProxyServer(proxyConfig: HttpProxyConfig, httpServerC
           proxyHttpRequest(req, res, sharedConfig);
         }
       },
-      upgrade: proxyConfig.ws
-        ? (req, socket, head) => {
-            proxyWebSocketRequest(req, socket, head, sharedConfig);
-          }
-        : undefined,
+      upgrade:
+        (httpServerConfig?.ws ?? true)
+          ? (req, socket, head) => {
+              proxyWebSocketRequest(req, socket, head, sharedConfig);
+            }
+          : undefined,
     },
     httpServerConfig
   );

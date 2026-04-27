@@ -9,6 +9,11 @@ import {
 } from '../../types';
 
 export interface HttpProxyConfig {
+  /** Timeout in ms for the incoming request socket */
+  timeout?: number;
+  /** Timeout in ms for the outgoing proxy request, aborts if exceeded */
+  proxyTimeout?: number;
+
   /**
    * global options for http.request of proxy, will merge with info from request to proxy
    */
@@ -24,6 +29,15 @@ export interface HttpProxyConfig {
   handleProxyRequestOptions?: (
     info: HttpRequestOptions
   ) => Promise<HttpRequestOptions | void> | HttpRequestOptions | void;
+
+  /**
+   * The following two options to set proxy request options, they have higher priority
+   * than handleProxyRequestOptions(middle priority) and globalRequestOptions(lowest priority).
+   */
+  /** Add x-forwarded-for, x-forwarded-port, x-forwarded-proto, x-forwarded-host headers */
+  xfwd?: boolean;
+  /** Rewrite Host header to match the target URL */
+  changeOrigin?: boolean;
   /**
    * Callback started just before proxy request start, use case:
    * 1. To collect proxyStatus
@@ -41,16 +55,6 @@ export interface HttpProxyConfig {
   handleResponseInfoToOrigin?: (
     info: HttpResponseInfo
   ) => Promise<HttpResponseInfo | void> | HttpResponseInfo | void;
-
-  /** Timeout in ms for the incoming request socket */
-  timeout?: number;
-  /** Timeout in ms for the outgoing proxy request, aborts if exceeded */
-  proxyTimeout?: number;
-
-  /** Add x-forwarded-for, x-forwarded-port, x-forwarded-proto, x-forwarded-host headers */
-  xfwd?: boolean;
-  /** Rewrite Host header to match the target URL */
-  changeOrigin?: boolean;
   /**
    * Rewrite Set-Cookie domain attribute.
    * - string: replace all domains with this value
@@ -63,9 +67,6 @@ export interface HttpProxyConfig {
    * - object: map from original path to new path, '*' as wildcard key
    */
   cookiePathRewrite?: string | Record<string, string>;
-
-  /** Enable WebSocket proxying (listens for 'upgrade' event on the server) */
-  ws?: boolean;
   /**
    * Rewrite the Location header on redirect responses (301/302/307/308).
    * - true: rewrite to match the original request's Host
@@ -78,6 +79,8 @@ export interface HttpProxyConfig {
   followRedirects?: boolean;
   /** Max number of redirects to follow (default: 5) */
   maxRedirects?: number;
+  /** Rewrite the resolved URL before sending the proxy request (highest priority, same as xfwd/changeOrigin) */
+  urlRewrite?: (url: URL) => Promise<URL> | URL;
 }
 
 interface MoreProxyRequestInfo {
@@ -94,8 +97,8 @@ export interface ProxyStatus {
   ts: number;
   requestInfo?: {origin: HttpRequestInfo; proxy: HttpRequestOptions};
   responseInfo?: {
-    toProxy: HttpResponseInfo;
-    toOrigin: HttpResponseInfo;
+    fromTarget: HttpResponseInfo;
+    fromProxy: HttpResponseInfo;
   };
   err?: {
     message: Error['message'];

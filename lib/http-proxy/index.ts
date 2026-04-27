@@ -1,4 +1,4 @@
 export {PATHNAME_PROXY_STATUS, startProxyServer} from './server';
-export * from './handler';
+export * from './handlers';
 export * from './utils';
 export * from './types';

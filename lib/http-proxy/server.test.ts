@@ -183,10 +183,10 @@ export async function testProxyServerWebSocket() {
   });
   await new Promise<void>(resolve => targetServer.listen(targetPort, targetHost, resolve));
 
-  const {origin: proxyOrigin, server: proxyServer} = await startProxyServer({
-    globalRequestOptions: {origin: targetOrigin},
-    ws: true,
-  });
+  const {origin: proxyOrigin, server: proxyServer} = await startProxyServer(
+    {globalRequestOptions: {origin: targetOrigin}},
+    {ws: true}
+  );
 
   try {
     const result = await new Promise<string>((resolve, reject) => {

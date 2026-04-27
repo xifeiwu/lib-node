@@ -5,7 +5,7 @@ import {ColorStyle, logColorful} from './external';
 const MAX_RROXY_STATUS_LENGTH = 100;
 
 /**
- *
+ * set current proxy status to status list before proxy sending request to target
  * @param config
  * @returns
  */

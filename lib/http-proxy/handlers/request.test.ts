@@ -1,11 +1,41 @@
 import http from 'http';
-import https from 'https';
+import {getDataFromReadable} from '../../../stream';
+import {proxyHttpRequest} from './request';
+import {proxyWebSocketRequest} from './websocket';
+import {getHttpRequestHeaderPartInfo, requestAndGetResponseInfo, startHttpServer} from '../external';
+import {getAFreePort} from '../../../net';
+import {HttpProxyConfig} from '../types';
 import type {Socket} from 'net';
-import {getDataFromReadable} from '../../stream';
-import {proxyHttpRequest, proxyWebSocketRequest} from './handler';
-import {getHttpRequestHeaderPartInfo, requestAndGetResponseInfo, startHttpServer} from './external';
-import {getAFreePort} from '../../net';
-import {HttpProxyConfig} from './types';
+
+function createTargetServer(handler: http.RequestListener): Promise<{origin: string; server: http.Server}> {
+  return new Promise(async (resolve, reject) => {
+    const port = await getAFreePort();
+    const host = '127.0.0.1';
+    const server = http.createServer(handler);
+    server.listen(port, host, () => resolve({origin: `http://${host}:${port}`, server}));
+    server.on('error', reject);
+  });
+}
+
+export function createProxyServer(
+  config: HttpProxyConfig & {ws?: boolean}
+): Promise<{origin: string; server: http.Server}> {
+  return new Promise(async (resolve, reject) => {
+    const port = await getAFreePort();
+    const host = '127.0.0.1';
+    const {ws, ...proxyConfig} = config;
+    const server = http.createServer((req, res) => {
+      proxyHttpRequest(req, res, proxyConfig);
+    });
+    if (ws) {
+      server.on('upgrade', (req, socket, head) => {
+        proxyWebSocketRequest(req, socket as Socket, head, proxyConfig);
+      });
+    }
+    server.listen(port, host, () => resolve({origin: `http://${host}:${port}`, server}));
+    server.on('error', reject);
+  });
+}
 
 /**
  * For handler2, req.readable is false
@@ -65,46 +95,19 @@ export async function twoWayOfProxyPayload() {
   console.log(`listening on ${origin}`);
 
   const resInfo1 = await requestAndGetResponseInfo({
-    url: `${origin}/api/debug/echo`,
+    href: `${origin}/api/debug/echo`,
     headers: {
       handler: '1',
     },
   });
   console.log(resInfo1);
   const resInfo2 = await requestAndGetResponseInfo({
-    url: `${origin}/api/debug/echo`,
+    href: `${origin}/api/debug/echo`,
     headers: {
       handler: '2',
     },
   });
   console.log(resInfo2);
-}
-
-function createTargetServer(handler: http.RequestListener): Promise<{origin: string; server: http.Server}> {
-  return new Promise(async (resolve, reject) => {
-    const port = await getAFreePort();
-    const host = '127.0.0.1';
-    const server = http.createServer(handler);
-    server.listen(port, host, () => resolve({origin: `http://${host}:${port}`, server}));
-    server.on('error', reject);
-  });
-}
-
-function createProxyServer(config: HttpProxyConfig): Promise<{origin: string; server: http.Server}> {
-  return new Promise(async (resolve, reject) => {
-    const port = await getAFreePort();
-    const host = '127.0.0.1';
-    const server = http.createServer((req, res) => {
-      proxyHttpRequest(req, res, config);
-    });
-    if (config.ws) {
-      server.on('upgrade', (req, socket, head) => {
-        proxyWebSocketRequest(req, socket as Socket, head, config);
-      });
-    }
-    server.listen(port, host, () => resolve({origin: `http://${host}:${port}`, server}));
-    server.on('error', reject);
-  });
 }
 
 /**
@@ -122,7 +125,7 @@ export async function testBasicProxy() {
   });
 
   try {
-    const {responseInfo} = await requestAndGetResponseInfo({url: `${proxyOrigin}/api/test`});
+    const {responseInfo} = await requestAndGetResponseInfo({href: `${proxyOrigin}/api/test`});
     const {statusCode, data} = responseInfo;
     console.assert(statusCode === 200, `expected 200, got ${statusCode}`);
     console.assert(data.method === 'GET', `expected GET, got ${data.method}`);
@@ -152,7 +155,7 @@ export async function testPostWithBody() {
   try {
     const payload = {name: 'test', value: 42};
     const {responseInfo} = await requestAndGetResponseInfo({
-      url: `${proxyOrigin}/api/data`,
+      href: `${proxyOrigin}/api/data`,
       method: 'POST',
       data: payload,
     });
@@ -190,7 +193,7 @@ export async function testXForwardedHeaders() {
   });
 
   try {
-    const {responseInfo} = await requestAndGetResponseInfo({url: `${proxyOrigin}/test`});
+    const {responseInfo} = await requestAndGetResponseInfo({href: `${proxyOrigin}/test`});
     const {data} = responseInfo;
     console.assert(data['x-forwarded-for'] !== undefined, 'x-forwarded-for should be set');
     console.assert(data['x-forwarded-port'] !== undefined, 'x-forwarded-port should be set');
@@ -222,7 +225,7 @@ export async function testChangeOrigin() {
   });
 
   try {
-    const {responseInfo} = await requestAndGetResponseInfo({url: `${proxyOrigin}/test`});
+    const {responseInfo} = await requestAndGetResponseInfo({href: `${proxyOrigin}/test`});
     const targetHost = new URL(targetOrigin).host;
     console.assert(
       responseInfo.data.host === targetHost,
@@ -254,7 +257,7 @@ export async function testHandleProxyRequestOptions() {
   });
 
   try {
-    const {responseInfo} = await requestAndGetResponseInfo({url: `${proxyOrigin}/test`});
+    const {responseInfo} = await requestAndGetResponseInfo({href: `${proxyOrigin}/test`});
     console.assert(responseInfo.data.customHeader === 'injected-value', `expected injected-value`);
     console.log('[PASS] testHandleProxyRequestOptions');
   } finally {
@@ -281,7 +284,7 @@ export async function testHandleResponseInfoToOrigin() {
   });
 
   try {
-    const {responseInfo} = await requestAndGetResponseInfo({url: `${proxyOrigin}/test`});
+    const {responseInfo} = await requestAndGetResponseInfo({href: `${proxyOrigin}/test`});
     console.assert(responseInfo.headers['x-proxy-added'] === 'yes', 'expected x-proxy-added header');
     console.log('[PASS] testHandleResponseInfoToOrigin');
   } finally {
@@ -305,7 +308,7 @@ export async function testTargetErrorStatus() {
   });
 
   try {
-    const {responseInfo} = await requestAndGetResponseInfo({url: `${proxyOrigin}/test`});
+    const {responseInfo} = await requestAndGetResponseInfo({href: `${proxyOrigin}/test`});
     console.assert(responseInfo.statusCode === 503, `expected 503, got ${responseInfo.statusCode}`);
     console.log('[PASS] testTargetErrorStatus');
   } finally {
@@ -324,7 +327,7 @@ export async function testTargetUnreachable() {
   });
 
   try {
-    const {responseInfo} = await requestAndGetResponseInfo({url: `${proxyOrigin}/test`});
+    const {responseInfo} = await requestAndGetResponseInfo({href: `${proxyOrigin}/test`});
     console.assert(responseInfo.statusCode === 502, `expected 502, got ${responseInfo.statusCode}`);
     console.log('[PASS] testTargetUnreachable');
   } finally {
@@ -349,7 +352,7 @@ export async function testProxyTimeout() {
   });
 
   try {
-    const {responseInfo} = await requestAndGetResponseInfo({url: `${proxyOrigin}/test`});
+    const {responseInfo} = await requestAndGetResponseInfo({href: `${proxyOrigin}/test`});
     console.assert(
       responseInfo.statusCode === 500,
       `expected 500 on timeout, got ${responseInfo.statusCode}`
@@ -377,7 +380,7 @@ export async function testCookieDomainRewrite() {
   });
 
   try {
-    const {responseInfo} = await requestAndGetResponseInfo({url: `${proxyOrigin}/test`});
+    const {responseInfo} = await requestAndGetResponseInfo({href: `${proxyOrigin}/test`});
     const cookie = responseInfo.headers['set-cookie'];
     const cookieStr = Array.isArray(cookie) ? cookie[0] : cookie;
     console.assert(cookieStr.includes('domain=localhost'), `expected domain=localhost in "${cookieStr}"`);
@@ -405,7 +408,7 @@ export async function testHostRewrite() {
   });
 
   try {
-    const {responseInfo} = await requestAndGetResponseInfo({url: `${proxyOrigin}/test`});
+    const {responseInfo} = await requestAndGetResponseInfo({href: `${proxyOrigin}/test`});
     console.assert(responseInfo.statusCode === 302, `expected 302`);
     const location = responseInfo.headers.location as string;
     console.assert(location.includes('my-proxy.com:3000'), `expected rewritten host, got "${location}"`);
@@ -433,7 +436,7 @@ export async function testProtocolRewrite() {
   });
 
   try {
-    const {responseInfo} = await requestAndGetResponseInfo({url: `${proxyOrigin}/old`});
+    const {responseInfo} = await requestAndGetResponseInfo({href: `${proxyOrigin}/old`});
     const location = responseInfo.headers.location as string;
     console.assert(location.startsWith('https://'), `expected https://, got "${location}"`);
     console.log('[PASS] testProtocolRewrite');
@@ -458,7 +461,7 @@ export async function testTargetPathname() {
   });
 
   try {
-    const {responseInfo} = await requestAndGetResponseInfo({url: `${proxyOrigin}/users`});
+    const {responseInfo} = await requestAndGetResponseInfo({href: `${proxyOrigin}/users`});
     console.assert(
       responseInfo.data.url.startsWith('/api/v1/users'),
       `expected /api/v1/users, got "${responseInfo.data.url}"`
@@ -504,7 +507,7 @@ export async function testFollowRedirects() {
   });
 
   try {
-    const {responseInfo} = await requestAndGetResponseInfo({url: `${proxyOrigin}/step1`});
+    const {responseInfo} = await requestAndGetResponseInfo({href: `${proxyOrigin}/step1`});
     console.assert(responseInfo.statusCode === 200, `expected 200, got ${responseInfo.statusCode}`);
     console.assert(responseInfo.data.reached === 'final', `expected reached=final`);
     console.log('[PASS] testFollowRedirects');
@@ -537,7 +540,7 @@ export async function testFollowRedirectsMaxExceeded() {
   });
 
   try {
-    const {responseInfo} = await requestAndGetResponseInfo({url: `${proxyOrigin}/start`});
+    const {responseInfo} = await requestAndGetResponseInfo({href: `${proxyOrigin}/start`});
     console.assert(responseInfo.statusCode === 502, `expected 502, got ${responseInfo.statusCode}`);
     console.log('[PASS] testFollowRedirectsMaxExceeded');
   } finally {
@@ -576,7 +579,7 @@ export async function testFollowRedirects303ToGet() {
 
   try {
     const {responseInfo} = await requestAndGetResponseInfo({
-      url: `${proxyOrigin}/submit`,
+      href: `${proxyOrigin}/submit`,
       method: 'POST',
       data: {form: 'data'},
     });
@@ -587,179 +590,6 @@ export async function testFollowRedirects303ToGet() {
     );
     console.log('[PASS] testFollowRedirects303ToGet');
   } finally {
-    targetServer.close();
-    proxyServer.close();
-  }
-}
-
-/**
- * WebSocket proxy: verifies bidirectional WebSocket message forwarding.
- */
-export async function testWebSocketProxy() {
-  const targetPort = await getAFreePort();
-  const targetHost = '127.0.0.1';
-  const targetOrigin = `http://${targetHost}:${targetPort}`;
-  const targetServer = http.createServer((req, res) => {
-    res.statusCode = 200;
-    res.end();
-  });
-  let targetSocket: Socket | undefined;
-  targetServer.on('upgrade', (req, socket, head) => {
-    targetSocket = socket as Socket;
-    socket.write(
-      'HTTP/1.1 101 Switching Protocols\r\n' + 'Upgrade: websocket\r\n' + 'Connection: Upgrade\r\n' + '\r\n'
-    );
-    socket.on('data', data => {
-      socket.write(`echo:${data.toString()}`);
-    });
-  });
-  await new Promise<void>(resolve => targetServer.listen(targetPort, targetHost, resolve));
-
-  const {origin: proxyOrigin, server: proxyServer} = await createProxyServer({
-    globalRequestOptions: {origin: targetOrigin},
-    ws: true,
-  });
-
-  try {
-    const result = await new Promise<string>((resolve, reject) => {
-      const proxyUrl = new URL(proxyOrigin);
-      const req = http.request({
-        hostname: proxyUrl.hostname,
-        port: proxyUrl.port,
-        path: '/ws',
-        headers: {
-          Connection: 'Upgrade',
-          Upgrade: 'websocket',
-        },
-      });
-
-      const timer = setTimeout(() => reject(new Error('ws timeout')), 3000);
-      req.on('upgrade', (res, socket, head) => {
-        socket.write('hello');
-        socket.on('data', data => {
-          clearTimeout(timer);
-          const msg = data.toString();
-          socket.destroy();
-          resolve(msg);
-        });
-      });
-
-      req.on('error', err => {
-        clearTimeout(timer);
-        reject(err);
-      });
-      req.end();
-    });
-    console.assert(result === 'echo:hello', `expected "echo:hello", got "${result}"`);
-    console.log('[PASS] testWebSocketProxy');
-  } finally {
-    targetSocket?.destroy();
-    targetServer.close();
-    proxyServer.close();
-  }
-}
-
-/**
- * WebSocket proxy hooks: verifies request and response hooks are applied to upgrade flow.
- */
-export async function testWebSocketProxyHooks() {
-  const targetPort = await getAFreePort();
-  const targetHost = '127.0.0.1';
-  const targetOrigin = `http://${targetHost}:${targetPort}`;
-  let targetUrl = '';
-  const targetServer = http.createServer((req, res) => {
-    res.statusCode = 404;
-    res.end('not found');
-  });
-  let targetSocket: Socket | undefined;
-  targetServer.on('upgrade', (req, socket, head) => {
-    targetSocket = socket as Socket;
-    targetUrl = req.url ?? '';
-    socket.write(
-      'HTTP/1.1 101 Switching Protocols\r\n' +
-        'Upgrade: websocket\r\n' +
-        'Connection: Upgrade\r\n' +
-        'x-target: yes\r\n' +
-        '\r\n'
-    );
-    socket.on('data', data => {
-      socket.write(`hook:${data.toString()}`);
-    });
-  });
-  await new Promise<void>(resolve => targetServer.listen(targetPort, targetHost, resolve));
-
-  let preProxyReqCalled = false;
-  let postResToProxyCalled = false;
-  const {origin: proxyOrigin, server: proxyServer} = await createProxyServer({
-    globalRequestOptions: {origin: targetOrigin},
-    ws: true,
-    handleProxyRequestOptions(info) {
-      info.pathname = '/rewritten';
-      info.headers = {...info.headers, 'x-ws-hook': 'yes'};
-      return info;
-    },
-    preProxyReq(status, {href}) {
-      preProxyReqCalled = true;
-      console.assert(
-        status.requestInfo.proxy.pathname === '/rewritten',
-        'proxy pathname should be rewritten'
-      );
-      console.assert(href.endsWith('/rewritten'), `expected href to end with /rewritten, got ${href}`);
-    },
-    postResToProxy(_response, headerPart) {
-      postResToProxyCalled = true;
-      console.assert(headerPart.statusCode === 101, `expected 101, got ${headerPart.statusCode}`);
-    },
-    handleResponseInfoToOrigin(info) {
-      info.headers['x-ws-response-hook'] = 'yes';
-      return info;
-    },
-  });
-
-  try {
-    const result = await new Promise<{message: string; headers: http.IncomingHttpHeaders}>(
-      (resolve, reject) => {
-        const proxyUrl = new URL(proxyOrigin);
-        const req = http.request({
-          hostname: proxyUrl.hostname,
-          port: proxyUrl.port,
-          path: '/ws',
-          headers: {
-            Connection: 'Upgrade',
-            Upgrade: 'websocket',
-          },
-        });
-
-        const timer = setTimeout(() => reject(new Error('ws hook timeout')), 3000);
-        req.on('upgrade', (res, socket, head) => {
-          socket.write('hello');
-          socket.on('data', data => {
-            clearTimeout(timer);
-            const message = data.toString();
-            socket.destroy();
-            resolve({message, headers: res.headers});
-          });
-        });
-
-        req.on('error', err => {
-          clearTimeout(timer);
-          reject(err);
-        });
-        req.end();
-      }
-    );
-
-    console.assert(targetUrl === '/rewritten', `expected /rewritten, got "${targetUrl}"`);
-    console.assert(preProxyReqCalled, 'preProxyReq should be called for websocket proxy');
-    console.assert(postResToProxyCalled, 'postResToProxy should be called for websocket proxy');
-    console.assert(
-      result.headers['x-ws-response-hook'] === 'yes',
-      'response hook header should be forwarded'
-    );
-    console.assert(result.message === 'hook:hello', `expected "hook:hello", got "${result.message}"`);
-    console.log('[PASS] testWebSocketProxyHooks');
-  } finally {
-    targetSocket?.destroy();
     targetServer.close();
     proxyServer.close();
   }
@@ -785,7 +615,7 @@ export async function testPostResToProxyCallback() {
   });
 
   try {
-    await requestAndGetResponseInfo({url: `${proxyOrigin}/test`});
+    await requestAndGetResponseInfo({href: `${proxyOrigin}/test`});
     console.assert(callbackCalled, 'postResToProxy should be called');
     console.assert(capturedStatus === 200, `expected status 200, got ${capturedStatus}`);
     console.log('[PASS] testPostResToProxyCallback');
@@ -796,9 +626,9 @@ export async function testPostResToProxyCallback() {
 }
 
 /**
- * Run all handler tests.
+ * Run all HTTP request proxy tests.
  */
-export async function runAllHandlerTests() {
+export async function runAllRequestTests() {
   const tests = [
     testBasicProxy,
     testPostWithBody,
@@ -816,8 +646,6 @@ export async function runAllHandlerTests() {
     testFollowRedirects,
     testFollowRedirectsMaxExceeded,
     testFollowRedirects303ToGet,
-    testWebSocketProxy,
-    testWebSocketProxyHooks,
     testPostResToProxyCallback,
   ];
 
@@ -832,5 +660,5 @@ export async function runAllHandlerTests() {
       console.error(`[FAIL] ${test.name}:`, (err as Error).message);
     }
   }
-  console.log(`\nHandler tests: ${passed} passed, ${failed} failed, ${tests.length} total`);
+  console.log(`\nRequest tests: ${passed} passed, ${failed} failed, ${tests.length} total`);
 }
