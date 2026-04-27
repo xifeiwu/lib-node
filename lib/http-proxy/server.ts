@@ -3,7 +3,7 @@ import {startHttpServer, getHttpRequestHeaderPartInfo} from './external';
 import {toBuffer} from './external';
 import {proxyHttpRequest, proxyWebSocketRequest} from './handler';
 import {toUrlInstance} from '../../external';
-import {getPreRequestCb} from './utils';
+import {preProxyReqHook} from './utils';
 import {HttpServerConfig} from '../../types';
 
 export const PATHNAME_PROXY_STATUS = '/api/proxy-status';
@@ -11,7 +11,7 @@ export async function startProxyServer(proxyConfig: HttpProxyConfig, httpServerC
   const proxyStatusList: ProxyStatus[] = [];
   const sharedConfig = {
     ...proxyConfig,
-    preProxyReq: getPreRequestCb({
+    preProxyReq: preProxyReqHook({
       statusList: proxyStatusList,
     }),
   };

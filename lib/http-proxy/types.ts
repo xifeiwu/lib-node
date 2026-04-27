@@ -15,7 +15,7 @@ export interface HttpProxyConfig {
   globalRequestOptions?: Partial<HttpRequestOptions>;
   /**
    * Use customized data other than request stream, use case:
-   * 1. Program already got all original data to decide how to handle some logic, the req stream is alreay ended.
+   * 1. logic of caller needs to use original data, and parsed before proxy phase.
    */
   originData?: Parameters<typeof toReadable>[0];
   /**

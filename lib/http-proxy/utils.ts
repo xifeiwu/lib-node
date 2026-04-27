@@ -4,7 +4,12 @@ import {ColorStyle, logColorful} from './external';
 
 const MAX_RROXY_STATUS_LENGTH = 100;
 
-export function getPreRequestCb(config: {
+/**
+ *
+ * @param config
+ * @returns
+ */
+export function preProxyReqHook(config: {
   statusList?: ProxyStatus[];
   maxSize?: number;
   maxAge?: number;
