@@ -87,6 +87,9 @@ export async function processProxyRequest(
   const {urlProps, restProps} = getUrlPropsFromConfig(proxyReqInfo);
   const {data, ...requestOptions} = restProps;
   let urlInst = toUrlInstance(urlProps);
+  const headers = proxyReqInfo.headers ?? {};
+  proxyReqInfo.headers = headers;
+  requestOptions.headers = headers;
 
   // 4. urlRewrite — highest priority
   if (config.urlRewrite) {
@@ -95,7 +98,6 @@ export async function processProxyRequest(
 
   // 5. xfwd — highest priority
   if (xfwd && req.socket) {
-    const headers = proxyReqInfo.headers || {};
     const existingFor = headers['x-forwarded-for'] as string;
     const clientIp = req.socket.remoteAddress;
     headers['x-forwarded-for'] = existingFor ? `${existingFor}, ${clientIp}` : clientIp;
@@ -105,17 +107,11 @@ export async function processProxyRequest(
     headers['x-forwarded-proto'] = (req.socket as any).encrypted
       ? `${protoMap[protocolType]}s`
       : protoMap[protocolType];
-    proxyReqInfo.headers = headers;
   }
 
   // 6. changeOrigin — highest priority
   if (changeOrigin) {
-    const headers = proxyReqInfo.headers || {};
     headers.host = urlInst.port ? `${urlInst.hostname}:${urlInst.port}` : urlInst.hostname;
-    proxyReqInfo.headers = headers;
-    if (requestOptions.headers) {
-      requestOptions.headers.host = headers.host;
-    }
   }
 
   proxyStatus.requestInfo = {origin: originReqInfo, proxy: proxyReqInfo};
