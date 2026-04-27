@@ -22,7 +22,7 @@ import {
 export const REDIRECT_STATUS_CODES = [301, 302, 303, 307, 308];
 
 export interface PreparedProxyRequest {
-  proxyStatus: ProxyStatus;
+  proxyStatus?: ProxyStatus;
   urlInst: URL;
   originReqInfo: HttpRequestInfo;
   /**
@@ -63,7 +63,7 @@ export async function processProxyRequest(
   options: {protocolType: 'http' | 'ws'; proxyStatus?: ProxyStatus}
 ): Promise<PreparedProxyRequest> {
   const {globalRequestOptions, timeout, xfwd, changeOrigin} = config;
-  const {protocolType, proxyStatus = {ts: Date.now()}} = options;
+  const {protocolType, proxyStatus} = options;
 
   if (timeout && req.socket) {
     req.socket.setTimeout(timeout);
@@ -120,7 +120,9 @@ export async function processProxyRequest(
     headers.host = urlInst.port ? `${urlInst.hostname}:${urlInst.port}` : urlInst.hostname;
   }
 
-  proxyStatus.requestInfo = {origin: originReqInfo, proxy: proxyReqInfo};
+  if (proxyStatus) {
+    proxyStatus.requestInfo = {origin: originReqInfo, proxy: proxyReqInfo};
+  }
 
   return {proxyStatus, proxyReqInfo, originReqInfo, urlInst, requestOptions, data};
 }
@@ -138,7 +140,7 @@ export async function processProxyResponse(
   config: HttpProxyConfig,
   options: {
     proxyReqInfo: HttpRequestOptions;
-    proxyStatus: ProxyStatus;
+    proxyStatus?: ProxyStatus;
     originReqInfo: HttpRequestInfo;
     href: string;
   }
@@ -176,7 +178,9 @@ export async function processProxyResponse(
     protocolRewrite,
   });
 
-  proxyStatus.responseInfo = {fromTarget: targetResInfo, fromProxy: proxyResInfo};
+  if (proxyStatus) {
+    proxyStatus.responseInfo = {fromTarget: targetResInfo, fromProxy: proxyResInfo};
+  }
 
   return {targetResInfo, proxyResInfo};
 }
