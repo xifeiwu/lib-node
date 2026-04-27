@@ -15,7 +15,7 @@ A customizable HTTP/WebSocket reverse proxy built on Node.js core `http`/`https`
 
 - **types.ts** — `HttpProxyConfig` (all config options) and `ProxyStatus` (request tracking)
 - **handlers/** — Core proxy logic, split into:
-  - **common.ts** — Shared functions: `handleProxyRequestOptions()`, `processProxyResponse()`, `issueRequestWithRedirects()`, `writeHttpResponseInfoToSocket()`, `postResToProxy()`
+  - **common.ts** — Shared functions: `processProxyRequest()`, `processProxyResponse()`, `issueRequestWithRedirects()`, `writeHttpResponseInfoToSocket()`, `postResToProxy()`
   - **request.ts** — `proxyHttpRequest()` for HTTP proxying
   - **websocket.ts** — `proxyWebSocketRequest()` for WebSocket proxying
   - **index.ts** — Re-exports `postResToProxy`, `proxyHttpRequest`, `proxyWebSocketRequest`

@@ -2,13 +2,13 @@ import https from 'https';
 import http, {IncomingMessage, ServerResponse} from 'http';
 import {HttpProxyConfig, ProxyStatus} from '../types';
 import {toReadable, getDataByTransform, toBuffer, logColorful} from '../external';
-import {handleProxyRequestOptions, processProxyResponse, issueRequestWithRedirects} from './common';
+import {processProxyRequest, processProxyResponse, issueRequestWithRedirects} from './common';
 
 export async function proxyHttpRequest(req: IncomingMessage, res: ServerResponse, config: HttpProxyConfig) {
   const {originData, proxyTimeout, followRedirects, maxRedirects = 5} = config;
 
   const proxyStatus: ProxyStatus = {ts: Date.now()};
-  const {proxyReqInfo, urlInst, requestOptions} = await handleProxyRequestOptions(req, config, {
+  const {proxyReqInfo, urlInst, requestOptions} = await processProxyRequest(req, config, {
     protocolType: 'http',
     proxyStatus,
   });

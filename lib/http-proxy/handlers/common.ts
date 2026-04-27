@@ -49,9 +49,9 @@ export function postResToProxy(
 }
 
 /**
- * Priority (highest to lowest): xfwd & changeOrigin > handleProxyRequestOptions hook > globalRequestOptions
+ * Priority (highest to lowest): xfwd & changeOrigin > config.handleProxyRequestOptions hook > globalRequestOptions
  */
-export async function handleProxyRequestOptions(
+export async function processProxyRequest(
   req: IncomingMessage,
   config: HttpProxyConfig,
   options: {protocolType: 'http' | 'ws'; proxyStatus?: ProxyStatus}

@@ -3,7 +3,7 @@ import http, {IncomingMessage} from 'http';
 import {Socket} from 'net';
 import {HttpProxyConfig, ProxyStatus} from '../types';
 import {logColorful} from '../external';
-import {handleProxyRequestOptions, processProxyResponse, writeHttpResponseInfoToSocket} from './common';
+import {processProxyRequest, processProxyResponse, writeHttpResponseInfoToSocket} from './common';
 
 export async function proxyWebSocketRequest(
   req: IncomingMessage,
@@ -14,7 +14,7 @@ export async function proxyWebSocketRequest(
   const {proxyTimeout} = config;
 
   const proxyStatus: ProxyStatus = {ts: Date.now()};
-  const {proxyReqInfo, urlInst, requestOptions} = await handleProxyRequestOptions(req, config, {
+  const {proxyReqInfo, urlInst, requestOptions} = await processProxyRequest(req, config, {
     protocolType: 'ws',
     proxyStatus,
   });
