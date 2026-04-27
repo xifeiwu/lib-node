@@ -12,13 +12,19 @@ import {
   logColorful,
   mergeHttpRequestOptions,
 } from '../external';
-import {HttpRequestOptions, HttpResponseHeaderPartInfo, HttpResponseInfo} from '../../../types';
+import {
+  HttpRequestInfo,
+  HttpRequestOptions,
+  HttpResponseHeaderPartInfo,
+  HttpResponseInfo,
+} from '../../../types';
 
 export const REDIRECT_STATUS_CODES = [301, 302, 303, 307, 308];
 
 export interface PreparedProxyRequest {
   proxyStatus: ProxyStatus;
   urlInst: URL;
+  originReqInfo: HttpRequestInfo;
   /**
    * contains all request info
    */
@@ -116,7 +122,7 @@ export async function processProxyRequest(
 
   proxyStatus.requestInfo = {origin: originReqInfo, proxy: proxyReqInfo};
 
-  return {proxyStatus, proxyReqInfo, urlInst, requestOptions, data};
+  return {proxyStatus, proxyReqInfo, originReqInfo, urlInst, requestOptions, data};
 }
 
 export interface ProcessedResponse {
@@ -130,9 +136,14 @@ export interface ProcessedResponse {
 export async function processProxyResponse(
   res2Proxy: IncomingMessage,
   config: HttpProxyConfig,
-  options: {proxyReqInfo: HttpRequestOptions; proxyStatus: ProxyStatus; req: IncomingMessage; href: string}
+  options: {
+    proxyReqInfo: HttpRequestOptions;
+    proxyStatus: ProxyStatus;
+    originReqInfo: HttpRequestInfo;
+    href: string;
+  }
 ): Promise<ProcessedResponse> {
-  const {proxyReqInfo, proxyStatus, req, href} = options;
+  const {proxyReqInfo, proxyStatus, originReqInfo, href} = options;
   const {
     postResToProxy: postResToProxyCb,
     handleResponseInfoToOrigin,
@@ -157,7 +168,7 @@ export async function processProxyResponse(
   // 2. applyResponseHeaderRewrite (cookie/host/protocol) — higher priority
   applyResponseHeaderRewrite({
     proxyResInfo,
-    req,
+    originHost: originReqInfo.headers?.host as string,
     href,
     cookieDomainRewrite,
     cookiePathRewrite,
@@ -172,15 +183,22 @@ export async function processProxyResponse(
 
 function applyResponseHeaderRewrite(options: {
   proxyResInfo: HttpResponseInfo;
-  req: IncomingMessage;
+  originHost?: string;
   href: string;
   cookieDomainRewrite?: HttpProxyConfig['cookieDomainRewrite'];
   cookiePathRewrite?: HttpProxyConfig['cookiePathRewrite'];
   hostRewrite?: HttpProxyConfig['hostRewrite'];
   protocolRewrite?: HttpProxyConfig['protocolRewrite'];
 }) {
-  const {proxyResInfo, req, href, cookieDomainRewrite, cookiePathRewrite, hostRewrite, protocolRewrite} =
-    options;
+  const {
+    proxyResInfo,
+    originHost,
+    href,
+    cookieDomainRewrite,
+    cookiePathRewrite,
+    hostRewrite,
+    protocolRewrite,
+  } = options;
   for (const [key, value] of Object.entries(proxyResInfo.headers)) {
     if (key.toLowerCase() === 'set-cookie') {
       let rewritten = value;
@@ -201,7 +219,7 @@ function applyResponseHeaderRewrite(options: {
   ) {
     const locationUrl = new URL(proxyResInfo.headers.location as string, href);
     if (hostRewrite) {
-      locationUrl.host = hostRewrite === true ? req.headers.host : hostRewrite;
+      locationUrl.host = hostRewrite === true ? originHost : hostRewrite;
     }
     if (protocolRewrite) {
       locationUrl.protocol = protocolRewrite.endsWith(':') ? protocolRewrite : `${protocolRewrite}:`;

@@ -8,7 +8,7 @@ export async function proxyHttpRequest(req: IncomingMessage, res: ServerResponse
   const {originData, proxyTimeout, followRedirects, maxRedirects = 5} = config;
 
   const proxyStatus: ProxyStatus = {ts: Date.now()};
-  const {proxyReqInfo, urlInst, requestOptions} = await processProxyRequest(req, config, {
+  const {proxyReqInfo, originReqInfo, urlInst, requestOptions} = await processProxyRequest(req, config, {
     protocolType: 'http',
     proxyStatus,
   });
@@ -16,7 +16,7 @@ export async function proxyHttpRequest(req: IncomingMessage, res: ServerResponse
 
   config.preProxyReq?.(proxyStatus, {href});
 
-  const processOptions = {proxyReqInfo, proxyStatus, req, href};
+  const processOptions = {proxyReqInfo, proxyStatus, originReqInfo, href};
 
   if (followRedirects) {
     try {

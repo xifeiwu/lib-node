@@ -14,7 +14,7 @@ export async function proxyWebSocketRequest(
   const {proxyTimeout} = config;
 
   const proxyStatus: ProxyStatus = {ts: Date.now()};
-  const {proxyReqInfo, urlInst, requestOptions} = await processProxyRequest(req, config, {
+  const {proxyReqInfo, originReqInfo, urlInst, requestOptions} = await processProxyRequest(req, config, {
     protocolType: 'ws',
     proxyStatus,
   });
@@ -22,7 +22,7 @@ export async function proxyWebSocketRequest(
 
   config.preProxyReq?.(proxyStatus, {href});
 
-  const processOptions = {proxyReqInfo, proxyStatus, req, href};
+  const processOptions = {proxyReqInfo, proxyStatus, originReqInfo, href};
 
   const proxyReq = (protocol === 'https:' || protocol === 'wss:' ? https : http).request(
     href,
