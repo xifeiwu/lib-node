@@ -68,9 +68,11 @@ startProxyServer(proxyConfig, {ws: true})  // ws defaults to true
 
 ## Key internal functions (handlers/common.ts)
 
-### handleProxyRequestOptions(req, config, options)
+### processProxyRequest(req, config, options)
 
-Prepares the proxy request. Returns `PreparedProxyRequest` with `{proxyStatus, proxyReqInfo, urlInst, requestOptions, data}`.
+Prepares the proxy request. Returns `PreparedProxyRequest` with `{proxyStatus?, originReqInfo, proxyReqInfo, urlInst, requestOptions, data}`.
+
+`options: {protocolType: 'http' | 'ws'; proxyStatus?: ProxyStatus}` — `proxyStatus` is optional; if omitted, no status tracking is performed.
 
 Execution order (reflects priority):
 1. `globalRequestOptions` merge (lowest)
@@ -83,6 +85,8 @@ Execution order (reflects priority):
 ### processProxyResponse(res2Proxy, config, options)
 
 Processes the target's response. Returns `ProcessedResponse` with `{targetResInfo, proxyResInfo}`.
+
+`options: {proxyReqInfo, proxyStatus?, originReqInfo, href}` — `proxyStatus` is optional; if omitted, no status tracking is performed.
 
 Execution order (reflects priority):
 1. `handleResponseInfoToOrigin` hook (lower)
