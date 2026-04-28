@@ -1,4 +1,4 @@
-import {Duplex, Readable, Transform, TransformOptions, Writable} from 'stream';
+import {Duplex, Readable, Transform, Writable} from 'stream';
 import {
   CustomizedDuplexConfig,
   CustomizedReadableConfig,
@@ -7,35 +7,30 @@ import {
 } from './types';
 import {getReadFunc, getWritableFuncs} from './service';
 
+export type * from './types';
+
 /**
  * configurable reader
  */
 export function getCustomizedReader(config?: CustomizedReadableConfig) {
   const {readableOptions = {}, ...restConfig} = config ?? {};
-  const d1 = new Readable({
+  const reader = new Readable({
     read: getReadFunc(restConfig),
     ...readableOptions,
   });
-  return d1;
+  return reader;
 }
 
 export function getCustomizedWriter(config?: CustomizedWritableConfig) {
   const {writableOptions, ...restConfig} = config ?? {};
   return new Writable({
     ...getWritableFuncs(restConfig),
-    // final(cb) {
-    //   if (restConfig.color) {
-    //     logColorful({color: restConfig.color}, 'final of writer is called');
-    //   }
-    //   cb && cb();
-    // },
     ...writableOptions,
   });
 }
 
 export function getCustomizedDuplex(config?: CustomizedDuplexConfig) {
-  const {customize: {read, write = {}, ...common} = {}, ...duplexOptions} = config ?? {};
-  // duplex read, write function can't be undefined
+  const {customize: {read, write, ...common} = {}, ...duplexOptions} = config ?? {};
   const duplex = new Duplex({
     read: read ? getReadFunc({...read, ...common}) : () => {},
     ...(write ? getWritableFuncs({...write, ...common}) : {}),
@@ -46,7 +41,6 @@ export function getCustomizedDuplex(config?: CustomizedDuplexConfig) {
 
 export function getCustomizedTransform(config?: CustomizedTransformConfig) {
   const {customize: {read, write, ...common} = {}, ...transformOptions} = config ?? {};
-  // duplex read, write function can't be undefined
   const transform = new Transform({
     read: read ? getReadFunc({...read, ...common}) : () => {},
     ...(write ? getWritableFuncs({...write, ...common}) : {}),

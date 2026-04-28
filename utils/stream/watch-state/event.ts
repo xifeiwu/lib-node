@@ -1,9 +1,9 @@
 import {Duplex, Readable, Writable} from 'stream';
-import {logColorful} from '../../../../log';
+import {logColorful} from '../../../log';
 import {WatchStreamOptions} from './types';
-import {ReadableEvent} from '../../../../types';
-import {isNumber} from '../../../../external';
-import {largeDataToString} from '../../../../transform';
+import {ReadableEvent} from '../../../types';
+import {isNumber} from '../../../external';
+import {largeDataToString} from '../../../transform';
 import {printDuplexState, printReadableState, printWritableState} from './state';
 
 export function watchReadableState(reader: Readable, options?: WatchStreamOptions) {
@@ -19,7 +19,6 @@ export function watchReadableState(reader: Readable, options?: WatchStreamOption
    * NOTICE: data, readable can not be listened together.
    */
   const eventNameList: ReadableEvent[] = ['pause', 'resume', 'end', 'error', 'close'];
-  // as listen on data event will change flowingMode of readable, so I should be set explictly by caller
   if (isNumber(maxPrintSizeOnData)) {
     reader.on('data', chunk => {
       const {byteLength} = chunk;
@@ -28,7 +27,7 @@ export function watchReadableState(reader: Readable, options?: WatchStreamOption
         [
           logPrefix ? `[${logPrefix}]` : null,
           `[${role}]`,
-          ['on-data'],
+          '[on-data]',
           `[size: ${byteLength}]:`,
           largeDataToString(chunk, {
             maxPrintSize: maxPrintSizeOnData,
@@ -71,11 +70,11 @@ export function watchWritableState(writer: Writable, options?: WatchStreamOption
   }
 }
 
-interface watchOptions extends WatchStreamOptions {
+interface WatchOptions extends WatchStreamOptions {
   reader?: WatchStreamOptions;
   writer?: WatchStreamOptions;
 }
-export function watchDuplexState(duplex: Duplex, watchOptions?: watchOptions) {
+export function watchDuplexState(duplex: Duplex, watchOptions?: WatchOptions) {
   const {reader = {}, writer = {}, ...rest} = watchOptions ?? {};
   watchReadableState(duplex, {...rest, ...reader, isDuplex: true});
   watchWritableState(duplex, {...rest, ...writer, isDuplex: true});

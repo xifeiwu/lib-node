@@ -1,5 +1,5 @@
 import {Duplex, Readable, Writable} from 'stream';
-import {logColorful} from '../../../../log';
+import {logColorful} from '../../../log';
 
 export function printReadableState(reader: Readable) {
   const {closed, destroyed, readable, readableFlowing, readableHighWaterMark, readableLength} = reader;

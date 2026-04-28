@@ -63,15 +63,11 @@ export {
   getDtStrInFormat,
   toDtStr,
   formatDt,
-<<<<<<< HEAD
   msToDuration,
   omitNullable,
+  LETTERS_BASE64,
 } from '../js';
 export {byteToWord, intToWord, wordToByte} from '../js/lib/humanize';
-=======
-  LETTERS_BASE64,
-} from '../js/common';
->>>>>>> c1b7e0f (small update for stream generator)
 export {AstAOptions, listAUsingUl} from '../js/lib/html-parser';
 export {mime} from '../js/lib/mime';
 

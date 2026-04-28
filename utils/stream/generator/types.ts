@@ -1,6 +1,6 @@
 import {DuplexOptions, ReadableOptions, TransformOptions, WritableOptions} from 'stream';
 
-import {LogColors, BufferGeneratorConfig} from '../../../../types';
+import {LogColors, BufferGeneratorConfig} from '../../../types';
 
 interface CommonFuncConfig {
   /** log what pushed or not */

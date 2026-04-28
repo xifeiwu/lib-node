@@ -1,4 +1,4 @@
-import {ColorStyle, LogColors} from '../../../../types';
+import {LogColors} from '../../../types';
 
 export interface WatchStreamOptions {
   color?: LogColors;
