@@ -2,6 +2,7 @@ import {LogColors} from '../../../types';
 
 export interface WatchStreamOptions {
   color?: LogColors;
+  eventTrace?: string[];
   logPrefix?: string;
   /**
    * if maxPrintSizeOnData is not undefined,

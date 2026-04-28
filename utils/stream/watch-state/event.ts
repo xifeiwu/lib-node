@@ -6,12 +6,31 @@ import {isNumber} from '../../../external';
 import {largeDataToString} from '../../../transform';
 import {printDuplexState, printReadableState, printWritableState} from './state';
 
+function formatLogMessage(parts: Array<string | null | undefined>) {
+  return '[' + parts.filter(Boolean).join(' ') + ']';
+}
+
+function logIfColor(color: WatchStreamOptions['color'], message: string) {
+  if (color !== undefined) {
+    logColorful({color}, message);
+  }
+}
+
+function traceEvent(eventTrace: WatchStreamOptions['eventTrace'], eventName: string) {
+  if (Array.isArray(eventTrace)) {
+    eventTrace.push(eventName);
+  }
+}
+
 export function watchReadableState(reader: Readable, options?: WatchStreamOptions) {
-  const {color, logPrefix = '', maxPrintSizeOnData, printState, isDuplex} = options ?? {};
+  const {color, logPrefix = '', maxPrintSizeOnData, printState, isDuplex, eventTrace} = options ?? {};
   const role = isDuplex ? 'duplex' : 'reader';
   const printStateFunc = (isDuplex ? printDuplexState : printReadableState) as typeof printReadableState;
+  const log = (...parts: Array<string | null | undefined>) => logIfColor(color, formatLogMessage(parts));
+  const print = () => printState && printStateFunc(reader);
+
   if (printState) {
-    logColorful({color}, '[' + [logPrefix, role, 'state:'].filter(Boolean).join(' ') + ']');
+    log(logPrefix, role, 'state:');
     printStateFunc(reader);
   }
   /**
@@ -21,51 +40,52 @@ export function watchReadableState(reader: Readable, options?: WatchStreamOption
   const eventNameList: ReadableEvent[] = ['pause', 'resume', 'end', 'error', 'close'];
   if (isNumber(maxPrintSizeOnData)) {
     reader.on('data', chunk => {
+      traceEvent(eventTrace, 'data');
       const {byteLength} = chunk;
-      logColorful(
-        {color},
-        [
-          logPrefix ? `[${logPrefix}]` : null,
-          `[${role}]`,
-          '[on-data]',
-          `[size: ${byteLength}]:`,
-          largeDataToString(chunk, {
-            maxPrintSize: maxPrintSizeOnData,
-          }),
-        ]
-          .filter(Boolean)
-          .join(' ')
+      log(
+        logPrefix ? `[${logPrefix}]` : null,
+        `[${role}]`,
+        '[on-data]',
+        `[size: ${byteLength}]:`,
+        largeDataToString(chunk, {
+          maxPrintSize: maxPrintSizeOnData,
+        })
       );
-      printState && printStateFunc(reader);
+      print();
     });
   }
   for (const eventName of eventNameList) {
     reader.on(eventName, chunkOrError => {
-      logColorful({color}, '[' + [logPrefix, role, `on-${eventName}`].filter(Boolean).join(' ') + ']');
+      traceEvent(eventTrace, eventName);
+      log(logPrefix, role, `on-${eventName}`);
       if (eventName === 'error') {
-        logColorful({color}, chunkOrError.stack);
+        logIfColor(color, chunkOrError.stack);
       }
-      printState && printStateFunc(reader);
+      print();
     });
   }
 }
 
 export function watchWritableState(writer: Writable, options?: WatchStreamOptions) {
-  const {color, logPrefix = '', printState, isDuplex} = options ?? {};
+  const {color, logPrefix = '', printState, isDuplex, eventTrace} = options ?? {};
   const role = isDuplex ? 'duplex' : 'writer';
   const printStateFunc = (isDuplex ? printDuplexState : printWritableState) as typeof printWritableState;
+  const log = (...parts: Array<string | null | undefined>) => logIfColor(color, formatLogMessage(parts));
+  const print = () => printState && printStateFunc(writer);
+
   if (printState) {
-    logColorful({color}, '[' + [logPrefix, role, `state:`].filter(Boolean).join(' ') + ']');
+    log(logPrefix, role, 'state:');
     printStateFunc(writer);
   }
   const eventNameList = ['drain', 'finish', 'pipe', 'unpipe', 'error', 'close'];
   for (const eventName of eventNameList) {
     writer.on(eventName, chunkOrError => {
-      logColorful({color}, '[' + [logPrefix, role, `on-${eventName}`].filter(Boolean).join(' ') + ']');
+      traceEvent(eventTrace, eventName);
+      log(logPrefix, role, `on-${eventName}`);
       if (eventName === 'error') {
-        logColorful({color}, chunkOrError.stack);
+        logIfColor(color, chunkOrError.stack);
       }
-      printState && printStateFunc(writer);
+      print();
     });
   }
 }
