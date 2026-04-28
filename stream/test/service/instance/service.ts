@@ -19,7 +19,9 @@ export function getReadFunc(config?: ReadFuncConfig) {
       if (color) {
         logColorful(
           {color},
-          [logPrefix, 'push', largeDataToString(data, {maxPrintSize})].filter(Boolean).join(' ')
+          [logPrefix ? `[${logPrefix}]` : null, '[push]', largeDataToString(data, {maxPrintSize})]
+            .filter(Boolean)
+            .join(' ')
         );
       }
       this.push(data);
@@ -40,14 +42,16 @@ export function getWritableFuncs(config?: WriteFuncConfig) {
     if (color) {
       logColorful(
         {color},
-        [logPrefix, 'write', largeDataToString(chunk, {maxPrintSize})].filter(Boolean).join(' ')
+        [logPrefix ? `[${logPrefix}]` : null, '[write]', largeDataToString(chunk, {maxPrintSize})]
+          .filter(Boolean)
+          .join(' ')
       );
     }
     cb && cb();
   }
   async function final(this: Writable, cb) {
     if (color) {
-      logColorful({color}, [logPrefix, 'final'].filter(Boolean).join(' '));
+      logColorful({color}, [logPrefix ? `[${logPrefix}]` : null, '[final]'].filter(Boolean).join(' '));
     }
     cb && cb();
   }

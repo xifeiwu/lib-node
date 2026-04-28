@@ -1,4 +1,4 @@
-import {BASE64_CHARS, byteToWord, isNumber, isPlainObject, isString, LETTERS, NUMBERS} from '../external';
+import {LETTERS_BASE64, byteToWord, isNumber, isPlainObject, isString, LETTERS, NUMBERS} from '../external';
 import {
   BufferGeneratorConfig,
   CanConvertToBuffer,
@@ -127,7 +127,15 @@ export function getBufferGenerator(config?: BufferGeneratorConfig) {
     throw new Error(`value of countOfGenerate is too large`);
   }
   let sourceBuffer = convertToBuffer(
-    source === 'word' ? LETTERS : source === 'number' ? NUMBERS : BASE64_CHARS
+    source === undefined
+      ? LETTERS_BASE64
+      : source === 'word'
+        ? LETTERS
+        : source === 'number'
+          ? NUMBERS
+          : source === 'base64'
+            ? LETTERS_BASE64
+            : source
   );
   /**
    * Try to get more different char when the length is 1

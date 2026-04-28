@@ -11,7 +11,7 @@ export function watchReadableState(reader: Readable, options?: WatchStreamOption
   const role = isDuplex ? 'duplex' : 'reader';
   const printStateFunc = (isDuplex ? printDuplexState : printReadableState) as typeof printReadableState;
   if (printState) {
-    logColorful({color}, [logPrefix, role, 'state:'].filter(Boolean).join(' '));
+    logColorful({color}, '[' + [logPrefix, role, 'state:'].filter(Boolean).join(' ') + ']');
     printStateFunc(reader);
   }
   /**
@@ -26,9 +26,9 @@ export function watchReadableState(reader: Readable, options?: WatchStreamOption
       logColorful(
         {color},
         [
-          logPrefix,
-          role,
-          'on-data',
+          logPrefix ? `[${logPrefix}]` : null,
+          `[${role}]`,
+          ['on-data'],
           `[size: ${byteLength}]:`,
           largeDataToString(chunk, {
             maxPrintSize: maxPrintSizeOnData,
@@ -42,7 +42,7 @@ export function watchReadableState(reader: Readable, options?: WatchStreamOption
   }
   for (const eventName of eventNameList) {
     reader.on(eventName, chunkOrError => {
-      logColorful({color}, [logPrefix, role, `on-${eventName}`].filter(Boolean).join(' '));
+      logColorful({color}, '[' + [logPrefix, role, `on-${eventName}`].filter(Boolean).join(' ') + ']');
       if (eventName === 'error') {
         logColorful({color}, chunkOrError.stack);
       }
@@ -56,13 +56,13 @@ export function watchWritableState(writer: Writable, options?: WatchStreamOption
   const role = isDuplex ? 'duplex' : 'writer';
   const printStateFunc = (isDuplex ? printDuplexState : printWritableState) as typeof printWritableState;
   if (printState) {
-    logColorful({color}, [logPrefix, role, `state:`].filter(Boolean).join(' '));
+    logColorful({color}, '[' + [logPrefix, role, `state:`].filter(Boolean).join(' ') + ']');
     printStateFunc(writer);
   }
   const eventNameList = ['drain', 'finish', 'pipe', 'unpipe', 'error', 'close'];
   for (const eventName of eventNameList) {
     writer.on(eventName, chunkOrError => {
-      logColorful({color}, [logPrefix, role, `on-${eventName}`].filter(Boolean).join(' '));
+      logColorful({color}, '[' + [logPrefix, role, `on-${eventName}`].filter(Boolean).join(' ') + ']');
       if (eventName === 'error') {
         logColorful({color}, chunkOrError.stack);
       }
