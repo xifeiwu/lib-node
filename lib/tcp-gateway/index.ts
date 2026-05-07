@@ -4,11 +4,12 @@ import {
   startSocketServer,
   getOneLineFromReader,
   responseHttpConnection,
-  isSocksProtocol,
-  SocksVersion,
   REG_HTTP_REQUEST_FIRST_LINE,
 } from './external';
-import {HttpHandler, Protocol, TcpHandler, TcpServerConfig} from '../../types';
+import {TcpServerConfig} from '../../types';
+import {HttpHandler, Protocol, TcpHandler} from './types';
+
+export {Protocol, TcpHandler, HttpHandler} from './types';
 
 function isHttpRequest(buffer: Buffer) {
   const str = buffer.toString();
@@ -27,10 +28,7 @@ async function getConnectionProtocol(
   if (isHttpRequest(firstChunk)) {
     result.protocol = 'http';
   } else {
-    const firstByte = firstChunk[0];
-    if (isSocksProtocol(firstByte)) {
-      result.protocol = firstByte as SocksVersion;
-    }
+    result.protocol = firstChunk[0];
   }
   return result;
 }
@@ -73,6 +71,9 @@ export async function startTcpGateway(
 ) {
   const {onConnection, httpHandler, httpServerInfo, tcpHandler} = config;
   function closeSocket(socket: Socket, protocol?: Protocol) {
+    if (socket.destroyed || socket.writableEnded || !socket.writable) {
+      return;
+    }
     responseHttpConnection(socket, {
       code: 400,
       message: `No handler found for protocol: ${protocol}`,
@@ -85,11 +86,13 @@ export async function startTcpGateway(
       return;
     }
     const {protocol, firstChunk} = await getConnectionProtocol(socket);
+    let isHandled: boolean | void = false;
+    /** if client not send data, or client closed connection, stop here */
     if (protocol === undefined) {
       return closeSocket(socket);
     }
-    let isHandled: boolean | void = false;
     if (protocol === 'http' && (httpHandler || httpServerInfo)) {
+      /** pass socket to httpHandler, or pipe socket connection to an existing http server */
       if (httpHandler) {
         isHandled = await httpHandler(socket, {firstChunk});
       } else {
