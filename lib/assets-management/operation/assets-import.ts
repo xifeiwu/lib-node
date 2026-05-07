@@ -1,13 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import {AssetInfoFull, MetaDiffForImportNew, MetaHandlers} from '../types';
-import {
-  serializeMetaDiff,
-  getSha1AsId,
-  getAssetInfoListFromMeta,
-  getSha1ToAssetInfo,
-  getFullAssetInfo,
-} from '../service';
+import {serializeMetaDiff, getSha1AsId, getSha1ToAssetInfo, getFullAssetInfo} from '../service';
 import {diffMetaForImportNew} from '../service';
 import {
   goOnOrNot,
@@ -125,7 +119,7 @@ export async function importAssets(
 
   if (Array.isArray(from)) {
     const toMeta = await toMetaHandlers.getMeta();
-    const existingList = getAssetInfoListFromMeta(toMeta);
+    const existingList = toMeta.assetInfoList;
     const sha1ToExisting = getSha1ToAssetInfo(existingList);
     const added: AssetInfoFull[] = [];
     const duplicated: MetaDiffForImportNew['duplicated'] = [];

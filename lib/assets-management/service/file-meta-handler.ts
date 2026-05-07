@@ -3,6 +3,7 @@ import {
   AssetInfoFull,
   GetMetaHandlers,
   GetDirAssetOptions,
+  GetMetaOptions,
   CreateOrUpdateItemOptions,
   MetaHandlers,
   AssetTree,
@@ -18,6 +19,7 @@ import {
   saveDirMeta,
   readMetaFromFile,
   saveMetaToFile,
+  toAssetListMeta,
 } from './assets-meta';
 import {goOnOrNot, removeFile} from '../external';
 
@@ -84,9 +86,14 @@ export const getFileMetaHandler = (options?: {metaFile: string}) => {
       }
     }
 
-    async function getMeta(options?: GetDirAssetOptions) {
-      await initMeta(options);
-      return {...meta, rootDir} as AssetTreeMeta;
+    async function getMeta(options?: GetMetaOptions) {
+      const {reset, ...dirAssetOptions} = options ?? {};
+      if (reset) {
+        await resetMeta(dirAssetOptions);
+      } else {
+        await initMeta(dirAssetOptions);
+      }
+      return toAssetListMeta({...meta, rootDir});
     }
 
     async function cleanUpMeta() {
@@ -172,9 +179,7 @@ export const getFileMetaHandler = (options?: {metaFile: string}) => {
     const handlers: MetaHandlers = {
       rootDir,
       getKey,
-      initMeta,
       getMeta,
-      resetMeta,
       cleanUpMeta,
       createOrUpdateItem,
       createOrUpdateItems,

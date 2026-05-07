@@ -1,10 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import {AssetInfoFull, MetaHandlers} from '../types';
-import {
-  getAssetInfoListFromMeta,
-  getSha1ToAssetInfo,
-} from '../service';
+import {getSha1ToAssetInfo} from '../service';
 import {
   goOnOrNot,
   addDtSuffixToBareBasename,
@@ -45,7 +42,7 @@ export async function handleDuplicateFile(
   }
   const {outputDir = DIR_ASSET_MANAGE_TMP_DIR} = options ?? {};
   const meta = await metaHandlers.getMeta();
-  const assetInfoList = getAssetInfoListFromMeta(meta);
+  const assetInfoList = meta.assetInfoList;
   const sha1ToAssetInfo = getSha1ToAssetInfo(assetInfoList);
   const duplicateFiles: Record<string, AssetInfoFull[]> = {};
   for (const key of Object.keys(sha1ToAssetInfo)) {

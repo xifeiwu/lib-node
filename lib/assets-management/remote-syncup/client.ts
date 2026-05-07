@@ -3,7 +3,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 import {getFileMetaHandler} from '../service/file-meta-handler';
 import {serailizeAssetInfo} from '../service/asset-info';
-import {getAssetInfoListFromMeta} from '../service/assets-meta';
 import {getPartialAssetInfo} from '../service/asset-info';
 import {goOnOrNot} from '../external';
 import {byteToWord} from '../external';
@@ -29,11 +28,10 @@ async function getLocalMeta(dir: string): Promise<AssetListMeta> {
   await alignMetaWithAssets(metaHandlers);
   console.log(`Scanning local files in ${absDir}...`);
   const meta = await metaHandlers.getMeta();
-  const itemList = getAssetInfoListFromMeta(meta);
-  console.log(`Found ${itemList.length} files.`);
+  console.log(`Found ${meta.assetInfoList.length} files.`);
   return {
     rootDir: absDir,
-    assetInfoList: itemList.map(it => serailizeAssetInfo(it) as any),
+    assetInfoList: meta.assetInfoList.map(it => serailizeAssetInfo(it) as any),
   };
 }
 
