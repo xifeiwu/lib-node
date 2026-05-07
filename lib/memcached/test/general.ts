@@ -1,8 +1,8 @@
 import assert from 'assert';
 import {getClient} from '../client';
 import {startServer} from '../server';
-import { startMemcachedServer } from './utils';
-import { PORT } from '../../../external';
+import {startMemcachedServer} from './utils';
+import {PORT} from '../../../external';
 
 const testKeyPair = {
   key: 'abc',

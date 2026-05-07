@@ -52,7 +52,7 @@ function escapeName(name) {
         '\r': '%0D',
         '\n': '%0A',
         '"': '%22',
-      }[match])
+      })[match]
   );
 }
 async function getFormPart(confg: {

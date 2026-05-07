@@ -1,5 +1,5 @@
-import { getSubrepoConfigSummary } from "./service/config";
-import { syncSubreposFromWorkspace } from "./sync";
+import {getSubrepoConfigSummary} from './service/config';
+import {syncSubreposFromWorkspace} from './sync';
 
 export async function testGetSubrepoConfigSummary() {
   // const dir = '/Users/wuxifei/code/react/start/small-apps-wrapper';

@@ -19,7 +19,7 @@ export function tryUseJsFile(scriptPath: string) {
 
 /**
  * Wait for ipc message once, until maxWaitInSec elapsed.
- * One point need to take care about is when maxWaitInSec is passed, the whole process will be 
+ * One point need to take care about is when maxWaitInSec is passed, the whole process will be
  * blocked for maxWaitInSec seconds if message event is not triggered on process
  */
 export async function waitIpcMessageOnce<T = any>(config?: {

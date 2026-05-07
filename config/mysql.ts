@@ -167,7 +167,7 @@ export function getDbConfig<Service extends keyof DbTypeModel, UserName extends 
 
 export function getDbConfigListOfService<
   Service extends keyof DbTypeModel,
-  UserName extends keyof DbTypeModel[Service]
+  UserName extends keyof DbTypeModel[Service],
 >(options: PartialExcept<GetDbConfigOptions<Service, UserName>, 'service'>) {
   const result: MysqlConfig[] = [];
   /** set database as default level */
@@ -211,7 +211,7 @@ export function getDbConfigListOfService<
 /** Get db config list that meets filter condition passed in options */
 export function getDbConfigList<
   Service extends keyof DbTypeModel,
-  UserName extends keyof DbTypeModel[Service]
+  UserName extends keyof DbTypeModel[Service],
 >(options?: GetDbConfigOptions<Service, UserName>) {
   const {service, username, database} = options ?? {};
   const result: MysqlConfig[] = [];
@@ -231,7 +231,7 @@ export function getDbConfigList<
  */
 export function getUserInfoOfDbService<
   Service extends keyof DbTypeModel,
-  UserName extends keyof UserInfoPerService[Service]
+  UserName extends keyof UserInfoPerService[Service],
 >(options: {service: Service}): Record<UserName, UserConfig> {
   const {service} = options;
   return SERVICE_TO_USER_INFO[service] as Record<UserName, UserConfig>;
@@ -242,7 +242,7 @@ export function getUserInfoOfDbService<
  */
 export async function selectDbConfig<
   Site extends keyof DbTypeModel,
-  UserName extends keyof DbTypeModel[Site]
+  UserName extends keyof DbTypeModel[Site],
 >(options?: {
   site?: Site;
   username?: UserName;

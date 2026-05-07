@@ -2,7 +2,6 @@ import tls from 'tls';
 import {logColorful} from '../../log';
 
 export async function testTlsConnection() {
-  
   const client = await new Promise<tls.TLSSocket>((res, rej) => {
     const client = tls.connect({
       host: 'nodejs.org',

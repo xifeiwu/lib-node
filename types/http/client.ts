@@ -21,8 +21,7 @@ export interface GeneralRequestOptions<Payload extends ConnectionPayload = any> 
  * A custom requestOptions based on http.RequestOptions, and used for requestAndGetResponse function.
  */
 export interface HttpRequestOptions<Payload extends ConnectionPayload = any>
-  extends RequestOptions,
-    GeneralRequestOptions<Payload> {}
+  extends RequestOptions, GeneralRequestOptions<Payload> {}
 
 export type HttpReceiverResponseInfo<DataType = any> = HttpResponseInfo<DataType, 'receiver'>;
 

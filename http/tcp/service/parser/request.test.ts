@@ -48,9 +48,8 @@ export async function testParseHttpFirstLine() {
     },
   });
   try {
-    const {info: firstLineInfo, dataConsumed: dataConsumed4FirstLine} = await tryParseHttpRequestFirstLine(
-      reader
-    );
+    const {info: firstLineInfo, dataConsumed: dataConsumed4FirstLine} =
+      await tryParseHttpRequestFirstLine(reader);
     console.log(`firstLineInfo`);
     assert.deepEqual(firstLineInfo, {
       method: 'POST',

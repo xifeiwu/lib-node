@@ -15,7 +15,7 @@
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
     "moduleResolution": "node",
-    "types": ["node"],
+    "types": ["node"]
   },
   "include": ["**/*.ts", "http/service"],
   "exclude": ["node_modules/*"]

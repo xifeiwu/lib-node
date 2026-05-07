@@ -11,7 +11,7 @@ import {convertToBuffer} from '../../../../transform';
 import {httpRequestHeaderPartInfoToBuffer} from '../convert';
 import {inferContentTypeByData} from '../common';
 import EventEmitter from 'events';
-import { Transform } from 'stream';
+import {Transform} from 'stream';
 
 export class HttpOutgoingMessage extends EventEmitter {
   socket: Socket;

@@ -1,14 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import {AssetInfoFull, MetaHandlers} from '../types';
-import {
-  getFullAssetInfo,
-  getPartialAssetInfo,
-} from '../service';
-import {
-  removeFile,
-  makeSureDirExistForFile,
-} from '../external';
+import {getFullAssetInfo, getPartialAssetInfo} from '../service';
+import {removeFile, makeSureDirExistForFile} from '../external';
 
 /**
  * Add files from external paths into rootDir and create meta entries

@@ -38,8 +38,7 @@ export async function updateFileTimes(
   const newBirthtime = options?.birthtime ?? options?.time;
   let changed = false;
 
-  const needUpdateTime =
-    (newMtime !== undefined && new Date(newMtime).getTime() !== mtime.getTime());
+  const needUpdateTime = newMtime !== undefined && new Date(newMtime).getTime() !== mtime.getTime();
   if (needUpdateTime) {
     fs.utimesSync(fullPath, newAtime ?? atime, newMtime ?? mtime);
     changed = true;

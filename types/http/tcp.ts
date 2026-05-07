@@ -24,13 +24,16 @@ export interface HttpRequestFirstLineInfo {
   httpVersion: 'HTTP/1.1' | '1.1' | string;
 }
 
-export interface HttpRequestHeaderPartInfo<Role extends ConnectionRole = 'sender'>
-  extends HttpRequestFirstLineInfo {
+export interface HttpRequestHeaderPartInfo<
+  Role extends ConnectionRole = 'sender',
+> extends HttpRequestFirstLineInfo {
   headers?: HttpHeadersTypByConnectionRole[Role];
 }
 
-export interface HttpRequestInfo<DataType = any, Role extends ConnectionRole = 'sender'>
-  extends HttpRequestHeaderPartInfo<Role> {
+export interface HttpRequestInfo<
+  DataType = any,
+  Role extends ConnectionRole = 'sender',
+> extends HttpRequestHeaderPartInfo<Role> {
   data?: DataType;
 }
 
@@ -53,12 +56,15 @@ export interface HttpResponseFirstLineInfo {
   statusMessage: string;
 }
 
-export interface HttpResponseHeaderPartInfo<Role extends ConnectionRole = 'receiver'>
-  extends HttpResponseFirstLineInfo {
+export interface HttpResponseHeaderPartInfo<
+  Role extends ConnectionRole = 'receiver',
+> extends HttpResponseFirstLineInfo {
   headers?: HttpHeadersTypByConnectionRole[Role];
 }
 
-export interface HttpResponseInfo<DataType = any, Role extends ConnectionRole = 'receiver'>
-  extends HttpResponseHeaderPartInfo<Role> {
+export interface HttpResponseInfo<
+  DataType = any,
+  Role extends ConnectionRole = 'receiver',
+> extends HttpResponseHeaderPartInfo<Role> {
   data?: DataType;
 }

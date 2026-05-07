@@ -8,13 +8,7 @@ import {
 } from './communication';
 import {ERRORS, createError, pushState} from '..';
 import {NegotiationWithClient} from '../types';
-import {
-  EMethod,
-  UserPassInfo,
-  ServerConfig,
-  RequestTargetResponseV5,
-  NegotiationResult,
-} from '../types/v5';
+import {EMethod, UserPassInfo, ServerConfig, RequestTargetResponseV5, NegotiationResult} from '../types/v5';
 import {deepEqual} from '../service/external';
 import {Socket} from 'net';
 import {SERVER_STATE_V5} from './service';

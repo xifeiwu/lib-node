@@ -86,7 +86,10 @@ function tryReadProcessInfoFromProcLinux(pid: number): ProcessInfo | null {
       const stat = fs.readFileSync(statPath, 'utf8');
       const rp = stat.indexOf(')');
       if (rp !== -1) {
-        const tail = stat.slice(rp + 2).trim().split(/\s+/);
+        const tail = stat
+          .slice(rp + 2)
+          .trim()
+          .split(/\s+/);
         const g = Number(tail[2]);
         if (Number.isFinite(g)) {
           pgid = g;

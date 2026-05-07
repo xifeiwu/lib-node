@@ -33,7 +33,7 @@ export default function keygrip(
       .createHmac(algorithm, key)
       .update(data)
       .digest(encoding)
-      .replace(/\/|\+|=/g, function(x) {
+      .replace(/\/|\+|=/g, function (x) {
         return {'/': '_', '+': '-', '=': ''}[x];
       });
   };

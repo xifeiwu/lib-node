@@ -12,7 +12,10 @@ interface Meta {
   contentTransferEncoding?: string;
 }
 
-type FileRelatedParserOptions = Pick<Required<HttpBodyParserOptions>, 'uploadDir' | 'wayOfHandleFile' | 'hash'>;
+type FileRelatedParserOptions = Pick<
+  Required<HttpBodyParserOptions>,
+  'uploadDir' | 'wayOfHandleFile' | 'hash'
+>;
 
 /**
  * Parser for Binary data. such as Form Part or data with content-type of octet-stream

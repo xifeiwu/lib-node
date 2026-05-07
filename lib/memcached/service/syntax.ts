@@ -122,7 +122,9 @@ const saveHandler: Handler<SaveCommandInfo, ReturnType<SaveFunc>> = {
     commandInfoToBuffer(params) {
       const {command, key, flags, expireTimeInSeconds: exptime, bytes, casId, value} = params;
       return toBuffer([
-        [command, key, flags, toNumber(exptime), toNumber(bytes), casId].filter(it => it !== undefined).join(' '),
+        [command, key, flags, toNumber(exptime), toNumber(bytes), casId]
+          .filter(it => it !== undefined)
+          .join(' '),
         BufferCRLF,
         value,
         BufferCRLF,

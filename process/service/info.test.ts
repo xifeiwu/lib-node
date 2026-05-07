@@ -2,7 +2,7 @@ import assert from 'assert';
 import {getProcessInfo, getProcessInfoByPort} from '../service/info';
 // import {DebugServerResponse, runTsScriptInChildProcess} from './child-process';
 import {logColorful} from '../../log';
-import { killProcessByPid } from './kill';
+import {killProcessByPid} from './kill';
 
 export async function testGetProcessInfo() {
   const processList = await getProcessInfo();

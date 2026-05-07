@@ -1,5 +1,9 @@
 import {Readable} from 'stream';
-import {HttpRequestHeaderPartInfo, HttpRequestFirstLineInfo, ParsedInfoWithDataConsumed} from '../../../../types';
+import {
+  HttpRequestHeaderPartInfo,
+  HttpRequestFirstLineInfo,
+  ParsedInfoWithDataConsumed,
+} from '../../../../types';
 import {getOneLineFromReader} from '../../../../stream';
 import {REG_HTTP_REQUEST_FIRST_LINE} from '../../../../external';
 import {tryParseHttpHeaders} from './common';
