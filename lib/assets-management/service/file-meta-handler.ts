@@ -23,6 +23,7 @@ import {goOnOrNot, removeFile} from '../external';
 
 /**
  * get a meta handler for a directory
+ * @param options.metaFile - the meta file path, if not set, will use the default meta file path in rootDir
  * Rules:
  * 1. to avoid write meta file too often, default archive is false
  */

@@ -10,10 +10,16 @@ export interface MetaHandlers {
   rootDir: string;
   getKey: () => string;
   // getMetaLocation: () => string;
-  /** handle meta operations */
-  resetMeta: (options?: GetDirAssetOptions) => Promise<AssetMeta>;
-  initMeta: (options?: GetDirAssetOptions) => Promise<void>;
+  /**
+   * handle meta operations
+   * call sequence: getMeta -> initMeta -> resetMeta
+   */
+  /** get meta of its assets, the meta data may be outdated */
   getMeta: (options?: GetDirAssetOptions) => Promise<AssetMeta>;
+  /** read exsiting meta file, if not exist, scan the directory to create a new meta */
+  initMeta: (options?: GetDirAssetOptions) => Promise<void>;
+  /** reset meta to the latest status of its assets */
+  resetMeta: (options?: GetDirAssetOptions) => Promise<AssetMeta>;
   cleanUpMeta: () => Promise<boolean>;
   /** handle items of asset meta */
   createItem: (info: AssetInfoFull) => Promise<AssetInfoFull>;
