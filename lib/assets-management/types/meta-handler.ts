@@ -15,7 +15,9 @@ export interface MetaHandlers {
   getKey: () => string;
   getMeta: (options?: GetMetaOptions) => Promise<AssetListMeta>;
   cleanUpMeta: () => Promise<boolean>;
-  /** handle items of asset meta */
+  /**
+   * handle items of asset meta, should persistent meta after each operation
+   */
   createItem: (info: AssetInfoFull) => Promise<AssetInfoFull>;
   createItems: (infoList: AssetInfoFull[]) => Promise<AssetInfoFull[]>;
   findItems: (assetInfo: Partial<AssetInfoFull>) => Promise<AssetInfoFull[]>;
