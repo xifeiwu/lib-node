@@ -8,17 +8,19 @@ import {byteToWord} from '../external';
 import type {AssetInfoFull, AssetListMeta, MetaDiffForSyncUp} from '../types';
 import {
   ASSETS_SYNC_PROTOCOL_BYTE,
-  AssetsSyncCommand,
   readJsonFrame,
   writeJsonFrame,
   streamFileToSocket,
   receiveFileFromSocket,
-  type AddFileMessage,
-  type DiffMessage,
-  type SuccessMessage,
-  type SimpleMessage,
-  type ChatMessage,
 } from './protocol';
+import type {
+  AssetsSyncCommand,
+  AddFileMessage,
+  DiffMessage,
+  SuccessMessage,
+  SimpleMessage,
+  ChatMessage,
+} from './types';
 import {alignMetaWithAssets} from '../operation';
 
 async function getLocalMeta(dir: string): Promise<AssetListMeta> {

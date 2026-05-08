@@ -8,16 +8,14 @@ import {getPartialAssetInfo} from '../service/asset-info';
 import type {AssetInfoFull, AssetListMeta, MetaDiffForSyncUp, MetaHandlers} from '../types';
 import {
   ASSETS_SYNC_PROTOCOL_BYTE,
-  AssetsSyncCommand,
   readExactly,
   readJsonFrame,
   writeJsonFrame,
   streamFileToSocket,
   receiveFileFromSocket,
-  type AddFileMessage,
-  type SimpleMessage,
 } from './protocol';
 import {alignMetaWithAssets} from '../operation';
+import type {AssetsSyncCommand, AddFileMessage, SimpleMessage} from './types';
 
 export {ASSETS_SYNC_PROTOCOL_BYTE};
 

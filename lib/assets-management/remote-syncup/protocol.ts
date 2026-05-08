@@ -1,49 +1,9 @@
 import {Socket} from 'net';
 import fs from 'fs';
 import path from 'path';
-import type {MetaDiffForSyncUp} from '../types';
 
 export const ASSETS_SYNC_PROTOCOL_BYTE = 0x10;
 const MAX_SOCKET_READ_CHUNK_SIZE = 64 * 1024;
-
-export type AssetsSyncCommand = 'push' | 'pull' | 'diff';
-
-export interface AddFileMessage {
-  label: 'add-file';
-  meta: {relativePath: string; size: number};
-}
-
-export interface DiffMessage {
-  label: 'diff';
-  meta: MetaDiffForSyncUp;
-}
-
-export interface SuccessMessage {
-  label: 'success';
-  meta: {git?: {committed: boolean; pushed: boolean}};
-}
-
-export interface InfoMessage {
-  label: 'info';
-  meta: {message: string};
-}
-
-export interface ErrorMessage {
-  label: 'error';
-  meta: {message: string};
-}
-
-export interface SimpleMessage {
-  label: 'transfer-complete';
-}
-
-export type ChatMessage =
-  | AddFileMessage
-  | DiffMessage
-  | SuccessMessage
-  | InfoMessage
-  | ErrorMessage
-  | SimpleMessage;
 
 export function readExactly(socket: Socket, n: number): Promise<Buffer> {
   return new Promise((resolve, reject) => {
