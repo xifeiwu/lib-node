@@ -1,12 +1,12 @@
 import {ECommand, UserPassInfo} from '../types/v5';
 
 /**
- * global basic auth config
+ * Default SOCKS username-password credentials (e.g. tests / local gateway config).
  */
-export const SOCKS_AUTH_USER_PASS: UserPassInfo = {
+export const SOCKS_AUTH_DEFAULT_USER_PASS: UserPassInfo = {
   username: 'abc',
   password: 'dddd',
 };
 
-export const DEFAULT_COMMAND = ECommand.CONNECT;
-// export const DEFAULT_COMMAND = ECommand.ECHO;
+export const SOCKS_DEFAULT_COMMAND = ECommand.CONNECT;
+// export const SOCKS_DEFAULT_COMMAND = ECommand.ECHO;

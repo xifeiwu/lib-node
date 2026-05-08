@@ -11,7 +11,7 @@ const testKeyPair = {
 
 export async function saveValue() {
   // const port = PORT.exploreMemcached.port;
-  const port = PORT.fullFeatureTcpServer.port;
+  const port = PORT.tcpGatewayServer.port;
   const client = getClient({host: '127.0.0.1', port});
   const setRes = await client.set({
     expireTimeInSeconds: 500000,

@@ -2,7 +2,7 @@ import {Readable, Writable} from 'stream';
 import {NegotiationInfoServer} from '../types/vc1';
 import {isNumber, toBuffer} from '../service/external';
 import {
-  DEFAULT_COMMAND,
+  SOCKS_DEFAULT_COMMAND,
   ERRORS,
   bufferToTargeServiceInfo,
   createError,
@@ -50,7 +50,7 @@ export async function clientSendNegotiationInfo(writer: Writable, info: Negotiat
   const {iv, auth, requestTarget} = info;
   const requestTargetV5 = toRequestTargetV5(requestTarget);
   const {username, password} = auth;
-  const {command = DEFAULT_COMMAND, address, port} = requestTargetV5;
+  const {command = SOCKS_DEFAULT_COMMAND, address, port} = requestTargetV5;
   if (!address) {
     throw new Error(`address is blank`);
   }

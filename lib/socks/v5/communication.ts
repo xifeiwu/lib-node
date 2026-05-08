@@ -1,6 +1,6 @@
 import {Readable, Writable} from 'stream';
 import {
-  DEFAULT_COMMAND,
+  SOCKS_DEFAULT_COMMAND,
   ERRORS,
   bufferToTargeServiceInfo,
   createError,
@@ -238,7 +238,7 @@ export async function clientWaitUserPassAuthResultReplied(reader: Readable) {
  * o  DST.PORT desired destination port in network octet order
  */
 export async function clientSendRequestTarget(writer: Writable, info: RequestTargetV5) {
-  const {command = DEFAULT_COMMAND, address, port} = info;
+  const {command = SOCKS_DEFAULT_COMMAND, address, port} = info;
   if (!address) {
     throw new Error(`address is blank`);
   }

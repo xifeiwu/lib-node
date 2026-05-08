@@ -1,12 +1,12 @@
 import {logColorful} from '../../../../log';
 import {connectToSocksServer} from '../../client';
 import {handleSocksConnection} from '../../server';
-import {SOCKS_AUTH_USER_PASS} from '../../service';
+import {SOCKS_AUTH_DEFAULT_USER_PASS} from '../../service';
 import {PORT, startHttpDebugServer, startSocketServer, httpRequestInfoToBuffer} from '../../service/external';
 import {EMethod, MethodUserPass} from '../../types/v5';
 
 export async function generalProcess() {
-  const {origin: httpOrigin, server} = await startHttpDebugServer({port: PORT.fullFeatureHttpServer.port});
+  const {origin: httpOrigin, server} = await startHttpDebugServer({port: PORT.stableHttpServer.port});
   const {host, port} = await startSocketServer(socket => {
     handleSocksConnection(socket, {socksVersion: 5, methodList: [{method: EMethod.NoAuth}]});
   });
@@ -43,7 +43,7 @@ export async function useAuthUserPass() {
   const {origin: httpOrigin, server} = await startHttpDebugServer();
   const methodUsePass: MethodUserPass = {
     method: EMethod.UserPass,
-    info: SOCKS_AUTH_USER_PASS,
+    info: SOCKS_AUTH_DEFAULT_USER_PASS,
   };
   const {host, port} = await startSocketServer(socket => {
     handleSocksConnection(socket, {socksVersion: 5, methodList: [methodUsePass]});

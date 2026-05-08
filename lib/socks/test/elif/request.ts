@@ -1,7 +1,7 @@
 import tls from 'tls';
 import path from 'path';
 import {connectToSocksServer} from '../../client';
-import {SOCKS_AUTH_USER_PASS} from '../../service';
+import {SOCKS_AUTH_DEFAULT_USER_PASS} from '../../service';
 import {
   httpRequestInfoToBuffer,
   HttpRequestOptions,
@@ -83,10 +83,10 @@ export async function bySocksServer() {
   const {info, urlInst: url, target} = httpRequestOptionsToHttpInfo(httpRequestOptions);
   const status = await connectToSocksServer({
     socksVersion: 1,
-    auth: SOCKS_AUTH_USER_PASS,
+    auth: SOCKS_AUTH_DEFAULT_USER_PASS,
     // socksVersion: 5,
     // methodList: [{method: EMethod.NoAuth}],
-    // methodList: [{method: EMethod.UserPass, info: SOCKS_AUTH_USER_PASS}],
+    // methodList: [{method: EMethod.UserPass, info: SOCKS_AUTH_DEFAULT_USER_PASS}],
     // socksServer: 'http://elif.site',
     socksServer: {
       // host: 'elif.site',
