@@ -95,7 +95,7 @@ export const getFileMetaHandler = (options?: {
       if (reset) {
         await resetMeta(dirAssetOptions);
       } else {
-        await initMeta(dirAssetOptions);
+        await initMeta(dirAssetOptions, resetIfNotExist);
       }
       return toAssetListMeta({...meta, rootDir});
     }
