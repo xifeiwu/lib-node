@@ -3,7 +3,7 @@ import {Socket} from 'net';
 import {HttpDebugServerPath} from '../../external';
 import {requestAndGetResponseInfo, startHttpDebugServer} from '../../http';
 import {startSocketClient} from '../../net';
-import {startTcpGateway, TcpHandler} from '.';
+import {startTcpServerAsGateway, TcpHandler} from '.';
 
 const tcpHandler: TcpHandler = async (socket: Socket) => {
   socket.on('data', chunk => {
@@ -13,7 +13,7 @@ const tcpHandler: TcpHandler = async (socket: Socket) => {
 
 export async function testStartProxyableTcpServer() {
   const httpServerInfo = await startHttpDebugServer();
-  const {host, port, server} = await startTcpGateway({
+  const {host, port, server} = await startTcpServerAsGateway({
     redirectByProtocol: {
       http: httpServerInfo,
     },
