@@ -18,7 +18,7 @@ function getActions(stateChange: MetaDiffForSyncUp) {
  * @param metaHandlers
  * @param fromMeta
  * @param options
- * @returns
+ * @returns two metas are the same or not
  */
 async function alignTwoMetas(
   metaHandlers: MetaHandlers,
@@ -26,7 +26,7 @@ async function alignTwoMetas(
   options?: {
     outputDir?: string;
   }
-) {
+): Promise<boolean> {
   const {outputDir = DIR_ASSET_MANAGE_TMP_DIR} = options ?? {};
   const toMeta = await metaHandlers.getMeta();
   if (toMeta.rootDir !== fromMeta.rootDir) {
@@ -61,7 +61,7 @@ async function alignTwoMetas(
   await metaHandlers.createItems(toAdd);
   await metaHandlers.updateItems(toModify.map(it => ({info: it.to, prevInfo: it.from})));
   await metaHandlers.removeItems(toDelete.map(it => it.relativePath));
-  return true;
+  return false;
 }
 
 /**
@@ -79,5 +79,6 @@ export async function alignMetaWithAssets(
   const {rootDir} = metaHandlers;
   /** only get partial asset info to reduce cost */
   const fromMeta = await getAssetPartialInfoTreeMeta(rootDir);
-  return alignTwoMetas(metaHandlers, fromMeta, options);
+  const isSame = await alignTwoMetas(metaHandlers, fromMeta, options);
+  return isSame;
 }

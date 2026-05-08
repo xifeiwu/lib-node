@@ -12,8 +12,10 @@ import {
   readExactly,
   readJsonFrame,
   writeJsonFrame,
-  writeFileFrame,
+  streamFileToSocket,
   receiveFileFromSocket,
+  type AddFileMessage,
+  type SimpleMessage,
 } from './protocol';
 import {alignMetaWithAssets} from '../operation';
 
@@ -37,6 +39,10 @@ export async function handleAssetsSyncConnection(socket: Socket, config: AssetsS
     const msg: CommandMessage = await readJsonFrame(socket);
     const {command, meta: clientMeta} = msg;
 
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, {recursive: true});
+    }
+
     const getMetaHandlers = getFileMetaHandler();
     const metaHandlers = await getMetaHandlers(dir);
     const serverMeta = await metaHandlers.getMeta();
@@ -49,30 +55,20 @@ export async function handleAssetsSyncConnection(socket: Socket, config: AssetsS
       diff = await diffMetaForSyncUp(clientMeta, serverMeta);
     }
 
-    await writeJsonFrame(socket, {diff: serializeMetaDiff(diff)});
+    await writeJsonFrame(socket, {label: 'diff', meta: serializeMetaDiff(diff)});
 
     if (command === 'diff') {
       socket.end();
       return;
     }
 
-    const confirmation = await readJsonFrame<{confirmed: boolean}>(socket);
-    if (!confirmation.confirmed) {
-      socket.end();
-      return;
-    }
-
     if (command === 'push') {
       await handlePush(socket, metaHandlers, diff);
-      let gitResult: any;
+      let gitResult: {committed: boolean; pushed: boolean} | undefined;
       if (git) {
-        try {
-          gitResult = await gitSyncUp(dir, git);
-        } catch (err) {
-          gitResult = {error: String(err)};
-        }
+        gitResult = await gitSyncUp(dir, git, socket);
       }
-      await writeJsonFrame(socket, {success: true, git: gitResult});
+      await writeJsonFrame(socket, {label: 'success', meta: {git: gitResult}});
     } else if (command === 'pull') {
       await handlePull(socket, metaHandlers, diff);
     }
@@ -81,7 +77,7 @@ export async function handleAssetsSyncConnection(socket: Socket, config: AssetsS
   } catch (err) {
     console.error('[assets-sync] error:', err);
     try {
-      await writeJsonFrame(socket, {error: String(err)});
+      await writeJsonFrame(socket, {label: 'error', meta: {message: String(err)}});
     } catch {}
     socket.destroy();
   }
@@ -93,18 +89,19 @@ async function handlePush(socket: Socket, metaHandlers: MetaHandlers, diff: Meta
 
   const filesToReceive = added.length + modified.length;
   for (let i = 0; i < filesToReceive; i++) {
-    const header = await readJsonFrame<{file: string; size: number}>(socket);
-    const filePath = path.join(rootDir, header.file);
+    const header = await readJsonFrame<AddFileMessage>(socket);
+    const {relativePath, size} = header.meta;
+    const filePath = path.join(rootDir, relativePath);
     const fileDir = path.dirname(filePath);
     if (!fs.existsSync(fileDir)) {
       fs.mkdirSync(fileDir, {recursive: true});
     }
-    await receiveFileFromSocket(socket, filePath, header.size);
+    await receiveFileFromSocket(socket, filePath, size);
 
-    const partialInfo = await getPartialAssetInfo({rootDir, relativePath: header.file});
+    const partialInfo = await getPartialAssetInfo({rootDir, relativePath});
     const assetInfo =
-      diff.added?.find(a => a.relativePath === header.file) ??
-      diff.modified?.find(m => m.to.relativePath === header.file)?.to;
+      diff.added?.find(a => a.relativePath === relativePath) ??
+      diff.modified?.find(m => m.to.relativePath === relativePath)?.to;
     if (assetInfo) {
       await metaHandlers.createOrUpdateItem({
         info: {...partialInfo, sha1: assetInfo.sha1, shortId: assetInfo.shortId} as AssetInfoFull,
@@ -112,7 +109,7 @@ async function handlePush(socket: Socket, metaHandlers: MetaHandlers, diff: Meta
     }
   }
 
-  const transferEnd = await readJsonFrame<{transferComplete: boolean}>(socket);
+  await readJsonFrame<SimpleMessage>(socket);
 
   for (const {from, to} of moved) {
     const fromPath = path.join(rootDir, from.relativePath);
@@ -159,23 +156,27 @@ async function handlePull(socket: Socket, metaHandlers: MetaHandlers, diff: Meta
   for (const assetInfo of added) {
     const filePath = path.join(rootDir, assetInfo.relativePath);
     const stat = fs.statSync(filePath);
-    await writeJsonFrame(socket, {file: assetInfo.relativePath, size: stat.size});
-    await writeFileFrame(socket, filePath, stat.size);
+    await writeJsonFrame(socket, {
+      label: 'add-file',
+      meta: {relativePath: assetInfo.relativePath, size: stat.size},
+    });
+    await streamFileToSocket(filePath, socket);
   }
 
   for (const {to} of modified) {
     const filePath = path.join(rootDir, to.relativePath);
     const stat = fs.statSync(filePath);
-    await writeJsonFrame(socket, {file: to.relativePath, size: stat.size});
-    await writeFileFrame(socket, filePath, stat.size);
+    await writeJsonFrame(socket, {label: 'add-file', meta: {relativePath: to.relativePath, size: stat.size}});
+    await streamFileToSocket(filePath, socket);
   }
 
-  await writeJsonFrame(socket, {transferComplete: true});
+  await writeJsonFrame(socket, {label: 'transfer-complete'});
 }
 
 export async function gitSyncUp(
   dir: string,
-  gitRemote: string
+  gitRemote: string,
+  socket: Socket
 ): Promise<{committed: boolean; pushed: boolean}> {
   const opts = {cwd: dir, encoding: 'utf8' as const};
 
@@ -183,7 +184,12 @@ export async function gitSyncUp(
     execFileSync('git', ['init'], opts);
   }
 
-  execFileSync('git', ['add', '.'], opts);
+  try {
+    execFileSync('git', ['add', '.'], opts);
+  } catch (err) {
+    await writeJsonFrame(socket, {label: 'info', meta: {message: `git add failed: ${err}`}});
+    return {committed: false, pushed: false};
+  }
 
   const status = execFileSync('git', ['status', '--porcelain'], opts);
   if (!status.trim()) {
@@ -191,7 +197,12 @@ export async function gitSyncUp(
   }
 
   const timestamp = new Date().toISOString();
-  execFileSync('git', ['commit', '-m', `assets sync: ${timestamp}`], opts);
+  try {
+    execFileSync('git', ['commit', '-m', `assets sync: ${timestamp}`], opts);
+  } catch (err) {
+    await writeJsonFrame(socket, {label: 'info', meta: {message: `git commit failed: ${err}`}});
+    return {committed: false, pushed: false};
+  }
 
   try {
     execFileSync('git', ['remote', 'add', 'origin', gitRemote], opts);
@@ -199,6 +210,12 @@ export async function gitSyncUp(
     execFileSync('git', ['remote', 'set-url', 'origin', gitRemote], opts);
   }
 
-  execFileSync('git', ['push', '-u', 'origin', 'HEAD'], opts);
+  try {
+    execFileSync('git', ['push', '-u', 'origin', 'HEAD'], opts);
+  } catch (err) {
+    await writeJsonFrame(socket, {label: 'info', meta: {message: `git push failed: ${err}`}});
+    return {committed: true, pushed: false};
+  }
+
   return {committed: true, pushed: true};
 }

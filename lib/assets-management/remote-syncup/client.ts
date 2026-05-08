@@ -4,17 +4,20 @@ import * as path from 'path';
 import {getFileMetaHandler} from '../service/file-meta-handler';
 import {serailizeAssetInfo} from '../service/asset-info';
 import {getPartialAssetInfo} from '../service/asset-info';
-import {goOnOrNot} from '../external';
 import {byteToWord} from '../external';
-import type {AssetInfoFull, AssetListMeta, MetaDiffForSyncUp, MetaHandlers} from '../types';
+import type {AssetInfoFull, AssetListMeta, MetaDiffForSyncUp} from '../types';
 import {
   ASSETS_SYNC_PROTOCOL_BYTE,
   AssetsSyncCommand,
   readJsonFrame,
-  writeFrame,
   writeJsonFrame,
-  writeFileFrame,
+  streamFileToSocket,
   receiveFileFromSocket,
+  type AddFileMessage,
+  type DiffMessage,
+  type SuccessMessage,
+  type SimpleMessage,
+  type ChatMessage,
 } from './protocol';
 import {alignMetaWithAssets} from '../operation';
 
@@ -76,22 +79,11 @@ export async function runAssetsSyncCommand(
   socket.write(Buffer.from([ASSETS_SYNC_PROTOCOL_BYTE]));
   await writeJsonFrame(socket, {command, meta});
 
-  const response = await readJsonFrame<{diff: MetaDiffForSyncUp}>(socket);
-  const {diff} = response;
+  const response = await readJsonFrame<DiffMessage>(socket);
+  const diff = response.meta;
   printDiffSummary(diff);
 
   if (command === 'diff' || !diff.isNeedAction) {
-    socket.end();
-    return;
-  }
-
-  const confirmed = await goOnOrNot({
-    tips: [`Proceed with ${command}?`],
-    defaultValue: true,
-  });
-
-  await writeJsonFrame(socket, {confirmed});
-  if (!confirmed) {
     socket.end();
     return;
   }
@@ -115,20 +107,27 @@ async function handlePushClient(socket: net.Socket, diff: MetaDiffForSyncUp, roo
   for (const {relativePath} of filesToSend) {
     const filePath = path.join(rootDir, relativePath);
     const stat = fs.statSync(filePath);
-    await writeJsonFrame(socket, {file: relativePath, size: stat.size});
-    await writeFileFrame(socket, filePath, stat.size);
+    await writeJsonFrame(socket, {label: 'add-file', meta: {relativePath, size: stat.size}});
+    await streamFileToSocket(filePath, socket);
     sent++;
     console.log(`  [${sent}/${filesToSend.length}] Sent: ${relativePath} (${byteToWord(stat.size)})`);
   }
 
-  await writeJsonFrame(socket, {transferComplete: true});
+  await writeJsonFrame(socket, {label: 'transfer-complete'});
 
-  const result = await readJsonFrame<{success: boolean; git?: any}>(socket);
-  if (result.success) {
-    console.log('Push completed successfully.');
-    if (result.git) {
-      console.log('Git:', JSON.stringify(result.git));
+  let result: SuccessMessage;
+  while (true) {
+    const frame = await readJsonFrame<ChatMessage>(socket);
+    if (frame.label === 'info') {
+      console.log('[server info]', frame.meta.message);
+    } else {
+      result = frame as SuccessMessage;
+      break;
     }
+  }
+  console.log('Push completed successfully.');
+  if (result.meta.git) {
+    console.log('Git:', JSON.stringify(result.meta.git));
   }
 }
 
@@ -139,14 +138,15 @@ async function handlePullClient(socket: net.Socket, diff: MetaDiffForSyncUp, roo
   let received = 0;
 
   for (let i = 0; i < filesToReceive; i++) {
-    const header = await readJsonFrame<{file: string; size: number}>(socket);
-    const filePath = path.join(rootDir, header.file);
-    await receiveFileFromSocket(socket, filePath, header.size);
+    const header = await readJsonFrame<AddFileMessage>(socket);
+    const {relativePath, size} = header.meta;
+    const filePath = path.join(rootDir, relativePath);
+    await receiveFileFromSocket(socket, filePath, size);
     received++;
-    console.log(`  [${received}/${filesToReceive}] Received: ${header.file} (${byteToWord(header.size)})`);
+    console.log(`  [${received}/${filesToReceive}] Received: ${relativePath} (${byteToWord(size)})`);
   }
 
-  const transferEnd = await readJsonFrame<{transferComplete: boolean}>(socket);
+  await readJsonFrame<SimpleMessage>(socket);
 
   const getMetaHandlers = getFileMetaHandler();
   const metaHandlers = await getMetaHandlers(rootDir);
