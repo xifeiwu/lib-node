@@ -9,7 +9,7 @@ Library for managing collections of large static files (images, videos, etc.) wi
 | `types/` | Core type definitions: `AssetInfoFull`, `AssetMeta`, `MetaHandlers`, `MetaDiffForSyncUp`, etc. |
 | `service/` | Core logic: file scanning, SHA1 hashing, meta persistence, diff computation, serialization |
 | `operation/` | Higher-level operations: add/delete assets, dedupe, backup, import, meta alignment |
-| `remote-syncup/` | TCP-based remote sync protocol (client + server) for syncing assets over the network |
+| `tcp-protocol/` | TCP-based asset sync protocol (client + server) for diff/pull/push operations |
 | `file-generator/` | Test utility: deterministic file/folder generation for testing asset operations |
 
 ## Layering
@@ -18,7 +18,7 @@ Library for managing collections of large static files (images, videos, etc.) wi
 
 - `service/` defines `MetaHandlers` and its filesystem-backed factory (`getFileMetaHandler`)
 - `operation/` takes a `MetaHandlers` instance as input and performs bulk operations (add, delete, dedupe, backup, import, align) by calling its CRUD methods
-- `remote-syncup/` takes a `MetaHandlers` instance (server) or creates one (client) to coordinate file transfer and meta updates during network sync
+- `tcp-protocol/` takes a `MetaHandlers` instance (server) or creates one (client) to coordinate file transfer and meta updates during network sync
 
 ## Key Concepts
 
@@ -75,9 +75,9 @@ Key operations:
 | `assets-backup.ts` | Backup assets to another directory |
 | `assets-import.ts` | Import new files from an external directory |
 
-### `remote-syncup/`
+### `tcp-protocol/`
 
-See `remote-syncup/CLAUDE.md` for details. TCP-based sync protocol with client (`runAssetsSyncCommand`) and server (`handleAssetsSyncConnection`).
+See `tcp-protocol/CLAUDE.md` for details. TCP-based sync protocol with client (`runAssetsSyncCommand`) and server (`handleAssetsSyncConnection`).
 
 ## Dependencies
 
