@@ -67,7 +67,7 @@ export const getFileMetaHandler = (options?: {
       return result;
     }
 
-    async function initMeta(options?: GetDirAssetOptions) {
+    async function initMeta(options?: GetDirAssetOptions, resetIfNotExist?: boolean) {
       const {getAssetInfoParams = {}, goThroughDirOptions} = options ?? {};
       const result = metaFile ? readMetaFromFile(metaFile) : readMetaFromDir(rootDir);
       if (result) {
@@ -77,6 +77,7 @@ export const getFileMetaHandler = (options?: {
         updateMeta({newValue: result});
       } else {
         if (
+          resetIfNotExist !== true &&
           !(await goOnOrNot({
             tips: [`Meta not found for dir: ${rootDir}, do you want to create it now?`],
             style: {color: 'red'},
@@ -85,13 +86,12 @@ export const getFileMetaHandler = (options?: {
         ) {
           throw new Error(`Meta not found, and user not want to create it`);
         }
-        getAssetInfoParams.logging = true;
         await resetMeta({getAssetInfoParams, goThroughDirOptions});
       }
     }
 
     async function getMeta(options?: GetMetaOptions) {
-      const {reset, ...dirAssetOptions} = options ?? {};
+      const {reset, resetIfNotExist, ...dirAssetOptions} = options ?? {};
       if (reset) {
         await resetMeta(dirAssetOptions);
       } else {

@@ -8,6 +8,7 @@ export interface CreateOrUpdateItemOptions {
 
 export interface GetMetaOptions extends GetDirAssetOptions {
   reset?: boolean;
+  resetIfNotExist?: boolean;
 }
 
 export interface MetaHandlers {
