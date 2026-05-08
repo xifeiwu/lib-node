@@ -452,12 +452,12 @@ export function saveDirMeta(
      * If this param is not set, do not backup the meta file
      * If the count of backup file larger than this value, remove the extral file by date
      */
-    maxMetaBackupFile?: number;
+    maxBackupFileCnt?: number;
     /** if the last backup is less than this value, do not backup again */
     backUpInterval?: number;
   }
 ) {
-  const {maxMetaBackupFile = 20, backUpInterval = 1000 * 60 * 10} = options ?? {};
+  const {maxBackupFileCnt, backUpInterval} = options ?? {};
   if (Array.isArray(assetMeta)) {
     assetMeta = toAssetTreeMeta(assetMeta, rootDir);
   }
@@ -469,14 +469,14 @@ export function saveDirMeta(
     backUpInterval > 0 &&
     lastBackupTime + backUpInterval < Date.now()
   ) {
-    if (isNumber(maxMetaBackupFile) && maxMetaBackupFile > 0 && fs.existsSync(metaFile)) {
+    if (isNumber(maxBackupFileCnt) && maxBackupFileCnt > 0 && fs.existsSync(metaFile)) {
       fs.renameSync(metaFile, addDtSuffixToBareBasename(metaFile, {dtFormat: '-' + FILE_SUFFIX_DT_FORMAT}));
       /** remove the extral backup file by date */
       const reg = new RegExp(`^index-[\\dT-]+\\.ts$`);
       const backupFiles = getFileList(getMetaDir(rootDir), {fileFilter: ({basename}) => reg.test(basename)});
-      if (backupFiles.length > maxMetaBackupFile) {
+      if (backupFiles.length > maxBackupFileCnt) {
         backupFiles.sort((a, b) => fs.statSync(a).mtime.getTime() - fs.statSync(b).mtime.getTime());
-        const filesToRemove = backupFiles.slice(0, maxMetaBackupFile);
+        const filesToRemove = backupFiles.slice(0, maxBackupFileCnt);
         for (const file of filesToRemove) {
           fs.unlinkSync(file);
         }

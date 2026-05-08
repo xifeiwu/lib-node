@@ -29,8 +29,12 @@ import {goOnOrNot, removeFile} from '../external';
  * Rules:
  * 1. to avoid write meta file too often, default archive is false
  */
-export const getFileMetaHandler = (options?: {metaFile: string}) => {
-  const {metaFile} = options ?? {};
+export const getFileMetaHandler = (options?: {
+  metaFile: string;
+  maxBackupFileCnt?: number;
+  backUpInterval?: number;
+}) => {
+  const {metaFile, maxBackupFileCnt, backUpInterval} = options ?? {};
   if (metaFile && !fs.existsSync(metaFile)) {
     throw new Error(`metaFile not exist: ${metaFile}`);
   }
@@ -53,7 +57,7 @@ export const getFileMetaHandler = (options?: {metaFile: string}) => {
       if (metaFile) {
         saveMetaToFile(metaFile, {...meta, rootDir});
       } else {
-        saveDirMeta(rootDir, meta, {maxMetaBackupFile: 20, backUpInterval: 1000 * 60 * 20});
+        saveDirMeta(rootDir, meta, {maxBackupFileCnt, backUpInterval});
       }
     }
 
