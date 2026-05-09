@@ -2,8 +2,8 @@ import path from 'path';
 import {SubRepoConfig, SubRepoInfoTree} from '../external';
 
 export function isSubrepoLeaf(info: SubRepoConfig | SubRepoInfoTree) {
-  const {source} = info as SubRepoConfig;
-  return source !== undefined && Array.isArray(source);
+  const {postPullCmds, source} = info as SubRepoConfig;
+  return Array.isArray(source) || Array.isArray(postPullCmds);
 }
 
 export function asSubrepoLeaf(info: SubRepoConfig | SubRepoInfoTree) {

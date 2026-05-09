@@ -57,18 +57,40 @@ async function syncSubrepos(subrepos: SubRepoInfoTree, config: SubrepoSyncConfig
       continue;
     }
     const {
-      source,
+      source = [],
       /** calculate relativePath if it's not set */
       relativePath = path.join(repoDir, repoOrCategoryName),
       postPullCmds = [],
     } = asSubrepoLeaf(info);
     logColorful({color: 'yellow'}, `${indexPrefix}${++index}. handing repo ${relativePath}`);
+    const repoFullPath = path.resolve(hostDir, relativePath);
+    const runPostPullCmds = async () => {
+      if (postPullCmds.length === 0) {
+        return;
+      }
+      if (!fs.existsSync(repoFullPath)) {
+        fs.mkdirSync(repoFullPath, {recursive: true});
+      } else if (!fs.statSync(repoFullPath).isDirectory()) {
+        throw new Error(`is not a dir: ${repoFullPath}`);
+      }
+      process.chdir(repoFullPath);
+      for (const command of postPullCmds) {
+        if (isFunction(command)) {
+          await (command as SubRepoPostPullFunc)({repoFullPath, hostDir});
+        } else if (isString(command)) {
+          execCmdWithOptions(command as string, execOpts);
+        } else {
+          const {cmd, ...options} = command as {cmd: string; ignoreStatus?: number[]};
+          execCmdWithOptions(cmd, {...execOpts, ...options});
+        }
+      }
+    };
     const [mainSource] = source;
     if (!mainSource) {
-      throw new Error(`At least one source should be set`);
+      await runPostPullCmds();
+      continue;
     }
     const {url, origin = 'origin', branch, commit} = mainSource;
-    const repoFullPath = path.resolve(hostDir, relativePath);
     if (!fs.existsSync(repoFullPath)) {
       for (let i = 0; i < source.length; i++) {
         if (i === 0) {
@@ -111,16 +133,7 @@ async function syncSubrepos(subrepos: SubRepoInfoTree, config: SubrepoSyncConfig
       execCmdWithOptions(`git fetch ${origin}`, execOpts);
       execCmdWithOptions(`git reset --hard ${origin}/${branch}`, execOpts);
     }
-    for (const command of postPullCmds) {
-      if (isFunction(command)) {
-        await (command as SubRepoPostPullFunc)({repoFullPath, hostDir});
-      } else if (isString(command)) {
-        execCmdWithOptions(command as string, execOpts);
-      } else {
-        const {cmd, ...options} = command as {cmd: string; ignoreStatus?: number[]};
-        execCmdWithOptions(cmd, {...execOpts, ...options});
-      }
-    }
+    await runPostPullCmds();
   }
 }
 
