@@ -109,6 +109,9 @@ export function findItemFromAssetTree(
   tree: AssetTree,
   relativePath: string
 ): AssetTree | AssetInfoFull | undefined {
+  if (!tree || !relativePath) {
+    return undefined;
+  }
   const parts = getPathParts(relativePath);
   let i = 1;
   let curItem: AssetTree | AssetInfoFull = tree;

@@ -4,7 +4,7 @@ import * as path from 'path';
 import {getFileMetaHandler} from '../service/file-meta-handler';
 import {serailizeAssetInfo} from '../service/asset-info';
 import {getPartialAssetInfo} from '../service/asset-info';
-import {byteToWord} from '../external';
+import {byteToWord, goOnOrNot} from '../external';
 import type {AssetInfoFull, AssetListMeta, MetaDiffForSyncUp} from '../types';
 import {
   ASSETS_SYNC_PROTOCOL_BYTE,
@@ -137,7 +137,7 @@ function printDiffSummary(diff: MetaDiffForSyncUp) {
 export async function runAssetsSyncCommand(
   command: AssetsSyncCommand,
   dir: string,
-  options: {host: string; port: string}
+  options: {host: string; port: string; runDirectly?: boolean}
 ) {
   const host = options.host;
   const port = parseInt(options.port, 10);
@@ -159,6 +159,17 @@ export async function runAssetsSyncCommand(
   if (command === 'diff' || !diff.isNeedAction) {
     socket.end();
     return;
+  }
+
+  if (!options.runDirectly) {
+    const shouldContinue = await goOnOrNot({
+      tips: [`Run command ${command}?`],
+      defaultValue: true,
+    });
+    if (!shouldContinue) {
+      socket.end();
+      return;
+    }
   }
 
   if (command === 'push') {
