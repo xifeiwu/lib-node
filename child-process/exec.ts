@@ -1,7 +1,13 @@
-import {execSync} from 'child_process';
+import {execSync, ExecSyncOptions} from 'child_process';
 import {logColorful} from '../log';
 import {convertToBuffer} from '../transform';
-import {ExecCmdOptions} from '../types';
+
+export interface ExecCmdOptions extends ExecSyncOptions {
+  more?: {
+    log?: boolean;
+    ignoreStatus?: number[];
+  };
+}
 
 /**
  * @deprecated by execCmdWithOptions

@@ -1,1 +1,1 @@
-export type {ExecCmdOptions} from '../../../../types/common';
+export type {ExecCmdOptions} from '../../child-process/exec';
