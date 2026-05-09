@@ -16,6 +16,7 @@ import {
   SubRepoPostPullFunc,
   SubRepoConfigFileExport,
   SubRepoInfoTree,
+  isObject,
 } from './external';
 import {
   assertNonEmptySubrepoTree,
@@ -79,9 +80,14 @@ async function syncSubrepos(subrepos: SubRepoInfoTree, config: SubrepoSyncConfig
           await (command as SubRepoPostPullFunc)({repoFullPath, hostDir});
         } else if (isString(command)) {
           execCmdWithOptions(command as string, execOpts);
+        } else if (isObject(command) && 'cmd' in command) {
+          const {cmd, options = {}} = command as {
+            cmd: string;
+            options?: Parameters<typeof execCmdWithOptions>[1];
+          };
+          execCmdWithOptions(cmd, {...execOpts, ...options, more: {...execOpts.more, ...options.more}});
         } else {
-          const {cmd, ...options} = command as {cmd: string; ignoreStatus?: number[]};
-          execCmdWithOptions(cmd, {...execOpts, ...options});
+          throw new Error(`invalid post pull command: ${JSON.stringify(command)}`);
         }
       }
     };

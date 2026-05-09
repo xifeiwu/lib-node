@@ -2,7 +2,9 @@ import {ExecCmdOptions} from '../types';
 import {execCmdWithOptions} from '../child-process';
 
 export const defaultGitExecOptions: ExecCmdOptions = {
-  log: true,
+  more: {
+    log: true,
+  },
 };
 
 export function getGitCurrentBranch(options: ExecCmdOptions = defaultGitExecOptions): string {

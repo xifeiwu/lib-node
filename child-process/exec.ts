@@ -34,7 +34,8 @@ export function logCmdAndexecSync(cmd: string, options?: {throwError?: boolean})
  * so we should take care of case like this.
  */
 export function execCmdWithOptions(cmd: string, options?: ExecCmdOptions) {
-  const {log, ignoreStatus, ...execOptions} = options ?? {};
+  const {more, ...execOptions} = options ?? {};
+  const {log, ignoreStatus} = more ?? {};
   log && logColorful({color: 'black'}, 'will run command in shell:', cmd);
   try {
     const result = execSync(cmd, execOptions);

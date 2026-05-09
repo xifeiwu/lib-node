@@ -6,6 +6,7 @@ export {
   SubRepoConfigFileExport,
   SubRepoInfoTree,
   SubRepoPostPullFunc,
+  isObject,
 } from '../../external';
 export {logColorful} from '../../log';
 export {execCmdWithOptions} from '../../child-process';
