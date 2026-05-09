@@ -196,7 +196,11 @@ export async function gitSyncUp(
 
   const timestamp = new Date().toISOString();
   try {
-    execFileSync('git', ['commit', '-m', `assets sync: ${timestamp}`], opts);
+    execFileSync(
+      'git',
+      ['-c', 'user.email=', '-c', 'user.name=assets server', 'commit', '-m', `assets sync: ${timestamp}`],
+      opts
+    );
   } catch (err) {
     await writeJsonFrame(socket, {label: 'info', meta: {message: `git commit failed: ${err}`}});
     return {committed: false, pushed: false};
