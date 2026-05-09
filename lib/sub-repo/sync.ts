@@ -103,8 +103,27 @@ async function syncSubrepos(subrepos: SubRepoInfoTree, config: SubrepoSyncConfig
           execCmdWithOptions(`git remote add -t ${it.branch} ${it.origin} ${it.url}`, execOpts);
         }
       }
+    } else if (!fs.statSync(repoFullPath).isDirectory()) {
+      throw new Error(`is not a dir: ${repoFullPath}`);
     }
+
     process.chdir(repoFullPath);
+    if (!fs.existsSync(path.join(repoFullPath, '.git'))) {
+      execCmdWithOptions(`git init`, execOpts);
+      execCmdWithOptions(`git remote add -t ${branch} ${origin} ${url}`, execOpts);
+      for (let i = 1; i < source.length; i++) {
+        const it = source[i];
+        if (!it.origin) {
+          continue;
+        }
+        execCmdWithOptions(`git remote add -t ${it.branch} ${it.origin} ${it.url}`, execOpts);
+      }
+    }
+    try {
+      execCmdWithOptions(`git remote get-url ${origin}`, execOpts);
+    } catch {
+      execCmdWithOptions(`git remote add -t ${branch} ${origin} ${url}`, execOpts);
+    }
     const curBranch = getGitCurrentBranch(execOpts);
     if (curBranch !== branch) {
       const allBranchs = listGitLocalBranches(execOpts);
@@ -115,7 +134,10 @@ async function syncSubrepos(subrepos: SubRepoInfoTree, config: SubrepoSyncConfig
         execCmdWithOptions(`git checkout ${branch}`, execOpts);
       }
     }
-    const curCommitId = getGitHeadCommit(execOpts);
+    let curCommitId: string | undefined;
+    try {
+      curCommitId = getGitHeadCommit(execOpts);
+    } catch {}
     if (commit !== undefined) {
       if (commit !== curCommitId) {
         try {
