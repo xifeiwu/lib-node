@@ -89,9 +89,22 @@ export async function startTcpServerAsGateway(
     }
     const redirectInfo = redirectByProtocol?.[protocol];
     if (redirectInfo) {
-      const proxySocket = await startSocketClient(redirectInfo);
-      socket.pipe(proxySocket).pipe(socket);
-      isHandled = true;
+      try {
+        const proxySocket = await startSocketClient(redirectInfo);
+        const destroyBoth = (err?: Error) => {
+          if (!socket.destroyed) socket.destroy(err);
+          if (!proxySocket.destroyed) proxySocket.destroy(err);
+        };
+        socket.on('error', destroyBoth);
+        proxySocket.on('error', destroyBoth);
+        socket.on('close', () => proxySocket.destroy());
+        proxySocket.on('close', () => socket.destroy());
+        socket.pipe(proxySocket);
+        proxySocket.pipe(socket);
+        isHandled = true;
+      } catch {
+        socket.destroy();
+      }
     } else if (handleConnection) {
       isHandled = await handleConnection(socket, {protocol, firstChunk});
     }
