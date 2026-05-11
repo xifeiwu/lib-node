@@ -1,5 +1,6 @@
 import path from 'path';
-import {CpWrapScriptOptions, RunScriptInCPOptions, SpawnConfig, TsNodeOptions} from '../../../types';
+import {CpWrapScriptOptions, RunScriptInCPOptions} from '../types';
+import {SpawnConfig, TsNodeOptions} from '../../../types';
 import {getFilePathInfo, getPreferredFileByExt} from '../../../path';
 import {getSpawnConfigByScript} from '../../../child-process';
 import {isTypeModulePackageFile} from '../../../service';

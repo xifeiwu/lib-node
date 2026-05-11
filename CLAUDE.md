@@ -10,4 +10,6 @@ All third-party dependencies (like `modules/lib/js`, `modules/types/common`) mus
 
 `index.ts` does not re-export `utils/`, `lib/`, or third-party functions from `external.ts` to minimize tsc compile scope for consumers.
 
+Types used only within a `utils/{feature}` should be defined in `utils/{feature}/types.ts` (or `utils/{feature}/types/` directory if there are multiple type files).
+
 See `README.md` for the full folder structure.

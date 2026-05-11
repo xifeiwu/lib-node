@@ -9,6 +9,5 @@ export * from './config';
 export * from './test';
 export * from './process';
 export * from './child_process';
-export * from './utils';
 export {FormFile, FormValue, NodeFormData} from '../http/form-data';
 export * from '../lib/http-body-parser/service/types';

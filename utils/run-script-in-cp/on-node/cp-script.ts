@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import {logColorful} from '../../../log';
-import {CpWrapScriptOptions, RunTargetScriptOptions} from '../../../types';
+import {CpWrapScriptOptions, RunTargetScriptOptions} from '../types';
 import {runTargetScriptOnNode} from './run-target-script';
 
 const TAG = 'OUT_OF_FUNCTION';

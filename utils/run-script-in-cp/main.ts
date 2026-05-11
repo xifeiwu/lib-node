@@ -1,4 +1,4 @@
-import {RunScriptInCPOptions} from '../../types';
+import {RunScriptInCPOptions} from './types';
 import {serializeSpawnResponse, spawnAndTryIpc} from '../../child-process';
 import {logColorful} from '../../log';
 import {getSpawnConfigForCpScript} from './on-node';

@@ -11,12 +11,6 @@ import {
 import {outOnAllChannels} from './service';
 import {CP} from '../../types';
 
-// export interface DebugServerInfo extends ChildProcessInfo, CP.DebugServerResponse {}
-
-export interface MainDebugServerInfo extends CP.DebugServerResponse {
-  pid: number;
-  childServerInfo: CP.DebugServerResponse[];
-}
 export async function start() {
   let ipcMessage: InfoToCp<CP.DebugServerClusterConfig> = {};
   const supportIpc = Boolean(process.send);

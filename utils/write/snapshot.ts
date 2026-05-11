@@ -3,26 +3,14 @@ import path from 'path';
 import {formatDate} from '../../external';
 import {makeSureDirExist} from '../../path';
 import {convertObjectToCjsExport} from '../../transform';
+import type {RollingSnapshotFormat, RollingSnapshotWriterOptions} from './types';
+
+export type {RollingSnapshotFormat, RollingSnapshotWriterOptions} from './types';
 
 const DEFAULT_MAX_FILE_COUNT = 100;
 
 /** Format segment for rolled snapshot filenames: `yyyy-MM-dd-hh-mm-ss.SSS` (local time, millisecond precision). */
 const ROLL_TIMESTAMP_FMT = '-yyyy-MM-dd-hh-mm-ss.SSS';
-
-export type RollingSnapshotFormat = 'json' | 'commonjs';
-
-export interface RollingSnapshotWriterOptions {
-  dir: string;
-  /** Filename only, e.g. `state.json`. Latest snapshot is always `path.join(dir, basename)`. */
-  basename: string;
-  /** Max number of related snapshot files (including the active `basename`). Default 100. */
-  maxFileCount?: number;
-  /**
-   * File body format. `json` (default): pretty-printed JSON.
-   * `commonjs`: `convertObjectToCjsExport` (one `module.exports.key = ...` per top-level key).
-   */
-  format?: RollingSnapshotFormat;
-}
 
 function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

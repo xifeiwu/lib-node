@@ -7,7 +7,7 @@ import {logColorful} from '../../../log';
 import {goOnOrNot, selectOption} from '../../../readline';
 import {isNumber, isAsyncFunction, isObject, isFunction} from '../../../external';
 import {reimportOrRequire} from '../../../service';
-import {RunTargetScriptOptions, GetTargetScriptFuncNameOptions} from '../../../types';
+import {RunTargetScriptOptions, GetTargetScriptFuncNameOptions} from '../types';
 
 const RUN_ALL_EXPORTED_FUNCTIONS = '_all';
 

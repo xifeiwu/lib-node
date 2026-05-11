@@ -2,23 +2,14 @@ import fs from 'fs';
 import path from 'path';
 import {formatDate, wordToByte} from '../../external';
 import {makeSureDirExist} from '../../path';
+import type {RollingLogWriterOptions} from './types';
+
+export type {RollingLogWriterOptions} from './types';
 
 const M = 1024 * 1024;
 const DEFAULT_MAX_FILE_SIZE = 10 * M;
 const DEFAULT_MAX_TOTAL_SIZE = 100 * M;
 const DEFAULT_MAX_FILE_COUNT = 100;
-
-export interface RollingLogWriterOptions {
-  dir: string;
-  /** Filename only, e.g. `app.log` */
-  basename: string;
-  /** Single active log file max size in bytes, or a human-readable size string passed to `wordToByte` (e.g. `10M`, `1.5G`). Default 10MB */
-  maxFileSize?: number | string;
-  /** Max total size of related log files under `dir` in bytes, or a string for `wordToByte`. Default 100MB */
-  maxTotalSize?: number | string;
-  /** Max number of related log files (including the active file). Default 100 */
-  maxFileCount?: number;
-}
 
 function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
