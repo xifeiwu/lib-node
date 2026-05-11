@@ -7,7 +7,7 @@ export interface GetTargetScriptFuncNameOptions {
 }
 
 /**
- * How to run target script on node runtime or cp-wrap-script
+ * How to run target script on node runtime or cp-script
  */
 export interface RunTargetScriptOptions extends GetTargetScriptFuncNameOptions {
   /** select and run exported function from script file */

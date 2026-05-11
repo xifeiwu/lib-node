@@ -11,7 +11,7 @@ Run a script file (.ts/.js) in a child process, with the ability to select and i
 Spawns a child process to run the target script in an isolated environment:
 
 1. Resolves the appropriate runtime (`ts-node`, `tsx`, or `node`) based on the target file extension and whether the project uses ESM (`"type": "module"`)
-2. Spawns `cp-wrap-script.ts` as the child process entry point, passing it the target script path and options via IPC
+2. Spawns `cp-script.ts` as the child process entry point, passing it the target script path and options via IPC
 3. Manages TTY raw mode around the child process lifecycle
 4. Returns serialized spawn response (stdout, exit code, etc.)
 
@@ -33,7 +33,7 @@ Handles the actual script loading and function invocation inside the child proce
 4. Supports a special `_all` option to run every exported function sequentially
 5. Handles both sync and async functions, and class-based modules (`module.exports = class {}`)
 
-### cp-wrap-script.ts
+### cp-script.ts
 
 The bridge between the two layers. Runs inside the child process:
 
@@ -44,4 +44,4 @@ The bridge between the two layers. Runs inside the child process:
 ## Exports
 
 - `runScriptInCP(options)` — run a script in a child process (main entry point)
-- `runTargetScriptOnNode(scriptPath, options)` — run a script in the current process (used internally by cp-wrap-script, also exported for direct use)
+- `runTargetScriptOnNode(scriptPath, options)` — run a script in the current process (used internally by cp-script, also exported for direct use)

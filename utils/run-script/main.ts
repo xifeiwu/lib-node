@@ -1,7 +1,7 @@
 import {RunScriptInCPOptions} from '../../types';
 import {serializeSpawnResponse, spawnAndTryIpc} from '../../child-process';
 import {logColorful} from '../../log';
-import {getSpawnConfigForCpWrapScript} from './on-node/utils';
+import {getSpawnConfigForCpScript} from './on-node/utils';
 
 function setRawModeIfPossible(value: boolean): void {
   if (process.stdin.isTTY && process.stdin.setRawMode) {
@@ -10,14 +10,16 @@ function setRawModeIfPossible(value: boolean): void {
 }
 
 /**
- * Run target script in child process, the script should can be run on any runtime, like ts-node, tsx, python, etc.
+ * Run target script in child process
+ * the final target is to support run target script on any runtime, like ts-node, tsx, python, etc.
+ * the script should can be run on any runtime, like ts-node, tsx, python, etc.
  * - In order to run target script on any runtime, we need to get the runtime options by targetScript.
- * -In order to select the exported function from target script, which is very useful for debug script,
- * we didn't spawn the script directly, but spawn a wrap-cp-script.ts to run the target script.
+ * - In order to select the exported function from target script, which is very useful for debug script,
+ * we didn't spawn the script directly, but spawn a cp-script.ts to run the target script.
  */
 export async function runScriptInCP(options: RunScriptInCPOptions) {
   const {dryRun} = options ?? {};
-  const {wholeScript, spwanConfig} = await getSpawnConfigForCpWrapScript(options);
+  const {wholeScript, spwanConfig} = await getSpawnConfigForCpScript(options);
   logColorful({color: 'magenta'}, 'Whole script to run in child process:', wholeScript);
   if (dryRun) {
     return;

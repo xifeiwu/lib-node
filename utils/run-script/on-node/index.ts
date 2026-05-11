@@ -12,9 +12,9 @@ const defaultTsNodeOptions: TsNodeOptions = {
 };
 
 /**
- * Get spawn config for cp-wrap-script.ts
+ * Get spawn config for cp-script.ts
  */
-export async function getSpawnConfigForCpWrapScript(options: RunScriptInCPOptions) {
+export async function getSpawnConfigForCpScript(options: RunScriptInCPOptions) {
   const {
     preScript,
     runtimeOptions = {},
@@ -28,7 +28,7 @@ export async function getSpawnConfigForCpWrapScript(options: RunScriptInCPOption
     throw new Error(`Currently, we only support to run .ts or .js script, but got ${extname}`);
   }
   // try use .js version first
-  const wrapScript = getPreferredFileByExt(path.join(__dirname, 'cp-wrap-script.ts'), {
+  const wrapScript = getPreferredFileByExt(path.join(__dirname, 'cp-script.ts'), {
     preferredExtSequence: ['.js'],
   });
   const targetIsTsFile = extname === '.ts';
