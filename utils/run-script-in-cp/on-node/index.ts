@@ -1,8 +1,9 @@
 import path from 'path';
-import {CpWrapScriptOptions, RunScriptInCpOptions} from '../types';
+import {RunScriptInCpOptions} from '../types';
 import {SpawnConfig, TsNodeOptions} from '../../../types';
 import {getFilePathInfo, getPreferredFileByExt} from '../../../path';
 import {getSpawnConfigByScript} from '../../../child-process';
+import type {CpWrapScriptIpcMessage} from './types';
 
 const defaultTsNodeOptions: TsNodeOptions = {
   // '--transpileOnly': true,
@@ -14,14 +15,13 @@ const defaultTsNodeOptions: TsNodeOptions = {
 /**
  * Get spawn config for cp-wrapper-script.ts
  */
-export async function getSpawnConfigForCpScript(options: RunScriptInCpOptions) {
+export async function getSpawnConfigForCpScript(targetScript: string, options: RunScriptInCpOptions) {
   const {
-    preScript,
     runtimeOptions = {},
-    targetScript,
-    runTargetScriptOptions,
+    cpWrapperOptions,
     spawnOptions: {env = {}, ...restSpawnOptions} = {},
   } = options ?? {};
+  const {preScript, runTargetScriptOptions} = cpWrapperOptions ?? {};
 
   const {extname} = getFilePathInfo(targetScript);
   if (!['.ts', '.js'].includes(extname)) {
@@ -66,10 +66,9 @@ export async function getSpawnConfigForCpScript(options: RunScriptInCpOptions) {
     .filter(Boolean)
     .join(' ');
 
-  const infoToCp: CpWrapScriptOptions = {
-    preScript,
+  const infoToCp: CpWrapScriptIpcMessage = {
+    ...cpWrapperOptions,
     targetScript,
-    runTargetScriptOptions,
   };
   const spwanConfig: SpawnConfig = {
     command: finalCommand,

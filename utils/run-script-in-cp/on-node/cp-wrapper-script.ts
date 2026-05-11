@@ -1,8 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import {logColorful} from '../../../log';
-import {CpWrapScriptOptions, RunTargetScriptOptions} from '../types';
+import {RunTargetScriptOptions} from '../types';
 import {runTargetScriptOnNode} from './run-target-script';
+import type {CpWrapScriptIpcMessage} from './types';
 
 const TAG = 'OUT_OF_FUNCTION';
 
@@ -10,10 +11,10 @@ const TAG = 'OUT_OF_FUNCTION';
  * This script works together with main.ts, it can't be used directly
  */
 export async function start() {
-  let ipcMessage: CpWrapScriptOptions;
+  let ipcMessage: CpWrapScriptIpcMessage;
   if (process.send) {
-    ipcMessage = await new Promise<CpWrapScriptOptions>(res => {
-      process.once('message', (chunk: CpWrapScriptOptions) => {
+    ipcMessage = await new Promise<CpWrapScriptIpcMessage>(res => {
+      process.once('message', (chunk: CpWrapScriptIpcMessage) => {
         res(chunk);
       });
       /** Wait message for one second at most */
