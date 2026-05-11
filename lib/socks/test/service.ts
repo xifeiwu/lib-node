@@ -71,8 +71,18 @@ export function getSocksServerConfigVc1(config?: Partial<SocksServerConfig<1>>) 
   };
   return socksServerConfig;
 }
+/**
+ * Default SOCKS server map: VC1 (protocol byte 0x01) and SOCKS5 (0x05).
+ * VC1 auth matches `SOCKS_AUTH_DEFAULT_USER_PASS` via {@link getSocksServerConfigVc1};
+ * v5 uses {@link getSocksServerConfigV5} (no-auth).
+ */
+export const DEFAULT_SOCKS_SERVER_CONFIG_PER_VERSION: Partial<SocksServerConfigPerVersion> = {
+  1: getSocksServerConfigVc1(),
+  5: getSocksServerConfigV5(),
+};
 
-export async function startTcpServerForSocks(socksServerConfig: Partial<SocksServerConfigPerVersion>) {
+export async function startTcpServerForSocks(socksServerConfig?: Partial<SocksServerConfigPerVersion>) {
+  socksServerConfig = socksServerConfig ?? DEFAULT_SOCKS_SERVER_CONFIG_PER_VERSION;
   const infoList: SocksServerInfo[] = [];
   const httpServerInfo = await startHttpServer(
     {

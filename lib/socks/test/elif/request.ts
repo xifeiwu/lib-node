@@ -14,9 +14,9 @@ import {
 } from '../../service/external';
 import {requestThroughHttpAndPrintResponse, selectAndRequireFile} from '../../service/external';
 import {Socket} from 'net';
-import {EMethod} from '../../types/v5';
 import {largeDataToString} from '../../../../transform';
 import {HttpRequestInfo, HttpRequestInfoFull} from '../../../../types';
+import {startTcpServerForSocks} from '../service';
 
 async function selectRequestOptions() {
   const selected = await selectAndRequireFile<{httpRequestOptions: HttpRequestOptions}>([
@@ -35,21 +35,30 @@ async function sendDataOverTcpAndCheckResponse(httpRequestOptions: HttpRequestOp
   // logColorful({}, '--end--');
   try {
     if (url.protocol === 'https:') {
+      /** RST here ⇒ problem on SOCKS / VC1 tunnel (proxy or XOR leg), not TLS to origin. */
+      socket.once('error', err => {
+        logColorful({color: 'red'}, '[phase] SOCKS tunnel socket error (before/during TLS):', err);
+      });
       // const tlsSocket = new TLSSocket(socket, {isServer: false, servername: ''});
+      logColorful({}, '[phase] start TLS over SOCKS tunnel →', url.hostname);
       const tlsSocket = tls.connect({
         socket,
         servername: url.hostname,
       });
-      await new Promise((res, rej) => {
-        tlsSocket.on('secureConnect', res);
-        tlsSocket.on('error', rej);
+      await new Promise<void>((res, rej) => {
+        tlsSocket.once('secureConnect', () => res());
+        tlsSocket.once('error', rej);
       });
+      logColorful({}, '[phase] TLS established');
       logColorful({}, tlsSocket.bytesRead, tlsSocket.bytesWritten);
       reader = tlsSocket;
     } else {
       // socket.end(buffer);
       reader = socket;
     }
+    reader.on('error', err => {
+      logColorful({color: 'red'}, 'reader error:', err);
+    });
     await sendHttpRequestByTcp(httpRequestOptions, reader);
     let totalSize = 0;
     let chunkIndex = 0;
@@ -79,8 +88,9 @@ async function sendDataOverTcpAndCheckResponse(httpRequestOptions: HttpRequestOp
  * Should not use getDataFromReadable to get whole response data, as end event will not be triggered.
  */
 export async function bySocksServer() {
+  const {host, port} = await startTcpServerForSocks();
   const httpRequestOptions = await selectRequestOptions();
-  const {info, urlInst: url, target} = httpRequestOptionsToHttpInfo(httpRequestOptions);
+  const {target} = httpRequestOptionsToHttpInfo(httpRequestOptions);
   const status = await connectToSocksServer({
     socksVersion: 1,
     auth: SOCKS_AUTH_DEFAULT_USER_PASS,
@@ -89,18 +99,29 @@ export async function bySocksServer() {
     // methodList: [{method: EMethod.UserPass, info: SOCKS_AUTH_DEFAULT_USER_PASS}],
     // socksServer: 'http://elif.site',
     socksServer: {
-      // host: 'elif.site',
-      // port: 80,
-      host: '127.0.0.1',
-      port: 3160,
+      host: 'elif.site',
+      port: 80,
+      // host,
+      // port,
+      // host: '127.0.0.1',
+      // port: 3160,
     },
     requestTarget: {
       address: target.host,
       port: target.port,
     },
   });
+  if (status.error) {
+    logColorful({color: 'red'}, 'SOCKS negotiation failed:', status.error);
+    logColorful({}, status.stateTracer);
+    throw status.error;
+  }
   const {socket} = status;
+  if (!socket) {
+    throw new Error('connectToSocksServer: no socket after successful negotiation');
+  }
   await sendDataOverTcpAndCheckResponse(httpRequestOptions, socket);
+  1;
 }
 
 export async function requestThroughHttp() {
