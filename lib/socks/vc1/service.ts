@@ -75,6 +75,13 @@ class EncryptedSocket extends Duplex {
       this.socket.end(cb);
     }
   }
+
+  /** Duplex has no idle timeout; forward so `pipeSocket` can use the same contract as `net.Socket`. */
+  setTimeout(msecs: number, callback?: () => void): this {
+    this.socket.setTimeout(msecs, callback);
+    return this;
+  }
+
   get localAddress() {
     return this.socket?.localAddress;
   }

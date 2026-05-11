@@ -64,7 +64,7 @@ function pipeSocket(
 
   // Enforce max connection lifetime to prevent indefinitely hung sockets
   for (const socket of [clientSocket, socket2Remote]) {
-    socket.setTimeout(socketTimeout, () => {
+    socket?.setTimeout(socketTimeout, () => {
       stateTracer.push(suffixWithDt(SERVER_STATE.connectionTimeout));
       closeBoth();
     });
