@@ -15,13 +15,15 @@ export interface RunTargetScriptOptions extends GetTargetScriptFuncNameOptions {
   funcParams?: Array<any>;
 }
 
-export interface CpWrapScriptOptions {
+export interface NodeCpWrapScriptOptions {
   /** run this scritp before main script, to do some pre logic, such as select and set global env */
   preScript?: string;
   runTargetScriptOptions?: RunTargetScriptOptions;
 }
 
-export interface RunScriptInCpOptions<RuntimeOptions = any> extends SpawnScriptOptions<RuntimeOptions> {
-  dryRun?: boolean;
+export interface RunScriptInCpOptions<
+  RuntimeOptions = any,
+  CpWrapScriptOptions = any,
+> extends SpawnScriptOptions<RuntimeOptions> {
   cpWrapperOptions?: CpWrapScriptOptions;
 }

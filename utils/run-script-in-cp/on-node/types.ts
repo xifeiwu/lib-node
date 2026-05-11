@@ -1,2 +1,2 @@
-import {CpWrapScriptOptions} from '../types';
-export type CpWrapScriptIpcMessage = CpWrapScriptOptions & {targetScript: string};
+import {NodeCpWrapScriptOptions} from '../types';
+export type CpWrapScriptIpcMessage = NodeCpWrapScriptOptions & {targetScript: string};

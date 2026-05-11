@@ -17,15 +17,21 @@ function setRawModeIfPossible(value: boolean): void {
  * - In order to select the exported function from target script, which is very useful for debug script,
  * we didn't spawn the script directly, but spawn a cp-wrapper-script.ts to run the target script.
  */
-export async function runScriptInCP(targetScript: string, options: RunScriptInCpOptions) {
-  const {dryRun} = options ?? {};
-  const {wholeScript, spwanConfig} = await getSpawnConfigForCpScript(targetScript, options);
+export async function runScriptInCP(
+  targetScript: string,
+  options: RunScriptInCpOptions,
+  moreOptions?: {
+    dryRun?: boolean;
+  }
+) {
+  const {dryRun} = moreOptions ?? {};
+  const {wholeScript, spawnConfig} = getSpawnConfigForCpScript(targetScript, options);
   logColorful({color: 'magenta'}, 'Whole script to run in child process:', wholeScript);
   if (dryRun) {
     return;
   }
   setRawModeIfPossible(false);
-  const response = await spawnAndTryIpc(spwanConfig);
+  const response = await spawnAndTryIpc(spawnConfig);
   const {childProcess} = response;
   // logColorful({color: 'magenta'}, `pid of main/child process: ${process.pid}/${childProcess.pid}`);
 

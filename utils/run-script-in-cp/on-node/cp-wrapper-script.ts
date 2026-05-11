@@ -25,7 +25,7 @@ export async function start() {
   }
   /**
    * Support get params in two way:
-   * 1. passed from parent process
+   * 1. passed from parent process through ipc(suggessted)
    * 2. parsed from process.argv
    */
   let scriptPath: string;

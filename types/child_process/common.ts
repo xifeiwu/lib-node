@@ -37,7 +37,7 @@ export interface IpcConfig<CpConfig = any> {
   maxWaitCpResInSec?: number;
 }
 
-interface SpawnScriptOnlyOptions<RuntimeOptions> {
+export interface SpawnScriptOnlyOptions<RuntimeOptions> {
   /** param for runtime */
   runtimeOptions?: RuntimeOptions;
   /** param for script */

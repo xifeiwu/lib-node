@@ -1,8 +1,8 @@
 import path from 'path';
-import {RunScriptInCpOptions} from '../types';
+import {NodeCpWrapScriptOptions, RunScriptInCpOptions} from '../types';
 import {SpawnConfig, TsNodeOptions} from '../../../types';
 import {getFilePathInfo, getPreferredFileByExt} from '../../../path';
-import {getSpawnConfigByScript} from '../../../child-process';
+import {getCommandByScriptPath} from '../../../child-process';
 import type {CpWrapScriptIpcMessage} from './types';
 
 const defaultTsNodeOptions: TsNodeOptions = {
@@ -15,47 +15,40 @@ const defaultTsNodeOptions: TsNodeOptions = {
 /**
  * Get spawn config for cp-wrapper-script.ts
  */
-export async function getSpawnConfigForCpScript(targetScript: string, options: RunScriptInCpOptions) {
+export function getSpawnConfigForCpScript(
+  targetScript: string,
+  options: RunScriptInCpOptions<TsNodeOptions, NodeCpWrapScriptOptions>
+) {
   const {
     runtimeOptions = {},
+    params,
     cpWrapperOptions,
     spawnOptions: {env = {}, ...restSpawnOptions} = {},
+    minUptime,
   } = options ?? {};
-  const {preScript, runTargetScriptOptions} = cpWrapperOptions ?? {};
+  const {runTargetScriptOptions} = cpWrapperOptions ?? {};
 
   const {extname} = getFilePathInfo(targetScript);
   if (!['.ts', '.js'].includes(extname)) {
     throw new Error(`Currently, we only support to run .ts or .js script, but got ${extname}`);
   }
-  // try use .js version first
+
   const wrapScript = getPreferredFileByExt(path.join(__dirname, 'cp-wrapper-script.ts'), {
     preferredExtSequence: ['.js'],
   });
-  const targetIsTsFile = extname === '.ts';
 
-  /**
-   * get command and args for targetScript:
-   * command: ts-node
-   * args: [-r, node/start/feature/node_modules/tsconfig-paths/register.js, --project, node/start/feature/tsconfig.json, --swc, /Users/wuxifei/code/node/start/feature/1-js/object/defineProperty/get-set.ts]
-   */
-  const spawnAndIpcConfig = getSpawnConfigByScript<TsNodeOptions>(targetScript, {
-    runtimeOptions: targetIsTsFile ? {...defaultTsNodeOptions, ...runtimeOptions} : {},
+  const {command, args} = getCommandByScriptPath<TsNodeOptions>(targetScript, {
+    runtimeOptions: extname === '.ts' ? {...defaultTsNodeOptions, ...runtimeOptions} : {},
+    params,
   });
-  const {command, args} = spawnAndIpcConfig;
-  const targetIsEsm = command === 'tsx';
 
-  /**
-   * if wrapScript is a ts file, use ts-node to run it. even targetScript is a js file.
-   */
-  const finalCommand = targetIsEsm
-    ? command
-    : getFilePathInfo(wrapScript).extname === '.ts'
-      ? 'ts-node'
-      : command;
-  const finalArgs = targetIsEsm ? [wrapScript, targetScript] : [...args];
-  if (!targetIsEsm) {
-    finalArgs.splice(args.length - 1, 0, wrapScript);
-  }
+  // Insert wrapScript before the target path (always the last element of args)
+  const finalArgs = [...args];
+  finalArgs.splice(args.length - 1, 0, wrapScript);
+
+  // If wrapScript is .ts and runtime is not tsx, override to ts-node
+  const wrapScriptIsTsFile = getFilePathInfo(wrapScript).extname === '.ts';
+  const finalCommand = command !== 'tsx' && wrapScriptIsTsFile ? 'ts-node' : command;
 
   const wholeScript = [
     finalCommand,
@@ -66,24 +59,17 @@ export async function getSpawnConfigForCpScript(targetScript: string, options: R
     .filter(Boolean)
     .join(' ');
 
-  const infoToCp: CpWrapScriptIpcMessage = {
-    ...cpWrapperOptions,
-    targetScript,
-  };
-  const spwanConfig: SpawnConfig = {
+  const spawnConfig: SpawnConfig = {
     command: finalCommand,
     args: finalArgs,
     spawnOptions: {
       stdio: [0, 1, 2, 'ipc'],
       ...restSpawnOptions,
-      env: {
-        ...process.env,
-        ...env,
-        // SPAWNED_BY: __filename,
-      },
+      env: {...process.env, ...env},
     },
-    infoToCp,
+    infoToCp: {...cpWrapperOptions, targetScript} as CpWrapScriptIpcMessage,
     maxWaitTime4Ipc: 30,
+    minUptime,
   };
-  return {wholeScript, spwanConfig};
+  return {wholeScript, spawnConfig};
 }

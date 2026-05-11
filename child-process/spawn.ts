@@ -11,6 +11,7 @@ import {
   TsNodeOptions,
   SpawnScriptOptions,
   SpawnResult,
+  SpawnScriptOnlyOptions,
 } from '../types';
 import {getFilePathInfo} from '../path';
 import {waitIpcMessageOnce} from './service';
@@ -79,15 +80,10 @@ export function getTsNodeParams(
   return tsNodeParams;
 }
 
-/**
- * Convert from SpawnFileOptions to SpawnConfig
- * spawn a script by info get from its path:
- * get command by file extname
- */
-export function getSpawnConfigByScript<RunTimeOptions = any>(
+export function getCommandByScriptPath<RunTimeOptions = any>(
   scriptPath: string,
-  options?: SpawnScriptOptions<RunTimeOptions>
-): SpawnConfig {
+  options?: SpawnScriptOnlyOptions<RunTimeOptions>
+): Pick<SpawnConfig, 'command' | 'args'> {
   const fullPath = path.resolve(process.cwd(), scriptPath);
   if (!fs.existsSync(fullPath)) {
     throw new Error(`script not exist: ${fullPath}`);
@@ -95,7 +91,7 @@ export function getSpawnConfigByScript<RunTimeOptions = any>(
   const {extname} = getFilePathInfo(fullPath);
   let command = '';
   let args: string[] = [];
-  const {runtimeOptions, params = [], ...rest} = options ?? {};
+  const {runtimeOptions, params = []} = options ?? {};
   const isEsm = isEsmPackage(fullPath);
   if (isEsm) {
     command = 'tsx';
@@ -109,6 +105,24 @@ export function getSpawnConfigByScript<RunTimeOptions = any>(
   } else {
     throw new Error(`Can't get spawn config by extname: ${extname}`);
   }
+  return {command, args};
+}
+
+/**
+ * Convert from SpawnFileOptions to SpawnConfig
+ * spawn a script by info get from its path:
+ * get command by file extname
+ */
+export function getSpawnConfigByScript<RunTimeOptions = any>(
+  scriptPath: string,
+  options?: SpawnScriptOptions<RunTimeOptions>
+): SpawnConfig {
+  const fullPath = path.resolve(process.cwd(), scriptPath);
+  if (!fs.existsSync(fullPath)) {
+    throw new Error(`script not exist: ${fullPath}`);
+  }
+  const {runtimeOptions, params = [], ...rest} = options ?? {};
+  const {command, args} = getCommandByScriptPath(fullPath, options);
   return {
     command,
     args,
