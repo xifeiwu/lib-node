@@ -3,11 +3,17 @@ import {serializeSpawnResponse, spawnAndTryIpc} from '../../child-process';
 import {logColorful} from '../../log';
 import {getSpawnConfigForCpWrapScript} from './on-node/utils';
 
+function setRawModeIfPossible(value: boolean): void {
+  if (process.stdin.isTTY && process.stdin.setRawMode) {
+    process.stdin.setRawMode(value);
+  }
+}
+
 /**
- * Run target script in child process, the script should can be run on any runtime, like ts-node, python, etc.
- * In order to run target script on any runtime, we need to get the runtime options by targetScript.
- * In order to select the exported function from target script, which is very useful for debug script,
- * we didn't spawn the script directly, but spawn a cp-script.ts to run the target script.
+ * Run target script in child process, the script should can be run on any runtime, like ts-node, tsx, python, etc.
+ * - In order to run target script on any runtime, we need to get the runtime options by targetScript.
+ * -In order to select the exported function from target script, which is very useful for debug script,
+ * we didn't spawn the script directly, but spawn a wrap-cp-script.ts to run the target script.
  */
 export async function runScriptInCP(options: RunScriptInCPOptions) {
   const {dryRun} = options ?? {};
@@ -16,14 +22,14 @@ export async function runScriptInCP(options: RunScriptInCPOptions) {
   if (dryRun) {
     return;
   }
-  process.stdin.setRawMode(false);
+  setRawModeIfPossible(false);
   const response = await spawnAndTryIpc(spwanConfig);
   const {childProcess} = response;
   // logColorful({color: 'magenta'}, `pid of main/child process: ${process.pid}/${childProcess.pid}`);
 
   childProcess.on('exit', () => {
     // console.log('exit child process');
-    process.stdin.setRawMode(true);
+    setRawModeIfPossible(true);
     // process.stdin.unpipe(childProcess.stdin);
     // process.stdin.off('data', )
   });

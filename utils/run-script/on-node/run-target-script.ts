@@ -6,7 +6,7 @@ import path from 'path';
 import {logColorful} from '../../../log';
 import {goOnOrNot, selectOption} from '../../../readline';
 import {isNumber, isAsyncFunction, isObject, isFunction} from '../../../external';
-import {rerequire} from '../../../service';
+import {reimportOrRequire} from '../../../service';
 import {RunTargetScriptOptions, GetTargetScriptFuncNameOptions} from '../../../types';
 
 const RUN_ALL_EXPORTED_FUNCTIONS = '_all';
@@ -87,7 +87,7 @@ export async function runTargetScriptOnNode(scriptPath: string, options?: RunTar
   if (!fs.existsSync(fullPath)) {
     throw new Error(`file ${fullPath} not exist`);
   }
-  const Module = rerequire(fullPath);
+  const Module = await reimportOrRequire(fullPath);
   if (!runExportedFunc && !funcName) {
     return;
   }

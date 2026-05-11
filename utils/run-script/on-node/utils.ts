@@ -2,6 +2,7 @@ import path from 'path';
 import {CpWrapScriptOptions, RunScriptInCPOptions, SpawnConfig, TsNodeOptions} from '../../../types';
 import {getFilePathInfo, getPreferredFileByExt} from '../../../path';
 import {getSpawnConfigByScript} from '../../../child-process';
+import {isTypeModulePackageFile} from '../../../service';
 
 const defaultTsNodeOptions: TsNodeOptions = {
   // '--transpileOnly': true,
@@ -24,8 +25,9 @@ export async function getSpawnConfigForCpWrapScript(options: RunScriptInCPOption
 
   const {extname} = getFilePathInfo(targetScript);
   if (!['.ts', '.js'].includes(extname)) {
-    throw new Error(`Can only run .ts or .js script`);
+    throw new Error(`Currently, we only support to run .ts or .js script, but got ${extname}`);
   }
+  // try use .js version first
   const wrapScript = getPreferredFileByExt(path.join(__dirname, 'cp-wrap-script.ts'), {
     preferredExtSequence: ['.js'],
   });
@@ -40,6 +42,7 @@ export async function getSpawnConfigForCpWrapScript(options: RunScriptInCPOption
     runtimeOptions: targetIsTsFile ? {...defaultTsNodeOptions, ...runtimeOptions} : {},
   });
   const {command, args} = spawnAndIpcConfig;
+  const targetIsEsm = targetIsTsFile && isTypeModulePackageFile(targetScript);
 
   /**
    * targetScript     mainScript        runtime
@@ -48,9 +51,15 @@ export async function getSpawnConfigForCpWrapScript(options: RunScriptInCPOption
    * .js              .ts               ts-node
    * .js              .js               node
    */
-  const finalCommand = getFilePathInfo(wrapScript).extname === '.ts' ? 'ts-node' : command;
-  const finalArgs = [...args];
-  finalArgs.splice(args.length - 1, 0, wrapScript);
+  const finalCommand = targetIsEsm
+    ? 'tsx'
+    : getFilePathInfo(wrapScript).extname === '.ts'
+      ? 'ts-node'
+      : command;
+  const finalArgs = targetIsEsm ? [wrapScript, targetScript] : [...args];
+  if (!targetIsEsm) {
+    finalArgs.splice(args.length - 1, 0, wrapScript);
+  }
 
   const wholeScript = [
     finalCommand,

@@ -6,16 +6,25 @@ export interface GetTargetScriptFuncNameOptions {
   runTheOnlyFuncDirectly?: boolean;
 }
 
+/**
+ * How to run target script on node runtime or cp-wrap-script
+ */
 export interface RunTargetScriptOptions extends GetTargetScriptFuncNameOptions {
   /** select and run exported function from script file */
   runExportedFunc?: boolean;
   funcParams?: Array<any>;
 }
 
+/**
+ * Options for spawn cp-script.ts
+ */
 export interface SpawnCpWrapScriptOptions<RuntimeOptions = any> {
   dryRun?: boolean;
+  /** path of target script to run */
   targetScript: string;
+  /** options for target script runtime */
   runtimeOptions?: RuntimeOptions;
+  /** options for spawn the child process */
   spawnOptions?: SpawnOptions;
 }
 
