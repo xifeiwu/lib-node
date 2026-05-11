@@ -15,7 +15,7 @@ function setRawModeIfPossible(value: boolean): void {
  * the script should can be run on any runtime, like ts-node, tsx, python, etc.
  * - In order to run target script on any runtime, we need to get the runtime options by targetScript.
  * - In order to select the exported function from target script, which is very useful for debug script,
- * we didn't spawn the script directly, but spawn a cp-script.ts to run the target script.
+ * we didn't spawn the script directly, but spawn a cp-wrapper-script.ts to run the target script.
  */
 export async function runScriptInCP(options: RunScriptInCpOptions) {
   const {dryRun} = options ?? {};
