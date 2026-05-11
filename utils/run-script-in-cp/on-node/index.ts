@@ -1,9 +1,8 @@
 import path from 'path';
-import {CpWrapScriptOptions, RunScriptInCPOptions} from '../types';
+import {CpWrapScriptOptions, RunScriptInCpOptions} from '../types';
 import {SpawnConfig, TsNodeOptions} from '../../../types';
 import {getFilePathInfo, getPreferredFileByExt} from '../../../path';
 import {getSpawnConfigByScript} from '../../../child-process';
-import {isTypeModulePackageFile} from '../../../service';
 
 const defaultTsNodeOptions: TsNodeOptions = {
   // '--transpileOnly': true,
@@ -15,7 +14,7 @@ const defaultTsNodeOptions: TsNodeOptions = {
 /**
  * Get spawn config for cp-script.ts
  */
-export async function getSpawnConfigForCpScript(options: RunScriptInCPOptions) {
+export async function getSpawnConfigForCpScript(options: RunScriptInCpOptions) {
   const {
     preScript,
     runtimeOptions = {},
@@ -43,17 +42,13 @@ export async function getSpawnConfigForCpScript(options: RunScriptInCPOptions) {
     runtimeOptions: targetIsTsFile ? {...defaultTsNodeOptions, ...runtimeOptions} : {},
   });
   const {command, args} = spawnAndIpcConfig;
-  const targetIsEsm = targetIsTsFile && isTypeModulePackageFile(targetScript);
+  const targetIsEsm = command === 'tsx';
 
   /**
-   * targetScript     mainScript        runtime
-   * .ts              .ts               ts-node
-   * .ts              .js               ts-node
-   * .js              .ts               ts-node
-   * .js              .js               node
+   * if wrapScript is a ts file, use ts-node to run it. even targetScript is a js file.
    */
   const finalCommand = targetIsEsm
-    ? 'tsx'
+    ? command
     : getFilePathInfo(wrapScript).extname === '.ts'
       ? 'ts-node'
       : command;

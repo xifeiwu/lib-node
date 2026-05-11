@@ -1,4 +1,4 @@
-import {RunScriptInCPOptions} from './types';
+import {RunScriptInCpOptions} from './types';
 import {serializeSpawnResponse, spawnAndTryIpc} from '../../child-process';
 import {logColorful} from '../../log';
 import {getSpawnConfigForCpScript} from './on-node';
@@ -17,7 +17,7 @@ function setRawModeIfPossible(value: boolean): void {
  * - In order to select the exported function from target script, which is very useful for debug script,
  * we didn't spawn the script directly, but spawn a cp-script.ts to run the target script.
  */
-export async function runScriptInCP(options: RunScriptInCPOptions) {
+export async function runScriptInCP(options: RunScriptInCpOptions) {
   const {dryRun} = options ?? {};
   const {wholeScript, spwanConfig} = await getSpawnConfigForCpScript(options);
   logColorful({color: 'magenta'}, 'Whole script to run in child process:', wholeScript);

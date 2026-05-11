@@ -25,6 +25,14 @@ const defaultTsNodeOptions: TsNodeOptions = {
   '-r': null,
   '--project': null,
 };
+
+function isEsmPackage(filePath: string): boolean {
+  const pkgPath = findClosestFile(path.dirname(filePath), 'package.json');
+  if (!pkgPath) return false;
+  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
+  return pkg.type === 'module';
+}
+
 export function getTsNodeParams(
   tsFilePath: string,
   options?: Pick<SpawnScriptOptions<TsNodeOptions>, 'runtimeOptions'>
@@ -88,8 +96,11 @@ export function getSpawnConfigByScript<RunTimeOptions = any>(
   let command = '';
   let args: string[] = [];
   const {runtimeOptions, params = [], ...rest} = options ?? {};
-  /** params should follow after fullPath */
-  if (extname === '.ts') {
+  const isEsm = isEsmPackage(fullPath);
+  if (isEsm) {
+    command = 'tsx';
+    args = [fullPath, ...params];
+  } else if (extname === '.ts') {
     command = 'ts-node';
     args = [...getTsNodeParams(fullPath, {runtimeOptions}), fullPath, ...params];
   } else if (extname === '.js') {

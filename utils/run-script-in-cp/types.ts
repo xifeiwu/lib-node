@@ -1,4 +1,4 @@
-import {SpawnOptions} from 'child_process';
+import {SpawnScriptOptions} from '../../types';
 
 export interface GetTargetScriptFuncNameOptions {
   funcName?: string;
@@ -18,14 +18,13 @@ export interface RunTargetScriptOptions extends GetTargetScriptFuncNameOptions {
 /**
  * Options for spawn cp-script.ts
  */
-export interface SpawnCpWrapScriptOptions<RuntimeOptions = any> {
+export interface SpawnCpWrapScriptOptions<RuntimeOptions = any> extends Pick<
+  SpawnScriptOptions<RuntimeOptions>,
+  'runtimeOptions' | 'spawnOptions'
+> {
   dryRun?: boolean;
   /** path of target script to run */
   targetScript: string;
-  /** options for target script runtime */
-  runtimeOptions?: RuntimeOptions;
-  /** options for spawn the child process */
-  spawnOptions?: SpawnOptions;
 }
 
 export interface CpWrapScriptOptions {
@@ -35,5 +34,5 @@ export interface CpWrapScriptOptions {
   runTargetScriptOptions?: RunTargetScriptOptions;
 }
 
-export type RunScriptInCPOptions<RuntimeOptions = any> = SpawnCpWrapScriptOptions<RuntimeOptions> &
+export type RunScriptInCpOptions<RuntimeOptions = any> = SpawnCpWrapScriptOptions<RuntimeOptions> &
   CpWrapScriptOptions;
