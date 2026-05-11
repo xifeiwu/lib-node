@@ -1,1 +1,1 @@
-export * from './run-script';
+export * from './run-script-in-cp';
