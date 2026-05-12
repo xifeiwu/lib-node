@@ -12,9 +12,11 @@ const defaultTsNodeOptions: TsNodeOptions = {
   '--project': null,
 };
 
-export function getSpawnConfigForCpScript(
+export function getSpawnConfigForCpScript<
+  InfoToCpWrapper extends NodeCpWrapScriptOptions = NodeCpWrapScriptOptions,
+>(
   targetScript: string,
-  spawnWrapperOptions: SpawnScriptOptions<TsNodeOptions, NodeCpWrapScriptOptions>,
+  spawnWrapperOptions: SpawnScriptOptions<TsNodeOptions, InfoToCpWrapper>,
   params?: string[]
 ) {
   const {

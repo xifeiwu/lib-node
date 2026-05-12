@@ -9,11 +9,11 @@ function setRawModeIfPossible(value: boolean): void {
   }
 }
 
-export async function runScriptInCP<InfoToCpWrapper = any>(
+export async function runScriptInCP<InfoToCp = any, InfoToCpWrapper = any>(
   targetScript: string,
   options?: {
     dryRun?: boolean;
-    spawnOptions?: SpawnScriptOptions;
+    spawnOptions?: SpawnScriptOptions<any, InfoToCp>;
     spawnWrapperOptions?: SpawnScriptOptions<any, InfoToCpWrapper>;
   }
 ) {

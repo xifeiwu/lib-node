@@ -5,7 +5,7 @@ import {NodeCpWrapScriptOptions} from '../../types';
 
 export async function testRunScriptExportInCP() {
   const scriptPath = path.join(__dirname, 'scripts/test.ts');
-  const result = await runScriptInCP<NodeCpWrapScriptOptions>(scriptPath, {
+  const result = await runScriptInCP<any, NodeCpWrapScriptOptions>(scriptPath, {
     spawnWrapperOptions: {
       infoToCp: {runTargetScriptOptions: {runExportedFunc: true, funcParams: [10]}},
     },
@@ -16,7 +16,7 @@ testRunScriptExportInCP();
 
 export async function passFuncNameAndParams() {
   const scriptPath = path.join(__dirname, 'scripts/test.ts');
-  const result = await runScriptInCP<NodeCpWrapScriptOptions>(scriptPath, {
+  const result = await runScriptInCP<any, NodeCpWrapScriptOptions>(scriptPath, {
     spawnWrapperOptions: {
       infoToCp: {
         runTargetScriptOptions: {runExportedFunc: true, funcName: 'add1', funcParams: [10]},
