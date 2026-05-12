@@ -22,9 +22,9 @@ interface CommonSpawnOptions {
  * 1. send params to child process
  * 2. wait for response from child process
  */
-export interface IpcConfig<CpConfig = any> {
+export interface IpcConfig<InfoToCp = any> {
   /** Info send to child process if process.send is enabled */
-  infoToCp?: CpConfig;
+  infoToCp?: InfoToCp;
   /**
    * @deprecated by maxWaitCpResInSec
    */
@@ -48,8 +48,8 @@ export interface SpawnScriptOnlyOptions<RuntimeOptions> {
  * command get from file extname
  * args of SpawnConfig split into two parts: tsNodeOptions for ts-node, params for ts script
  */
-export interface SpawnScriptOptions<RuntimeOptions = any, CpConfig = any>
-  extends SpawnScriptOnlyOptions<RuntimeOptions>, CommonSpawnOptions, IpcConfig<CpConfig> {}
+export interface SpawnScriptOptions<RuntimeOptions = any, InfoToCp = any>
+  extends SpawnScriptOnlyOptions<RuntimeOptions>, CommonSpawnOptions, IpcConfig<InfoToCp> {}
 
 /**
  * @deprecated by SpawnScriptOptions
@@ -60,7 +60,7 @@ export type SpawnFileOptions = SpawnScriptOptions;
  * Configs used for node spwan function in format:
  * spawn(command, args, spawnOptions)
  */
-export interface SpawnConfig<CpConfig = any> extends CommonSpawnOptions, IpcConfig<CpConfig> {
+export interface SpawnConfig<InfoToCp = any> extends CommonSpawnOptions, IpcConfig<InfoToCp> {
   command: string;
   /**
    * all args used for command include:

@@ -1,6 +1,6 @@
 import path from 'path';
-import {NodeCpWrapScriptOptions, RunScriptInCpOptions} from '../types';
-import {SpawnConfig, TsNodeOptions} from '../../../types';
+import {NodeCpWrapScriptOptions} from '../types';
+import {SpawnConfig, SpawnScriptOptions, TsNodeOptions} from '../../../types';
 import {getFilePathInfo, getPreferredFileByExt} from '../../../path';
 import {getCommandByScriptPath} from '../../../child-process';
 import type {CpWrapScriptIpcMessage} from './types';
@@ -12,20 +12,19 @@ const defaultTsNodeOptions: TsNodeOptions = {
   '--project': null,
 };
 
-/**
- * Get spawn config for cp-wrapper-script.ts
- */
 export function getSpawnConfigForCpScript(
   targetScript: string,
-  options: RunScriptInCpOptions<TsNodeOptions, NodeCpWrapScriptOptions>
+  spawnWrapperOptions: SpawnScriptOptions<TsNodeOptions, NodeCpWrapScriptOptions>,
+  params?: string[]
 ) {
   const {
     runtimeOptions = {},
-    params,
-    cpWrapperOptions,
+    infoToCp: cpWrapperOptions,
     spawnOptions: {env = {}, ...restSpawnOptions} = {},
     minUptime,
-  } = options ?? {};
+    maxWaitTime4Ipc = 30,
+    maxWaitCpResInSec,
+  } = spawnWrapperOptions ?? {};
   const {runTargetScriptOptions} = cpWrapperOptions ?? {};
 
   const {extname} = getFilePathInfo(targetScript);
@@ -42,11 +41,9 @@ export function getSpawnConfigForCpScript(
     params,
   });
 
-  // Insert wrapScript before the target path (always the last element of args)
   const finalArgs = [...args];
   finalArgs.splice(args.length - 1, 0, wrapScript);
 
-  // If wrapScript is .ts and runtime is not tsx, override to ts-node
   const wrapScriptIsTsFile = getFilePathInfo(wrapScript).extname === '.ts';
   const finalCommand = command !== 'tsx' && wrapScriptIsTsFile ? 'ts-node' : command;
 
@@ -68,7 +65,8 @@ export function getSpawnConfigForCpScript(
       env: {...process.env, ...env},
     },
     infoToCp: {...cpWrapperOptions, targetScript} as CpWrapScriptIpcMessage,
-    maxWaitTime4Ipc: 30,
+    maxWaitTime4Ipc,
+    maxWaitCpResInSec,
     minUptime,
   };
   return {wholeScript, spawnConfig};
