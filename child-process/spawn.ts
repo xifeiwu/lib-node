@@ -73,7 +73,7 @@ export function getTsNodeParams(
   return tsNodeParams;
 }
 
-export function getCommandByScriptPath<RunTimeOptions = any>(
+export function getCommandAndArgsByScriptPath<RunTimeOptions = any>(
   scriptPath: string,
   options?: SpawnScriptOnlyOptions<RunTimeOptions>
 ): Pick<SpawnConfig, 'command' | 'args'> {
@@ -115,7 +115,7 @@ export function getSpawnConfigByScript<RunTimeOptions = any>(
     throw new Error(`script not exist: ${fullPath}`);
   }
   const {runtimeOptions, params = [], ...rest} = options ?? {};
-  const {command, args} = getCommandByScriptPath(fullPath, options);
+  const {command, args} = getCommandAndArgsByScriptPath(fullPath, options);
   return {
     command,
     args,
@@ -185,11 +185,29 @@ export function getCpConfigByScriptPath<CpConfig = any>(
  * @returns
  */
 export async function spawnAndTryIpc<CpConfig extends Serializable = any, ResponseFromCp = any>(
-  config: SpawnConfig<CpConfig>
+  config: SpawnConfig<CpConfig>,
+  options?: {
+    stdinRawMode?: boolean;
+  }
 ): Promise<SpawnAndTryIpcResponse<ResponseFromCp>> {
   const {command, args, spawnOptions, minUptime = 0, infoToCp} = config;
+  const {stdinRawMode} = options ?? {};
   const maxWaitCpResInSec = config.maxWaitCpResInSec ?? config.maxWaitTime4Ipc;
+  if (stdinRawMode) {
+    setRawModeIfPossible(false);
+  }
   const childProcess = spawn(command, args, {...spawnOptions});
+  let rawModeRestored = false;
+  function restoreRawModeIfNeeded() {
+    if (!stdinRawMode || rawModeRestored) {
+      return;
+    }
+    rawModeRestored = true;
+    setRawModeIfPossible(true);
+  }
+  childProcess.once('exit', restoreRawModeIfNeeded);
+  childProcess.once('close', restoreRawModeIfNeeded);
+  childProcess.once('error', restoreRawModeIfNeeded);
   const supportIpc = Boolean(childProcess.connected && childProcess.send);
   if (!supportIpc && [infoToCp, maxWaitCpResInSec].some(it => it !== undefined)) {
     /** Shoule kill child process created when throw Error */
@@ -255,6 +273,11 @@ export async function spawnAndTryIpc<CpConfig extends Serializable = any, Respon
     info.responseFromCp = await waitResPromise;
   }
   return info;
+}
+function setRawModeIfPossible(value: boolean): void {
+  if (process.stdin.isTTY && process.stdin.setRawMode) {
+    process.stdin.setRawMode(value);
+  }
 }
 
 export async function spawnScriptAndTryIpc<CpConfig extends Serializable = any, ResponseFromCp = any>(

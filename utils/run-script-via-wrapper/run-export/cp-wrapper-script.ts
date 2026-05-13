@@ -3,7 +3,7 @@ import path from 'path';
 import {logColorful} from '../../../log';
 import {RunTargetScriptOptions} from '../types';
 import {runTargetScriptOnNode} from '../run-node-script';
-import type {CpWrapScriptIpcMessage} from './types';
+import type {NodeCpWrapScriptOptions} from '../types';
 
 const TAG = 'OUT_OF_FUNCTION';
 
@@ -11,10 +11,10 @@ const TAG = 'OUT_OF_FUNCTION';
  * This script works together with main.ts, it can't be used directly
  */
 export async function start() {
-  let ipcMessage: CpWrapScriptIpcMessage;
+  let ipcMessage: NodeCpWrapScriptOptions;
   if (process.send) {
-    ipcMessage = await new Promise<CpWrapScriptIpcMessage>(res => {
-      process.once('message', (chunk: CpWrapScriptIpcMessage) => {
+    ipcMessage = await new Promise<NodeCpWrapScriptOptions>(res => {
+      process.once('message', (chunk: NodeCpWrapScriptOptions) => {
         res(chunk);
       });
       /** Wait message for one second at most */
@@ -29,29 +29,32 @@ export async function start() {
    * 2. parsed from process.argv
    */
   let scriptPath: string;
-  let options: RunTargetScriptOptions;
+  let options: RunTargetScriptOptions = {};
   let preScript: string;
   if (ipcMessage) {
-    scriptPath = ipcMessage.targetScript;
-    options = ipcMessage.runTargetScriptOptions;
     if (ipcMessage.preScript) {
       preScript = path.resolve(process.cwd(), ipcMessage.preScript);
     }
-  } else {
-    [, , scriptPath] = process.argv;
-    options = {
-      runExportedFunc: true,
-      funcParams: process.argv.slice(3),
-    };
+    options = ipcMessage.runTargetScriptOptions;
   }
-
-  if (process.connected && process.send) {
-    /** Child process will exit by the error EPipe if the error is not catched here */
-    process.send(
-      `start run command in child process: ${[scriptPath, options?.funcName, ...(options?.funcParams ?? [])]
-        .filter(Boolean)
-        .join(' ')}`
-    );
+  /**
+   * runTargetScriptOptions in command line have higher priority than ipcMessage
+   * [
+   *   '/Users/wuxifei/.nvm/versions/node/v24.12.0/bin/ts-node',
+   *   '/Users/wuxifei/code/node/tool/busybox/modules/lib/node/utils/run-script-via-wrapper/run-export/cp-wrapper-script.ts',
+   *   '/Users/wuxifei/code/node/tool/busybox/src/run-in-cp/test/project/index.ts',
+   *   'add1',
+   *   '10'
+   * ]
+   */
+  if (process.argv.length > 2) {
+    [, , scriptPath] = process.argv;
+    const funcName = process.argv[3];
+    if (funcName) {
+      options.funcName = funcName;
+      // One issue about pass function params is the types of all item in params are string.
+      // options.funcParams = process.argv.slice(4);
+    }
   }
 
   try {
