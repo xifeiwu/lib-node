@@ -77,7 +77,7 @@ export async function start() {
     console.log('------');
     if (process.connected && process.send) {
       /** Child process will exit by the error EPipe if the error is not catched here */
-      process.send(result, err => {
+      process.send(result ?? null, err => {
         if (err) {
           console.log(err);
         }
