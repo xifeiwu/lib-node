@@ -1,6 +1,5 @@
 import {isFunction, isObject} from '../external';
-import fs from 'fs';
-import path from 'path';
+import {isEsmPackage} from '../fs';
 import {pathToFileURL} from 'url';
 
 /**
@@ -25,31 +24,6 @@ export function rerequire(modulePath) {
   return require(modulePath);
 }
 
-function getClosestPackageJson(filePath: string): string | undefined {
-  let dir = fs.statSync(filePath).isDirectory() ? filePath : path.dirname(filePath);
-
-  while (true) {
-    const packageJson = path.join(dir, 'package.json');
-    if (fs.existsSync(packageJson)) {
-      return packageJson;
-    }
-
-    const parent = path.dirname(dir);
-    if (parent === dir) {
-      return undefined;
-    }
-    dir = parent;
-  }
-}
-
-export function isTypeModulePackageFile(modulePath: string): boolean {
-  const packageJson = getClosestPackageJson(modulePath);
-  if (!packageJson) return false;
-
-  const packageInfo = JSON.parse(fs.readFileSync(packageJson, 'utf-8'));
-  return packageInfo.type === 'module';
-}
-
 async function nativeImport(modulePath: string) {
   const importFunc = new Function('specifier', 'return import(specifier)') as (
     specifier: string
@@ -58,7 +32,7 @@ async function nativeImport(modulePath: string) {
 }
 
 export async function reimportOrRequire(modulePath: string) {
-  if (isTypeModulePackageFile(modulePath)) {
+  if (isEsmPackage(modulePath)) {
     return await nativeImport(modulePath);
   }
   return rerequire(modulePath);

@@ -1,7 +1,17 @@
+import fs from 'fs';
+import path from 'path';
 import {selectOption} from '../readline';
 import {rerequire} from '../service';
 import {FilePathInfo, GetFileListInfo} from '../types';
 import {getFileListOfDirs} from './go-through-dir';
+import {findClosestFile} from './read';
+
+export function isEsmPackage(filePath: string): boolean {
+  const pkgPath = findClosestFile(path.dirname(filePath), 'package.json');
+  if (!pkgPath) return false;
+  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
+  return pkg.type === 'module';
+}
 
 export async function selectFileFromDir(
   targetDirInfoList: Array<GetFileListInfo>,

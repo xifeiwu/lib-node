@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import {Serializable, spawn} from 'child_process';
-import {findClosestFile} from '../fs';
+import {findClosestFile, isEsmPackage} from '../fs';
 import {isBoolean, isNumber, isString, toDtStr} from '../external';
 import {
   SpawnAndTryIpcResponse,
@@ -26,13 +26,6 @@ const defaultTsNodeOptions: TsNodeOptions = {
   '-r': null,
   '--project': null,
 };
-
-function isEsmPackage(filePath: string): boolean {
-  const pkgPath = findClosestFile(path.dirname(filePath), 'package.json');
-  if (!pkgPath) return false;
-  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
-  return pkg.type === 'module';
-}
 
 export function getTsNodeParams(
   tsFilePath: string,
