@@ -1,6 +1,7 @@
 import path from 'path';
-import {runTargetScriptOnNode} from '../../on-node/run-target-script';
-import {logColorful} from '../../../../log';
+import assert from 'assert';
+import {runTargetScriptOnNode} from '../run-node-script';
+import {logColorful} from '../../../log';
 
 export async function runTsFileExport() {
   const tsScript = path.join(__dirname, 'scripts/test.ts');
@@ -15,12 +16,18 @@ export async function runTsFileExportWithParam() {
     funcName: 'add1',
     funcParams: [12],
   });
+  assert(result === 13);
   logColorful({}, result);
 }
 // runTsFileExportWithParam();
 
 export async function runJsFileExport() {
   const tsScript = path.join(__dirname, 'scripts/test.js');
-  const result = await runTargetScriptOnNode(tsScript, {runExportedFunc: true});
+  const result = await runTargetScriptOnNode(tsScript, {
+    runExportedFunc: true,
+    funcName: 'add2',
+    funcParams: [12],
+  });
+  assert(result === 14);
   logColorful({}, result);
 }

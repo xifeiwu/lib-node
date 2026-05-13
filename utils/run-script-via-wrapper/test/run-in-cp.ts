@@ -1,7 +1,7 @@
 import path from 'path';
-import {runScriptInCP} from '../../main';
-import {logColorful} from '../../../../log';
-import {NodeCpWrapScriptOptions} from '../../types';
+import {runScriptInCP} from '../main';
+import {logColorful} from '../../../log';
+import {NodeCpWrapScriptOptions} from '../types';
 
 export async function testRunScriptExportInCP() {
   const scriptPath = path.join(__dirname, 'scripts/test.ts');

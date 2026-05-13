@@ -1,4 +1,4 @@
-# run-script-in-cp
+# run-script-via-wrapper
 
 ## Design
 

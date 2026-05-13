@@ -106,7 +106,7 @@ This provides a single point of control for all external dependencies.
 │   ├── select.ts
 │   ├── cp-script/                  #   child-process script utilities
 │   ├── exec/                       #   diff-patch
-│   ├── run-script-in-cp/            #   script runner (on-node)
+│   ├── run-script-via-wrapper/       #   script runner (run-export)
 │   └── write/                      #   log/snapshot writers
 │
 │── Layer 3 — Feature Libraries
