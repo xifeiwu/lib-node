@@ -268,7 +268,7 @@ export async function spawnScriptAndTryIpc<CpConfig extends Serializable = any, 
 /** Default stdio for detached spawn: no inherited tty, IPC for optional handshake (same idea as process-manager detached mode). */
 const DETACHED_SPAWN_STDIO: Array<'ignore' | 'ipc'> = ['ignore', 'ignore', 'ignore', 'ipc'];
 
-function prepareSpawnConfigForDetachedMode<CpConfig>(
+function transferSpawnConfigToDetachedMode<CpConfig>(
   spawnConfig: SpawnConfig<CpConfig>
 ): SpawnConfig<CpConfig> {
   const config = {...spawnConfig};
@@ -310,7 +310,7 @@ function prepareSpawnConfigForDetachedMode<CpConfig>(
 export async function spwanInDetachedMode<CpConfig extends Serializable = any, ResponseFromCp = any>(
   config: SpawnConfig<CpConfig>
 ): Promise<SpawnAndTryIpcResponse<ResponseFromCp> & {finalSpawnConfig: SpawnConfig<CpConfig>}> {
-  const finalConfig = prepareSpawnConfigForDetachedMode(config);
+  const finalConfig = transferSpawnConfigToDetachedMode(config);
   const result = await spawnAndTryIpc<CpConfig, ResponseFromCp>(finalConfig);
   const {childProcess} = result;
   childProcess.disconnect?.();
