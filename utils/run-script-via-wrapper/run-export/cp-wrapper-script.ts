@@ -75,6 +75,14 @@ export async function start() {
     console.log(TAG);
     console.log(result);
     console.log('------');
+    if (process.connected && process.send) {
+      /** Child process will exit by the error EPipe if the error is not catched here */
+      process.send(result, err => {
+        if (err) {
+          console.log(err);
+        }
+      });
+    }
   } catch (err) {
     console.log(`${TAG} catch Error:`);
     logColorful({color: 'red'}, err);
