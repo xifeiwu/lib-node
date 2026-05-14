@@ -30,7 +30,10 @@ import {mergeHttpHeaders} from '../service';
 process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
 
 export interface MergeHttpRequestOptionsOptions {
+  /** ignore null or undefined values of second options */
   ignoreNullable?: boolean;
+  /** ignore origin for second options, when there is origin exist in first options */
+  ingoreOrigin?: boolean;
 }
 
 function mergeTwoHttpRequestOptions(
@@ -41,21 +44,31 @@ function mergeTwoHttpRequestOptions(
   if (!second) {
     return first;
   }
-  const {headers: headers1 = {}, ...restOptions1} = first;
-  const {headers: headers2, ...restOptions2} = second;
+  const {href, origin, headers: headers1 = {}, ...restOptions1} = first;
+  const {href: href2, origin: origin2, headers: headers2 = {}, ...restOptions2} = second;
   const mergedHeaders = mergeHttpHeaders(headers1, headers2, options);
-  return {
+  const result: HttpRequestOptions = {
     ...restOptions1,
     ...(options?.ignoreNullable ? omitNullable(restOptions2) : restOptions2),
     headers: mergedHeaders,
   };
+  /** special merge for origin and href */
+  const mergedOrigin = options?.ingoreOrigin && origin ? origin : origin2;
+  const mergedHref = options?.ingoreOrigin && href ? href : href2;
+  if (mergedOrigin) {
+    result.origin = mergedOrigin;
+  }
+  if (mergedHref) {
+    result.href = mergedHref;
+  }
+  return result;
 }
 
 function isMergeOptions(
   options: HttpRequestOptions | MergeHttpRequestOptionsOptions
 ): options is MergeHttpRequestOptionsOptions {
   const keys = Object.keys(options ?? {});
-  return keys.length > 0 && keys.every(key => key === 'ignoreNullable');
+  return keys.length > 0 && keys.some(key => ['ignoreNullable', 'ingoreOrigin'].includes(key));
 }
 
 export function mergeHttpRequestOptions(
