@@ -1,8 +1,10 @@
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import {FilePathSegement} from './types';
 import {formatDate, getDtStrInFormat} from './external';
 import {isFileExist} from './fs';
+import {isMapIterator} from 'util/types';
 
 export function parseBasename(basename: string) {
   const extname = path.extname(basename);
@@ -165,4 +167,47 @@ export function getPreferredFileByExt(
     }
   }
   return filePath;
+}
+
+export function expandHome(inputPath: string) {
+  if (inputPath === '~') {
+    return os.homedir();
+  }
+  if (inputPath.startsWith('~/')) {
+    return path.join(os.homedir(), inputPath.slice(2));
+  }
+  return inputPath;
+}
+
+/**
+ * @returns if filePath is not in rootDir, return undefined, else return relative path to rootDir
+ */
+function getRelativePathInRoot(rootDir: string, filePath: string): string | undefined {
+  const relativePath = path.relative(path.resolve(rootDir), path.resolve(filePath));
+  if (!relativePath || relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
+    return undefined;
+  }
+  return relativePath;
+}
+
+/**
+ * get absolute path and relative path from a path
+ * @param path may be absolute path or relative path
+ * @param rootDir
+ * @returns
+ */
+export function resolvePathInRoot(rootDir: string, filePath: string) {
+  rootDir = expandHome(rootDir);
+  filePath = expandHome(filePath);
+  if (path.isAbsolute(filePath)) {
+    return {
+      fullpath: filePath,
+      relativePath: getRelativePathInRoot(rootDir, filePath),
+    };
+  } else {
+    return {
+      fullpath: path.join(rootDir, filePath),
+      relativePath: filePath,
+    };
+  }
 }

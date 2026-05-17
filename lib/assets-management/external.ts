@@ -37,4 +37,5 @@ export {
   convertObjectToCjsExport,
   isInSameDevice,
   selectOption,
+  resolvePathInRoot,
 } from '../../index';

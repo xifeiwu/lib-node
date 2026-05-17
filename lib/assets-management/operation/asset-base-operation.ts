@@ -2,47 +2,65 @@ import fs from 'fs';
 import path from 'path';
 import {AssetInfoFull, MetaHandlers} from '../types';
 import {diffAssets, getFullAssetInfo, getPartialAssetInfo} from '../service';
-import {removeFile, makeSureDirExistForFile} from '../external';
-
-function getRelativePathInRoot(rootDir: string, filePath: string): string | undefined {
-  const relativePath = path.relative(path.resolve(rootDir), path.resolve(filePath));
-  if (!relativePath || relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
-    return undefined;
-  }
-  return relativePath;
-}
+import {removeFile, makeSureDirExistForFile, resolvePathInRoot, goOnOrNot} from '../external';
 
 /**
- * Add files from external paths into rootDir and create meta entries
+ * Add files into rootDir and create meta entries.
+ * - External source: copy the file and calculate full asset info.
+ * - Internal source with no existing meta: copy the file and calculate full asset info.
+ * - Internal source with matching partial info: reuse existing sha1/shortId to avoid hashing again.
+ * - Internal source with changed partial info: calculate full asset info for the target file.
  * @param metaHandlers
  * @param files - list of { sourcePath: absolute path of source file, relativePath: target relative path in rootDir }
  */
-export async function addAssetMeta(
+export async function addAsset(
   metaHandlers: MetaHandlers,
-  files: {sourcePath: string; relativePath: string}[]
+  files: {sourcePath: string; toRelativePath: string}[],
+  options?: {
+    overwrite?: boolean;
+  }
 ) {
   const {rootDir} = metaHandlers;
+  const {overwrite = false} = options ?? {};
   const added: AssetInfoFull[] = [];
-  for (const {sourcePath, relativePath} of files) {
-    const toPath = path.join(rootDir, relativePath);
-    const sourceRelativePath = getRelativePathInRoot(rootDir, sourcePath);
+  for (const file of files) {
+    const {fullpath: sourcePath, relativePath: sourceRelativePath} = resolvePathInRoot(
+      rootDir,
+      file.sourcePath
+    );
+    const {fullpath: toPath, relativePath: toRelativePath} = resolvePathInRoot(rootDir, file.toRelativePath);
+    if (!fs.existsSync(sourcePath)) {
+      throw new Error(`source file not exist: ${sourcePath}`);
+    }
+    if (!toRelativePath) {
+      throw new Error(
+        `target path must be relative path in rootDir: ${rootDir}, but ${toRelativePath} is not.`
+      );
+    }
+    if (!overwrite && fs.existsSync(toPath)) {
+      if (
+        !goOnOrNot({
+          tips: [`target file already exist: ${toPath}`, `overwrite?`],
+          defaultValue: false,
+        })
+      ) {
+        continue;
+      }
+    }
     let info: AssetInfoFull;
-
     makeSureDirExistForFile(toPath);
 
-    if (!sourceRelativePath) {
+    if (path.isAbsolute(sourcePath)) {
       fs.copyFileSync(sourcePath, toPath);
-      info = await getFullAssetInfo({rootDir, relativePath});
+      info = await getFullAssetInfo({rootDir, relativePath: toRelativePath});
     } else {
       const [currentInfo] = await metaHandlers.findItems({relativePath: sourceRelativePath});
-      const resolvedSourcePath = path.resolve(sourcePath);
-      const resolvedToPath = path.resolve(toPath);
-      if (resolvedSourcePath !== resolvedToPath) {
+      if (sourcePath !== toPath) {
         fs.copyFileSync(sourcePath, toPath);
       }
 
       if (!currentInfo) {
-        info = await getFullAssetInfo({rootDir, relativePath});
+        info = await getFullAssetInfo({rootDir, relativePath: toRelativePath});
       } else {
         const sourcePartialInfo = await getPartialAssetInfo({rootDir, relativePath: sourceRelativePath});
         if (
@@ -53,9 +71,9 @@ export async function addAssetMeta(
             'modifyDate',
           ])
         ) {
-          info = await getFullAssetInfo({rootDir, relativePath});
+          info = await getFullAssetInfo({rootDir, relativePath: toRelativePath});
         } else {
-          const targetPartialInfo = await getPartialAssetInfo({rootDir, relativePath});
+          const targetPartialInfo = await getPartialAssetInfo({rootDir, relativePath: toRelativePath});
           info = {
             ...targetPartialInfo,
             sha1: currentInfo.sha1,
@@ -71,45 +89,27 @@ export async function addAssetMeta(
   return added;
 }
 
-/**
- * Copy files within the same rootDir to new paths and create meta entries
- * @param metaHandlers
- * @param files - list of { fromRelativePath, toRelativePath }
- */
-export async function copyAssetMeta(
-  metaHandlers: MetaHandlers,
-  files: {fromRelativePath: string; toRelativePath: string}[]
-) {
-  const {rootDir} = metaHandlers;
-  const copied: AssetInfoFull[] = [];
-  for (const {fromRelativePath, toRelativePath} of files) {
-    const fromPath = path.join(rootDir, fromRelativePath);
-    const toPath = path.join(rootDir, toRelativePath);
-    makeSureDirExistForFile(toPath);
-    fs.copyFileSync(fromPath, toPath);
-    const fromInfoList = await metaHandlers.findItems({relativePath: fromRelativePath});
-    const fromInfo = fromInfoList[0];
-    const info: AssetInfoFull = {
-      ...(await getPartialAssetInfo({rootDir, relativePath: toRelativePath})),
-      sha1: fromInfo?.sha1,
-      shortId: fromInfo?.shortId,
-    } as AssetInfoFull;
-    await metaHandlers.createItem(info);
-    copied.push(info);
+function resolveDeletablePathInRoot(rootDir: string, filePath: string) {
+  const {fullpath, relativePath} = resolvePathInRoot(rootDir, filePath);
+  if (!relativePath) {
+    throw new Error(`filePath must be relative path in rootDir: ${rootDir}, but ${filePath} is not.`);
   }
-  return copied;
+  if (!fs.existsSync(fullpath)) {
+    throw new Error(`filePath not exist: ${fullpath}`);
+  }
+  return {fullpath, relativePath};
 }
 
 /**
  * Delete files from rootDir and remove meta entries
  * @param metaHandlers
- * @param relativePaths - list of relative paths to delete
+ * @param files - list of relative paths to delete
  */
-export async function deleteAssetMeta(metaHandlers: MetaHandlers, relativePaths: string[]) {
+export async function deleteAssetMeta(metaHandlers: MetaHandlers, files: string[]) {
   const {rootDir} = metaHandlers;
-  for (const relativePath of relativePaths) {
-    const filePath = path.join(rootDir, relativePath);
-    removeFile(filePath);
+  const resolvedPath = files.map(filePath => resolveDeletablePathInRoot(rootDir, filePath));
+  for (const {fullpath} of resolvedPath) {
+    removeFile(fullpath);
   }
-  await metaHandlers.removeItems(relativePaths);
+  await metaHandlers.removeItems(resolvedPath.map(it => it.relativePath));
 }

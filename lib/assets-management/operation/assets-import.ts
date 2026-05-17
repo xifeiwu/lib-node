@@ -12,7 +12,7 @@ import {
   formatDt,
 } from '../external';
 import {DIR_ASSET_MANAGE_TMP_DIR, FILE_SUFFIX_DT_FORMAT} from '../service';
-import {addAssetMeta} from './asset-base-operation';
+import {addAsset} from './asset-base-operation';
 import {getFileMetaHandler} from '../service';
 
 export async function importAssetsByMeta(
@@ -78,7 +78,7 @@ export async function importAssetsByMeta(
     const {relativePath} = assetInfo;
     const sourcePath = path.join(fromMetaHandlers.rootDir, relativePath);
     const targetRelativePath = path.join(newAssetsDirRelativePath, relativePath);
-    await addAssetMeta(toMetaHandlers, [{sourcePath, relativePath: targetRelativePath}]);
+    await addAsset(toMetaHandlers, [{sourcePath, toRelativePath: targetRelativePath}]);
     copiedSize += assetInfo.size;
     copiedCount++;
     console.log(
@@ -152,7 +152,7 @@ export async function importAssets(
         continue;
       }
       const relativePath = path.basename(fullPath);
-      const result = await addAssetMeta(toMetaHandlers, [{sourcePath: fullPath, relativePath}]);
+      const result = await addAsset(toMetaHandlers, [{sourcePath: fullPath, toRelativePath: relativePath}]);
       for (const info of result) {
         mergeIntoSha1Map(info);
       }
