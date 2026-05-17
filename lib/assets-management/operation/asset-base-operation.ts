@@ -1,8 +1,16 @@
 import fs from 'fs';
 import path from 'path';
 import {AssetInfoFull, MetaHandlers} from '../types';
-import {getFullAssetInfo, getPartialAssetInfo} from '../service';
+import {diffAssets, getFullAssetInfo, getPartialAssetInfo} from '../service';
 import {removeFile, makeSureDirExistForFile} from '../external';
+
+function getRelativePathInRoot(rootDir: string, filePath: string): string | undefined {
+  const relativePath = path.relative(path.resolve(rootDir), path.resolve(filePath));
+  if (!relativePath || relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
+    return undefined;
+  }
+  return relativePath;
+}
 
 /**
  * Add files from external paths into rootDir and create meta entries
@@ -17,9 +25,46 @@ export async function addAssetMeta(
   const added: AssetInfoFull[] = [];
   for (const {sourcePath, relativePath} of files) {
     const toPath = path.join(rootDir, relativePath);
+    const sourceRelativePath = getRelativePathInRoot(rootDir, sourcePath);
+    let info: AssetInfoFull;
+
     makeSureDirExistForFile(toPath);
-    fs.copyFileSync(sourcePath, toPath);
-    const info = await getFullAssetInfo({rootDir, relativePath});
+
+    if (!sourceRelativePath) {
+      fs.copyFileSync(sourcePath, toPath);
+      info = await getFullAssetInfo({rootDir, relativePath});
+    } else {
+      const [currentInfo] = await metaHandlers.findItems({relativePath: sourceRelativePath});
+      const resolvedSourcePath = path.resolve(sourcePath);
+      const resolvedToPath = path.resolve(toPath);
+      if (resolvedSourcePath !== resolvedToPath) {
+        fs.copyFileSync(sourcePath, toPath);
+      }
+
+      if (!currentInfo) {
+        info = await getFullAssetInfo({rootDir, relativePath});
+      } else {
+        const sourcePartialInfo = await getPartialAssetInfo({rootDir, relativePath: sourceRelativePath});
+        if (
+          diffAssets(sourcePartialInfo as AssetInfoFull, currentInfo, [
+            'relativePath',
+            'extname',
+            'size',
+            'modifyDate',
+          ])
+        ) {
+          info = await getFullAssetInfo({rootDir, relativePath});
+        } else {
+          const targetPartialInfo = await getPartialAssetInfo({rootDir, relativePath});
+          info = {
+            ...targetPartialInfo,
+            sha1: currentInfo.sha1,
+            shortId: currentInfo.shortId,
+          } as AssetInfoFull;
+        }
+      }
+    }
+
     await metaHandlers.createItem(info);
     added.push(info);
   }
