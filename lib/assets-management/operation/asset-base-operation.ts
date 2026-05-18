@@ -136,15 +136,29 @@ function resolveDeletablePathInRoot(rootDir: string, filePath: string) {
 }
 
 /**
- * Delete files from rootDir and remove meta entries
+ * Delete files or folders from rootDir and remove meta entries.
+ * When a path is a folder, all files within it are removed from meta and the folder is deleted.
  * @param metaHandlers
- * @param files - list of relative paths to delete
+ * @param pathList - list of relative paths (files or folders) to delete
  */
-export async function deleteAsset(metaHandlers: MetaHandlers, files: string[]) {
+export async function deleteAsset(metaHandlers: MetaHandlers, pathList: string[]) {
   const {rootDir} = metaHandlers;
-  const resolvedPath = files.map(filePath => resolveDeletablePathInRoot(rootDir, filePath));
-  for (const {fullpath} of resolvedPath) {
+  const allRelativePaths: string[] = [];
+  const pathsToDelete: string[] = [];
+
+  for (const filePath of pathList) {
+    const {fullpath, relativePath} = resolveDeletablePathInRoot(rootDir, filePath);
+    if (fs.statSync(fullpath).isDirectory()) {
+      const fileList = getFileList(fullpath);
+      allRelativePaths.push(...fileList.map(f => path.join(relativePath, f)));
+    } else {
+      allRelativePaths.push(relativePath);
+    }
+    pathsToDelete.push(fullpath);
+  }
+
+  for (const fullpath of pathsToDelete) {
     removeFile(fullpath);
   }
-  await metaHandlers.removeItems(resolvedPath.map(it => it.relativePath));
+  await metaHandlers.removeItems(allRelativePaths);
 }
