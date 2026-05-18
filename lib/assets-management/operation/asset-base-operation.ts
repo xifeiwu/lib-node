@@ -124,13 +124,13 @@ export async function addAsset(
   return added;
 }
 
-function resolveDeletablePathInRoot(rootDir: string, filePath: string) {
+function resolveInternalPath(rootDir: string, filePath: string, label: string) {
   const {fullpath, relativePath} = resolvePathInRoot(rootDir, filePath);
   if (!relativePath) {
-    throw new Error(`filePath must be relative path in rootDir: ${rootDir}, but ${filePath} is not.`);
+    throw new Error(`${label} must be relative path in rootDir: ${rootDir}, but ${filePath} is not.`);
   }
   if (!fs.existsSync(fullpath)) {
-    throw new Error(`filePath not exist: ${fullpath}`);
+    throw new Error(`${label} not exist: ${fullpath}`);
   }
   return {fullpath, relativePath};
 }
@@ -147,7 +147,7 @@ export async function deleteAsset(metaHandlers: MetaHandlers, pathList: string[]
   const pathsToDelete: string[] = [];
 
   for (const filePath of pathList) {
-    const {fullpath, relativePath} = resolveDeletablePathInRoot(rootDir, filePath);
+    const {fullpath, relativePath} = resolveInternalPath(rootDir, filePath, 'filePath');
     if (fs.statSync(fullpath).isDirectory()) {
       const fileList = getFileList(fullpath);
       allRelativePaths.push(...fileList.map(f => path.join(relativePath, f)));
@@ -161,4 +161,47 @@ export async function deleteAsset(metaHandlers: MetaHandlers, pathList: string[]
     removeFile(fullpath);
   }
   await metaHandlers.removeItems(allRelativePaths);
+}
+
+/**
+ * Copy files or folders within rootDir and create meta entries for the targets.
+ * Both sourcePath and targetPath must be relative paths within rootDir.
+ * Delegates to addAsset after validating source paths are internal.
+ * @param metaHandlers
+ * @param pathList - list of { sourcePath, targetPath } relative to rootDir
+ */
+export async function copyAsset(
+  metaHandlers: MetaHandlers,
+  pathList: {sourcePath: string; targetPath: string}[],
+  options?: {overwrite?: boolean}
+) {
+  const {rootDir} = metaHandlers;
+  for (const {sourcePath} of pathList) {
+    resolveInternalPath(rootDir, sourcePath, 'sourcePath');
+  }
+  return addAsset(metaHandlers, pathList, options);
+}
+
+/**
+ * Move files or folders within rootDir and update meta entries.
+ * Both sourcePath and targetPath must be relative paths within rootDir.
+ * Delegates to addAsset (copy + create meta) then deleteAsset (remove source + remove meta).
+ * @param metaHandlers
+ * @param pathList - list of { sourcePath, targetPath } relative to rootDir
+ */
+export async function moveAsset(
+  metaHandlers: MetaHandlers,
+  pathList: {sourcePath: string; targetPath: string}[],
+  options?: {overwrite?: boolean}
+) {
+  const {rootDir} = metaHandlers;
+  for (const {sourcePath} of pathList) {
+    resolveInternalPath(rootDir, sourcePath, 'sourcePath');
+  }
+  const added = await addAsset(metaHandlers, pathList, options);
+  await deleteAsset(
+    metaHandlers,
+    pathList.map(it => it.sourcePath)
+  );
+  return added;
 }
