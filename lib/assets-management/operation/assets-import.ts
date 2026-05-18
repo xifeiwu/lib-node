@@ -9,7 +9,7 @@ import {
   convertObjectToCjsExport,
   writeFileSync,
   byteToWord,
-  formatDt,
+  toDtStr,
 } from '../external';
 import {DIR_ASSET_MANAGE_TMP_DIR, FILE_SUFFIX_DT_FORMAT} from '../service';
 import {addAsset} from './asset-base-operation';
@@ -25,7 +25,7 @@ export async function importAssetsByMeta(
   }
 ): Promise<MetaDiffForImportNew> {
   const {
-    newAssetsDir = `new-assets-${formatDt('yyyy-MM-ddThh-mm-ss')}`,
+    newAssetsDir = `new-assets-${toDtStr(new Date(), 'yyyy-MM-ddThh-mm-ss')}`,
     outputDir = DIR_ASSET_MANAGE_TMP_DIR,
   } = options ?? {};
   const {rootDir: rootDir1} = toMetaHandlers;
@@ -78,7 +78,7 @@ export async function importAssetsByMeta(
     const {relativePath} = assetInfo;
     const sourcePath = path.join(fromMetaHandlers.rootDir, relativePath);
     const targetRelativePath = path.join(newAssetsDirRelativePath, relativePath);
-    await addAsset(toMetaHandlers, [{sourcePath, toRelativePath: targetRelativePath}]);
+    await addAsset(toMetaHandlers, [{sourcePath, targetPath: targetRelativePath}]);
     copiedSize += assetInfo.size;
     copiedCount++;
     console.log(
@@ -152,7 +152,7 @@ export async function importAssets(
         continue;
       }
       const relativePath = path.basename(fullPath);
-      const result = await addAsset(toMetaHandlers, [{sourcePath: fullPath, toRelativePath: relativePath}]);
+      const result = await addAsset(toMetaHandlers, [{sourcePath: fullPath, targetPath: relativePath}]);
       for (const info of result) {
         mergeIntoSha1Map(info);
       }

@@ -9,6 +9,7 @@ export {
   getSequentialBase64String,
   toDurationStr,
   formatDt,
+  toDtStr,
 } from '../../../js';
 export {byteToWord} from '../../../js/lib/humanize';
 export {
