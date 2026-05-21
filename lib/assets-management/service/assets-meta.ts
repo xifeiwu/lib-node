@@ -427,7 +427,7 @@ export function deserailizeTreeMeta(meta: AssetTree) {
 }
 
 /** Start: meta file persistence in dir level, may be deprecated */
-function getMetaDir(rootDir: string) {
+export function getMetaDir(rootDir: string) {
   const metaDir = path.join(rootDir, '.meta');
   makeSureDirExist(metaDir, {isDir: true});
   return metaDir;
@@ -435,7 +435,7 @@ function getMetaDir(rootDir: string) {
 
 function getDefaultMetaFilePath(rootDir: string) {
   const metaDir = getMetaDir(rootDir);
-  return path.resolve(metaDir, 'index.ts');
+  return path.resolve(metaDir, 'local.js');
 }
 
 export function readMetaFromDir(rootDir: string): AssetTreeMeta | undefined {
@@ -475,7 +475,7 @@ export function saveDirMeta(
     if (isNumber(maxBackupFileCnt) && maxBackupFileCnt > 0 && fs.existsSync(metaFile)) {
       fs.renameSync(metaFile, addDtSuffixToBareBasename(metaFile, {dtFormat: '-' + FILE_SUFFIX_DT_FORMAT}));
       /** remove the extral backup file by date */
-      const reg = new RegExp(`^index-[\\dT-]+\\.ts$`);
+      const reg = new RegExp(`^index-[\\dT-]+\\.js$`);
       const backupFiles = getFileList(getMetaDir(rootDir), {fileFilter: ({basename}) => reg.test(basename)});
       if (backupFiles.length > maxBackupFileCnt) {
         backupFiles.sort((a, b) => fs.statSync(a).mtime.getTime() - fs.statSync(b).mtime.getTime());
