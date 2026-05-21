@@ -69,3 +69,16 @@ export function findModulePath(moduleName: string, currentPath: string) {
   const fullPath = pathList.map(it => path.resolve(it, moduleName)).find(it => fs.existsSync(it));
   return fullPath;
 }
+
+/** If path is a symlink, return relativePath of the link target (for index parsing). */
+function resolveLinkTarget(linkFilePath: string): string {
+  const stat = getFileStat(linkFilePath);
+  if (!stat?.isSymbolicLink()) {
+    return linkFilePath;
+  }
+  const linkTarget = fs.readlinkSync(linkFilePath);
+  const resolvedFullPath = path.isAbsolute(linkTarget)
+    ? linkTarget
+    : path.resolve(path.dirname(linkFilePath), linkTarget);
+  return resolvedFullPath;
+}
