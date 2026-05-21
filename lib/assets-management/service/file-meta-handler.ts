@@ -91,12 +91,17 @@ export const getFileMetaHandler = (
         await resetMeta({getAssetInfoParams, goThroughDirOptions});
       }
     }
-
-    async function getMeta(options?: GetDirAssetOptions) {
+    async function initOrResetMeta(options?: GetDirAssetOptions) {
       if (reset) {
         await resetMeta(options ?? initMetaOptions);
       } else {
         await initMeta(options ?? initMetaOptions);
+      }
+    }
+
+    async function getMeta(options?: GetDirAssetOptions) {
+      if (!meta) {
+        throw new Error(`Can't get meta, because meta is not initialized!`);
       }
       return toAssetListMeta({...meta, rootDir});
     }
@@ -181,7 +186,7 @@ export const getFileMetaHandler = (
       return results;
     }
 
-    await getMeta();
+    await initOrResetMeta();
     const handlers: MetaHandlers = {
       rootDir,
       getKey,
