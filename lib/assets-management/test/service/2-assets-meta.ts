@@ -1,4 +1,3 @@
-import path from 'path';
 import {
   createDuplicateFile,
   createNewFiles,
@@ -12,17 +11,16 @@ import {
   getAssetFullInfoTreeMeta,
   isSameAssetMeta,
   toAssetTreeMeta,
-} from './assets-meta';
+} from '../service/assets-meta';
 import {logColorful} from '../external';
-
-const rootDir = path.join(__dirname, '.tmp');
+import {SOURCE_DIR} from './serivice';
 
 /**
  * Get dir asset meta
  * asset info of link file can be calculated from the source file
  */
 export async function runGetDirAssetMeta() {
-  initSampleAssets(rootDir);
+  const rootDir = SOURCE_DIR;
   const assetInfoTree = await getAssetFullInfoTreeMeta(rootDir, {
     getAssetInfoParams: {
       reCalcId: true,

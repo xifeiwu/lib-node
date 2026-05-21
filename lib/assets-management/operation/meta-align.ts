@@ -5,6 +5,12 @@ import {diffMetaForSyncUp} from '../service';
 import {goOnOrNot, addDtSuffixToBareBasename, convertObjectToCjsExport, writeFileSync} from '../external';
 import {DIR_ASSET_MANAGE_TMP_DIR, FILE_SUFFIX_DT_FORMAT} from '../service';
 
+interface AlignTwoMetasOptions {
+  outputDir?: string;
+  /** Skip confirmation prompt (e.g. after CLI already confirmed). */
+  runDirectly?: boolean;
+}
+
 function getActions(stateChange: MetaDiffForSyncUp) {
   const {added = [], copied = [], moved = [], modified = [], deleted = [], isNeedAction} = stateChange;
   const toAdd: AssetInfoFull[] = [...added, ...copied.map(it => it.to), ...moved.map(it => it.to)];
@@ -20,14 +26,10 @@ function getActions(stateChange: MetaDiffForSyncUp) {
  * @param options
  * @returns two metas are the same or not
  */
-export async function alignTwoMetas(
+async function alignTwoMetas(
   targetMetaHandlers: MetaHandlers,
   sourceMeta: AssetMeta,
-  options?: {
-    outputDir?: string;
-    /** Skip confirmation prompt (e.g. after CLI already confirmed). */
-    runDirectly?: boolean;
-  }
+  options?: AlignTwoMetasOptions
 ): Promise<boolean> {
   const targetMeta = await targetMetaHandlers.getMeta();
   if (targetMeta.rootDir !== sourceMeta.rootDir) {
@@ -74,12 +76,7 @@ export async function alignTwoMetas(
  * @param options
  * @returns
  */
-export async function alignMetaWithAssets(
-  metaHandlers: MetaHandlers,
-  options?: {
-    outputDir?: string;
-  }
-) {
+export async function alignMetaWithAssets(metaHandlers: MetaHandlers, options?: AlignTwoMetasOptions) {
   const {rootDir} = metaHandlers;
   /** only get partial asset info to reduce cost */
   const fromMeta = await getAssetPartialInfoTreeMeta(rootDir);

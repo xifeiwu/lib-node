@@ -1,5 +1,6 @@
+import fs from 'fs';
 import path from 'path';
-import {getFileInfoList} from '../external';
+import {getFileInfoList, getFileStat} from '../external';
 import {BaseOptions, FileOptions, Folder, FolderOptions} from './types';
 
 export const DEFAULT_ROOT_DIR = path.join(__dirname, '.tmp');
@@ -103,18 +104,39 @@ export function getNextDuplicateIndex(options: FolderOptions & {referIndex: numb
 }
 
 const REG_RELATIVE_PATH = /^([abc])\/([0-9]+).txt$/;
+
+/** If path is a symlink, return relativePath of the link target (for index parsing). */
+function resolveRelativePathForIndex(rootDir: string, relativePath: string): string {
+  const fullPath = path.join(rootDir, relativePath);
+  const stat = getFileStat(fullPath);
+  if (!stat?.isSymbolicLink()) {
+    return relativePath;
+  }
+  const linkTarget = fs.readlinkSync(fullPath);
+  const resolvedFullPath = path.isAbsolute(linkTarget)
+    ? linkTarget
+    : path.resolve(path.dirname(fullPath), linkTarget);
+  if (!fs.existsSync(resolvedFullPath)) {
+    throw new Error(`Symlink target not found: ${relativePath} -> ${linkTarget}`);
+  }
+  return path.relative(rootDir, resolvedFullPath);
+}
+
 export function syncUpExistingFiles(options: BaseOptions = {}) {
   const {rootDir = DEFAULT_ROOT_DIR} = options;
   const existingFiles = getFileIndex({rootDir});
-  const fileInfoList = getFileInfoList(rootDir);
+  const fileInfoList = getFileInfoList(rootDir, {includeDir: false});
   for (const fileInfo of fileInfoList) {
-    const {relativePath} = fileInfo;
+    const relativePath = resolveRelativePathForIndex(rootDir, fileInfo.relativePath);
     const execResult = REG_RELATIVE_PATH.exec(relativePath);
     if (!execResult) {
       throw new Error(`Not match relativePath reg: ${relativePath}`);
     }
     const [_, folder, size] = execResult;
-    existingFiles[folder].push(parseInt(size, 10));
+    const index = parseInt(size, 10);
+    if (!existingFiles[folder].includes(index)) {
+      existingFiles[folder].push(index);
+    }
   }
   return existingFiles;
 }

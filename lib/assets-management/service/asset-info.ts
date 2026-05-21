@@ -40,8 +40,8 @@ function getAssetInfoFromStat(stat: fs.Stats): Pick<AssetInfoPartial, 'changeDat
 
 /**
  * Get info from asset, try to avoid sha1 calculation as much as possible
- * 1. only cal sha1 when reCalcId is true
- * 2. only cal shortId when shortIdFromName is not exist
+ * 1. calculate sha1 only when reCalcId is true, by default will not calculate sha1 in consideration of cost
+ * 2. calculate shortId only when shortIdFromName is not exist
  */
 export async function getAssetInfo(options?: GetAssetInfoParams): Promise<AssetInfoPartial> {
   const {relativePath, rootDir, reCalcId, appendShortId, logging} = options ?? {};
