@@ -41,9 +41,8 @@ export async function handleAssetsSyncConnection(socket: Socket, config: AssetsS
       fs.mkdirSync(dir, {recursive: true});
     }
 
-    const getMetaHandlers = getFileMetaHandler();
-    const metaHandlers = await getMetaHandlers(dir);
-    const serverMeta = await metaHandlers.getMeta({resetIfNotExist: true});
+    const metaHandlers = await getFileMetaHandler({runDirectly: true})(dir);
+    const serverMeta = await metaHandlers.getMeta();
     await alignMetaWithAssets(metaHandlers);
 
     let diff: MetaDiffForSyncUp;

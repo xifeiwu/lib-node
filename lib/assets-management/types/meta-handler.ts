@@ -6,15 +6,22 @@ export interface CreateOrUpdateItemOptions {
   prevInfo?: Partial<AssetInfoFull>;
 }
 
-export interface GetMetaOptions extends GetDirAssetOptions {
+/**
+ * after get meta handler, we assume the meta is already been read by metaHandler
+ */
+export interface GetMetaHandlersOptions {
+  /** regenerate meta to override the existing one */
   reset?: boolean;
-  resetIfNotExist?: boolean;
+  /** skip confirmation prompt (e.g. after CLI already confirmed) */
+  runDirectly?: boolean;
+
+  initMetaOptions?: GetDirAssetOptions;
 }
 
 export interface MetaHandlers {
   rootDir: string;
   getKey: () => string;
-  getMeta: (options?: GetMetaOptions) => Promise<AssetListMeta>;
+  getMeta: (options?: GetDirAssetOptions) => Promise<AssetListMeta>;
   cleanUpMeta: () => Promise<boolean>;
   /**
    * handle items of asset meta, should persistent meta after each operation

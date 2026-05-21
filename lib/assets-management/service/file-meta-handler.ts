@@ -3,11 +3,11 @@ import {
   AssetInfoFull,
   GetMetaHandlers,
   GetDirAssetOptions,
-  GetMetaOptions,
   CreateOrUpdateItemOptions,
   MetaHandlers,
   AssetTree,
   AssetTreeMeta,
+  GetMetaHandlersOptions,
 } from '../types';
 import {
   assetInfoTreeToList,
@@ -29,12 +29,14 @@ import {goOnOrNot, removeFile} from '../external';
  * Rules:
  * 1. to avoid write meta file too often, default archive is false
  */
-export const getFileMetaHandler = (options?: {
-  metaFile: string;
-  maxBackupFileCnt?: number;
-  backUpInterval?: number;
-}) => {
-  const {metaFile, maxBackupFileCnt, backUpInterval} = options ?? {};
+export const getFileMetaHandler = (
+  options?: GetMetaHandlersOptions & {
+    metaFile?: string;
+    maxBackupFileCnt?: number;
+    backUpInterval?: number;
+  }
+) => {
+  const {metaFile, maxBackupFileCnt, backUpInterval, reset, runDirectly, initMetaOptions} = options ?? {};
   if (metaFile && !fs.existsSync(metaFile)) {
     throw new Error(`metaFile not exist: ${metaFile}`);
   }
@@ -67,7 +69,7 @@ export const getFileMetaHandler = (options?: {
       return result;
     }
 
-    async function initMeta(options?: GetDirAssetOptions, resetIfNotExist?: boolean) {
+    async function initMeta(options?: GetDirAssetOptions) {
       const {getAssetInfoParams = {}, goThroughDirOptions} = options ?? {};
       const result = metaFile ? readMetaFromFile(metaFile) : readMetaFromDir(rootDir);
       if (result) {
@@ -77,7 +79,7 @@ export const getFileMetaHandler = (options?: {
         updateMeta({newValue: result});
       } else {
         if (
-          resetIfNotExist !== true &&
+          runDirectly !== true &&
           !(await goOnOrNot({
             tips: [`Meta not found for dir: ${rootDir}, do you want to create it now?`],
             style: {color: 'red'},
@@ -90,12 +92,11 @@ export const getFileMetaHandler = (options?: {
       }
     }
 
-    async function getMeta(options?: GetMetaOptions) {
-      const {reset, resetIfNotExist, ...dirAssetOptions} = options ?? {};
+    async function getMeta(options?: GetDirAssetOptions) {
       if (reset) {
-        await resetMeta(dirAssetOptions);
+        await resetMeta(options ?? initMetaOptions);
       } else {
-        await initMeta(dirAssetOptions, resetIfNotExist);
+        await initMeta(options ?? initMetaOptions);
       }
       return toAssetListMeta({...meta, rootDir});
     }
@@ -180,6 +181,7 @@ export const getFileMetaHandler = (options?: {
       return results;
     }
 
+    await getMeta();
     const handlers: MetaHandlers = {
       rootDir,
       getKey,
