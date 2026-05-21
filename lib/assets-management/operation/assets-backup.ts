@@ -16,49 +16,52 @@ import {
 import {DIR_ASSET_MANAGE_TMP_DIR, FILE_SUFFIX_DT_FORMAT} from '../service';
 
 export async function backupAssets(
-  toMetaHandlers: MetaHandlers,
-  fromMetaHandlers: MetaHandlers,
+  targetMetaHandlers: MetaHandlers,
+  sourceMetaHandlers: MetaHandlers,
   options?: {
     outputDir?: string;
+    runDirectly?: boolean;
   }
 ) {
-  const {rootDir: rootDir1} = toMetaHandlers;
-  const {rootDir: rootDir2} = fromMetaHandlers;
-  if (
-    !(await goOnOrNot({
-      tips: [`Will back up assets by meta?`, `from dir: ${rootDir2}`, `to dir: ${rootDir1}`],
-      defaultValue: true,
-    }))
-  ) {
-    return;
+  const {rootDir: rootDir1} = targetMetaHandlers;
+  const {rootDir: rootDir2} = sourceMetaHandlers;
+  if (!rootDir1 || !rootDir2) {
+    throw new Error(`source or target rootDir is empty!`);
   }
-  if (!rootDir1 || !rootDir2 || rootDir1 === rootDir2) {
-    throw new Error(`rootDir check fail!`);
+  if (rootDir1 === rootDir2) {
+    throw new Error(`rootDir should not be the same!`);
   }
 
-  const {outputDir = DIR_ASSET_MANAGE_TMP_DIR} = options ?? {};
-  const toMeta = await toMetaHandlers.getMeta();
-  const fromMeta = await fromMetaHandlers.getMeta();
-  const difference = await diffMetaForSyncUp(toMeta, fromMeta);
+  const targetMeta = await targetMetaHandlers.getMeta();
+  const sourceMeta = await sourceMetaHandlers.getMeta();
+  const difference = await diffMetaForSyncUp(targetMeta, sourceMeta);
   if (!difference.isNeedAction) {
     return true;
   }
 
-  const stateFile = addDtSuffixToBareBasename(path.join(outputDir, 'assets-assets-diff.js'), {
-    dtFormat: FILE_SUFFIX_DT_FORMAT,
-  });
-  writeFileSync(
-    stateFile,
-    convertObjectToCjsExport({difference: serializeMetaDiff(difference)}, {format: true})
-  );
-  if (
-    !(await goOnOrNot({
-      tips: [`state change is saved to file: ${stateFile}`, `Are you sure to apply state change above?`],
-      style: {color: 'yellow'},
-      defaultValue: true,
-    }))
-  ) {
-    return false;
+  /** save diff info to file and ask user to double confirm */
+  if (!options?.runDirectly) {
+    const {outputDir = DIR_ASSET_MANAGE_TMP_DIR} = options ?? {};
+    const stateFile = addDtSuffixToBareBasename(path.join(outputDir, 'assets-assets-diff.js'), {
+      dtFormat: FILE_SUFFIX_DT_FORMAT,
+    });
+    writeFileSync(
+      stateFile,
+      convertObjectToCjsExport({difference: serializeMetaDiff(difference)}, {format: true})
+    );
+    if (
+      !(await goOnOrNot({
+        tips: [
+          `backup assets from ${rootDir2} to ${rootDir1}`,
+          `state change is saved to file: ${stateFile}`,
+          `Are you sure to apply state change above?`,
+        ],
+        style: {color: 'yellow'},
+        defaultValue: true,
+      }))
+    ) {
+      return false;
+    }
   }
   const {added = [], copied = [], moved = [], modified = [], deleted = []} = difference;
   let copiedCount = 0;
@@ -66,24 +69,25 @@ export async function backupAssets(
   let copiedSize = 0;
   for (const assetInfo of added) {
     const {relativePath, sha1, shortId} = assetInfo;
-    const fromPath = path.join(fromMetaHandlers.rootDir, relativePath);
-    const toPath = path.join(toMetaHandlers.rootDir, relativePath);
-    makeSureDirExistForFile(toPath);
+    const sourcePath = path.join(sourceMetaHandlers.rootDir, relativePath);
+    const targetPath = path.join(targetMetaHandlers.rootDir, relativePath);
+    makeSureDirExistForFile(targetPath);
     console.log(
-      `[${++copiedCount}/${added.length}] copying [${byteToWord(assetInfo.size)}] from ${fromPath} to ${toPath}`
+      `[${++copiedCount}/${added.length}] copying [${byteToWord(assetInfo.size)}] from ${sourcePath} to ${targetPath}`
     );
-    fs.copyFileSync(fromPath, toPath);
+    fs.copyFileSync(sourcePath, targetPath);
     copiedSize += assetInfo.size;
     console.log(
       `copied size:${byteToWord(copiedSize)} / ${byteToWord(totalSize)} (${((copiedSize / totalSize) * 100).toFixed(2)}%)`
     );
-    await toMetaHandlers.createItem({
+    await targetMetaHandlers.createItem({
       sha1,
       shortId,
-      ...(await getPartialAssetInfo({rootDir: toMetaHandlers.rootDir, relativePath})),
+      ...(await getPartialAssetInfo({rootDir: targetMetaHandlers.rootDir, relativePath})),
     } as AssetInfoFull);
   }
-  const operationOnToDir = async ({
+
+  const operationOnTargetDir = async ({
     from,
     to,
     action,
@@ -94,38 +98,39 @@ export async function backupAssets(
   }) => {
     const {relativePath: fromRelativePath, sha1, shortId} = from;
     const {relativePath: toRelativePath} = to;
-    const fromPath = path.join(toMetaHandlers.rootDir, fromRelativePath);
-    const toPath = path.join(toMetaHandlers.rootDir, toRelativePath);
+    const fromPath = path.join(targetMetaHandlers.rootDir, fromRelativePath);
+    const toPath = path.join(targetMetaHandlers.rootDir, toRelativePath);
     makeSureDirExistForFile(toPath);
     if (action === 'copy') {
       makeSureDirExistForFile(toPath);
       fs.copyFileSync(fromPath, toPath);
-      await toMetaHandlers.createItem({
-        ...(await getPartialAssetInfo({rootDir: toMetaHandlers.rootDir, relativePath: toRelativePath})),
+      await targetMetaHandlers.createItem({
+        ...(await getPartialAssetInfo({rootDir: targetMetaHandlers.rootDir, relativePath: toRelativePath})),
         sha1,
         shortId,
       } as AssetInfoFull);
     } else if (action === 'move') {
       moveFile(fromPath, toPath);
-      await toMetaHandlers.createItem({
+      await targetMetaHandlers.createItem({
         sha1,
         shortId,
-        ...(await getPartialAssetInfo({rootDir: toMetaHandlers.rootDir, relativePath: toRelativePath})),
+        ...(await getPartialAssetInfo({rootDir: targetMetaHandlers.rootDir, relativePath: toRelativePath})),
       } as AssetInfoFull);
-      await toMetaHandlers.removeItem(fromRelativePath);
+      await targetMetaHandlers.removeItem(fromRelativePath);
     }
   };
+
   for (const assetInfo of [...copied, ...modified]) {
-    await operationOnToDir({from: assetInfo.from, to: assetInfo.to, action: 'copy'});
+    await operationOnTargetDir({from: assetInfo.from, to: assetInfo.to, action: 'copy'});
   }
   for (const assetInfo of moved) {
-    await operationOnToDir({from: assetInfo.from, to: assetInfo.to, action: 'move'});
+    await operationOnTargetDir({from: assetInfo.from, to: assetInfo.to, action: 'move'});
   }
   for (const assetInfo of deleted) {
     const {relativePath} = assetInfo;
-    const fromPath = path.join(toMetaHandlers.rootDir, relativePath);
+    const fromPath = path.join(targetMetaHandlers.rootDir, relativePath);
     removeFile(fromPath);
-    await toMetaHandlers.removeItem(relativePath);
+    await targetMetaHandlers.removeItem(relativePath);
   }
 
   return true;

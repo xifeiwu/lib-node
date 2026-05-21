@@ -89,4 +89,6 @@ External dependencies (via `external.ts`):
 
 - `modules/lib/net/koa/middleware/assets/` — TCP middleware wrapper for the remote sync server
 - `modules/lib/net/service/external.ts` — re-exports key functions for the net layer
-- `src/1-command/assets-sync.ts` — CLI wrapper for the remote sync client
+- `src/assets-management/` — CLI and multi meta-source orchestration (depends on `modules/lib/db`)
+
+CLI / meta-source are **not** in this library (no `modules/lib/db` dependency here).

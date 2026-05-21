@@ -15,52 +15,56 @@ function getActions(stateChange: MetaDiffForSyncUp) {
 
 /**
  * align two metas of the same dir
- * @param metaHandlers
- * @param fromMeta
+ * @param targetMetaHandlers
+ * @param sourceMeta
  * @param options
  * @returns two metas are the same or not
  */
-async function alignTwoMetas(
-  metaHandlers: MetaHandlers,
-  fromMeta: AssetMeta,
+export async function alignTwoMetas(
+  targetMetaHandlers: MetaHandlers,
+  sourceMeta: AssetMeta,
   options?: {
     outputDir?: string;
+    /** Skip confirmation prompt (e.g. after CLI already confirmed). */
+    runDirectly?: boolean;
   }
 ): Promise<boolean> {
-  const {outputDir = DIR_ASSET_MANAGE_TMP_DIR} = options ?? {};
-  const toMeta = await metaHandlers.getMeta();
-  if (toMeta.rootDir !== fromMeta.rootDir) {
+  const targetMeta = await targetMetaHandlers.getMeta();
+  if (targetMeta.rootDir !== sourceMeta.rootDir) {
     throw new Error(`toMeta.rootDir should not be the same as fromMeta.rootDir`);
   }
-  const difference = await diffMetaForSyncUp(toMeta, fromMeta);
+  const difference = await diffMetaForSyncUp(targetMeta, sourceMeta);
   if (!difference.isNeedAction) {
     return true;
   }
+  const {outputDir = DIR_ASSET_MANAGE_TMP_DIR} = options ?? {};
   const action = getActions(difference);
-  const stateFile = addDtSuffixToBareBasename(path.join(outputDir, 'meta-meta-diff.js'), {
-    dtFormat: FILE_SUFFIX_DT_FORMAT,
-  });
-  writeFileSync(
-    stateFile,
-    convertObjectToCjsExport({difference: serializeMetaDiff(difference), action}, {format: true})
-  );
-  if (
-    !(await goOnOrNot({
-      tips: [
-        `Need to do meta-asset sync up for dir: ${toMeta.rootDir}`,
-        `state change is saved to file: ${stateFile}`,
-        `Are you sure to apply state change above?`,
-      ],
-      style: {color: 'yellow'},
-      defaultValue: true,
-    }))
-  ) {
-    return false;
+  if (!options?.runDirectly) {
+    const stateFile = addDtSuffixToBareBasename(path.join(outputDir, 'meta-meta-diff.js'), {
+      dtFormat: FILE_SUFFIX_DT_FORMAT,
+    });
+    writeFileSync(
+      stateFile,
+      convertObjectToCjsExport({difference: serializeMetaDiff(difference), action}, {format: true})
+    );
+    if (
+      !(await goOnOrNot({
+        tips: [
+          `Need to do meta-asset sync up for dir: ${targetMeta.rootDir}`,
+          `state change is saved to file: ${stateFile}`,
+          `Are you sure to apply state change above?`,
+        ],
+        style: {color: 'yellow'},
+        defaultValue: true,
+      }))
+    ) {
+      return false;
+    }
   }
   const {toAdd, toDelete, toModify} = action;
-  await metaHandlers.createItems(toAdd);
-  await metaHandlers.updateItems(toModify.map(it => ({info: it.to, prevInfo: it.from})));
-  await metaHandlers.removeItems(toDelete.map(it => it.relativePath));
+  await targetMetaHandlers.createItems(toAdd);
+  await targetMetaHandlers.updateItems(toModify.map(it => ({info: it.to, prevInfo: it.from})));
+  await targetMetaHandlers.removeItems(toDelete.map(it => it.relativePath));
   return false;
 }
 
