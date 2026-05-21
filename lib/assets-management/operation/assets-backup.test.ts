@@ -1,7 +1,7 @@
 import path from 'path';
 import {alignMetaWithAssets} from '.';
 import {getFileMetaHandler} from '../service';
-import {backupAssets} from './assets-backup';
+import {handleAssetsBackup} from './assets-backup';
 
 // const rootDir = '/Volumes/ssd_4t/z-movie';
 // const bkrootDir = '/Volumes/12T_APFS/z-movie';
@@ -16,5 +16,5 @@ export async function runBackupAssets() {
   const bkMetaHandlers = await getFileMetaHandler()(bkrootDir);
   await bkMetaHandlers.getMeta();
   await alignMetaWithAssets(bkMetaHandlers);
-  await backupAssets(bkMetaHandlers, metaHandlers);
+  await handleAssetsBackup(bkMetaHandlers, metaHandlers);
 }
