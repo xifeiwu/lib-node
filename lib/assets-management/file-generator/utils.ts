@@ -31,7 +31,7 @@ export function initSampleAssets(rootDir: string) {
  * update a file content
  * @param rootDir
  */
-export function updateSourceAssets(rootDir: string) {
+export function updateSampleAssets(rootDir: string) {
   const existingFiles = syncUpExistingFiles({rootDir});
   logColorful({}, existingFiles);
   /** create a new file a60 */

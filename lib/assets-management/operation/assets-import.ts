@@ -12,12 +12,12 @@ import {
   toDtStr,
 } from '../external';
 import {DIR_ASSET_MANAGE_TMP_DIR, FILE_SUFFIX_DT_FORMAT} from '../service';
-import {addAsset} from './asset-base-operation';
+import {addAsset} from './assets-operation';
 import {getFileMetaHandler} from '../service';
 
 export async function importAssetsByMeta(
-  toMetaHandlers: MetaHandlers,
-  fromMetaHandlers: MetaHandlers,
+  targetMetaHandlers: MetaHandlers,
+  sourceMetaHandlers: MetaHandlers,
   options?: {
     /** must be relative dir to toMetaHandlers.rootDir */
     newAssetsDir?: string;
@@ -28,11 +28,11 @@ export async function importAssetsByMeta(
     newAssetsDir = `new-assets-${toDtStr(new Date(), 'yyyy-MM-ddThh-mm-ss')}`,
     outputDir = DIR_ASSET_MANAGE_TMP_DIR,
   } = options ?? {};
-  const {rootDir: rootDir1} = toMetaHandlers;
-  const {rootDir: rootDir2} = fromMetaHandlers;
-  const newAssetsDirPath = path.resolve(toMetaHandlers.rootDir, newAssetsDir);
-  const newAssetsDirRelativePath = path.relative(toMetaHandlers.rootDir, newAssetsDirPath);
-  if (!newAssetsDirPath.startsWith(toMetaHandlers.rootDir)) {
+  const {rootDir: rootDir1} = targetMetaHandlers;
+  const {rootDir: rootDir2} = sourceMetaHandlers;
+  const newAssetsDirPath = path.resolve(targetMetaHandlers.rootDir, newAssetsDir);
+  const newAssetsDirRelativePath = path.relative(targetMetaHandlers.rootDir, newAssetsDirPath);
+  if (!newAssetsDirPath.startsWith(targetMetaHandlers.rootDir)) {
     throw new Error(`newAssetsDir should be a subdir of toMetaHandlers.rootDir`);
   }
   if (
@@ -47,9 +47,9 @@ export async function importAssetsByMeta(
     throw new Error(`rootDir check fail!`);
   }
 
-  const toMeta = await toMetaHandlers.getMeta();
-  const fromMeta = await fromMetaHandlers.getMeta();
-  const difference = await diffMetaForImportNew(toMeta, fromMeta);
+  const targetMeta = await targetMetaHandlers.getMeta();
+  const sourceMeta = await sourceMetaHandlers.getMeta();
+  const difference = await diffMetaForImportNew(targetMeta, sourceMeta);
   if (!difference.isNeedAction) {
     return difference;
   }
@@ -76,9 +76,9 @@ export async function importAssetsByMeta(
   let copiedCount = 0;
   for (const assetInfo of added) {
     const {relativePath} = assetInfo;
-    const sourcePath = path.join(fromMetaHandlers.rootDir, relativePath);
+    const sourcePath = path.join(sourceMetaHandlers.rootDir, relativePath);
     const targetRelativePath = path.join(newAssetsDirRelativePath, relativePath);
-    await addAsset(toMetaHandlers, [{sourcePath, targetPath: targetRelativePath}]);
+    await addAsset(targetMetaHandlers, [{sourcePath, targetPath: targetRelativePath}]);
     copiedSize += assetInfo.size;
     copiedCount++;
     console.log(

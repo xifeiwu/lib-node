@@ -12,6 +12,7 @@ import {
   isInSameDevice,
   selectOption,
   makeSureDirExist,
+  logColorful,
 } from '../external';
 import {DIR_ASSET_MANAGE_TMP_DIR, FILE_SUFFIX_DT_FORMAT} from '../service';
 
@@ -21,14 +22,15 @@ import {DIR_ASSET_MANAGE_TMP_DIR, FILE_SUFFIX_DT_FORMAT} from '../service';
  * @param options
  * @returns
  */
-export async function handleDuplicateFile(
+export async function handleAssetsDedupe(
   metaHandlers: MetaHandlers,
   options: {
-    /** solution to handle duplicate file */
-    solution?: 'short-name';
     /** move the file to delete to a folder first, to double confirm before completely remove the file  */
     dir4DeletedFile: string;
+    /** solution to handle duplicate file */
+    solution?: 'short-name';
     outputDir?: string;
+    runDirectly?: boolean;
   }
 ) {
   const rootDir = metaHandlers.rootDir;
@@ -54,21 +56,24 @@ export async function handleDuplicateFile(
   if (Object.keys(duplicateFiles).length === 0) {
     return true;
   }
-  const stateFile = addDtSuffixToBareBasename(path.join(outputDir, 'duplicate.js'), {
-    dtFormat: FILE_SUFFIX_DT_FORMAT,
-  });
-  writeFileSync(stateFile, convertObjectToCjsExport({duplicate: duplicateFiles}, {format: true}));
-  if (
-    !(await goOnOrNot({
-      tips: [
-        `Info of duplicate file is saved to file: ${stateFile}`,
-        `Do you want to remove duplicate file?`,
-      ],
-      style: {color: 'yellow'},
-      defaultValue: true,
-    }))
-  ) {
-    return false;
+  let stateFile: string;
+  if (options.runDirectly !== true) {
+    stateFile = addDtSuffixToBareBasename(path.join(outputDir, 'duplicate.js'), {
+      dtFormat: FILE_SUFFIX_DT_FORMAT,
+    });
+    writeFileSync(stateFile, convertObjectToCjsExport({duplicate: duplicateFiles}, {format: true}));
+    if (
+      !(await goOnOrNot({
+        tips: [
+          `Info of duplicate file is saved to file: ${stateFile}`,
+          `Do you want to remove duplicate file?`,
+        ],
+        style: {color: 'yellow'},
+        defaultValue: true,
+      }))
+    ) {
+      return false;
+    }
   }
   let deletedAssets: AssetInfoFull[] = [];
   const DELETE_ALL = 'delete all';
@@ -110,4 +115,6 @@ export async function handleDuplicateFile(
     }
   }
   await metaHandlers.removeItems(deletedAssets.map(it => it.relativePath));
+  logColorful({color: 'red'}, `Deleted file are backed up to: ${dir4DeletedFile}`);
+  logColorful({color: 'red'}, `Info of duplicate file is saved to file: ${stateFile}`);
 }

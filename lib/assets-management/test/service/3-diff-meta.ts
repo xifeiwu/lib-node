@@ -1,9 +1,9 @@
-import {logColorful} from '../external';
-import {initSampleAssets, updateSourceAssets} from '../file-generator';
-import {getAssetFullInfoTreeMeta, readMetaFromDir} from '../service/assets-meta';
-import {diffMetaForSyncUp} from '../service/diff-meta';
-import {AssetMeta} from '../types';
-import {SOURCE_DIR} from './serivice';
+import {logColorful} from '../../external';
+import {initSampleAssets, updateSampleAssets} from '../../file-generator';
+import {getAssetFullInfoTreeMeta, readMetaFromDir} from '../../service/assets-meta';
+import {diffMetaForSyncUp} from '../../service/diff-meta';
+import {AssetMeta} from '../../types';
+import {SOURCE_DIR} from '../serivice';
 export async function testDiffMetaForSyncUp() {
   const rootDir = SOURCE_DIR;
   initSampleAssets(rootDir);
@@ -12,7 +12,7 @@ export async function testDiffMetaForSyncUp() {
       reCalcId: true,
     },
   });
-  updateSourceAssets(rootDir);
+  updateSampleAssets(rootDir);
   const targetMeta: AssetMeta = await getAssetFullInfoTreeMeta(rootDir, {
     getAssetInfoParams: {
       reCalcId: true,

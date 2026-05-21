@@ -1,7 +1,7 @@
 import path from 'path';
-import {logColorful} from '../external';
-import {getAssetInfo} from '../service/asset-info';
-import {SOURCE_DIR} from './serivice';
+import {logColorful} from '../../external';
+import {getAssetInfo} from '../../service/asset-info';
+import {SOURCE_DIR} from '../serivice';
 
 export async function runGetAssetInfo() {
   const rootDir = SOURCE_DIR;

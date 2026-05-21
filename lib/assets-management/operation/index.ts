@@ -8,7 +8,7 @@
  * They are based on meta handler, which is a wrapper of meta file.
  */
 export * from './meta-align';
-export * from './asset-base-operation';
+export * from './assets-operation';
 export * from './assets-dedupe';
 export * from './assets-backup';
 export * from './assets-import';

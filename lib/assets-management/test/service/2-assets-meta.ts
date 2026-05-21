@@ -1,19 +1,12 @@
 import {
-  createDuplicateFile,
-  createNewFiles,
-  createLinkFile,
-  removeDataDir,
-  initSampleAssets,
-} from '../file-generator';
-import {
   assetInfoTreeToList,
   deleteItemFromAssetTree,
   getAssetFullInfoTreeMeta,
   isSameAssetMeta,
   toAssetTreeMeta,
-} from '../service/assets-meta';
-import {logColorful} from '../external';
-import {SOURCE_DIR} from './serivice';
+} from '../../service/assets-meta';
+import {logColorful} from '../../external';
+import {SOURCE_DIR} from '../serivice';
 
 /**
  * Get dir asset meta

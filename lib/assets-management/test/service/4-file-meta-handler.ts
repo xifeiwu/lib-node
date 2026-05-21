@@ -1,7 +1,7 @@
-import {logColorful} from '../external';
-import {getFileMetaHandler} from '../service';
-import {initSourceAssets} from './service/0-file-generator';
-import {SOURCE_DIR} from './serivice';
+import {logColorful} from '../../external';
+import {getFileMetaHandler} from '../../service';
+import {initSourceAssets} from './0-file-generator';
+import {SOURCE_DIR} from '../serivice';
 
 export async function testFileMetaHandler() {
   // initSourceAssets();
