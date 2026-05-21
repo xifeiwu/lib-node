@@ -26,7 +26,7 @@ function getActions(stateChange: MetaDiffForSyncUp) {
  * @param options
  * @returns two metas are the same or not
  */
-async function alignTwoMetas(
+export async function alignTwoMetas(
   targetMetaHandlers: MetaHandlers,
   sourceMeta: AssetMeta,
   options?: AlignTwoMetasOptions
