@@ -51,10 +51,10 @@ function connectToServer(host: string, port: number): Promise<net.Socket> {
 export async function runAssetsSyncCommand(
   command: AssetsSyncCommand,
   dir: string,
-  options: {host: string; port: string; runDirectly?: boolean}
+  options: {host: string; port: string | number; runDirectly?: boolean}
 ) {
   const host = options.host;
-  const port = parseInt(options.port, 10);
+  const port = typeof options.port === 'string' ? parseInt(options.port, 10) : options.port;
   const absDir = path.resolve(process.cwd(), dir);
 
   const meta = await getLocalMeta(dir);
