@@ -31,6 +31,9 @@ import {goOnOrNot, removeFile} from '../external';
  */
 export const getFileMetaHandler = (
   options?: GetMetaHandlersOptions & {
+    /**
+     * @deprecated metaFile will make logic more complex, and not easy to maintain, so it will be removed in the future
+     */
     metaFile?: string;
     maxBackupFileCnt?: number;
     backUpInterval?: number;

@@ -1,4 +1,4 @@
-import {AssetInfoFull, AssetInfoPartial} from './asset';
+import {AssetInfoFull} from './asset';
 
 /**
  * Compared to Meta, what is changed in assets
@@ -40,24 +40,4 @@ export interface MetaDiffForImportNew {
       by: AssetInfoFull[];
     }
   >;
-}
-
-// export interface Actions {
-//   toAdd: AssetInfoFull[];
-//   toDelete: AssetInfoFull[];
-//   toModify: {
-//     from: AssetInfoFull;
-//     to: AssetInfoFull;
-//     changed: Partial<AssetInfoFull>;
-//   }[];
-//   isNeedAction: boolean;
-// }
-
-/**
- * @deprecated by getAssetStateChange
- */
-export interface AssetStateChangeInfo {
-  assetInfoListMeta: AssetInfoFull[];
-  latestAssetInfoList: AssetInfoPartial[];
-  stateChange: MetaDiffForSyncUp;
 }

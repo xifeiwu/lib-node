@@ -24,10 +24,11 @@ import {
   AssetTreeMeta,
   AssetListMeta,
   AssetMeta,
+  MetaFileContent,
 } from '../types';
 import {deserailizeAssetInfo, diffAssets, getAssetInfo, serailizeAssetInfo} from './asset-info';
 import {isNumber, toDtStr} from '../../../external';
-import {FILE_SUFFIX_DT_FORMAT} from '..';
+import {FILE_SUFFIX_DT_FORMAT, META_DIR_NAME} from '..';
 
 async function getOneAssetMeta(
   item: FileInfoTreeItem,
@@ -428,7 +429,7 @@ export function deserailizeTreeMeta(meta: AssetTree) {
 
 /** Start: meta file persistence in dir level, may be deprecated */
 export function getMetaDir(rootDir: string) {
-  const metaDir = path.join(rootDir, '.meta');
+  const metaDir = path.join(rootDir, META_DIR_NAME);
   makeSureDirExist(metaDir, {isDir: true});
   return metaDir;
 }
@@ -443,7 +444,7 @@ export function readMetaFromDir(rootDir: string): AssetTreeMeta | undefined {
   if (!fs.existsSync(metaFile)) {
     return undefined;
   }
-  const meta = rerequire(metaFile).meta as AssetMeta;
+  const meta = (rerequire(metaFile) as MetaFileContent).meta as AssetMeta;
   return deserailizeTreeMeta(meta as AssetTreeMeta);
 }
 
@@ -488,10 +489,11 @@ export function saveDirMeta(
   }
   makeSureDirExistForFile(metaFile);
   const serializedMeta = serializeMeta(assetMeta);
-  fs.writeFileSync(
-    metaFile,
-    convertObjectToCjsExport({timestamp: toDtStr(), meta: serializedMeta}, {format: true})
-  );
+  const metaFileContent: MetaFileContent = {
+    meta: serializedMeta,
+    timestamp: toDtStr(),
+  };
+  fs.writeFileSync(metaFile, convertObjectToCjsExport(metaFileContent, {format: true}));
 }
 /** End: meta file persistence in dir level */
 /** Start: meta file persistence in file level */
@@ -502,6 +504,10 @@ export function readMetaFromFile(metaFile: string): AssetTreeMeta | undefined {
   const meta = rerequire(metaFile).meta as AssetMeta;
   return deserailizeTreeMeta(meta as AssetTreeMeta);
 }
+
+/**
+ * @deprecated metaFile will make logic more complex, and not easy to maintain, so it will be removed in the future
+ */
 export function saveMetaToFile(metaFile: string, meta: AssetTreeMeta) {
   makeSureDirExistForFile(metaFile);
   const serializedMeta = serializeMeta(meta);

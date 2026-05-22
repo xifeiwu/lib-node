@@ -19,3 +19,9 @@ export interface AssetListMeta {
 }
 
 export type AssetMeta = AssetTreeMeta | AssetListMeta;
+
+export interface MetaFileContent {
+  meta: AssetMeta;
+  timestamp: string;
+  priority?: number;
+}

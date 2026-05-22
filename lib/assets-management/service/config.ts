@@ -1,5 +1,7 @@
 import path from 'path';
 
+export const META_DIR_NAME = '.meta';
+
 export const DIR_ASSET_MANAGE_TMP_DIR = path.resolve(process.env.HOME, '.tmp-assets-management');
 
 export const FILE_SUFFIX_DT_FORMAT = 'yyyy-MM-ddThh-mm-ss';
