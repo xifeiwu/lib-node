@@ -45,9 +45,12 @@ export type Sha1ToAssetInfo = Record<string, AssetInfoFull | AssetInfoFull[]>;
 export type IdToAssetInfo = Record<string, AssetInfoPartial | Array<AssetInfoPartial>>;
 
 export interface GetAssetInfoParams {
+  /** fullPath have higher priority than rootDir + relativePath */
+  fullPath?: string;
   /** both rootDir and relativePath should be passed */
-  relativePath: string;
-  rootDir: string;
+  rootDir?: string;
+  relativePath?: string;
+  /** avoid reget stat by pass it in caller */
   stat?: fs.Stats;
   /** recalculate id or not */
   reCalcId?: boolean;

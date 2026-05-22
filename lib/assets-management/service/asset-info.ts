@@ -45,7 +45,7 @@ function getAssetInfoFromStat(stat: fs.Stats): Pick<AssetInfoPartial, 'changeDat
  */
 export async function getAssetInfo(options?: GetAssetInfoParams): Promise<AssetInfoPartial> {
   const {relativePath, rootDir, reCalcId, appendShortId, logging} = options ?? {};
-  const fullPath = path.join(rootDir, relativePath);
+  const fullPath = options?.fullPath ?? path.join(rootDir, relativePath);
   if (!fs.existsSync(fullPath)) {
     throw new Error(`File not exist: ${fullPath}`);
   }
@@ -56,7 +56,7 @@ export async function getAssetInfo(options?: GetAssetInfoParams): Promise<AssetI
   }
   let fileStatInfo = getAssetInfoFromStat(stat);
 
-  let fixedRelativePath: string | undefined;
+  let fixedFullPath: string | undefined;
   let sha1: string;
   let shortId = shortIdFromName;
   /** SHA-1 computation should be avoided because it is resource-intensive. */
@@ -75,18 +75,24 @@ export async function getAssetInfo(options?: GetAssetInfoParams): Promise<AssetI
       shortId = sha1Info.shortId;
       /** append correct shortId to filename */
       if (shortIdFromName || appendShortId) {
-        fixedRelativePath = appendShortIdToFilePath(relativePath, shortId);
-        if (fixedRelativePath !== relativePath) {
-          fs.renameSync(path.resolve(rootDir, fullPath), path.resolve(rootDir, fixedRelativePath));
+        fixedFullPath = appendShortIdToFilePath(fullPath, shortId);
+        if (fixedFullPath !== fullPath) {
+          fs.renameSync(fullPath, fixedFullPath);
         }
       }
     }
   }
+  /** use fullPath if it's passed, otherwise use relativePath */
+  const finalPathValue = fixedFullPath
+    ? options?.fullPath
+      ? fixedFullPath
+      : path.relative(rootDir, fixedFullPath)
+    : (options?.fullPath ?? relativePath);
   const assetInfo: AssetInfoPartial = {
-    relativePath: fixedRelativePath ?? relativePath,
+    relativePath: finalPathValue,
     extname,
-    ...(fixedRelativePath
-      ? getAssetInfoFromStat(fs.statSync(path.resolve(rootDir, fixedRelativePath)))
+    ...(fixedFullPath
+      ? getAssetInfoFromStat(fs.statSync(path.resolve(rootDir, fixedFullPath)))
       : fileStatInfo),
     sha1,
     shortId,
