@@ -32,11 +32,14 @@ export interface MetaDiffForImportNew {
   fromDir: string;
   isNeedAction: boolean;
   toDir: string;
-  added?: AssetInfoFull[];
-  duplicated?: {
-    origin: AssetInfoFull | AssetInfoFull[];
-    by: AssetInfoFull | AssetInfoFull[];
-  }[];
+  newFiles?: AssetInfoFull[];
+  duplicatedFiles?: Record<
+    string,
+    {
+      origin: AssetInfoFull[];
+      by: AssetInfoFull[];
+    }
+  >;
 }
 
 // export interface Actions {

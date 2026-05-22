@@ -1,6 +1,6 @@
 import fs, {writeFileSync} from 'fs';
 import path from 'path';
-import {AssetInfoFull, MetaDiffForImportNew, MetaHandlers} from '../types';
+import {AssetInfoFull, MetaHandlers} from '../types';
 import {
   appendShortIdToFilePath,
   diffAssets,
@@ -10,8 +10,7 @@ import {
   getFileMetaHandler,
   getFullAssetInfo,
   getPartialAssetInfo,
-  parseFilePath,
-  serializeMetaDiff,
+  serailizeAssetInfo,
 } from '../service';
 import {
   removeFile,
@@ -23,15 +22,61 @@ import {
   addDtSuffixToBareBasename,
   convertObjectToCjsExport,
   byteToWord,
-  getFilePathInfo,
+  moveFile,
 } from '../external';
 
-async function addAssetWithInfo(
+enum IgnoreReason {
+  IS_LINK = 'Not support add link file',
+  IS_EXIST = 'Source file already exists in rootDir',
+}
+
+interface AddAssetsOptions {
+  /** run directly without confirmation */
+  runDirectly?: boolean;
+  /** by default, will ignore duplicated assets */
+  addDuplicates?: boolean;
+}
+
+interface InternalTransferOptions {
+  /** replace existing target files */
+  overwrite?: boolean;
+}
+
+interface InternalTransferPair {
+  sourceRelativePath: string;
+  targetRelativePath: string;
+  sourceFullPath: string;
+  targetFullPath: string;
+}
+interface IgnoredAssets {
+  reason: IgnoreReason;
+  sourcePath?: string;
+  sourceInfo?: AssetInfoFull;
+  duplicatedInfo?: AssetInfoFull;
+}
+
+/**
+ * What is done in this function:
+ * 1. check source file exist
+ * 2. check target file exist
+ * 3. if target file exist, append short id to target path
+ * 4. copy source file to target file
+ * 5. create target partial info
+ * 6. create target full info
+ * 7. return target asset info
+ * What it not do:
+ * 1. whether source asset info is outdated
+ * 1. check whether targetDir contains source file or not(by sha1 compare).
+ * @param target
+ * @param source
+ * @returns
+ */
+async function doAddAction(
   target: {metaHandler: MetaHandlers; relativePath: string},
-  source: {assetInfo: AssetInfoFull; fullpath: string}
+  source: {assetInfo: AssetInfoFull; fullPath: string}
 ) {
-  const {assetInfo, fullpath: sourceFullPath} = source;
-  const {sha1, shortId} = assetInfo;
+  const {assetInfo: sourceAssetInfo, fullPath: sourceFullPath} = source;
+  const {sha1, shortId} = sourceAssetInfo;
   if (!fs.existsSync(sourceFullPath)) {
     throw new Error(`source file not exist: ${sourceFullPath}`);
   }
@@ -49,6 +94,7 @@ async function addAssetWithInfo(
     targetFullPath = path.join(targetRootDir, targetRelativePath);
   }
   makeSureDirExistForFile(targetFullPath);
+  console.log(`copying [${byteToWord(sourceAssetInfo.size)}] from ${sourceFullPath} to ${targetFullPath}`);
   fs.copyFileSync(sourceFullPath, targetFullPath);
   const targetPartialInfo = await getPartialAssetInfo({
     rootDir: targetRootDir,
@@ -60,178 +106,138 @@ async function addAssetWithInfo(
     shortId,
   } as AssetInfoFull;
   await metaHandler.createItem(targetAssetInfo);
-  return {source: assetInfo, target: targetAssetInfo};
-}
-
-async function addSingleAsset(
-  metaHandler: MetaHandlers,
-  options: {
-    /** can be relative path or absolute path */
-    sourcePath: string;
-    /** must be relative path */
-    targetPath: string;
-  }
-) {
-  const {sourcePath, targetPath} = options;
-  const {rootDir} = metaHandler;
-  const {fullpath: sourceFullPath, relativePath: sourceRelativePath} = resolvePathInRoot(rootDir, sourcePath);
-  const {fullpath: targetFullPath, relativePath: targetRelativePath} = resolvePathInRoot(rootDir, targetPath);
-  if (!fs.existsSync(sourceFullPath)) {
-    throw new Error(`source file not exist: ${sourceFullPath}`);
-  }
-  if (!targetRelativePath) {
-    throw new Error(`target path must be relative path in rootDir: ${rootDir}, but ${targetPath} is not.`);
-  }
-  let info: AssetInfoFull;
-
-  /** sourceRelativePath is undefined means the source is an external source */
-  if (!sourceRelativePath) {
-    /** copy from external source */
-    // fs.copyFileSync(sourceFullPath, targetFullPath);
-    const {dirname, basename} = getFilePathInfo(sourceFullPath);
-    info = await getFullAssetInfo({rootDir: dirname, relativePath: basename});
-  } else {
-    /** the source file is internal file */
-    const [currentInfo] = await metaHandler.findItems({relativePath: sourceRelativePath});
-    // if (sourceFullPath !== targetFullPath) {
-    //   fs.copyFileSync(sourceFullPath, targetFullPath);
-    // }
-
-    if (!currentInfo) {
-      info = await getFullAssetInfo({rootDir, relativePath: targetRelativePath});
-    } else {
-      const sourcePartialInfo = await getPartialAssetInfo({rootDir, relativePath: sourceRelativePath});
-      /** check whether currentInfo is outdated */
-      if (
-        diffAssets(sourcePartialInfo as AssetInfoFull, currentInfo, [
-          'relativePath',
-          'extname',
-          'size',
-          'modifyDate',
-        ])
-      ) {
-        info = await getFullAssetInfo({rootDir, relativePath: targetRelativePath});
-      } else {
-        info = currentInfo;
-      }
-    }
-  }
-  return addAssetWithInfo(
-    {metaHandler, relativePath: targetRelativePath},
-    {assetInfo: info, fullpath: sourceFullPath}
-  );
+  return {source: sourceAssetInfo, target: targetAssetInfo};
 }
 
 /**
- * Only add new assets from external folder to rootDir.
- * Will not add assets that already exist in rootDir.
+ * When source is an external folder, this function will add metaHandler for source dir.
+ * What is not done in this function, these logic should be done in caller::
+ * 1. whether options.sourceFullPath is exists
+ * 2. whether options.targetRelativeDir is a valid relative path in rootDir
  */
 async function addNewAssetsFromExternalFolder(
   metaHandler: MetaHandlers,
   options?: {
-    sourceDir: string;
+    /** must be an external dir */
+    sourceFullPath: string;
+    /** must be relative path in rootDir */
     targetRelativeDir: string;
     outputDir?: string;
-    runDirectly?: boolean;
-  }
+  } & AddAssetsOptions
 ) {
-  const result: Array<{source: AssetInfoFull; target: AssetInfoFull}> = [];
+  const addedFileList: Array<{source: AssetInfoFull; target: AssetInfoFull}> = [];
   const {rootDir: targetRootDir} = metaHandler;
-  const {sourceDir, targetRelativeDir, outputDir = DIR_ASSET_MANAGE_TMP_DIR, runDirectly} = options ?? {};
-  if (!fs.statSync(sourceDir).isDirectory()) {
-    throw new Error(`sourceDir is not a directory: ${sourceDir}`);
-  }
-  const {relativePath: sourceRelativePath} = resolvePathInRoot(targetRootDir, sourceDir);
-  if (sourceRelativePath) {
-    throw new Error(
-      `sourceDir[${sourceDir}] must be an external dir, compared to rootDir: ${targetRootDir}.`
-    );
-  }
-  const {relativePath: targetRelativePath, fullpath: targetFullPath} = resolvePathInRoot(
-    targetRootDir,
-    targetRelativeDir
-  );
-  if (!targetRelativePath) {
-    throw new Error(
-      `targetDir must be relative path in rootDir: ${targetRootDir}, but ${targetRelativeDir} is not.`
-    );
-  }
-  if (fs.existsSync(targetFullPath) && !fs.statSync(targetFullPath).isDirectory()) {
-    throw new Error(`targetDir exist, but is not a folder: ${targetFullPath}`);
-  }
+  const {
+    sourceFullPath: sourceFullpath,
+    targetRelativeDir,
+    outputDir = DIR_ASSET_MANAGE_TMP_DIR,
+    runDirectly,
+    addDuplicates,
+  } = options ?? {};
+  const {fullPath: targetFullPath} = resolvePathInRoot(targetRootDir, targetRelativeDir);
   makeSureDirExistForFile(targetFullPath);
 
-  const sourceMetaHandlder = await getFileMetaHandler({runDirectly})(sourceDir);
+  const sourceMetaHandlder = await getFileMetaHandler({runDirectly})(sourceFullpath);
   const targetMeta = await metaHandler.getMeta();
   const sourceMeta = await sourceMetaHandlder.getMeta();
   const difference = await diffMetaForImportNew(targetMeta, sourceMeta);
+  const {fromDir, toDir, newFiles = [], duplicatedFiles = {}} = difference;
   if (!difference.isNeedAction) {
-    return result;
+    return addedFileList;
   }
   if (runDirectly !== true) {
-    const stateFile = addDtSuffixToBareBasename(path.join(outputDir, 'import-assets-diff.js'), {
+    const stateFile = addDtSuffixToBareBasename(path.join(outputDir, 'import-dir-assets-new-files-.js'), {
       dtFormat: FILE_SUFFIX_DT_FORMAT,
     });
     writeFileSync(
       stateFile,
-      convertObjectToCjsExport({difference: serializeMetaDiff(difference)}, {format: true})
+      convertObjectToCjsExport(
+        {fromDir, toDir, newFiles: newFiles.map(it => serailizeAssetInfo(it))},
+        {format: true}
+      )
     );
     if (
       !(await goOnOrNot({
         tips: [
-          `import assets from: ${targetFullPath}`,
+          `import assets`,
+          `from dir: ${targetFullPath}`,
           `to dir: ${targetRootDir}`,
           `state change is saved to file: ${stateFile}`,
           `Are you sure to apply state change above?`,
         ],
-        style: {color: 'yellow'},
+        style: {color: 'blue'},
         defaultValue: true,
       }))
     ) {
-      return result;
+      return addedFileList;
     }
   }
-  const {added = [], duplicated} = difference;
-  const totalSize = added.reduce((acc, assetInfo) => acc + assetInfo.size, 0);
-  let copiedSize = 0;
-  let copiedCount = 0;
-  for (const assetInfo of added) {
+  // const totalSize = newFiles.reduce((acc, assetInfo) => acc + assetInfo.size, 0);
+  // let copiedSize = 0;
+  // let copiedCount = 0;
+  for (const assetInfo of [
+    ...newFiles,
+    ...(addDuplicates ? Object.values(duplicatedFiles).flatMap(it => it.origin) : []),
+  ]) {
     const {relativePath} = assetInfo;
-    const info = await addAssetWithInfo(
+    const info = await doAddAction(
       {metaHandler, relativePath},
-      {assetInfo, fullpath: path.join(sourceDir, relativePath)}
+      {assetInfo, fullPath: path.join(sourceFullpath, relativePath)}
     );
-    result.push(info);
-    copiedSize += assetInfo.size;
-    copiedCount++;
-    console.log(
-      `copied size:${byteToWord(copiedSize)} / ${byteToWord(totalSize)} (${((copiedSize / totalSize) * 100).toFixed(2)}%), copied count:${copiedCount} / ${added.length}`
-    );
+    addedFileList.push(info);
+    // copiedSize += assetInfo.size;
+    // copiedCount++;
+    // console.log(
+    //   `copied size:${byteToWord(copiedSize)} / ${byteToWord(totalSize)} (${((copiedSize / totalSize) * 100).toFixed(2)}%), copied count:${copiedCount} / ${newFiles.length}`
+    // );
   }
-  return result;
+  return addedFileList;
 }
 
+async function checkInternalAssetInfo(metaHandler: MetaHandlers, relativePath: string) {
+  const {rootDir} = metaHandler;
+  let assetInfo: AssetInfoFull;
+  const [currentInfo] = await metaHandler.findItems({relativePath});
+  if (!currentInfo) {
+    throw new Error(`asset info not found for relative path: ${relativePath}`);
+  }
+  const sourcePartialInfo = await getPartialAssetInfo({rootDir, relativePath});
+  /** check whether currentInfo is outdated */
+  if (
+    diffAssets(sourcePartialInfo as AssetInfoFull, currentInfo, [
+      'relativePath',
+      'extname',
+      'size',
+      'modifyDate',
+    ])
+  ) {
+    assetInfo = await getFullAssetInfo({rootDir, relativePath});
+    await metaHandler.updateItem({info: assetInfo, prevInfo: currentInfo});
+  } else {
+    assetInfo = currentInfo;
+  }
+  return assetInfo;
+}
 /**
  * Add files into rootDir and create meta entries.
- *
- * @param metaHandlers
+ * @param metaHandler
  * @param files - list of { sourcePath: path of source file or folder, toRelativePath: target relative path in rootDir }
+ * @param files[0].sourcePath - will ignore source file if it already exists in rootDir(by sha1 compare)
+ * @param files[0].targetPath - will add source file when targetPath is specified.
  */
-export async function addAsset(
-  metaHandlers: MetaHandlers,
+export async function addAssets(
+  metaHandler: MetaHandlers,
   files: {sourcePath: string; targetPath?: string}[],
-  options?: {
-    overwrite?: boolean;
-    runDirectly?: boolean;
-  }
+  options?: AddAssetsOptions
 ) {
-  const {rootDir} = metaHandlers;
-  const {runDirectly} = options ?? {};
+  const {rootDir} = metaHandler;
+  const {runDirectly, addDuplicates} = options ?? {};
   const defaultTargetDir = `new-assets-${toDtStr(new Date(), 'yyyy-MM-ddThh-mm-ss')}`;
-  const result: Array<{source: AssetInfoFull; target: AssetInfoFull}> = [];
+  const results: Array<{source: AssetInfoFull; target: AssetInfoFull}> = [];
+  const ignored: Array<IgnoredAssets> = [];
   for (const file of files) {
     /** check source */
-    const {fullpath: sourceFullPath, relativePath: sourceRelativePath} = resolvePathInRoot(
+    const {fullPath: sourceFullPath, relativePath: sourceRelativePath} = resolvePathInRoot(
       rootDir,
       file.sourcePath
     );
@@ -241,11 +247,12 @@ export async function addAsset(
     const sourceStat = fs.statSync(sourceFullPath);
     /** not handle symlink */
     if (sourceStat.isSymbolicLink()) {
+      ignored.push({sourcePath: sourceFullPath, reason: IgnoreReason.IS_LINK});
       continue;
     }
-    /** check target */
+    /** check target if provide */
     if (file.targetPath) {
-      const {fullpath: targetFullPath, relativePath: targetRelativePath} = resolvePathInRoot(
+      const {fullPath: targetFullPath, relativePath: targetRelativePath} = resolvePathInRoot(
         rootDir,
         file.targetPath
       );
@@ -258,62 +265,141 @@ export async function addAsset(
         throw new Error(`target path already exist: ${targetFullPath}`);
       }
     }
-    let targetPath = file.targetPath;
 
     /** start to add asset */
     /** sourceRelativePath is undefined means the source is an external source */
     if (!sourceRelativePath) {
       if (sourceStat.isDirectory()) {
-        targetPath = targetPath ?? defaultTargetDir;
-        const folderName = path.basename(sourceFullPath);
-        const info = await addNewAssetsFromExternalFolder(metaHandlers, {
-          sourceDir: sourceFullPath,
-          targetRelativeDir: path.join(targetPath, folderName),
+        const targetRelativeDir =
+          file.targetPath ?? path.join(defaultTargetDir, path.basename(sourceFullPath));
+        const info = await addNewAssetsFromExternalFolder(metaHandler, {
+          sourceFullPath: sourceFullPath,
+          targetRelativeDir,
           runDirectly,
         });
-        result.push(...info);
+        results.push(...info);
       } else {
-        targetPath = targetPath ?? path.basename(sourceFullPath);
-        const info = await addSingleAsset(metaHandlers, {sourcePath: sourceFullPath, targetPath: targetPath});
-        result.push(info);
+        const targetRelativePath =
+          file.targetPath ?? path.join(defaultTargetDir, path.basename(sourceFullPath));
+        const sourceInfo = await getFullAssetInfo({fullPath: sourceFullPath});
+        const [currentInfo] = await metaHandler.findItems({sha1: sourceInfo.sha1});
+        if (currentInfo) {
+          ignored.push({sourceInfo: sourceInfo, duplicatedInfo: currentInfo, reason: IgnoreReason.IS_EXIST});
+        } else {
+          const result = await doAddAction(
+            {metaHandler, relativePath: targetRelativePath},
+            {assetInfo: sourceInfo, fullPath: sourceFullPath}
+          );
+          results.push(result);
+        }
       }
     } else {
+      if (file.targetPath) {
+        throw new Error(`target path must be provided when addAssets and source is internal file`);
+      }
+      const {relativePath: targetRelativePath} = resolvePathInRoot(rootDir, file.targetPath);
       if (fs.statSync(sourceFullPath).isDirectory()) {
-        const {relativePath: toRelativePath} = resolvePathInRoot(rootDir, file.targetPath);
-        if (!toRelativePath) {
-          throw new Error(
-            `target path must be relative path in rootDir: ${rootDir}, but ${file.targetPath} is not.`
-          );
-        }
         const fileList = getFileList(sourceFullPath, {includeDir: false});
         for (const relPath of fileList) {
-          const info = await addSingleAsset(metaHandlers, {
-            sourcePath: relPath,
-            targetPath: targetPath ?? path.join(defaultTargetDir, relPath),
-          });
-          result.push(info);
+          const internalRelativePath = path.join(sourceRelativePath, relPath);
+          const internalTargetRelativePath = path.join(targetRelativePath, relPath);
+          const sourceInfo = await checkInternalAssetInfo(metaHandler, internalRelativePath);
+          const result = await doAddAction(
+            {metaHandler, relativePath: internalTargetRelativePath},
+            {assetInfo: sourceInfo, fullPath: path.join(sourceFullPath, relPath)}
+          );
+          results.push(result);
         }
       } else {
-        const info = await addSingleAsset(metaHandlers, {
-          sourcePath: sourceRelativePath,
-          targetPath: targetPath ?? path.join(defaultTargetDir, sourceRelativePath),
-        });
-        result.push(info);
+        const sourceInfo = await checkInternalAssetInfo(metaHandler, sourceRelativePath);
+        const result = await doAddAction(
+          {metaHandler, relativePath: targetRelativePath},
+          {assetInfo: sourceInfo, fullPath: sourceFullPath}
+        );
+        results.push(result);
       }
     }
   }
-  return result;
+  return {results, ignored};
 }
 
-function resolveInternalPath(rootDir: string, filePath: string, label: string) {
-  const {fullpath, relativePath} = resolvePathInRoot(rootDir, filePath);
+/**
+ * resolve @param filePath, and check whether it's relative path in @param rootDir
+ */
+function resolveInternalPath(rootDir: string, filePath: string) {
+  const {fullPath, relativePath} = resolvePathInRoot(rootDir, filePath);
   if (!relativePath) {
-    throw new Error(`${label} must be relative path in rootDir: ${rootDir}, but ${filePath} is not.`);
+    throw new Error(`relative path constranit fail in rootDir: ${rootDir}, but ${filePath} is not.`);
   }
-  if (!fs.existsSync(fullpath)) {
-    throw new Error(`${label} not exist: ${fullpath}`);
+  if (!fs.existsSync(fullPath)) {
+    throw new Error(`file not exist: ${fullPath}`);
   }
-  return {fullpath, relativePath};
+  return {fullPath, relativePath};
+}
+
+function resolveInternalTargetPath(rootDir: string, filePath: string) {
+  const {fullPath, relativePath} = resolvePathInRoot(rootDir, filePath);
+  if (!relativePath) {
+    throw new Error(`target path must be relative path in rootDir: ${rootDir}, but ${filePath} is not.`);
+  }
+  return {fullPath, relativePath};
+}
+
+function assertTargetAvailable(targetFullPath: string, overwrite?: boolean) {
+  if (!fs.existsSync(targetFullPath)) {
+    return;
+  }
+  if (!overwrite) {
+    throw new Error(`target path already exist: ${targetFullPath}`);
+  }
+  removeFile(targetFullPath);
+}
+
+function collectInternalTransferPairs(
+  rootDir: string,
+  sourcePath: string,
+  targetPath: string
+): InternalTransferPair[] {
+  const {fullPath: sourceFullPath, relativePath: sourceRelativePath} = resolveInternalPath(
+    rootDir,
+    sourcePath
+  );
+  const {relativePath: targetRelativePath} = resolveInternalTargetPath(rootDir, targetPath);
+  const pairs: InternalTransferPair[] = [];
+
+  if (fs.statSync(sourceFullPath).isDirectory()) {
+    const fileList = getFileList(sourceFullPath);
+    if (fileList.length === 0) {
+      throw new Error(`source directory is empty: ${sourceFullPath}`);
+    }
+    for (const relPath of fileList) {
+      const sourceRel = path.join(sourceRelativePath, relPath);
+      const targetRel = path.join(targetRelativePath, relPath);
+      pairs.push({
+        sourceRelativePath: sourceRel,
+        targetRelativePath: targetRel,
+        sourceFullPath: path.join(rootDir, sourceRel),
+        targetFullPath: path.join(rootDir, targetRel),
+      });
+    }
+  } else {
+    pairs.push({
+      sourceRelativePath,
+      targetRelativePath,
+      sourceFullPath,
+      targetFullPath: path.join(rootDir, targetRelativePath),
+    });
+  }
+  return pairs;
+}
+
+function removeEmptyDirIfNeeded(dirFullPath: string) {
+  if (!fs.existsSync(dirFullPath) || !fs.statSync(dirFullPath).isDirectory()) {
+    return;
+  }
+  if (getFileList(dirFullPath).length === 0) {
+    removeFile(dirFullPath);
+  }
 }
 
 /**
@@ -328,18 +414,18 @@ export async function deleteAsset(metaHandlers: MetaHandlers, pathList: string[]
   const pathsToDelete: string[] = [];
 
   for (const filePath of pathList) {
-    const {fullpath, relativePath} = resolveInternalPath(rootDir, filePath, 'filePath');
-    if (fs.statSync(fullpath).isDirectory()) {
-      const fileList = getFileList(fullpath);
+    const {fullPath, relativePath} = resolveInternalPath(rootDir, filePath);
+    if (fs.statSync(fullPath).isDirectory()) {
+      const fileList = getFileList(fullPath);
       allRelativePaths.push(...fileList.map(f => path.join(relativePath, f)));
     } else {
       allRelativePaths.push(relativePath);
     }
-    pathsToDelete.push(fullpath);
+    pathsToDelete.push(fullPath);
   }
 
-  for (const fullpath of pathsToDelete) {
-    removeFile(fullpath);
+  for (const fullPath of pathsToDelete) {
+    removeFile(fullPath);
   }
   await metaHandlers.removeItems(allRelativePaths);
 }
@@ -347,42 +433,85 @@ export async function deleteAsset(metaHandlers: MetaHandlers, pathList: string[]
 /**
  * Copy files or folders within rootDir and create meta entries for the targets.
  * Both sourcePath and targetPath must be relative paths within rootDir.
- * Delegates to addAsset after validating source paths are internal.
  * @param metaHandlers
  * @param pathList - list of { sourcePath, targetPath } relative to rootDir
  */
 export async function copyAsset(
   metaHandlers: MetaHandlers,
   pathList: {sourcePath: string; targetPath: string}[],
-  options?: {overwrite?: boolean}
+  options?: InternalTransferOptions
 ) {
   const {rootDir} = metaHandlers;
-  for (const {sourcePath} of pathList) {
-    resolveInternalPath(rootDir, sourcePath, 'sourcePath');
+  const {overwrite} = options ?? {};
+  const results: Array<{source: AssetInfoFull; target: AssetInfoFull}> = [];
+
+  for (const {sourcePath, targetPath} of pathList) {
+    const pairs = collectInternalTransferPairs(rootDir, sourcePath, targetPath);
+    for (const pair of pairs) {
+      assertTargetAvailable(pair.targetFullPath, overwrite);
+      const sourceInfo = await checkInternalAssetInfo(metaHandlers, pair.sourceRelativePath);
+      const result = await doAddAction(
+        {metaHandler: metaHandlers, relativePath: pair.targetRelativePath},
+        {assetInfo: sourceInfo, fullPath: pair.sourceFullPath}
+      );
+      results.push(result);
+    }
   }
-  return addAsset(metaHandlers, pathList, options);
+  return results;
+}
+
+async function doMoveAction(
+  metaHandler: MetaHandlers,
+  pair: InternalTransferPair
+): Promise<{source: AssetInfoFull; target: AssetInfoFull}> {
+  const {sourceRelativePath, targetRelativePath, sourceFullPath, targetFullPath} = pair;
+  const sourceInfo = await checkInternalAssetInfo(metaHandler, sourceRelativePath);
+  if (sourceRelativePath === targetRelativePath) {
+    return {source: sourceInfo, target: sourceInfo};
+  }
+  const {sha1, shortId} = sourceInfo;
+  moveFile(sourceFullPath, targetFullPath);
+  const targetPartialInfo = await getPartialAssetInfo({
+    rootDir: metaHandler.rootDir,
+    relativePath: targetRelativePath,
+  });
+  const targetAssetInfo = {
+    ...targetPartialInfo,
+    sha1,
+    shortId,
+  } as AssetInfoFull;
+  await metaHandler.createItem(targetAssetInfo);
+  await metaHandler.removeItem(sourceRelativePath);
+  return {source: sourceInfo, target: targetAssetInfo};
 }
 
 /**
  * Move files or folders within rootDir and update meta entries.
  * Both sourcePath and targetPath must be relative paths within rootDir.
- * Delegates to addAsset (copy + create meta) then deleteAsset (remove source + remove meta).
  * @param metaHandlers
  * @param pathList - list of { sourcePath, targetPath } relative to rootDir
  */
 export async function moveAsset(
   metaHandlers: MetaHandlers,
   pathList: {sourcePath: string; targetPath: string}[],
-  options?: {overwrite?: boolean}
+  options?: InternalTransferOptions
 ) {
   const {rootDir} = metaHandlers;
-  for (const {sourcePath} of pathList) {
-    resolveInternalPath(rootDir, sourcePath, 'sourcePath');
+  const {overwrite} = options ?? {};
+  const results: Array<{source: AssetInfoFull; target: AssetInfoFull}> = [];
+
+  for (const {sourcePath, targetPath} of pathList) {
+    const {fullPath: sourceFullPath} = resolveInternalPath(rootDir, sourcePath);
+    const isSourceDirectory = fs.statSync(sourceFullPath).isDirectory();
+    const pairs = collectInternalTransferPairs(rootDir, sourcePath, targetPath);
+    for (const pair of pairs) {
+      assertTargetAvailable(pair.targetFullPath, overwrite);
+      const result = await doMoveAction(metaHandlers, pair);
+      results.push(result);
+    }
+    if (isSourceDirectory) {
+      removeEmptyDirIfNeeded(sourceFullPath);
+    }
   }
-  const added = await addAsset(metaHandlers, pathList, options);
-  await deleteAsset(
-    metaHandlers,
-    pathList.map(it => it.sourcePath)
-  );
-  return added;
+  return results;
 }

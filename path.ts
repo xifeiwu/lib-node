@@ -201,12 +201,12 @@ export function resolvePathInRoot(rootDir: string, filePath: string) {
   filePath = expandHome(filePath);
   if (path.isAbsolute(filePath)) {
     return {
-      fullpath: filePath,
+      fullPath: filePath,
       relativePath: getRelativePathInRoot(rootDir, filePath),
     };
   } else {
     return {
-      fullpath: path.join(rootDir, filePath),
+      fullPath: path.join(rootDir, filePath),
       relativePath: filePath,
     };
   }

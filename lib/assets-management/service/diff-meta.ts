@@ -170,19 +170,22 @@ export async function diffMetaForImportNew(
   const sha1ToAssetInfo1 = getSha1ToAssetInfo(assetInfoList1);
   const sha1ToAssetInfo2 = getSha1ToAssetInfo(assetInfoList2);
 
-  const added: AssetInfoFull[] = [];
-  const duplicated: MetaDiffForImportNew['duplicated'] = [];
+  const newFiles: AssetInfoFull[] = [];
+  const duplicatedFiles: MetaDiffForImportNew['duplicatedFiles'] = {};
   for (const key of Object.keys(sha1ToAssetInfo2)) {
     const assetInfo1 = sha1ToAssetInfo1[key];
     const assetInfo2 = sha1ToAssetInfo2[key];
     if (assetInfo1) {
-      duplicated.push({origin: assetInfo1, by: assetInfo2});
+      duplicatedFiles[key] = {
+        origin: Array.isArray(assetInfo1) ? assetInfo1 : [assetInfo1],
+        by: Array.isArray(assetInfo2) ? assetInfo2 : [assetInfo2],
+      };
     } else {
-      added.push(await toFullAssetInfo(Array.isArray(assetInfo2) ? assetInfo2[0] : assetInfo2, rootDir2));
+      newFiles.push(await toFullAssetInfo(Array.isArray(assetInfo2) ? assetInfo2[0] : assetInfo2, rootDir2));
     }
   }
-  const isNeedAction = added.length > 0 || duplicated.length > 0;
-  return {fromDir: rootDir2, isNeedAction, toDir: rootDir1, added, duplicated};
+  const isNeedAction = newFiles.length > 0;
+  return {isNeedAction, fromDir: rootDir2, toDir: rootDir1, newFiles, duplicatedFiles};
 }
 
 // export function diffAssetMeta(from: MetaInfo, to: MetaInfo) {}
