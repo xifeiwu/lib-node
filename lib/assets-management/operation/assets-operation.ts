@@ -244,7 +244,7 @@ export async function addAssets(
     if (!fs.existsSync(sourceFullPath)) {
       throw new Error(`source path not exist: ${sourceFullPath}`);
     }
-    const sourceStat = fs.statSync(sourceFullPath);
+    const sourceStat = fs.lstatSync(sourceFullPath);
     /** not handle symlink */
     if (sourceStat.isSymbolicLink()) {
       ignored.push({sourcePath: sourceFullPath, reason: IgnoreReason.IS_LINK});
@@ -281,7 +281,11 @@ export async function addAssets(
       } else {
         const targetRelativePath =
           file.targetPath ?? path.join(defaultTargetDir, path.basename(sourceFullPath));
-        const sourceInfo = await getFullAssetInfo({fullPath: sourceFullPath});
+        const sourceInfo = await getFullAssetInfo({
+          fullPath: sourceFullPath,
+          rootDir: path.dirname(sourceFullPath),
+          relativePath: path.basename(sourceFullPath),
+        });
         const [currentInfo] = await metaHandler.findItems({sha1: sourceInfo.sha1});
         if (currentInfo) {
           ignored.push({sourceInfo: sourceInfo, duplicatedInfo: currentInfo, reason: IgnoreReason.IS_EXIST});
@@ -294,7 +298,7 @@ export async function addAssets(
         }
       }
     } else {
-      if (file.targetPath) {
+      if (!file.targetPath) {
         throw new Error(`target path must be provided when addAssets and source is internal file`);
       }
       const {relativePath: targetRelativePath} = resolvePathInRoot(rootDir, file.targetPath);
