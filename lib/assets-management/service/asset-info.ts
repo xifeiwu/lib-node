@@ -50,7 +50,7 @@ export async function getAssetInfo(options?: GetAssetInfoParams): Promise<AssetI
     throw new Error(`File not exist: ${fullPath}`);
   }
   const {shortId: shortIdFromName, extname} = parseFilePath(fullPath);
-  const stat = options?.stat ?? fs.statSync(path.resolve(rootDir, relativePath));
+  const stat = options?.stat ?? fs.statSync(fullPath);
   if (stat.isDirectory()) {
     throw new Error(`Not a file (directory): ${fullPath}`);
   }

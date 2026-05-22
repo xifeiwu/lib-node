@@ -281,11 +281,7 @@ export async function addAssets(
       } else {
         const targetRelativePath =
           file.targetPath ?? path.join(defaultTargetDir, path.basename(sourceFullPath));
-        const sourceInfo = await getFullAssetInfo({
-          fullPath: sourceFullPath,
-          rootDir: path.dirname(sourceFullPath),
-          relativePath: path.basename(sourceFullPath),
-        });
+        const sourceInfo = await getFullAssetInfo({fullPath: sourceFullPath});
         const [currentInfo] = await metaHandler.findItems({sha1: sourceInfo.sha1});
         if (currentInfo) {
           ignored.push({sourceInfo: sourceInfo, duplicatedInfo: currentInfo, reason: IgnoreReason.IS_EXIST});
