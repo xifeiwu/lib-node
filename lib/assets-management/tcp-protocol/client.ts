@@ -5,7 +5,7 @@ import {getFileMetaHandler} from '../service/file-meta-handler';
 import {serailizeAssetInfo} from '../service/asset-info';
 import {getPartialAssetInfo} from '../service/asset-info';
 import {byteToWord, goOnOrNot} from '../external';
-import {printDiffSummary} from '../service/diff-print';
+import {printDiffForSyncUp} from '../service/print/diff-for-syncup';
 import type {AssetInfoFull, AssetListMeta, MetaDiffForSyncUp} from '../types';
 import {
   ASSETS_SYNC_PROTOCOL_BYTE,
@@ -68,7 +68,7 @@ export async function runAssetsSyncCommand(
 
   const response = await readJsonFrame<DiffMessage>(socket);
   const diff = response.meta;
-  printDiffSummary(diff);
+  printDiffForSyncUp(diff);
 
   if (command === 'diff' || !diff.isNeedAction) {
     socket.end();

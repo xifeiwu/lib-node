@@ -1,5 +1,5 @@
-import {byteToWord} from '../external';
-import type {AssetInfoFull, MetaDiffForSyncUp} from '../types';
+import {byteToWord} from '../../external';
+import type {AssetInfoFull, MetaDiffForSyncUp} from '../../types';
 
 /** Max lines printed per diff category (beyond summary counts). */
 const DIFF_DETAIL_LIMIT = 40;
@@ -24,7 +24,7 @@ function printDetailLines(lines: string[], totalCount: number) {
   }
 }
 
-export function printDiffSummary(diff: MetaDiffForSyncUp) {
+export function printDiffForSyncUp(diff: MetaDiffForSyncUp) {
   const {added = [], deleted = [], modified = [], moved = [], copied = []} = diff;
   const totalSize = (list: AssetInfoFull[]) => list.reduce((sum, f) => sum + (f.size || 0), 0);
 

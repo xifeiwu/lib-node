@@ -1,6 +1,6 @@
 import fs, {writeFileSync} from 'fs';
 import path from 'path';
-import {AssetInfoFull, MetaHandlers} from '../types';
+import {AssetInfoFull, IgnoredAssets, IgnoreReason, MetaHandlers, OperatedAssets} from '../types';
 import {
   appendShortIdToFilePath,
   diffAssets,
@@ -25,11 +25,6 @@ import {
   moveFile,
 } from '../external';
 
-enum IgnoreReason {
-  IS_LINK = 'Not support add link file',
-  IS_EXIST = 'Source file already exists in rootDir',
-}
-
 interface AddAssetsOptions {
   /** run directly without confirmation */
   runDirectly?: boolean;
@@ -47,12 +42,6 @@ interface InternalTransferPair {
   targetRelativePath: string;
   sourceFullPath: string;
   targetFullPath: string;
-}
-interface IgnoredAssets {
-  reason: IgnoreReason;
-  sourcePath?: string;
-  sourceInfo?: AssetInfoFull;
-  duplicatedInfo?: AssetInfoFull;
 }
 
 /**
@@ -125,7 +114,7 @@ async function addNewAssetsFromExternalFolder(
     outputDir?: string;
   } & AddAssetsOptions
 ) {
-  const addedFileList: Array<{source: AssetInfoFull; target: AssetInfoFull}> = [];
+  const addedFileList: Array<OperatedAssets> = [];
   const {rootDir: targetRootDir} = metaHandler;
   const {
     sourceFullPath: sourceFullpath,
@@ -233,7 +222,7 @@ export async function addAssets(
   const {rootDir} = metaHandler;
   const {runDirectly, addDuplicates} = options ?? {};
   const defaultTargetDir = `new-assets-${toDtStr(new Date(), 'yyyy-MM-ddThh-mm-ss')}`;
-  const results: Array<{source: AssetInfoFull; target: AssetInfoFull}> = [];
+  const results: Array<OperatedAssets> = [];
   const ignored: Array<IgnoredAssets> = [];
   for (const file of files) {
     /** check source */
@@ -443,7 +432,7 @@ export async function copyAsset(
 ) {
   const {rootDir} = metaHandlers;
   const {overwrite} = options ?? {};
-  const results: Array<{source: AssetInfoFull; target: AssetInfoFull}> = [];
+  const results: Array<OperatedAssets> = [];
 
   for (const {sourcePath, targetPath} of pathList) {
     const pairs = collectInternalTransferPairs(rootDir, sourcePath, targetPath);
@@ -460,10 +449,7 @@ export async function copyAsset(
   return results;
 }
 
-async function doMoveAction(
-  metaHandler: MetaHandlers,
-  pair: InternalTransferPair
-): Promise<{source: AssetInfoFull; target: AssetInfoFull}> {
+async function doMoveAction(metaHandler: MetaHandlers, pair: InternalTransferPair): Promise<OperatedAssets> {
   const {sourceRelativePath, targetRelativePath, sourceFullPath, targetFullPath} = pair;
   const sourceInfo = await checkInternalAssetInfo(metaHandler, sourceRelativePath);
   if (sourceRelativePath === targetRelativePath) {
@@ -498,7 +484,7 @@ export async function moveAsset(
 ) {
   const {rootDir} = metaHandlers;
   const {overwrite} = options ?? {};
-  const results: Array<{source: AssetInfoFull; target: AssetInfoFull}> = [];
+  const results: Array<OperatedAssets> = [];
 
   for (const {sourcePath, targetPath} of pathList) {
     const {fullPath: sourceFullPath} = resolveInternalPath(rootDir, sourcePath);
