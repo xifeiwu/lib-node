@@ -20,7 +20,9 @@ function getActions(stateChange: MetaDiffForSyncUp) {
 }
 
 /**
- * align two metas of the same dir
+ * align two metas of the same dir:
+ * - syncup latest assets info to its meta
+ * - syncup assets one meta to another meta
  * @param targetMetaHandlers
  * @param sourceMeta
  * @param options
@@ -71,7 +73,7 @@ export async function alignTwoMetas(
 }
 
 /**
- * align meta with latest status of its assets
+ * align meta with latest assets status
  * @param metaHandlers
  * @param options
  * @returns

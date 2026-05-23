@@ -4,10 +4,10 @@ import {diffAssets, serailizeAssetInfo, toFullAssetInfo} from './asset-info';
 import {getAssetInfoListFromMeta, getRelativePathToAssetInfo, getSha1ToAssetInfo} from './assets-meta';
 
 /**
- * diff meta for asset syncup, the meta may comes from same dir or different dir.
- * - for same dir, it's used to do syncup between latest assets and its meta
- * - for different dir, it's used to do syncup assets and its meta,
- *   the meta of source and target must aligned with its latest assets.
+ * diff meta for syncup, it can be used for cases:
+ * - syncup latest assets info to its meta, sourceMeta is latest partial info of assets.
+ * - syncup assets one meta to another meta
+ * - syncup assets and its meta between different dirs
  * @returns diff result for syncup
  */
 export async function diffMetaForSyncUp(
