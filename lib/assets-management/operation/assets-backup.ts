@@ -120,6 +120,7 @@ export async function backupAssets(
     }
   };
 
+  /** copy should be handled before move */
   for (const assetInfo of [...copied, ...modified]) {
     await operationOnTargetDir({from: assetInfo.from, to: assetInfo.to, action: 'copy'});
   }

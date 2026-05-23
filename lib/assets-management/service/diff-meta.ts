@@ -1,42 +1,56 @@
+import assert from 'assert';
 import {AssetInfoFull, AssetMeta, MetaDiffForImportNew, MetaDiffForSyncUp} from '../types';
 import {diffAssets, serailizeAssetInfo, toFullAssetInfo} from './asset-info';
-import {
-  getAssetInfoById,
-  getAssetInfoListFromMeta,
-  getRelativePathToAssetInfo,
-  getSha1ToAssetInfo,
-} from './assets-meta';
+import {getAssetInfoListFromMeta, getRelativePathToAssetInfo, getSha1ToAssetInfo} from './assets-meta';
 
 /**
- * use relativePath as id for assets syncup
- * @param toMeta
- * @param fromMeta
- * @returns
+ * diff meta for asset syncup, the meta may comes from same dir or different dir.
+ * - for same dir, it's used to do syncup between latest assets and its meta
+ * - for different dir, it's used to do syncup assets and its meta,
+ *   the meta of source and target must aligned with its latest assets.
+ * @returns diff result for syncup
  */
-export async function diffMetaForSyncUp(toMeta: AssetMeta, fromMeta: AssetMeta): Promise<MetaDiffForSyncUp> {
-  const {rootDir: rootDir1} = toMeta;
-  const {rootDir: rootDir2} = fromMeta;
-  const isSameDir = rootDir1 === rootDir2;
-  const assetInfoList1 = getAssetInfoListFromMeta(toMeta);
-  const assetInfoList2 = getAssetInfoListFromMeta(fromMeta);
-  const pathToInfo1 = getRelativePathToAssetInfo(assetInfoList1);
-  const sha1ToAssetInfo1 = getSha1ToAssetInfo(assetInfoList1);
-  const pathToInfo2 = getRelativePathToAssetInfo(assetInfoList2);
+export async function diffMetaForSyncUp(
+  targetMeta: AssetMeta,
+  sourceMeta: AssetMeta
+): Promise<MetaDiffForSyncUp> {
+  const {rootDir: targetRootDir} = targetMeta;
+  const {rootDir: sourceRootDir} = sourceMeta;
 
-  const paths1 = Object.keys(pathToInfo1);
-  const paths2 = Object.keys(pathToInfo2);
-  const pathAll = Array.from(new Set([...paths1, ...paths2]));
-  const pathOnlyIn2: string[] = [];
-  const pathOnlyIn1: string[] = [];
+  const targetAssetList = getAssetInfoListFromMeta(targetMeta);
+  const sourceAssetList = getAssetInfoListFromMeta(sourceMeta);
+
+  const isSameDir = targetRootDir === sourceRootDir;
+  /** check asset info */
+  assert(
+    targetAssetList.every(it => it.sha1 !== undefined),
+    'every item in targetAssetList must be full asset info.'
+  );
+  if (!isSameDir) {
+    assert(
+      sourceAssetList.every(it => it.sha1 !== undefined),
+      'every item in sourceAssetList must be full asset info.'
+    );
+  }
+
+  const pathToAssetInTarget = getRelativePathToAssetInfo(targetAssetList);
+  const sha1ToAssetInTarget = getSha1ToAssetInfo(targetAssetList);
+  const pathToAssetInSource = getRelativePathToAssetInfo(sourceAssetList);
+
+  const pathListInTarget = Object.keys(pathToAssetInTarget);
+  const pathListInSource = Object.keys(pathToAssetInSource);
+  const pathAll = Array.from(new Set([...pathListInTarget, ...pathListInSource]));
+  const pathOnlyInSource: string[] = [];
+  const pathOnlyInTarget: string[] = [];
   const pathCommon: string[] = [];
   for (const p of pathAll) {
     let cnt = 0;
-    cnt |= pathToInfo1[p] ? 1 : 0;
-    cnt |= pathToInfo2[p] ? 2 : 0;
+    cnt |= pathToAssetInTarget[p] ? 1 : 0;
+    cnt |= pathToAssetInSource[p] ? 2 : 0;
     if (cnt === 1) {
-      pathOnlyIn1.push(p);
+      pathOnlyInTarget.push(p);
     } else if (cnt === 2) {
-      pathOnlyIn2.push(p);
+      pathOnlyInSource.push(p);
     } else if (cnt === 3) {
       pathCommon.push(p);
     } else {
@@ -66,7 +80,10 @@ export async function diffMetaForSyncUp(toMeta: AssetMeta, fromMeta: AssetMeta):
     to: AssetInfoFull;
     changed?: Partial<AssetInfoFull>;
   }[] = [];
-  const pathOfMovedIn1: string[] = [];
+  /**
+   * save moved path in target, as move can only happen once.
+   */
+  const pathOfMovedInTarget: string[] = [];
   /** assets that are deleted */
   let deleted: AssetInfoFull[] = [];
 
@@ -77,70 +94,73 @@ export async function diffMetaForSyncUp(toMeta: AssetMeta, fromMeta: AssetMeta):
    * 3. move from file in 1:
    */
   /** go through relative path only in from assets meta */
-  for (const p of pathOnlyIn2) {
-    const info = pathToInfo2[p];
-    const fullInfo = await toFullAssetInfo(info, rootDir2);
-    const {sha1} = fullInfo;
-    const info1 = sha1ToAssetInfo1[sha1];
+  for (const p of pathOnlyInSource) {
+    const sourceAsset = await toFullAssetInfo(pathToAssetInSource[p], sourceRootDir);
+    const {sha1} = sourceAsset;
+    const assetInTarget = sha1ToAssetInTarget[sha1];
     // const info1 = getAssetInfoById(sha1ToAssetInfo1, sha1);
 
     /** if can't find asset info by sha1 on assets meta1 by sha1, it's a new asset */
-    if (!info1) {
-      added.push(fullInfo);
+    if (!assetInTarget) {
+      added.push(sourceAsset);
       continue;
     }
     /** Try find move action to reduce disk cost */
-    let moveFromFile: AssetInfoFull;
-    if (Array.isArray(info1)) {
-      moveFromFile = info1.find(it => {
+    let movedFileInTarget: AssetInfoFull;
+    if (Array.isArray(assetInTarget)) {
+      movedFileInTarget = assetInTarget.find(it => {
         const {relativePath} = it;
-        return pathOnlyIn1.includes(relativePath) && !pathOfMovedIn1.includes(relativePath);
+        return pathOnlyInTarget.includes(relativePath) && !pathOfMovedInTarget.includes(relativePath);
       });
     } else {
-      const {relativePath} = info1;
-      if (pathOnlyIn1.includes(relativePath) && !pathOfMovedIn1.includes(relativePath)) {
-        moveFromFile = info1;
+      const {relativePath} = assetInTarget;
+      if (pathOnlyInTarget.includes(relativePath) && !pathOfMovedInTarget.includes(relativePath)) {
+        movedFileInTarget = assetInTarget;
       }
     }
-    if (moveFromFile) {
-      pathOfMovedIn1.push(moveFromFile.relativePath);
+    /**
+     * Find move action first, if not found, it's a copy action.
+     * When do syncup using diff result, copy should be handled before move.
+     */
+    if (movedFileInTarget) {
+      pathOfMovedInTarget.push(movedFileInTarget.relativePath);
       moved.push({
-        from: moveFromFile,
-        to: fullInfo,
+        from: movedFileInTarget,
+        to: sourceAsset,
       });
     } else {
       copied.push({
-        from: Array.isArray(info1) ? info1[0] : info1,
-        to: fullInfo,
+        from: Array.isArray(assetInTarget) ? assetInTarget[0] : assetInTarget,
+        to: sourceAsset,
       });
     }
   }
   for (const p of pathCommon) {
-    const info1 = pathToInfo1[p];
-    const info2 = pathToInfo2[p];
-    const changed = diffAssets(info2, info1, isSameDir ? ['modifyDate', 'size'] : ['sha1']);
+    const targetAsset = pathToAssetInTarget[p];
+    const sourceAsset = pathToAssetInSource[p];
+    const changed = diffAssets(sourceAsset, targetAsset, isSameDir ? ['modifyDate', 'size'] : ['sha1']);
     if (changed) {
       if (isSameDir) {
         /** Once there are asset props change, should recalculate assets sha1 */
-        const newInfo2 = await toFullAssetInfo(info2, rootDir2);
-        const changed2 = diffAssets(newInfo2, info1);
+        const sourceAssetFull = await toFullAssetInfo(sourceAsset, sourceRootDir);
+        const changed2 = diffAssets(sourceAssetFull, targetAsset);
         if (changed2) {
           modified.push({
-            from: info1,
-            to: newInfo2,
+            from: targetAsset,
+            to: sourceAssetFull,
             changed: changed,
           });
         }
       } else {
         modified.push({
-          from: info1,
-          to: info2,
+          from: targetAsset,
+          to: sourceAsset,
         });
       }
     }
   }
 
-  deleted = pathOnlyIn1.filter(p => !pathOfMovedIn1.includes(p)).map(p => pathToInfo1[p]);
+  deleted = pathOnlyInTarget.filter(p => !pathOfMovedInTarget.includes(p)).map(p => pathToAssetInTarget[p]);
 
   const isNeedAction =
     [added, copied, moved, modified, deleted].reduce<number>((sum, it) => {
@@ -148,8 +168,8 @@ export async function diffMetaForSyncUp(toMeta: AssetMeta, fromMeta: AssetMeta):
     }, 0) > 0;
 
   return {
-    toDir: rootDir1,
-    fromDir: rootDir2,
+    toDir: targetRootDir,
+    fromDir: sourceRootDir,
     isNeedAction,
     added,
     copied,
