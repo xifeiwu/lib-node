@@ -81,7 +81,7 @@ export async function alignTwoMetas(
  * @param options
  * @returns
  */
-export async function alignMetaWithAssets(metaHandlers: MetaHandlers, options?: AlignTwoMetasOptions) {
+export async function updateMetaHandlerMeta(metaHandlers: MetaHandlers, options?: AlignTwoMetasOptions) {
   const {rootDir} = metaHandlers;
   /** only get partial asset info to reduce cost */
   const fromMeta = await getAssetPartialInfoTreeMeta(rootDir);

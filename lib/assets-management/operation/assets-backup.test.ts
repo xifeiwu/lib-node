@@ -1,5 +1,5 @@
 import path from 'path';
-import {alignMetaWithAssets} from '.';
+import {updateMetaHandlerMeta} from '.';
 import {getFileMetaHandler} from '../service';
 import {handleAssetsBackup} from './assets-backup';
 
@@ -12,9 +12,9 @@ const bkrootDir = '/Volumes/12T_APFS/camera';
 export async function runBackupAssets() {
   const metaHandlers = await getFileMetaHandler()(rootDir);
   await metaHandlers.getMeta();
-  await alignMetaWithAssets(metaHandlers);
+  await updateMetaHandlerMeta(metaHandlers);
   const bkMetaHandlers = await getFileMetaHandler()(bkrootDir);
   await bkMetaHandlers.getMeta();
-  await alignMetaWithAssets(bkMetaHandlers);
+  await updateMetaHandlerMeta(bkMetaHandlers);
   await handleAssetsBackup(bkMetaHandlers, metaHandlers);
 }

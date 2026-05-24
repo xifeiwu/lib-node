@@ -22,7 +22,7 @@ import type {
   SimpleMessage,
   ChatMessage,
 } from './types';
-import {alignMetaWithAssets} from '../operation';
+import {updateMetaHandlerMeta} from '../operation';
 
 async function getLocalMeta(dir: string): Promise<AssetListMeta> {
   const absDir = path.resolve(process.cwd(), dir);
@@ -31,7 +31,7 @@ async function getLocalMeta(dir: string): Promise<AssetListMeta> {
   }
   const getMetaHandlers = getFileMetaHandler();
   const metaHandlers = await getMetaHandlers(absDir);
-  await alignMetaWithAssets(metaHandlers);
+  await updateMetaHandlerMeta(metaHandlers);
   console.log(`Scanning local files in ${absDir}...`);
   const meta = await metaHandlers.getMeta();
   console.log(`Found ${meta.assetInfoList.length} files.`);

@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import {logColorful} from '../../external';
 import {addAssets, copyAsset, moveAsset, deleteAsset} from '../../operation/assets-operation';
-import {alignMetaWithAssets} from '../../operation/meta-align';
+import {updateMetaHandlerMeta} from '../../operation/meta-align';
 import {getFileMetaHandler} from '../../service';
 import type {MetaHandlers} from '../../types';
 import {SOURCE_DIR} from '../serivice';
@@ -21,12 +21,12 @@ async function createAlignedMetaHandler(): Promise<MetaHandlers> {
   delete FILE_INDEX[SOURCE_DIR];
   initSampleAssets(SOURCE_DIR);
   const metaHandler = await getFileMetaHandler({runDirectly: true})(SOURCE_DIR);
-  await alignMetaWithAssets(metaHandler);
+  await updateMetaHandlerMeta(metaHandler);
   return metaHandler;
 }
 
 async function assertMetaAligned(metaHandler: MetaHandlers, label: string) {
-  const isSame = await alignMetaWithAssets(metaHandler);
+  const isSame = await updateMetaHandlerMeta(metaHandler);
   assert.strictEqual(isSame, true, `${label}: meta should match disk`);
   logColorful({color: 'green'}, `${label}: meta aligned`);
 }

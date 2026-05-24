@@ -1,4 +1,4 @@
-import {alignMetaWithAssets} from '../../operation/meta-align';
+import {updateMetaHandlerMeta} from '../../operation/meta-align';
 import {getFileMetaHandler} from '../../service';
 import {handleAssetsBackup} from '../../operation/assets-backup';
 import {initSampleAssets} from '../../file-generator';
@@ -11,9 +11,9 @@ export async function testHandleAssetsBackup() {
   // }
   // fs.mkdirSync(TARGET_DIR, {recursive: true});
   const metaHandlers = await getFileMetaHandler()(SOURCE_DIR);
-  await alignMetaWithAssets(metaHandlers);
+  await updateMetaHandlerMeta(metaHandlers);
   const bkMetaHandlers = await getFileMetaHandler()(TARGET_DIR);
-  await alignMetaWithAssets(bkMetaHandlers);
+  await updateMetaHandlerMeta(bkMetaHandlers);
   await handleAssetsBackup(bkMetaHandlers, metaHandlers);
 }
 export async function testHandleAssetsBackup2() {
@@ -24,9 +24,9 @@ export async function testHandleAssetsBackup2() {
   const bkrootDir = '/Volumes/12T_APFS/camera';
   const metaHandlers = await getFileMetaHandler()(rootDir);
   await metaHandlers.getMeta();
-  await alignMetaWithAssets(metaHandlers);
+  await updateMetaHandlerMeta(metaHandlers);
   const bkMetaHandlers = await getFileMetaHandler()(bkrootDir);
   await bkMetaHandlers.getMeta();
-  await alignMetaWithAssets(bkMetaHandlers);
+  await updateMetaHandlerMeta(bkMetaHandlers);
   await handleAssetsBackup(bkMetaHandlers, metaHandlers);
 }

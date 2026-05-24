@@ -14,7 +14,7 @@ import {
   streamFileToSocket,
   receiveFileFromSocket,
 } from './protocol';
-import {alignMetaWithAssets} from '../operation';
+import {updateMetaHandlerMeta} from '../operation';
 import type {AssetsSyncCommand, AddFileMessage, SimpleMessage} from './types';
 
 export {ASSETS_SYNC_PROTOCOL_BYTE};
@@ -43,7 +43,7 @@ export async function handleAssetsSyncConnection(socket: Socket, config: AssetsS
 
     const metaHandlers = await getFileMetaHandler({runDirectly: true})(dir);
     const serverMeta = await metaHandlers.getMeta();
-    await alignMetaWithAssets(metaHandlers);
+    await updateMetaHandlerMeta(metaHandlers);
 
     let diff: MetaDiffForSyncUp;
     if (command === 'push' || command === 'diff') {
