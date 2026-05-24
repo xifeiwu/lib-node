@@ -31,19 +31,12 @@ function getActions(stateChange: MetaDiffForSyncUp) {
  * @param options
  * @returns two metas are the same or not
  */
-export async function alignTwoMetas(
+export async function applyDiffForMetaSyncup(
   targetMetaHandlers: MetaHandlers,
-  sourceMeta: AssetMeta,
+  difference: MetaDiffForSyncUp,
   options?: AlignTwoMetasOptions
 ): Promise<boolean> {
-  const targetMeta = await targetMetaHandlers.getMeta();
-  if (targetMeta.rootDir !== sourceMeta.rootDir) {
-    throw new Error(`toMeta.rootDir should not be the same as fromMeta.rootDir`);
-  }
-  const difference = await diffMetaForSyncUp(targetMeta, sourceMeta);
-  if (!difference.isNeedAction) {
-    return true;
-  }
+  const {targetDir} = difference;
   const {outputDir = DIR_ASSET_MANAGE_TMP_DIR} = options ?? {};
   const action = getActions(difference);
   if (!options?.runDirectly) {
@@ -57,7 +50,7 @@ export async function alignTwoMetas(
     if (
       !(await goOnOrNot({
         tips: [
-          `Need to do meta-asset sync up for dir: ${targetMeta.rootDir}`,
+          `Need to do meta-asset sync up for dir: ${targetDir}`,
           `state change is saved to file: ${stateFile}`,
           `Are you sure to apply state change above?`,
         ],
@@ -72,7 +65,6 @@ export async function alignTwoMetas(
   await targetMetaHandlers.createItems(toAdd);
   await targetMetaHandlers.updateItems(toModify.map(it => ({info: it.to, prevInfo: it.from})));
   await targetMetaHandlers.removeItems(toDelete.map(it => it.relativePath));
-  return false;
 }
 
 /**
@@ -84,7 +76,15 @@ export async function alignTwoMetas(
 export async function updateMetaHandlerMeta(metaHandlers: MetaHandlers, options?: AlignTwoMetasOptions) {
   const {rootDir} = metaHandlers;
   /** only get partial asset info to reduce cost */
-  const fromMeta = await getAssetPartialInfoTreeMeta(rootDir);
-  const isSame = await alignTwoMetas(metaHandlers, fromMeta, options);
-  return isSame;
+  const sourceMeta = await getAssetPartialInfoTreeMeta(rootDir);
+  const targetMeta = await metaHandlers.getMeta();
+  if (targetMeta.rootDir !== sourceMeta.rootDir) {
+    throw new Error(`toMeta.rootDir should not be the same as fromMeta.rootDir`);
+  }
+  const difference = await diffMetaForSyncUp(targetMeta, sourceMeta);
+  if (!difference.isNeedAction) {
+    return difference;
+  }
+  await applyDiffForMetaSyncup(metaHandlers, difference, options);
+  return difference;
 }
