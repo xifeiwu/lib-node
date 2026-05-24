@@ -3,7 +3,7 @@ import * as path from 'path';
 import {Socket} from 'net';
 import {execFileSync} from 'child_process';
 import {getFileMetaHandler} from '../service/file-meta-handler';
-import {diffMetaForSyncUp, serializeMetaDiff} from '../service/diff-meta';
+import {diffMetaForSyncUp, serializeMetaDiffForSyncup} from '../service/diff-meta';
 import {getPartialAssetInfo} from '../service/asset-info';
 import type {AssetInfoFull, AssetListMeta, MetaDiffForSyncUp, MetaHandlers} from '../types';
 import {
@@ -52,7 +52,7 @@ export async function handleAssetsSyncConnection(socket: Socket, config: AssetsS
       diff = await diffMetaForSyncUp(clientMeta, serverMeta);
     }
 
-    await writeJsonFrame(socket, {label: 'diff', meta: serializeMetaDiff(diff)});
+    await writeJsonFrame(socket, {label: 'diff', meta: serializeMetaDiffForSyncup(diff)});
 
     if (command === 'diff') {
       socket.end();

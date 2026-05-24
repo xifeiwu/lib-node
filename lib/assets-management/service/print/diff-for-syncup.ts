@@ -29,8 +29,8 @@ export function printDiffForSyncUp(diff: MetaDiffForSyncUp) {
   const totalSize = (list: AssetInfoFull[]) => list.reduce((sum, f) => sum + (f.size || 0), 0);
 
   console.log('\n--- Diff Summary ---');
-  console.log(`  To:   ${diff.toDir}`);
-  console.log(`  From: ${diff.fromDir}`);
+  console.log(`  To:   ${diff.targetDir}`);
+  console.log(`  From: ${diff.sourceDir}`);
 
   if (added.length) {
     console.log(`  Added:    ${added.length} files (${byteToWord(totalSize(added))})`);

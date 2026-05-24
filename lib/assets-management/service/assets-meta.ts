@@ -25,6 +25,7 @@ import {
   AssetListMeta,
   AssetMeta,
   MetaFileContent,
+  MetaHandlers,
 } from '../types';
 import {deserailizeAssetInfo, diffAssets, getAssetInfo, serailizeAssetInfo} from './asset-info';
 import {isNumber, toDtStr} from '../../../external';

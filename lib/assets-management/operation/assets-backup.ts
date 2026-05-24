@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import {AssetInfoFull, MetaHandlers} from '../types';
-import {serializeMetaDiff, getPartialAssetInfo} from '../service';
+import {AssetInfoFull, AssetMeta, MetaDiffForSyncUp, MetaHandlers} from '../types';
+import {serializeMetaDiffForSyncup, getPartialAssetInfo} from '../service';
 import {diffMetaForSyncUp} from '../service';
 import {
   goOnOrNot,
@@ -15,30 +15,17 @@ import {
 } from '../external';
 import {DIR_ASSET_MANAGE_TMP_DIR, FILE_SUFFIX_DT_FORMAT} from '../service';
 
-export async function backupAssets(
+interface ApplyDiffForAssetsBackupOptions {
+  runDirectly?: boolean;
+  outputDir?: string;
+}
+export async function applyDiffForAssetsBackup(
   targetMetaHandlers: MetaHandlers,
-  sourceMetaHandlers: MetaHandlers,
-  options?: {
-    outputDir?: string;
-    runDirectly?: boolean;
-  }
+  sourceMeta: AssetMeta,
+  difference: MetaDiffForSyncUp,
+  options?: ApplyDiffForAssetsBackupOptions
 ) {
-  const {rootDir: rootDir1} = targetMetaHandlers;
-  const {rootDir: rootDir2} = sourceMetaHandlers;
-  if (!rootDir1 || !rootDir2) {
-    throw new Error(`source or target rootDir is empty!`);
-  }
-  if (rootDir1 === rootDir2) {
-    throw new Error(`rootDir should not be the same!`);
-  }
-
-  const targetMeta = await targetMetaHandlers.getMeta();
-  const sourceMeta = await sourceMetaHandlers.getMeta();
-  const difference = await diffMetaForSyncUp(targetMeta, sourceMeta);
-  if (!difference.isNeedAction) {
-    return true;
-  }
-
+  const {sourceDir, targetDir} = difference;
   /** save diff info to file and ask user to double confirm */
   if (!options?.runDirectly) {
     const {outputDir = DIR_ASSET_MANAGE_TMP_DIR} = options ?? {};
@@ -47,12 +34,12 @@ export async function backupAssets(
     });
     writeFileSync(
       stateFile,
-      convertObjectToCjsExport({difference: serializeMetaDiff(difference)}, {format: true})
+      convertObjectToCjsExport({difference: serializeMetaDiffForSyncup(difference)}, {format: true})
     );
     if (
       !(await goOnOrNot({
         tips: [
-          `backup assets from ${rootDir2} to ${rootDir1}`,
+          `backup assets from ${sourceDir} to ${targetDir}`,
           `state change is saved to file: ${stateFile}`,
           `Are you sure to apply state change above?`,
         ],
@@ -69,8 +56,8 @@ export async function backupAssets(
   let copiedSize = 0;
   for (const assetInfo of added) {
     const {relativePath, sha1, shortId} = assetInfo;
-    const sourcePath = path.join(sourceMetaHandlers.rootDir, relativePath);
-    const targetPath = path.join(targetMetaHandlers.rootDir, relativePath);
+    const sourcePath = path.join(sourceDir, relativePath);
+    const targetPath = path.join(targetDir, relativePath);
     makeSureDirExistForFile(targetPath);
     console.log(
       `[${++copiedCount}/${added.length}] copying [${byteToWord(assetInfo.size)}] from ${sourcePath} to ${targetPath}`
@@ -83,7 +70,7 @@ export async function backupAssets(
     await targetMetaHandlers.createItem({
       sha1,
       shortId,
-      ...(await getPartialAssetInfo({rootDir: targetMetaHandlers.rootDir, relativePath})),
+      ...(await getPartialAssetInfo({rootDir: targetDir, relativePath})),
     } as AssetInfoFull);
   }
 
@@ -133,6 +120,31 @@ export async function backupAssets(
     removeFile(fromPath);
     await targetMetaHandlers.removeItem(relativePath);
   }
+}
 
+export async function backupAssets(
+  targetMetaHandlers: MetaHandlers,
+  sourceMeta: AssetMeta,
+  // sourceMetaHandlers: MetaHandlers,
+  options?: {
+    outputDir?: string;
+    runDirectly?: boolean;
+  }
+) {
+  const {rootDir: targetRootDir} = targetMetaHandlers;
+  const {rootDir: sourceRootDir} = sourceMeta;
+  if (!targetRootDir || !sourceRootDir) {
+    throw new Error(`source or target rootDir is empty!`);
+  }
+  if (targetRootDir === sourceRootDir) {
+    throw new Error(`rootDir should not be the same!`);
+  }
+
+  const targetMeta = await targetMetaHandlers.getMeta();
+  const difference = await diffMetaForSyncUp(targetMeta, sourceMeta);
+  if (!difference.isNeedAction) {
+    return true;
+  }
+  await applyDiffForAssetsBackup(targetMetaHandlers, sourceMeta, difference, options);
   return true;
 }

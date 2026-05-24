@@ -1,6 +1,9 @@
 import path from 'path';
 import {AssetInfoFull, AssetMeta, MetaDiffForSyncUp, MetaHandlers} from '../types';
-import {getAssetPartialInfoTreeMeta, serializeMetaDiff} from '../service';
+import {
+  getAssetPartialInfoTreeMeta,
+  serializeMetaDiffForSyncup as serializeMetaDiffForSyncup,
+} from '../service';
 import {diffMetaForSyncUp} from '../service';
 import {goOnOrNot, addDtSuffixToBareBasename, convertObjectToCjsExport, writeFileSync} from '../external';
 import {DIR_ASSET_MANAGE_TMP_DIR, FILE_SUFFIX_DT_FORMAT} from '../service';
@@ -49,7 +52,7 @@ export async function alignTwoMetas(
     });
     writeFileSync(
       stateFile,
-      convertObjectToCjsExport({difference: serializeMetaDiff(difference), action}, {format: true})
+      convertObjectToCjsExport({difference: serializeMetaDiffForSyncup(difference), action}, {format: true})
     );
     if (
       !(await goOnOrNot({

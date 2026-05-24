@@ -5,8 +5,8 @@ import {AssetInfoFull} from './asset';
  */
 export interface MetaDiffForSyncUp {
   isNeedAction: boolean;
-  toDir: string;
-  fromDir: string;
+  sourceDir: string;
+  targetDir: string;
   // forOperation: ForOperation;
   added?: AssetInfoFull[];
   copied?: {

@@ -14,13 +14,13 @@ export async function diffMetaForSyncUp(
   targetMeta: AssetMeta,
   sourceMeta: AssetMeta
 ): Promise<MetaDiffForSyncUp> {
-  const {rootDir: targetRootDir} = targetMeta;
-  const {rootDir: sourceRootDir} = sourceMeta;
+  const {rootDir: targetDir} = targetMeta;
+  const {rootDir: sourceDir} = sourceMeta;
 
   const targetAssetList = getAssetInfoListFromMeta(targetMeta);
   const sourceAssetList = getAssetInfoListFromMeta(sourceMeta);
 
-  const isSameDir = targetRootDir === sourceRootDir;
+  const isSameDir = targetDir === sourceDir;
   /** check asset info */
   assert(
     targetAssetList.every(it => it.sha1 !== undefined),
@@ -95,7 +95,7 @@ export async function diffMetaForSyncUp(
    */
   /** go through relative path only in from assets meta */
   for (const p of pathOnlyInSource) {
-    const sourceAsset = await toFullAssetInfo(pathToAssetInSource[p], sourceRootDir);
+    const sourceAsset = await toFullAssetInfo(pathToAssetInSource[p], sourceDir);
     const {sha1} = sourceAsset;
     const assetInTarget = sha1ToAssetInTarget[sha1];
     // const info1 = getAssetInfoById(sha1ToAssetInfo1, sha1);
@@ -142,7 +142,7 @@ export async function diffMetaForSyncUp(
     if (changed) {
       if (isSameDir) {
         /** Once there are asset props change, should recalculate assets sha1 */
-        const sourceAssetFull = await toFullAssetInfo(sourceAsset, sourceRootDir);
+        const sourceAssetFull = await toFullAssetInfo(sourceAsset, sourceDir);
         const changed2 = diffAssets(sourceAssetFull, targetAsset);
         if (changed2) {
           modified.push({
@@ -168,8 +168,8 @@ export async function diffMetaForSyncUp(
     }, 0) > 0;
 
   return {
-    toDir: targetRootDir,
-    fromDir: sourceRootDir,
+    targetDir: targetDir,
+    sourceDir: sourceDir,
     isNeedAction,
     added,
     copied,
@@ -209,7 +209,7 @@ export async function diffMetaForImportNew(
 }
 
 // export function diffAssetMeta(from: MetaInfo, to: MetaInfo) {}
-export function serializeMetaDiff(stateChange: MetaDiffForSyncUp) {
+export function serializeMetaDiffForSyncup(stateChange: MetaDiffForSyncUp) {
   return {
     ...stateChange,
     added: stateChange.added?.map(it => serailizeAssetInfo(it)),
