@@ -54,10 +54,13 @@ export const getFileMetaHandler = (
       return metaFile;
     }
 
-    function updateMeta(options?: {newValue?: AssetTreeMeta | null}) {
-      const {newValue} = options ?? {};
+    function updateMeta(options?: {newValue?: AssetTreeMeta | null; save?: boolean}) {
+      const {newValue, save} = options ?? {};
       if (newValue !== undefined) {
         meta = {...newValue, rootDir};
+      }
+      if (save === false) {
+        return;
       }
       if (metaFile) {
         saveMetaToFile(metaFile, {...meta, rootDir});
@@ -79,7 +82,7 @@ export const getFileMetaHandler = (
         if (result.rootDir !== rootDir) {
           throw new Error(`rootDir from assetMeta is different from rootDir of meta handler!`);
         }
-        updateMeta({newValue: result});
+        updateMeta({newValue: result, save: false});
       } else {
         if (
           runDirectly !== true &&
