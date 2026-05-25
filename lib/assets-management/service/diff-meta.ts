@@ -147,13 +147,14 @@ export async function diffMetaForSyncUp(
           modified.push({
             from: targetAsset,
             to: sourceAssetFull,
-            changed: changed,
+            changed: changed2,
           });
         }
       } else {
         modified.push({
           from: targetAsset,
           to: sourceAsset,
+          changed,
         });
       }
     }

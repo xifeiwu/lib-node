@@ -8,6 +8,7 @@ export {
   getRandomBase64String,
   getSequentialBase64String,
   toDurationStr,
+  msToDuration,
   formatDt,
   toDtStr,
 } from '../../../js';
