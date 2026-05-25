@@ -2,7 +2,7 @@ import {byteToWord, formatDate} from '../../external';
 import type {AssetInfoFull, MetaDiffForSyncUp} from '../../types';
 
 /** Max lines printed per diff category (beyond summary counts). */
-const DIFF_DETAIL_LIMIT = 40;
+const DIFF_DETAIL_LIMIT = 100;
 const DT_FORMAT = 'yyyy-MM-ddThh:mm:ss.SSSz';
 
 function abbrevSha(sha1: string | undefined): string {

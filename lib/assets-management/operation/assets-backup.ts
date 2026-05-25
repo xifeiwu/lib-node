@@ -137,7 +137,7 @@ export async function backupAssets(
     throw new Error(`source or target rootDir is empty!`);
   }
   if (targetRootDir === sourceRootDir) {
-    throw new Error(`rootDir should not be the same!`);
+    throw new Error(`backupAssets should happen in different dirs!`);
   }
 
   const targetMeta = await targetMetaHandlers.getMeta();
