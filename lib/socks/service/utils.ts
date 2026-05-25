@@ -78,6 +78,7 @@ export const ERRORS = {
   InvalidSocks5IncomingConnectionResponse: 'Received invalid Socks5 incoming connection response',
   Socks5ProxyRejectedIncomingBoundConnection: 'Socks5 Proxy rejected incoming bound connection',
   IPV4FormatNotCorrect: 'format of ipv4 address is not correct',
+  IPv6FormatNotCorrect: 'format of ipv6 address is not correct',
   proxyError: 'error while proxy to other socks server',
 };
 
@@ -159,6 +160,132 @@ export function getAddressType(host: string): EAddressType {
   return EAddressType.DOMAINNAME;
 }
 
+function ipv4BytesToHextets(bytes: Buffer): [string, string] {
+  return [((bytes[0] << 8) | bytes[1]).toString(16), ((bytes[2] << 8) | bytes[3]).toString(16)];
+}
+
+function expandIpv6Hextets(address: string): string[] {
+  let ipv4Part: string | undefined;
+  if (address.includes('.')) {
+    const lastColon = address.lastIndexOf(':');
+    if (lastColon < 0) {
+      throw createError(ERRORS.IPv6FormatNotCorrect);
+    }
+    ipv4Part = address.slice(lastColon + 1);
+    address = address.slice(0, lastColon);
+  }
+
+  let parts: string[];
+  if (address.includes('::')) {
+    const [left, right] = address.split('::');
+    const leftParts = left ? left.split(':').filter(Boolean) : [];
+    const rightParts = right ? right.split(':').filter(Boolean) : [];
+    const ipv4Slots = ipv4Part ? 2 : 0;
+    const missing = 8 - leftParts.length - rightParts.length - ipv4Slots;
+    if (missing < 0) {
+      throw createError(ERRORS.IPv6FormatNotCorrect);
+    }
+    parts = [...leftParts, ...Array<string>(missing).fill('0'), ...rightParts];
+  } else {
+    parts = address.split(':').filter(Boolean);
+  }
+
+  if (ipv4Part) {
+    const ipv4Bytes = address2Buffer(ipv4Part, EAddressType.IPV4);
+    parts.push(...ipv4BytesToHextets(ipv4Bytes));
+  }
+
+  if (parts.length !== 8) {
+    throw createError(ERRORS.IPv6FormatNotCorrect);
+  }
+  return parts;
+}
+
+/**
+ * parses IPv6 strings (including :: compression and ::ffff:x.x.x.x) into 16-byte SOCKS5 wire format
+ * @param address
+ * @returns
+ */
+function ipv6ToBuffer(address: string): Buffer {
+  if (isIP(address) !== 6) {
+    throw createError(ERRORS.IPv6FormatNotCorrect);
+  }
+  const parts = expandIpv6Hextets(address);
+  const buf = Buffer.alloc(16);
+  for (let i = 0; i < 8; i++) {
+    const value = parseInt(parts[i], 16);
+    if (isNaN(value) || value < 0 || value > 0xffff) {
+      throw createError(ERRORS.IPv6FormatNotCorrect);
+    }
+    buf.writeUInt16BE(value, i * 2);
+  }
+  return buf;
+}
+
+/**
+ * decodes 16 bytes back to a compressed IPv6 string (RFC 5952-style)
+ * @param buf
+ * @returns
+ */
+function bufferToIpv6(buf: Buffer): string {
+  if (buf.byteLength !== 16) {
+    throw createError(ERRORS.InvalidSchemaFormat);
+  }
+  const groups: number[] = [];
+  for (let i = 0; i < 8; i++) {
+    groups.push(buf.readUInt16BE(i * 2));
+  }
+
+  if (
+    groups[0] === 0 &&
+    groups[1] === 0 &&
+    groups[2] === 0 &&
+    groups[3] === 0 &&
+    groups[4] === 0 &&
+    groups[5] === 0xffff
+  ) {
+    const ipv4 = [(groups[6] >> 8) & 0xff, groups[6] & 0xff, (groups[7] >> 8) & 0xff, groups[7] & 0xff].join(
+      '.'
+    );
+    return `::ffff:${ipv4}`;
+  }
+
+  const hexParts = groups.map(g => g.toString(16));
+  let bestStart = -1;
+  let bestLen = 0;
+  for (let i = 0; i < hexParts.length; i++) {
+    if (hexParts[i] !== '0') {
+      continue;
+    }
+    let j = i;
+    while (j < hexParts.length && hexParts[j] === '0') {
+      j++;
+    }
+    const len = j - i;
+    if (len > bestLen) {
+      bestLen = len;
+      bestStart = i;
+    }
+  }
+
+  if (bestLen < 2) {
+    return hexParts.join(':');
+  }
+
+  const before = hexParts.slice(0, bestStart);
+  const after = hexParts.slice(bestStart + bestLen);
+  if (before.length === 0 && after.length === 0) {
+    return '::';
+  }
+  if (before.length === 0) {
+    return '::' + after.join(':');
+  }
+  if (after.length === 0) {
+    return before.join(':') + '::';
+  }
+  return before.join(':') + '::' + after.join(':');
+}
+
 function address2Buffer(address: string, addressType?: EAddressType) {
   if (!addressType) {
     addressType = getAddressType(address);
@@ -173,7 +300,7 @@ function address2Buffer(address: string, addressType?: EAddressType) {
     }
     return Buffer.from(bytes);
   } else if (addressType === EAddressType.IPV6) {
-    throw new Error(`ipv6 not support yet`);
+    return ipv6ToBuffer(address);
   } else if (addressType === EAddressType.DOMAINNAME) {
     const length = address.length;
     if (length > 255) {
@@ -222,6 +349,14 @@ export function bufferToTargeServiceInfo(buf: Buffer): Required<Omit<RequestTarg
     const domainBuf = remainBuffer.subarray(0, 4);
     const portBuf = remainBuffer.subarray(4, 6);
     address = Array.prototype.join.call(domainBuf, '.');
+    port = (portBuf[0] << 8) + portBuf[1];
+  } else if (addressType === EAddressType.IPV6) {
+    if (remainBuffer.byteLength < 18) {
+      throw createError(ERRORS.InvalidSchemaFormat);
+    }
+    const addrBuf = remainBuffer.subarray(0, 16);
+    const portBuf = remainBuffer.subarray(16, 18);
+    address = bufferToIpv6(addrBuf);
     port = (portBuf[0] << 8) + portBuf[1];
   }
   return {addressType, address, port};
