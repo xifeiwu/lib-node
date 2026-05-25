@@ -1,12 +1,42 @@
-import {byteToWord} from '../../external';
+import {byteToWord, formatDate} from '../../external';
 import type {AssetInfoFull, MetaDiffForSyncUp} from '../../types';
 
 /** Max lines printed per diff category (beyond summary counts). */
 const DIFF_DETAIL_LIMIT = 40;
+const DT_FORMAT = 'yyyy-MM-ddThh:mm:ss.SSSz';
 
 function abbrevSha(sha1: string | undefined): string {
   if (!sha1) return '(no hash)';
   return sha1.length <= 12 ? sha1 : `${sha1.slice(0, 12)}…`;
+}
+
+function formatAssetFieldValue(key: keyof AssetInfoFull, value: unknown): string {
+  if (value === undefined) return '(none)';
+  if (key === 'size') return byteToWord((value as number) || 0);
+  if (key === 'sha1') return abbrevSha(value as string);
+  if (key === 'modifyDate' || key === 'changeDate') {
+    return formatDate(value as Date | string, DT_FORMAT);
+  }
+  return String(value);
+}
+
+function formatChangedField(key: keyof AssetInfoFull, from: AssetInfoFull, to: AssetInfoFull): string {
+  if (!['shortId', 'relativePath', 'size', 'modifyDate'].includes(key)) {
+    return '';
+  }
+  const fromVal = formatAssetFieldValue(key, from[key]);
+  const toVal = formatAssetFieldValue(key, to[key]);
+  if (key === 'sha1') {
+    return `sha1 ${fromVal} → ${toVal}`;
+  }
+  return `${key} ${fromVal} → ${toVal}`;
+}
+
+function modifiedLine({from, to, changed}: MetaDiffForSyncUp['modified'][number]): string {
+  const keys = changed ? (Object.keys(changed) as Array<keyof AssetInfoFull>) : [];
+  const parts = keys.map(key => formatChangedField(key, from, to)).filter(Boolean);
+  const detail = parts.length ? `  ${parts.join('  ')}` : '';
+  return `~ ${to.relativePath}${detail}`;
 }
 
 function assetBriefLine(a: AssetInfoFull): string {
@@ -29,6 +59,9 @@ export function printDiffForSyncUp(diff: MetaDiffForSyncUp) {
   const totalSize = (list: AssetInfoFull[]) => list.reduce((sum, f) => sum + (f.size || 0), 0);
 
   console.log('\n--- Diff Summary ---');
+  if (!diff.isNeedAction) {
+    return;
+  }
   console.log(`  To:   ${diff.targetDir}`);
   console.log(`  From: ${diff.sourceDir}`);
 
@@ -43,14 +76,7 @@ export function printDiffForSyncUp(diff: MetaDiffForSyncUp) {
   if (modified.length) {
     console.log(`  Modified: ${modified.length} files`);
     const sorted = [...modified].sort((a, b) => a.to.relativePath.localeCompare(b.to.relativePath));
-    const lines = sorted.map(m => {
-      const {from, to, changed} = m;
-      const sizePart = `${byteToWord(from.size || 0)} → ${byteToWord(to.size || 0)}`;
-      const hashPart = `sha1 ${abbrevSha(from.sha1)} → ${abbrevSha(to.sha1)}`;
-      const changedKeys =
-        changed && Object.keys(changed).length ? `  changed: ${Object.keys(changed).join(', ')}` : '';
-      return `~ ${to.relativePath}  ${sizePart}  ${hashPart}${changedKeys}`;
-    });
+    const lines = sorted.map(modifiedLine);
     printDetailLines(lines, modified.length);
   }
   if (moved.length) {
