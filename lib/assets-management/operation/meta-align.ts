@@ -79,7 +79,7 @@ export async function updateMetaHandlerMeta(metaHandlers: MetaHandlers, options?
   const sourceMeta = await getAssetPartialInfoTreeMeta(rootDir);
   const targetMeta = await metaHandlers.getMeta();
   if (targetMeta.rootDir !== sourceMeta.rootDir) {
-    throw new Error(`toMeta.rootDir should not be the same as fromMeta.rootDir`);
+    throw new Error(`updateMetaHandlerMeta: source meta root dir should be the same as target meta root dir`);
   }
   const difference = await diffMetaForSyncUp(targetMeta, sourceMeta);
   if (!difference.isNeedAction) {

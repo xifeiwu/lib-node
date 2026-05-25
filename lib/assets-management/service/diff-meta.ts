@@ -98,7 +98,6 @@ export async function diffMetaForSyncUp(
     const sourceAsset = await toFullAssetInfo(pathToAssetInSource[p], sourceDir);
     const {sha1} = sourceAsset;
     const assetInTarget = sha1ToAssetInTarget[sha1];
-    // const info1 = getAssetInfoById(sha1ToAssetInfo1, sha1);
 
     /** if can't find asset info by sha1 on assets meta1 by sha1, it's a new asset */
     if (!assetInTarget) {

@@ -428,10 +428,12 @@ export function deserailizeTreeMeta(meta: AssetTree) {
   return deserailizeAssetInfo(meta as AssetInfoFull);
 }
 
-/** Start: meta file persistence in dir level, may be deprecated */
+/**
+ * get meta dir of assets
+ * the existence of meta dir means the assets is initialized
+ */
 export function getMetaDir(rootDir: string) {
   const metaDir = path.join(rootDir, META_DIR_NAME);
-  makeSureDirExist(metaDir, {isDir: true});
   return metaDir;
 }
 
@@ -467,6 +469,7 @@ export function saveDirMeta(
     assetMeta = toAssetTreeMeta(assetMeta, rootDir);
   }
   const metaFile = getDefaultMetaFilePath(rootDir);
+  makeSureDirExistForFile(metaFile);
   const lastBackupTime = fs.existsSync(metaFile) ? fs.statSync(metaFile).mtime.getTime() : 0;
   if (
     lastBackupTime > 0 &&

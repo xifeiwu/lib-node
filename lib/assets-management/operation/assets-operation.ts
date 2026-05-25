@@ -284,7 +284,9 @@ export async function addAssets(
       }
     } else {
       if (!file.targetPath) {
-        throw new Error(`target path must be provided during addAssets when source is internal file`);
+        throw new Error(
+          `target path must be provided during addAssets when source is internal file: ${sourceRelativePath}`
+        );
       }
       const {relativePath: targetRelativePath} = resolvePathInRoot(rootDir, file.targetPath);
       if (fs.statSync(sourceFullPath).isDirectory()) {
