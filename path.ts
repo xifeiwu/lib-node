@@ -184,7 +184,10 @@ export function expandHome(inputPath: string) {
  */
 function getRelativePathInRoot(rootDir: string, filePath: string): string | undefined {
   const relativePath = path.relative(path.resolve(rootDir), path.resolve(filePath));
-  if (!relativePath || relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
+  if (relativePath === '') {
+    return '.';
+  }
+  if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
     return undefined;
   }
   return relativePath;

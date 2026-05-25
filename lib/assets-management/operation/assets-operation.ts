@@ -257,7 +257,7 @@ export async function addAssets(
 
     /** start to add asset */
     /** sourceRelativePath is undefined means the source is an external source */
-    if (!sourceRelativePath) {
+    if (sourceRelativePath === undefined) {
       if (sourceStat.isDirectory()) {
         const targetRelativeDir =
           file.targetPath ?? path.join(defaultTargetDir, path.basename(sourceFullPath));
@@ -284,7 +284,7 @@ export async function addAssets(
       }
     } else {
       if (!file.targetPath) {
-        throw new Error(`target path must be provided when addAssets and source is internal file`);
+        throw new Error(`target path must be provided during addAssets when source is internal file`);
       }
       const {relativePath: targetRelativePath} = resolvePathInRoot(rootDir, file.targetPath);
       if (fs.statSync(sourceFullPath).isDirectory()) {
