@@ -3,6 +3,13 @@ import {deepMergeByConcat, Env, deepClone, isObject, deepEqual, omitNullable} fr
 import {HttpRequestOptions, HttpServerConfig} from '../../types';
 import {getDefaultTlsConfig} from '../../net';
 
+export function isHtmlRequest(req: {headers: {accept?: string | string[]}; method?: string}): boolean {
+  if (req.method && req.method !== 'GET' && req.method !== 'HEAD') return false;
+
+  const accept = Array.isArray(req.headers.accept) ? req.headers.accept.join(',') : req.headers.accept;
+  return !accept || accept.includes('text/html');
+}
+
 export interface MergeHttpHeadersOptions {
   ignoreNullable?: boolean;
 }
