@@ -4,7 +4,6 @@ import path from 'path';
 import {FilePathSegement} from './types';
 import {formatDate, getDtStrInFormat} from './external';
 import {isFileExist} from './fs';
-import {isMapIterator} from 'util/types';
 
 export function parseBasename(basename: string) {
   const extname = path.extname(basename);

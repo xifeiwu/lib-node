@@ -9,6 +9,7 @@ export {
   isFunction,
   isObject,
   concatPath,
+  formatPathname,
   deepClone,
   deepMerge,
   deepMergeByConcat,
