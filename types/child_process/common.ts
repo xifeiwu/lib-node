@@ -81,7 +81,7 @@ export interface SpawnResult {
 }
 
 /**
- * @deprecated as it meaningless
+ * @deprecated as it meaningless, the type of data send to child process can be described directly.
  */
 export interface InfoToCp<CpConfig = any> {
   /** Config passed to child process */

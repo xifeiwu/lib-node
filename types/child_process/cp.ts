@@ -1,5 +1,4 @@
-import {Server} from 'net';
-import {InfoToCp, SerializableSpawnInfo, SpawnConfig, SpawnAndTryIpcResponse} from './common';
+import {SerializableSpawnInfo} from './common';
 import {HttpServerConfig} from '../http';
 import {ProcessInfo} from '../process';
 
@@ -52,67 +51,4 @@ export namespace CP {
     master: DebugServerResponse;
     slaves: Array<SerializableSpawnInfo<DebugServerResponse>>;
   }
-
-  export interface DaemonConfig {
-    /** For socket server: fullname or object of path info */
-    socketPath?:
-      | {
-          dirname?: string;
-          basename?: string;
-        }
-      /** fullpath or basename */
-      | string;
-    /** For spwan child process: restart child process when it's exited */
-    retry?: {
-      /** max count of retry */
-      maxCount?: number;
-      /** Minimum time a child process has to be up. */
-      minInterval?: number;
-    };
-  }
-  export interface DaemonSocketInfo {
-    path?: string;
-    server?: Server;
-  }
-  export interface DaemonCPStatus {
-    status: 'init' | 'start' | 'running' | 'stop' | 'exiting';
-    currentAction: 'none' | 'start' | 'stop' | 'restart';
-    retryCount: number;
-    response?: SpawnAndTryIpcResponse;
-  }
-  export interface DaemonInfo<ResponseFromCp = any> {
-    pid: number;
-    config: InfoToCp<CP.DaemonConfig>;
-    socketPath: string;
-    cpStatus: Omit<DaemonCPStatus, 'response'> & {
-      spawnInfo: SerializableSpawnInfo<ResponseFromCp>;
-    };
-  }
-  type Action = 'start' | 'stop' | 'restart' | 'info';
-  export type DaemonAction = {
-    action: Action | 'ping';
-    info?: InfoToCp<CP.DaemonConfig>;
-  };
-  export interface DaemonResponseInfo {
-    type: Action | 'unknown';
-    data?: DaemonInfo;
-  }
-  export interface DaemonResponsePong {
-    type: 'pong';
-  }
-  export interface DaemonResponseError {
-    type: 'error';
-    message: string;
-  }
-  export type DaemonResponseOnAction = DaemonResponseInfo | DaemonResponsePong | DaemonResponseError;
-
-  /**
-   * @deprecated may be useless
-   */
-  export type ScriptFileName =
-    | 'debug-server.ts'
-    | 'debug-server.js'
-    | 'debug-server-cluster.ts'
-    | 'echo-input.ts'
-    | 'daemon.ts';
 }
