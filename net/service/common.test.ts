@@ -1,4 +1,4 @@
-import {getLocalIpAddress} from './utils';
+import {getLocalIpAddress} from './common';
 
 export function testGetLocalIpAddress() {
   const ipAddress = getLocalIpAddress();

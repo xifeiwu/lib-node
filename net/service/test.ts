@@ -1,5 +1,5 @@
 import {startSocketServer} from './server';
-import {watchSocketState} from './utils';
+import {watchSocketState} from './common';
 import {startSocketClient} from './client';
 import {getBufferGenerator} from '../../index';
 import {waitFor} from '../../external';
