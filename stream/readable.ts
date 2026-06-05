@@ -76,9 +76,11 @@ export function getOneLineFromReader(
   options?: {
     /** return first chunk when not find '\r\n' on first chunk  */
     firstChunkOnly?: boolean;
+    /** max time to wait for the first chunk */
+    timeout?: number;
   }
 ): Promise<Buffer> {
-  const {firstChunkOnly} = options ?? {};
+  const {firstChunkOnly, timeout} = options ?? {};
   let resolve: (data: Buffer) => void;
   let reject: (err: Error) => void;
   const promise = new Promise<Buffer>((res, rej) => {
@@ -87,7 +89,19 @@ export function getOneLineFromReader(
   });
   let matcher = getSequenceMatcher('\r\n');
   let resolved = false;
+  let timeoutTag: NodeJS.Timeout | null = null;
   const bytes: number[] = [];
+  const finish = (fn: () => void) => {
+    if (resolved) {
+      return;
+    }
+    resolved = true;
+    if (timeoutTag) {
+      clearTimeout(timeoutTag);
+    }
+    reader.removeListener('readable', parse);
+    fn();
+  };
   const parse = () => {
     if (resolved) {
       return;
@@ -102,17 +116,16 @@ export function getOneLineFromReader(
       // cacheBuffer = Buffer.concat([cacheBuffer, oneByte]);
       bytes.push(oneByte);
       if (matcher(oneByte)) {
-        resolve(Buffer.from(bytes));
-        resolved = true;
+        finish(() => resolve(Buffer.from(bytes)));
         break;
       }
     }
     if (!resolved) {
       if (firstChunkOnly) {
-        resolve(Buffer.from(bytes));
+        finish(() => resolve(Buffer.from(bytes)));
       } else {
         if (reader.closed) {
-          reject(new Error(`data end without suffix \r\n`));
+          finish(() => reject(new Error(`data end without suffix \r\n`)));
         } else {
           /** If unresolve, wait for next chunk */
           reader.once('readable', parse);
@@ -120,6 +133,11 @@ export function getOneLineFromReader(
       }
     }
   };
+  if (timeout) {
+    timeoutTag = setTimeout(() => {
+      finish(() => reject(new Error(`timeout: ${timeout}ms`)));
+    }, timeout);
+  }
   if (reader.readableLength > 0) {
     parse();
   } else {
