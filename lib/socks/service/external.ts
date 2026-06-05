@@ -53,7 +53,7 @@ export {
   getXorDataFunc,
 } from '../../../index';
 
-export {startTcpServerAsGateway} from '../../../utils/tcp-gateway';
+export {startTcpConnectionRouter} from '../../../utils/tcp-gateway';
 
 export {
   requestThroughTcpAndPrintResponse,

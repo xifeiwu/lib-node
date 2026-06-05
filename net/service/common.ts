@@ -3,9 +3,10 @@ import fs from 'fs';
 import path from 'path';
 import {Writable} from 'stream';
 import net, {Socket} from 'net';
-import {ColorStyle, HttpRequestFirstLineInfo, SocketInfo, logColorful} from '../../index';
 import {isString, isNumber, formatDate, REG_HTTP_REQUEST_FIRST_LINE} from '../../external';
 import {TlsOptions} from 'tls';
+import {ColorStyle, HttpRequestFirstLineInfo, SocketInfo} from '../../types';
+import {logColorful} from '../../log';
 
 export function getLocalIpAddress() {
   let localIP = null;

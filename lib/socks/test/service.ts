@@ -1,6 +1,6 @@
 import {
   startHttpServer,
-  startTcpServerAsGateway,
+  startTcpConnectionRouter,
   toBuffer,
   toUrlProps,
   ulItems,
@@ -130,11 +130,11 @@ export async function startTcpServerForSocks(socksServerConfig?: Partial<SocksSe
   const tcpHandler = async (socket: Socket, info) => {
     return handleAsSocks(socket, info.firstChunk);
   };
-  const tcpServerInfo = await startTcpServerAsGateway({
-    redirectByProtocol: {
+  const tcpServerInfo = await startTcpConnectionRouter({
+    router: {
       http: httpServerInfo,
     },
-    handleConnection: tcpHandler,
+    tcpHandler,
   });
   return tcpServerInfo;
 }

@@ -1,7 +1,7 @@
 import path from 'path';
 import assert from 'assert';
 import fs from 'fs';
-import {getAFreePort} from '../../../net/service/utils';
+import {getAFreePort} from '../../../net/service/common';
 import {logColorful, getSpawnConfigByScript, CP, waitFor, killProcessByPid} from './external';
 import {launchCpInDetachedMode} from '../launch-cp/detached';
 import {getProcBaseDir} from './file';

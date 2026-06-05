@@ -3,9 +3,10 @@ import {Socket} from 'net';
 import {HttpDebugServerPath} from '../../external';
 import {requestAndGetResponseInfo, startHttpDebugServer} from '../../http';
 import {startSocketClient} from '../../net';
-import {startTcpServerAsGateway, TcpHandler} from '.';
+import {startTcpConnectionRouter} from './server';
+import {TcpHandler} from './types';
 
-const tcpHandler: TcpHandler = async (socket: Socket) => {
+const echoData: TcpHandler = async (socket: Socket) => {
   socket.on('data', chunk => {
     socket.write(chunk);
   });
@@ -13,11 +14,11 @@ const tcpHandler: TcpHandler = async (socket: Socket) => {
 
 export async function testStartProxyableTcpServer() {
   const httpServerInfo = await startHttpDebugServer();
-  const {host, port, server} = await startTcpServerAsGateway({
-    redirectByProtocol: {
+  const {host, port, server} = await startTcpConnectionRouter({
+    router: {
       http: httpServerInfo,
     },
-    handleConnection: tcpHandler,
+    tcpHandler: echoData,
   });
   try {
     const {responseInfo} = await requestAndGetResponseInfo({
@@ -29,8 +30,10 @@ export async function testStartProxyableTcpServer() {
         b: 'b',
       },
     });
+    /** test route to http */
     assert.equal(HttpDebugServerPath.echo, responseInfo.data.url);
     const client = await startSocketClient({host, port});
+    /** test route to tcp */
     const toSend = 'abc';
     client.write(toSend);
     const replyFromServer = await new Promise<string>(resolve => {
