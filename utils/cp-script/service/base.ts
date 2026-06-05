@@ -2,9 +2,18 @@ import {isNumber, waitFor} from '../../../external';
 import {logColorful} from '../../../log';
 import {CP} from '../../../types';
 
-export function outOnAllChannels(value: any) {
-  logColorful({}, value);
-  if (process.connected && process.send) {
+export function outputInfo(
+  value: any,
+  channel?: {
+    stdout?: boolean;
+    ipc?: boolean;
+  }
+) {
+  const {stdout = true, ipc = true} = channel ?? {};
+  if (stdout) {
+    logColorful({}, value);
+  }
+  if (ipc && process.connected && process.send) {
     /** Child process will exit by the error EPipe if the error is not catched here */
     process.send(value, err => {
       console.log(`err`);
@@ -35,14 +44,17 @@ export async function handleCpCustomization(config?: CP.CpCustomization, key?: s
   }
 }
 
-export function getErrorResponse(err: Error | string) {
+export function getErrorMessage(err: Error | string) {
   let message = err as string;
   if (err instanceof Error) {
     message = err.stack ? err.stack : err.message;
   }
-  const errorResponse = {
+  return message;
+}
+
+export function getErrorResponse(err: Error | string) {
+  return {
     type: 'error',
-    data: message,
+    data: getErrorMessage(err),
   };
-  return errorResponse;
 }

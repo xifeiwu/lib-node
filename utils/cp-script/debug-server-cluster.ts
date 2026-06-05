@@ -8,7 +8,7 @@ import {
   htmlUlItems,
   spawnScriptAndTryIpc,
 } from '../../index';
-import {outOnAllChannels} from './service';
+import {outputInfo} from './service';
 import {CP} from '../../types';
 
 export async function start() {
@@ -87,9 +87,9 @@ export async function start() {
       },
       slaves,
     };
-    outOnAllChannels(info);
+    outputInfo(info, {stdout: true, ipc: true});
   } catch (err) {
-    outOnAllChannels(err.stack);
+    outputInfo(err.stack, {stdout: true, ipc: true});
   }
 }
 

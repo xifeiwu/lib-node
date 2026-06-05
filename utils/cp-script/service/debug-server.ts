@@ -1,4 +1,4 @@
-import {getErrorResponse, handleCpCustomization, outOnAllChannels} from '.';
+import {getErrorResponse, handleCpCustomization, outputInfo} from '.';
 import {getAFreePort} from '../../../net';
 import {startHttpDebugServer} from '../../../http';
 import {CP} from '../../../types';
@@ -24,17 +24,20 @@ export async function startDebugServer() {
         const serverInfo = await startHttpDebugServer(config, {logRequestHeaderInfo: 'black'});
         const {host, port, origin} = serverInfo;
         delete serverInfo['server'];
-        outOnAllChannels({
-          serverInfo: {
-            host,
-            port,
-            origin,
-            config: serverInfo.config,
+        outputInfo(
+          {
+            serverInfo: {
+              host,
+              port,
+              origin,
+              config: serverInfo.config,
+            },
+            processInfo: getProcessInfoByInst(process),
           },
-          processInfo: getProcessInfoByInst(process),
-        });
+          {stdout: true, ipc: true}
+        );
       } catch (err) {
-        outOnAllChannels(getErrorResponse(err));
+        outputInfo(getErrorResponse(err), {stdout: true, ipc: true});
       }
     } else {
       await handleCpCustomization(config, key);

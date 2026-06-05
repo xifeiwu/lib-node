@@ -1,2 +1,2 @@
-export {outOnAllChannels} from './service';
+export {outputInfo, getErrorMessage} from './service';
 export * from './utils';
