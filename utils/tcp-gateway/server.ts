@@ -1,5 +1,5 @@
 import {Socket} from 'net';
-import {startSocketServer, responseHttpConnection} from './external';
+import {applyIdleTimeout, startSocketServer, responseHttpConnection} from './external';
 import {TcpServerConfig} from '../../types';
 import {Protocol, RouteTcpConnectionOptions, TcpHandler} from './types';
 import {routeTcpConnection} from './service';
@@ -41,7 +41,9 @@ export async function startTcpConnectionRouter(
     });
   }
 
+  const idleTimeoutMs = tcpServerConfig?.idleTimeoutMs;
   const {host, port, server} = await startSocketServer(async socket => {
+    applyIdleTimeout(socket, idleTimeoutMs);
     if (onConnection && (await onConnection(socket)) === false) {
       socket.writable && socket.end(`closed by server side`);
       return;

@@ -34,6 +34,8 @@ interface TcpServerConfigCommon {
   /** support string for more compatible */
   port?: number | string;
   path?: string;
+  /** disconnect the socket after this many ms of inactivity; omit to keep the connection open */
+  idleTimeoutMs?: number;
 }
 export interface NetServerConfig extends TcpServerConfigCommon {
   options?: ServerOpts;
